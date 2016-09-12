@@ -193,8 +193,7 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,MATNAME>,
     if( typeImplemented_ && !problemTooSmall_ )
     {
       TYPE(linearOp) jdOp;
-      for(int i = 0; i < _NV_; i++)
-        sigma_[i] = st::zero();
+      for(int i = 0; i < _NV_; i++) sigma_[i] = st::zero();
       SUBR(jadaOp_create)(opA_,NULL,q_,NULL,sigma_,_NV_,&jdOp,&iflag_);
       ASSERT_EQ(0,iflag_);
 
@@ -222,27 +221,25 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,MATNAME>,
     if( typeImplemented_ && !problemTooSmall_ )
     {
       TYPE(linearOp) jdOp;
-      for(int i = 0; i < _NV_; i++)
-        sigma_[i] = st::zero();
+      for(int i = 0; i < _NV_; i++) sigma_[i] = st::zero();
       SUBR(jadaOp_create)(opAB_,opB_,qb_,Bq_,sigma_,_NV_,&jdOp,&iflag_);
       ASSERT_EQ(0,iflag_);
-
-      // apply, vec1 = (I-qBq') I (I-qBq')vec2
+      // apply, vec1 = (I-Bqq') I (I-qBq')vec2
       jdOp.apply(st::one(),jdOp.A,vec2_,st::zero(),vec1_,&iflag_);
       ASSERT_EQ(0,iflag_);
 
-      // vec2_ = (I-q_*Bq_') vec2_ 
-      SUBR(mvecT_times_mvec)(st::one(),Bq_,vec2_,st::zero(),mat2_,&iflag_);
+      // vec3_ = (I-Bq_*q_') vec2_. Note that vec3=vec2 by construction
+      SUBR(mvecT_times_mvec)(st::one(),Bq_,vec3_,st::zero(),mat2_,&iflag_);
       ASSERT_EQ(0,iflag_);
       SUBR(mvec_times_sdMat)(-st::one(),qb_,mat2_,st::one(),vec3_,&iflag_);
       ASSERT_EQ(0,iflag_);
 
       // vec1_ <- vec1 - (vec2 projected twice) should be zero
-      SUBR(mvecT_times_mvec)(st::one(),Bq_,vec3_,st::zero(),mat2_,&iflag_);
+      SUBR(mvecT_times_mvec)(st::one(),qb_,vec3_,st::zero(),mat2_,&iflag_);
       ASSERT_EQ(0,iflag_);
       SUBR(mvec_add_mvec)(-st::one(),vec3_,st::one(),vec1_,&iflag_);
       ASSERT_EQ(0,iflag_);
-      SUBR(mvec_times_sdMat)(st::one(),qb_,mat2_,st::one(),vec1_,&iflag_);
+      SUBR(mvec_times_sdMat)(st::one(),Bq_,mat2_,st::one(),vec1_,&iflag_);
       ASSERT_EQ(0,iflag_);
 
       ASSERT_REAL_EQ(mt::one(),MvecEqual(vec1_,st::zero()));
@@ -326,24 +323,32 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,MATNAME>,
       SUBR(jadaOp_create)(opAB_,opB_,qb_,Bq_,sigma_,_NV_,&jdOp,&iflag_);
       ASSERT_EQ(0,iflag_);
 
-      // apply
-      jdOp.apply(st::one(),jdOp.A,vec2_,st::zero(),vec3_,&iflag_);
+      // apply, vec2 = (jdOp)*vec3, save vec2 for the final comparison
+      jdOp.apply(st::one(),jdOp.A,vec3_,st::zero(),vec2_,&iflag_);
       ASSERT_EQ(0,iflag_);
 
 
-      // vec3_ = (I-q_*q_') (vec1+sigma_i*I)vec2_ ?
-      opA_->apply(st::one(), opA_->A, vec2_, st::zero(), vec1_, &iflag_);
+      // vec3_ = (I-q_*Bq_') vec3_.
+      SUBR(mvecT_times_mvec)(st::one(),Bq_,vec3_,st::zero(),mat2_,&iflag_);
       ASSERT_EQ(0,iflag_);
-      SUBR(mvec_vadd_mvec)(sigma_,vec2_,st::one(),vec1_,&iflag_);
-      ASSERT_EQ(0,iflag_);
-      SUBR(mvecT_times_mvec)(st::one(),Bq_,vec1_,st::zero(),mat2_,&iflag_);
-      ASSERT_EQ(0,iflag_);
-      SUBR(mvec_add_mvec)(-st::one(),vec1_,st::one(),vec3_,&iflag_);
-      ASSERT_EQ(0,iflag_);
-      SUBR(mvec_times_sdMat)(st::one(),qb_,mat2_,st::one(),vec3_,&iflag_);
+      SUBR(mvec_times_sdMat)(-st::one(),qb_,mat2_,st::one(),vec3_,&iflag_);
       ASSERT_EQ(0,iflag_);
 
-      ASSERT_NEAR(mt::one(),MvecEqual(vec3_,st::zero()),10*VTest::releps());
+      // vec1_ = (A+sigma_i*B)vec3
+      SUBR(sparseMat_times_mvec)(st::one(),B_,vec3_,st::zero(),vec1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(mvec_vscale)(vec1_,sigma_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(sparseMat_times_mvec)(st::one(), A_, vec3_, +st::one(), vec1_, &iflag_);
+      ASSERT_EQ(0,iflag_);
+
+      // vec1 = (I - Bqq')vec1
+      SUBR(mvecT_times_mvec)(st::one(),qb_,vec1_,st::zero(),mat2_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(mvec_times_sdMat)(-st::one(),Bq_,mat2_,st::one(),vec1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+
+      ASSERT_NEAR(mt::one(),MvecsEqual(vec1_,vec2_),100.0*VTest::releps());
 
       SUBR(jadaOp_delete)(&jdOp,&iflag_);
       ASSERT_EQ(0,iflag_);
@@ -444,20 +449,46 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,MATNAME>,
   }
 
 
-  TEST_F(CLASSNAME, apply_check_orthogonality_withB)
+  // checks that A_orth Q = 0 
+  // NOTE: test disabled because this only holds if we pre-project,
+  // right now our jadaOp is defined as (I-VV')(A-sigma*I) if B=I, however.
+  TEST_F(CLASSNAME, DISABLED_orthogonality_of_jadaOp)
   {
     if( typeImplemented_ && !problemTooSmall_ )
     {
       TYPE(linearOp) jdOp;
-      SUBR(jadaOp_create)(opAB_,opB_,qb_,Bq_,sigma_,_NV_,&jdOp,&iflag_);
+      _ST_ sigma[_NVP_];
+      for (int i=0; i<_NVP_; i++) sigma[i]=st::prand();
+      SUBR(jadaOp_create)(opA_,NULL,q_,NULL,sigma,_NVP_,&jdOp,&iflag_);
       ASSERT_EQ(0,iflag_);
 
-      // apply
+      // apply to Q itself (should give 0)
+      jdOp.apply(st::one(),jdOp.A,q_,st::zero(),qb_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      
+      ASSERT_NEAR(st::one(),MvecEqual(qb_,st::zero()),VTest::releps());
+
+      SUBR(jadaOp_delete)(&jdOp,&iflag_);
+      ASSERT_EQ(0,iflag_);
+    }
+  }
+
+
+  // checks that A_orth Q = 0 and Q'A_orth X = 0
+  TEST_F(CLASSNAME, check_orthogonality_of_output_vector)
+  {
+    if( typeImplemented_ && !problemTooSmall_ )
+    {
+      TYPE(linearOp) jdOp;
+      SUBR(jadaOp_create)(opA_,NULL,q_,NULL,sigma_,_NV_,&jdOp,&iflag_);
+      ASSERT_EQ(0,iflag_);
+
+      // apply to X
       jdOp.apply(st::one(),jdOp.A,vec2_,st::zero(),vec3_,&iflag_);
       ASSERT_EQ(0,iflag_);
       
       // check that result is orthogonal to q
-      SUBR(mvecT_times_mvec)(st::one(),Bq_,vec3_,st::zero(),mat1_,&iflag_);
+      SUBR(mvecT_times_mvec)(st::one(),q_,vec3_,st::zero(),mat1_,&iflag_);
       ASSERT_EQ(0,iflag_);
       
       ASSERT_NEAR(st::one(),SdMatEqual(mat1_,st::zero()),10*mt::eps());
@@ -467,3 +498,58 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,MATNAME>,
     }
   }
 
+
+  // checks that A_orth*Q = 0
+  TEST_F(CLASSNAME, check_orthogonality_of_jadaOp_withB)
+  {
+    if( typeImplemented_ && !problemTooSmall_ )
+    {
+      TYPE(linearOp) jdOp;
+      _ST_ sigma[_NVP_];
+      for (int i=0; i<_NVP_; i++) sigma[i]=st::prand();
+      SUBR(jadaOp_create)(opAB_,opB_,qb_,Bq_,sigma,_NVP_,&jdOp,&iflag_);
+      ASSERT_EQ(0,iflag_);
+
+      // apply to BQ itself (should give 0)
+      jdOp.apply(st::one(),jdOp.A,qb_,st::zero(),q_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      
+      ASSERT_NEAR(st::one(),MvecEqual(q_,st::zero()),10*VTest::releps());
+
+      // apply
+      jdOp.apply(st::one(),jdOp.A,vec2_,st::zero(),vec3_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      
+      // check that result is orthogonal to q
+      SUBR(mvecT_times_mvec)(st::one(),qb_,vec3_,st::zero(),mat1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      
+      ASSERT_NEAR(st::one(),SdMatEqual(mat1_,st::zero()),10*mt::eps());
+
+      SUBR(jadaOp_delete)(&jdOp,&iflag_);
+      ASSERT_EQ(0,iflag_);
+    }
+  }
+
+  TEST_F(CLASSNAME, check_orthogonality_of_output_vector_withB)
+  {
+    if( typeImplemented_ && !problemTooSmall_ )
+    {
+      TYPE(linearOp) jdOp;
+      SUBR(jadaOp_create)(opAB_,opB_,qb_,Bq_,sigma_,_NV_,&jdOp,&iflag_);
+      ASSERT_EQ(0,iflag_);
+
+      // apply to X
+      jdOp.apply(st::one(),jdOp.A,vec2_,st::zero(),vec3_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      
+      // check that result is orthogonal to q
+      SUBR(mvecT_times_mvec)(st::one(),qb_,vec3_,st::zero(),mat1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      
+      ASSERT_NEAR(st::one(),SdMatEqual(mat1_,st::zero()),10*mt::eps());
+
+      SUBR(jadaOp_delete)(&jdOp,&iflag_);
+      ASSERT_EQ(0,iflag_);
+    }
+  }

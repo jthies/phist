@@ -90,7 +90,7 @@ PHIST_ENTER_FCN("phist_jadaOp_shifted_A_times_mvec");
 PHIST_ENTER_FCN("phist_jadaOp_mvecT_times_mvec");
     PHIST_CHK_IERR( SUBR( mvecT_times_mvec ) (st::one(),  jadaOp->V,  Y,   st::zero(), tmp, iflag), *iflag);
 }
-    // Y <- Y - V*tmp
+    // Y <- Y - BV*tmp
 {
 PHIST_ENTER_FCN("phist_jadaOp_mvec_times_sdMat");
     PHIST_CHK_IERR( SUBR( mvec_times_sdMat ) (-st::one(), jadaOp->BV, tmp, st::one(),  Y,   iflag), *iflag);
@@ -105,7 +105,7 @@ PHIST_ENTER_FCN("phist_jadaOp_mvec_times_sdMat");
 //               with X_=(I-VV')X
 //
 // for B!=NULL:  Y <- alpha* (I-BVV')* (AX_ + BX_*sigma) + beta*Y
-//               with X_=(I-VV'B)X
+//               with X_=(I-V(VB)')X
 //
 void SUBR(jadaOp_apply_project_pre_post)(_ST_ alpha, const void* op, TYPE(const_mvec_ptr) X,
     _ST_ beta, TYPE(mvec_ptr) Y, int* iflag)
@@ -150,16 +150,16 @@ void SUBR(jadaOp_apply_project_pre_post)(_ST_ alpha, const void* op, TYPE(const_
     // using a fused kernel here would save some data traffic, but the corresponding kernel doesn't exist right now:
     // X_proj = X - V*(BV'X)
 
-    // tmp <- (BV')*X and X_proj = X
+    // tmp <- (BV)'*X and X_proj = X
 {
 PHIST_ENTER_FCN("phist_jadaOp_mvecT_times_mvec_and_copy_x");
-    PHIST_CHK_IERR( SUBR( mvecT_times_mvec ) (st::one(),  jadaOp->V,  X,   st::zero(), tmp, iflag), *iflag);
+    PHIST_CHK_IERR( SUBR( mvecT_times_mvec ) (st::one(),  jadaOp->BV,  X,   st::zero(), tmp, iflag), *iflag);
     PHIST_CHK_IERR( SUBR( mvec_add_mvec ) (st::one(), X, st::zero(), X_proj, iflag), *iflag);
 }
     // X_proj <- X - V*tmp
 {
 PHIST_ENTER_FCN("phist_jadaOp_mvec_times_sdMat");
-    PHIST_CHK_IERR( SUBR( mvec_times_sdMat ) (-st::one(), jadaOp->BV, tmp, st::one(),  X_proj,   iflag), 
+    PHIST_CHK_IERR( SUBR( mvec_times_sdMat ) (-st::one(), jadaOp->V, tmp, st::one(),  X_proj,   iflag), 
     *iflag);
 }
 
@@ -219,8 +219,8 @@ void SUBR(jadaOp_create)(TYPE(const_linearOp_ptr)    AB_op,
   jdOp->A     = (const void*)myOp;
   if (B_op!=NULL)
   {
-    // create temporary space
-    //TROET
+    // if the user passes in a B opeartor and projection vectors V, he also has to provide BV
+    PHIST_CHK_IERR(*iflag= (V!=NULL && BV==V)? PHIST_INVALID_INPUT: 0, *iflag);
     jdOp->apply = (&SUBR(jadaOp_apply_project_pre_post));
   }
   else
@@ -236,7 +236,9 @@ void SUBR(jadaOp_create)(TYPE(const_linearOp_ptr)    AB_op,
   jdOp->domain_map=AB_op->domain_map;
   
   // print some useful data
-  PHIST_SOUT(PHIST_DEBUG, "Created jadaOp with %d projection vectors and %d shifts\n",   nvecp,nvec);
+  PHIST_SOUT(PHIST_DEBUG, "Created jadaOp with %d projection vectors and %d shifts\n%s\n",   nvecp,nvec,
+              B_op==NULL? "                    B=I and postprojection\n":
+                          "                    B-inner product and pre-/postprojection\n");
 }
 
 
