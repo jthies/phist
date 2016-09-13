@@ -362,7 +362,8 @@ using ::phist::GhostMV;
 #endif      
       // multiply
       const char* trans="N";
-      ghost_gemm(_mv,_A,(char*)trans,Bghost,(char*)"N",&alpha,&beta,GHOST_GEMM_NO_REDUCE,GHOST_GEMM_DEFAULT);
+      ghost_gemm(_mv,_A,(char*)trans,Bghost,(char*)"N",&alpha,&beta,
+      GHOST_GEMM_NO_REDUCE, _mv->context, GHOST_GEMM_DEFAULT);
       
       ghost_densemat_destroy(Bghost);
     }
@@ -467,7 +468,9 @@ using ::phist::GhostMV;
                    const_cast<ghost_densemat*>(B.get()),
                    (char*)"N",
                    (void*)&alpha, (void*)&beta,
-                   GHOST_GEMM_ALL_REDUCE,GHOST_GEMM_DEFAULT);
+                   GHOST_GEMM_ALL_REDUCE,
+                   A.get()->context,
+                   GHOST_GEMM_DEFAULT);
 #ifdef GHOST_HAVE_CUDA
       if (A.get()->traits.location&GHOST_LOCATION_DEVICE)
       {
@@ -488,7 +491,7 @@ using ::phist::GhostMV;
           "Belos::MultiVecTraits<Scalar,GhostMV>::MvDot(A,B,dots): dots must have room for all dot products.");
 
       Teuchos::ArrayView<Scalar> av(dots);
-      ghost_dot((void*)&dots[0],const_cast<ghost_densemat*>(A.get()),const_cast<ghost_densemat*>(B.get()));
+      ghost_dot((void*)&dots[0],const_cast<ghost_densemat*>(A.get()),const_cast<ghost_densemat*>(B.get()),A.get()->context->mpicomm);
     }
 
     static void MvNorm(const GhostMV& mv, std::vector<magn_t> &normvec, NormType type=TwoNorm)
@@ -504,7 +507,7 @@ using ::phist::GhostMV;
         case OneNorm:
           break;
         case TwoNorm:
-          ghost_dot(av.getRawPtr(), _mv, _mv);
+          ghost_dot(av.getRawPtr(), _mv, _mv, _mv->context->mpicomm);
           for (int i=0;i<av.size();i++)
           {
             nv[i]=st::real(st::sqrt(av[i]));
