@@ -255,7 +255,7 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,MATNAME>,
         // calculate A*V(:,1:m)
         opA->apply(st::one(),opA->A,Vm_,st::zero(),AV_,&iflag_);
         ASSERT_EQ(0,iflag_);
-        // calculate B*V(:,1:m+BLOCK_SIZE1)*H(1:m+BLOCK_SIZE1,1:m)
+        // calculate V(:,1:m+BLOCK_SIZE1)*H(1:m+BLOCK_SIZE1,1:m)
         SUBR(mvec_times_sdMat)(st::one(),V_,H_,st::zero(),VH_,&iflag_);
         ASSERT_EQ(0,iflag_);
 
