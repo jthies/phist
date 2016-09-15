@@ -18,7 +18,15 @@ list (APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/")
 # Define some custom variables
 project(phist C CXX Fortran)
 SET(CMAKE_SKIP_INSTALL_ALL_DEPENDENCY TRUE)
-set(PHIST_VERSION 1.1.0)
+# here an odd version minor (e.g. 1.1.x, 1.3.x etc.) indicates a development version
+# with unstable functionality, an even version minor (1.0.x, 1.2.x etc.) a stable version.
+# Stable versions will return *iflag=-99 (not implemented) if a function is called that is
+# still under development, whereas the next development version may or may not do what
+# the function claims to do, depending on the status of the repository.
+set(PHIST_VERSION_MAJOR 1)
+set(PHIST_VERSION_MINOR 1)
+set(PHIST_VERSION_PATCH 0)
+set(PHIST_VERSION ${PHIST_VERSION_MAJOR}.${PHIST_VERSION_MINOR}.${PHIST_VERSION_PATCH})
 set(PRODUCT_NAME phist-${PHIST_VERSION})
 
 if("${CMAKE_BUILD_TYPE}" STREQUAL "")
