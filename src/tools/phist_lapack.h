@@ -112,6 +112,11 @@ typedef char phist_blas_char;
 #define DLARTG LAPACK_SUBR(DLARTG,dlartg)
 #define CLARTG LAPACK_SUBR(CLARTG,clartg)
 #define ZLARTG LAPACK_SUBR(ZLARTG,zlartg)
+/* GESVD */
+#define SGESVD LPACK_SUBR(SGESVD,sgesvd)
+#define DGESVD LPACK_SUBR(DGESVD,dgesvd)
+#define CGESVD LPACK_SUBR(CGESVD,cgesvd)
+#define ZGESVD LPACK_SUBR(ZGESVD,zgesvd)
 
 #ifdef PHIST_SDMATS_ROW_MAJOR
 /* we might use LAPACKE for this case, but we don't really need the support
