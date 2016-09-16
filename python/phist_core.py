@@ -72,7 +72,9 @@ for _varT in ('S', 'D', 'C', 'Z'):
                     ('aux',   _ct.c_void_p),
                     ('apply', _ct.c_void_p),
                     ('applyT', _ct.c_void_p),
-                    ('apply_shifted', _ct.c_void_p)]
+                    ('apply_shifted', _ct.c_void_p),
+                    ('fused_apply_mvTmv', _ct.c_void_p),
+                    ('destroy', _ct.c_void_p)]
 
     _set(_varT+'linearOp', _linearOp)
     _linearOp_ptr = _ct.POINTER(_linearOp)
