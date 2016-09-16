@@ -348,18 +348,8 @@ protected:
       ASSERT_EQ(0,iflag_);
       SUBR(mvecT_times_mvec)(st::one(),X,OPX,st::zero(),M,&iflag_);
       ASSERT_EQ(0,iflag_);
-      SUBR(sdMat_from_device)(M,&iflag_);
+      max_err=MTest::symmetry_check(M,&iflag_);
       ASSERT_EQ(0,iflag_);
-      phist_lidx ldm;
-      _ST_* M_raw=NULL;
-      SUBR(sdMat_extract_view)(M,&M_raw,&ldm,&iflag_);
-      for (int i=0; i<_NV_; i++)
-      {
-        for (int j=i+1; j<_NV_;j++)
-        {
-          max_err = std::max(max_err,std::abs(M_raw[i*ldm+j]-M_raw[j*ldm+i]));
-        }
-      }
       SUBR(sdMat_delete)(M,&iflag_);
       ASSERT_EQ(0,iflag_);
     }

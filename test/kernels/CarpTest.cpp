@@ -11,6 +11,7 @@
 #include "kernels/phist_kernel_flags.h"
 #include "KernelTestWithSparseMat.h"
 #include "KernelTestWithVectors.h"
+#include "KernelTestWithSdMats.h"
 
 #include <complex>
 

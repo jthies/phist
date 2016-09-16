@@ -348,6 +348,37 @@ static void PrintSdMat(int outlev, std::string label,
       return;
     }
   }
+
+  /*! returns the deviation from symmetry (Hermitian-ness) in the inf norm,
+      that is, max_ij (A(i,j)-A(j,i)^*), and iflag!=0 if anything else is fishy
+      (for instance, the matrix is no-square)
+   */
+  static _MT_ symmetry_check(TYPE(sdMat_ptr) mat, int* iflag)
+  {
+    *iflag = 0;
+    _MT_ max_err=-mt::one();
+    // TODO: use correct communicator
+    int n,m;
+    SUBR(sdMat_from_device)(mat,iflag); if (*iflag) return max_err;
+    SUBR(sdMat_get_nrows)(mat, &m, iflag); if (*iflag) return max_err;
+    SUBR(sdMat_get_ncols)(mat, &n, iflag); if (*iflag) return max_err;
+    
+    if (n!=m) {*iflag=PHIST_INVALID_INPUT; return max_err;}
+
+    _ST_* mat_raw;
+    phist_lidx lda;
+    SUBR(sdMat_extract_view)((TYPE(sdMat_ptr))mat, &mat_raw, &lda, iflag); if (*iflag) return max_err;
+    
+    // copy data to buffer
+    for(int j = 0; j < n; j++)
+    {
+      for(int i = 0; i <= m; i++)
+      {
+        max_err = std::max(max_err, std::abs(mat_raw[i*lda+j]-st::conj(mat_raw[j*lda+i])));
+      }
+    }
+    return max_err;
+  }
   
   static TYPE(sdMat_ptr) mem1_, mem2_, mem3_, mem4_;
   static TYPE(sdMat_ptr) mat1_, mat2_, mat3_, mat4_;

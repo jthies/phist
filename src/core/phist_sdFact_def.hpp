@@ -125,6 +125,8 @@ extern "C" void SUBR(sdMat_qb)(TYPE(sdMat_ptr) B,
   PHIST_PERFCHECK_VERIFY_SMALL;
   phist_lidx ldB, ldB_1, n, m;
   _ST_ *Bval, *B_1val, *Berr=NULL, *B_1err=NULL;
+  PHIST_TOUCH(Berr);
+  PHIST_TOUCH(B_1err);
 #if PHIST_HIGH_PRECISION_KERNELS_FORCE
   bool robust=true;
 #else
@@ -169,7 +171,7 @@ extern "C" void SUBR(sdMat_qb)(TYPE(sdMat_ptr) B,
 //! computes in-place the inverse of a Hermitian and positive semi-definite matrix using Cholesky factorization.
 //! If A is singular (actually semi-definite, that is), the pseudo-inverse is computed using rank-revealing Cholesky.
 //! The rank of A on input is returned as *rank.
-void SUBR(sdMat_inv)(TYPE(sdMat_ptr) A_hpd, int* rank, int* iflag)
+void SUBR(sdMat_inverse)(TYPE(sdMat_ptr) A_hpd, int* rank, int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   PHIST_PERFCHECK_VERIFY_SMALL;
@@ -178,9 +180,9 @@ void SUBR(sdMat_inv)(TYPE(sdMat_ptr) A_hpd, int* rank, int* iflag)
   PHIST_CHK_IERR(SUBR(sdMat_get_nrows)(A_hpd,&n,iflag),*iflag);
   PHIST_CHK_IERR(SUBR(sdMat_get_ncols)(A_hpd,&m,iflag),*iflag);
   PHIST_CHK_IERR(*iflag = n==m? 0: PHIST_INVALID_INPUT, *iflag);
-  
+
+  // create matrix with NULL communicator
   phist_const_comm_ptr comm=NULL;
-  SUBR(sdMat_get_comm)(A_hpd,&comm,iflag),*iflag);
   
   TYPE(sdMat_ptr) RR=NULL;
   PHIST_CHK_IERR(SUBR(sdMat_create)(&RR,m,m,comm,iflag),*iflag);
@@ -191,13 +193,18 @@ void SUBR(sdMat_inv)(TYPE(sdMat_ptr) A_hpd, int* rank, int* iflag)
   PHIST_CHK_IERR(SUBR(sdMat_cholesky)(RR,perm,rank,iflag),*iflag);
   PHIST_CHK_IERR(SUBR(sdMat_identity)(A_hpd,iflag),*iflag);
   *iflag=iflag_in;
-  PHIST_CHK_IERR(SUBR(sdMat_backwardSubst_sdMat)(RR,perm,*rank,R_1,iflag),*iflag);
+  // compute A^{-1} = (R'R)\I= R'\ R\ I
+  PHIST_CHK_IERR(SUBR(sdMat_backwardSubst_sdMat)(RR,perm,*rank,A_hpd,iflag),*iflag);
+  PHIST_CHK_IERR(SUBR(sdMat_forwardSubst_sdMat)(RR,perm,*rank,A_hpd,iflag),*iflag);
   PHIST_CHK_IERR(SUBR(sdMat_delete)(RR,iflag),*iflag);
 }
 
-//! computes in-place the pseudo-inverse of an arbitrary square matrix. The rank of A on input is returned as *rank.
-void SUBR(sdMat_pinv)(TYPE(sdMat_ptr) A_gen, int* rank, int* iflag)
+//! computes in-place the (transpose of the Moore-Penrose)
+//! pseudo-inverse of an arbitrary square matrix. The rank
+//! of A on input is returned as *rank.
+void SUBR(sdMat_pseudo_inverse)(TYPE(sdMat_ptr) A_gen, int* rank, int* iflag)
 {
+#include "phist_std_typedefs.hpp"
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   PHIST_PERFCHECK_VERIFY_SMALL;
   int iflag_in=*iflag;
@@ -207,10 +214,9 @@ void SUBR(sdMat_pinv)(TYPE(sdMat_ptr) A_gen, int* rank, int* iflag)
   PHIST_CHK_IERR(SUBR(sdMat_get_ncols)(A_gen,&n,iflag),*iflag);
   
   phist_const_comm_ptr comm=NULL;
-  SUBR(sdMat_get_comm)(A_gen,&comm,iflag),*iflag);
   
   TYPE(sdMat_ptr) U=NULL, Sigma=NULL, Vt=NULL;
-  PHIST_CHK_IERR(SUBR(sdMat_create)(&V,m,m,comm,iflag),*iflag);
+  PHIST_CHK_IERR(SUBR(sdMat_create)(&U,m,m,comm,iflag),*iflag);
   PHIST_CHK_IERR(SUBR(sdMat_create)(&Sigma,m,n,comm,iflag),*iflag);
   PHIST_CHK_IERR(SUBR(sdMat_create)(&Vt,n,n,comm,iflag),*iflag);
   
@@ -222,16 +228,51 @@ void SUBR(sdMat_pinv)(TYPE(sdMat_ptr) A_gen, int* rank, int* iflag)
   _ST_ *Sigma_raw=NULL, *Sigma_err=NULL;
   phist_lidx ldS;
   PHIST_CHK_IERR(SUBR(sdMat_extract_view)(Sigma,&Sigma_raw,&ldS,iflag),*iflag);
+  _MT_ sval_max = st::abs(Sigma_raw[0]), sval_max_err=mt::zero();
   if (high_prec)
   {
-    PHIST_CHK_IERR(SUBR(sdMat_extract_err)(Sigma,&Sigma_err,&ldS,iflag),*iflag);
-    for (int i=0; i<std::min(TROET)    
+#ifdef PHIST_HIGH_PRECISION_KERNELS
+    PHIST_CHK_IERR(SUBR(sdMat_extract_error)(Sigma,&Sigma_err,&ldS,iflag),*iflag);
+    sval_max_err = st::abs(Sigma_err[0]);
+#else
+    PHIST_CHK_IERR(*iflag=PHIST_NOT_IMPLEMENTED,*iflag);
+#endif
+  }
+  for (int i=0; i<std::min(n,m); i++)
+  {
+    _ST_ sval = Sigma_raw[i*ldS+i];
+#ifdef PHIST_HIGH_PRECISION_KERNELS
+    if (high_prec)
+    {
+      _ST_ serr = Sigma_err[i*ldS+i];
+      if (st::abs(sval)<sval_max*mt::rankTol(high_prec)))
+      {
+        Sigma_raw[i*ldS+i]=st::zero();
+        Sigma_err[i*ldS+i]=st::zero();
+      }
+      else
+      {
+        st::prec_div(Sigma_raw[i*ldS+i], Sigma_err[i*ldS+i]);
+      }
+    }
+    else
+#endif
+    {
+      if (st::abs(sval)<sval_max*mt::rankTol())
+      {
+        Sigma_raw[i*ldS+i]=st::zero();
+      }
+      else
+      {
+        Sigma_raw[i*ldS+i]=st::one()/sval;
+      }
+    }
   }
   
   
   PHIST_CHK_IERR(SUBR(sdMat_delete)(U,iflag),*iflag);
   PHIST_CHK_IERR(SUBR(sdMat_delete)(Sigma,iflag),*iflag);
-  PHIST_CHK_IERR(SUBR(sdMat_delete)(V,iflag),*iflag);
+  PHIST_CHK_IERR(SUBR(sdMat_delete)(Vt,iflag),*iflag);
 }
 
 //! singular value decomposition, A = U*Sigma*Vt  
@@ -247,13 +288,14 @@ void SUBR(sdMat_pinv)(TYPE(sdMat_ptr) A_gen, int* rank, int* iflag)
 //! diagonal entries of Sigma only (the actual singular values).
 void SUBR(sdMat_svd)(TYPE(sdMat_ptr) A, TYPE(sdMat_ptr) U, TYPE(sdMat_ptr) Sigma, TYPE(sdMat_ptr) Vt, int* iflag)
 {
+#include "phist_std_typedefs.hpp"
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   PHIST_PERFCHECK_VERIFY_SMALL;
   int iflag_in=*iflag;
   bool high_prec = *iflag&PHIST_ROBUST_REDUCTIONS;
   int n,m;
-  PHIST_CHK_IERR(SUBR(sdMat_get_nrows)(A_gen,&m,iflag),*iflag);
-  PHIST_CHK_IERR(SUBR(sdMat_get_ncols)(A_gen,&n,iflag),*iflag);  
+  PHIST_CHK_IERR(SUBR(sdMat_get_nrows)(A,&m,iflag),*iflag);
+  PHIST_CHK_IERR(SUBR(sdMat_get_ncols)(A,&n,iflag),*iflag);  
   
   int nrowsSigma, ncolsSigma;
   PHIST_CHK_IERR(SUBR(sdMat_get_nrows)(Sigma,&nrowsSigma,iflag),*iflag);
@@ -265,19 +307,20 @@ void SUBR(sdMat_svd)(TYPE(sdMat_ptr) A, TYPE(sdMat_ptr) U, TYPE(sdMat_ptr) Sigma
   _ST_ *A_val, *U_val, *Vt_val, *S_val;
   int ldA, ldU, ldVt, ldSigma;
   PHIST_CHK_IERR(SUBR(sdMat_extract_view)(A,&A_val,&ldA,iflag),*iflag);
-  PHIST_CHK_IERR(SUBR(sdMat_extract_view)(S,&Sigma_val,&ldSigma,iflag),*iflag);
+  PHIST_CHK_IERR(SUBR(sdMat_extract_view)(Sigma,&S_val,&ldSigma,iflag),*iflag);
   PHIST_CHK_IERR(SUBR(sdMat_extract_view)(U,&U_val,&ldU,iflag),*iflag);
   PHIST_CHK_IERR(SUBR(sdMat_extract_view)(Vt,&Vt_val,&ldVt,iflag),*iflag);
   
   if (high_prec)
   {
+ #ifdef PHIST_HIGH_PRECISION_KERNELS
     _ST_ *A_err, *U_err, *Vt_err, *S_err;
     PHIST_CHK_IERR(SUBR(sdMat_extract_error)(A,&A_err,iflag),*iflag);
     PHIST_CHK_IERR(SUBR(sdMat_extract_error)(Sigma,&S_err,iflag),*iflag);
     PHIST_CHK_IERR(SUBR(sdMat_extract_error)(U,&U_err,iflag),*iflag);
     PHIST_CHK_IERR(SUBR(sdMat_extract_error)(Vt,&Vt_err,iflag),*iflag);
 #if defined(IS_DOUBLE)&&(!defined(IS_COMPLEX))
-    phist_Drgesvd("jobU","jobVt",m,n,a,aC,lda,s,sC,u,uC,ldU,vt,vtC,ldvt,iflag);
+    phist_Drgesvd("jobU","jobVt",m,n,A_val,A_err,ldA,S_val,S_err,U_val,U_err,ldU,Vt_val,Vt_err,ldVt,iflag);
 #else
     *iflag=PHIST_NOT_IMPLEMENTED;
 #endif
@@ -291,6 +334,9 @@ void SUBR(sdMat_svd)(TYPE(sdMat_ptr) A, TYPE(sdMat_ptr) U, TYPE(sdMat_ptr) Sigma
         Sigma_err[i*ldSigma+i]=Sigma_err[i]; Sigma_err[i]=st::zero();
       }
     }
+#else
+    PHIST_CHK_IERR(*iflag=PHIST_NOT_IMPLEMENTED,*iflag);
+#endif  
   }
   else
   {
@@ -298,18 +344,36 @@ void SUBR(sdMat_svd)(TYPE(sdMat_ptr) A, TYPE(sdMat_ptr) U, TYPE(sdMat_ptr) Sigma
     _ST_* work=NULL;
     int lwork=-1;
     _ST_ tmp_work;
-    const char jobu="A", jobvt="A";
-    PHIST_TG_PREFIX(GESVD)(jobu,jobvt,m,n,A_val,m,S_val,U_val,m,Vt_val,n,&tmp_work,lwork,iflag);
-    lwork=(mpackint)tmp_work.x[0];
-    Rgesvd(jobu,jobvt,m,n,A_val,m,S_val,U_val,m,Vt_val,n,iflag);
+    int mn=std::min(m,n);
+    _MT_ RS_val[mn];
+    const char jobu='A', jobvt='A';
+#ifdef IS_COMPLEX
+    _MT_ rwork[5*mn];
+    PHIST_TG_PREFIX(GESVD)((phist_blas_char*)(&jobu),(phist_blas_char*)(&jobvt),&m,&n,A_val,&ldA,RS_val,U_val,&ldU,Vt_val,&ldVt,&tmp_work,&lwork,rwork,iflag);
+#else
+    PHIST_TG_PREFIX(GESVD)((phist_blas_char*)(&jobu),(phist_blas_char*)(&jobvt),&m,&n,A_val,&ldA,RS_val,U_val,&ldU,Vt_val,&ldVt,&tmp_work,&lwork,iflag);
+#endif
+    lwork=(int)st::real(tmp_work);
+    work=new _ST_[lwork];
+#ifdef IS_COMPLEX
+    PHIST_TG_PREFIX(GESVD)((phist_blas_char*)(&jobu),(phist_blas_char*)(&jobvt),&m,&n,A_val,&ldA,RS_val,U_val,&ldU,Vt_val,&ldVt,&tmp_work,&lwork,rwork,iflag);
+#else
+    PHIST_TG_PREFIX(GESVD)((phist_blas_char*)(&jobu),(phist_blas_char*)(&jobvt),&m,&n,A_val,&ldA,RS_val,U_val,&ldU,Vt_val,&ldVt,&tmp_work,&lwork,iflag);
+#endif
     delete [] work;
     if (svals_only==false)
     {
       // copy the returned singular values to the diagonal of Sigma
-      int mn=std::min(m,n);
       for (int i=0; i<mn; i++)
       {
-        Sigma_val[i*ldSigma+i]=Sigma_val[i]; Sigma_val[i]=st::zero();
+        S_val[i*ldSigma+i]=(_ST_)(RS_val[i]);
+      }
+    }
+    else
+    {
+      for (int i=0; i<mn; i++)
+      {
+        S_val[i]=(_ST_)(RS_val[i]);
       }
     }
   }

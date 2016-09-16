@@ -38,10 +38,17 @@ void SUBR(sdMat_qb)(TYPE(sdMat_ptr) B, TYPE(sdMat_ptr) B_1,int* rank, int* iflag
 //! computes in-place the inverse of a Hermitian and positive semi-definite matrix using Cholesky factorization.
 //! If A is singular (actually semi-definite, that is), the pseudo-inverse is computed using rank-revealing Cholesky.
 //! The rank of A on input is returned as *rank.
-void SUBR(sdMat_inv)(TYPE(sdMat_ptr) A_hpd, int* rank, int* iflag);
+void SUBR(sdMat_inverse)(TYPE(sdMat_ptr) A_hpd, int* rank, int* iflag);
 
-//! computes in-place the pseudo-inverse of an arbitrary square matrix. The rank of A on input is returned as *rank.
-void SUBR(sdMat_pinv)(TYPE(sdMat_ptr) A_gen, int* rank, int* iflag);
+//! computes in-place the (transposed) Moore-Penrose pseudo-inverse A+ of an arbitrary n x m matrix A.
+//! The rank of A on input is returned as *rank.
+//! The four defining properties are (where A is the input and B the output matrix):
+//!
+//! 1. AB'A = A
+//! 2. B'AB'= B'
+//! 3. (AB')'=AB'
+//! 4. (B'A)'=B'A
+void SUBR(sdMat_pseudo_inverse)(TYPE(sdMat_ptr) A_gen, int* rank, int* iflag);
 
 //! singular value decomposition, A = U*Sigma*Vt
 
