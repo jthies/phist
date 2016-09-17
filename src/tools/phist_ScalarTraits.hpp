@@ -109,6 +109,21 @@ class ScalarTraits< float >
   {
     return std::sqrt(x);
   }
+
+  //! square root with increased precision. also returns 1/sqrt(x).
+  static inline void prec_sqrt(const scalar_t& x, const scalar_t& xC,
+                   scalar_t& sqrt, scalar_t& sqrtC,
+                   scalar_t& inv_sqrt, scalar_t& inv_sqrtC)
+  {
+    throw "not implemented";
+  }
+  
+  //! in-place computation of 1/x with increased precision
+  static inline void prec_div(const scalar_t& x, const scalar_t& xC,
+                               scalar_t& inv,     scalar_t& invC)
+  {
+    throw "not implemented";
+  }
     
   //! absolute value
   static inline magn_t abs(const scalar_t& x)
@@ -266,7 +281,22 @@ class ScalarTraits< double >
   {
     return std::sqrt(x);
   }
-    
+
+  //! square root with increased precision. also returns 1/sqrt(x).
+  static inline void prec_sqrt(const scalar_t& x, const scalar_t& xC,
+                   scalar_t& sqrt, scalar_t& sqrtC,
+                   scalar_t& inv_sqrt, scalar_t& inv_sqrtC)
+  {
+    throw "not implemented";
+  }
+  
+  //! in-place computation of 1/x with increased precision
+  static inline void prec_div(const scalar_t& x, const scalar_t& xC,
+                               scalar_t& inv,     scalar_t& invC)
+  {
+    throw "not implemented";
+  }
+
   //! absolute value
   static inline magn_t abs(const scalar_t& x)
   {
@@ -409,6 +439,21 @@ class ScalarTraits< std::complex<MT> >
   static inline scalar_t sqrt(const scalar_t& x)
   {
     return std::sqrt(x);
+  }
+
+  //! square root with increased precision. also returns 1/sqrt(x).
+  static inline void prec_sqrt(const scalar_t& x, const scalar_t& xC,
+                   scalar_t& sqrt, scalar_t& sqrtC,
+                   scalar_t& inv_sqrt, scalar_t& inv_sqrtC)
+  {
+    throw "not implemented";
+  }
+  
+  //! in-place computation of 1/x with increased precision
+  static inline void prec_div(const scalar_t& x, const scalar_t& xC,
+                               scalar_t& inv,     scalar_t& invC)
+  {
+    throw "not implemented";
   }
     
   //! absolute value
