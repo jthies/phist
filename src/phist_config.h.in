@@ -70,7 +70,6 @@ kernel libs) ?
 #cmakedefine PHIST_KERNEL_LIB_MAGMA
 
 #cmakedefine PHIST_MVECS_ROW_MAJOR
-#cmakedefine PHIST_SDMATS_ROW_MAJOR
 
 /* use random number generator prescribed by the kernel lib or our own? 
    The builtin variant may be much faster but the PHIST RNG gives reproducible
