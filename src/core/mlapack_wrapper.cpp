@@ -61,7 +61,7 @@ for (int i=0; i<(_ncols); i++)\
   for (int j=0; j<(_nrows); j++)\
   {\
     (_a) [i+j*(_lda)] = (_A)[i+j*(_nrows)].x[0]; \
-    (_aC)[i+j*(_lda)] = (_A)[i+j*(_nrows)].x[1]; \ 
+    (_aC)[i+j*(_lda)] = (_A)[i+j*(_nrows)].x[1]; \
   }\
 }\
 }
@@ -132,7 +132,7 @@ for (int i=0; i<n; i++)
 #endif
 }
 
-void phist_Drgesvd(const char *jobu, const char *jobvt, int m, int n,
+extern "C" void phist_Drgesvd(const char *jobu, const char *jobvt, int m, int n,
             double *restrict a, double *restrict aC, int lda, double *restrict s, double *restrict sC,
             double *restrict u, double *restrict uC, int ldu, double *restrict vt, double *restrict vtC, 
             int ldvt, int *iflag)
@@ -141,11 +141,13 @@ void phist_Drgesvd(const char *jobu, const char *jobvt, int m, int n,
   PHIST_TO_QD(a,aC,lda,m,n,A);
   // create work array
   dd_real* work=NULL;
-  mpackint lwork=-1;
+  mpackint lwork=-1, _m=m, _n=n,_iflag;
   dd_real tmp_work;
-  Rgesvd(jobu,jobvt,m,n,A,m,S,U,m,Vt,n,&tmp_work,lwork,iflag);
+  Rgesvd(jobu,jobvt,_m,_n,A,_m,S,U,_m,Vt,_n,&tmp_work,lwork,&_iflag);
+  *iflag=(int)_iflag;
   lwork=(mpackint)tmp_work.x[0];
-  Rgesvd(jobu,jobvt,m,n,A,m,S,U,m,Vt,n,iflag);
+  work=new dd_real[lwork];
+  Rgesvd(jobu,jobvt,_m,_n,A,_m,S,U,_m,Vt,_n,work,lwork,&_iflag);
   delete [] work;
   QD_TO_PHIST( s, sC, m, m, 1, S);
   QD_TO_PHIST( u, uC, m, m, m, U);
