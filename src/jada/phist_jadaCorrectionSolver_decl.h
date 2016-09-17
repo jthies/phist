@@ -12,6 +12,8 @@ typedef struct TYPE(jadaCorrectionSolver)
   TYPE(blockedGMRESstate_ptr) *blockedGMRESstates_;     //! blockedGMRES states
   TYPE(carp_cgState_ptr) *carp_cgStates_; //! can use CARP-CG alternatively
   phist_ElinSolv     method_;    //! supported values are GMRES, MINRES, CARP_CG and CUSTOM.
+  
+  int preconSkewProject;
 
   TYPE(const_linearOp_ptr) rightPrecon;
 

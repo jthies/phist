@@ -295,10 +295,61 @@ void SUBR(jadaOp_apply_project_none)(_ST_ alpha, const void* op, TYPE(const_mvec
 //! ditioning operator. Obviously not all preconditioners are able to handle varying shifts without
 //! recomputing, this is not taken into account by this function:in that case the input P_op must be
 //! updated beforehand.
-void SUBR(jadaPrec_create)(TYPE(const_linearOp_ptr) P_op, const _ST_ sigma[], int nvec,
+//!
+//! If V is given, the preconditioner application will include a skew-projection
+//! Y <- (I - P_op\V (V' P_op\ V)^{-1} V' ) P_op\X      or (if BV!=V and BV!=NULL):
+//! Y <- (I -BP_op\V (V'BP_op\BV)^{-1} V'B) P_op\X
+//!
+void SUBR(jadaPrec_create)(TYPE(const_linearOp_ptr) P_op, 
+        TYPE(const_mvec_ptr) V, TYPE(const_mvec_ptr) BV,
+        const _ST_ sigma[], int nvec,
         TYPE(linearOp_ptr) jdPrec, int* iflag)
 {
-  PHIST_CHK_IERR(SUBR(jadaOp_create)(P_op,NULL,NULL,NULL,sigma, nvec, jdPrec,iflag),*iflag);
-  // use the version without the projections:
-  jdPrec->apply=SUBR(jadaOp_apply_project_none);
+#include "phist_std_typedefs.hpp"
+  if (V==NULL)
+  {
+    // simply apply the preconditioner "as is"
+    PHIST_CHK_IERR(SUBR(jadaOp_create)(P_op,NULL,NULL,NULL,sigma, nvec, jdPrec,iflag),*iflag);
+    // use the version without the projections:
+    jdPrec->apply=SUBR(jadaOp_apply_project_none);
+  }
+  else
+  {
+    // construct a skew-projected operator, first we need to construct P\V*(V'P\V)^{-1}
+    if (BV!=V && BV!=NULL)
+    {
+      PHIST_CHK_IERR(*iflag=PHIST_NOT_IMPLEMENTED,*iflag);
+    }
+    else
+    {
+      int nproj;
+      PHIST_CHK_IERR(SUBR(mvec_num_vectors)(V,&nproj,iflag),*iflag);
+      if (nproj==0) PHIST_CHK_IERR(*iflag=PHIST_INVALID_INPUT,*iflag);
+      
+      TYPE(mvec_ptr) PV=NULL;
+      PHIST_CHK_IERR(SUBR(mvec_create)(&PV,P_op->domain_map,nproj,iflag),*iflag);
+      PHIST_CHK_IERR(P_op->apply(st::one(),P_op->A,V,st::zero(),PV,iflag),*iflag);
+      TYPE(sdMat_ptr) VtPV=NULL;
+      phist_const_comm_ptr comm=NULL;
+      PHIST_CHK_IERR(phist_map_get_comm(P_op->domain_map,&comm,iflag),*iflag);
+      PHIST_CHK_IERR(SUBR(sdMat_create)(&VtPV, nproj,nproj,comm,iflag),*iflag);
+      
+      // compute the pseudo-inverse of V'K\V in place
+      int rank;
+      PHIST_CHK_IERR(SUBR(sdMat_pseudo_inverse)(VtPV,&rank,iflag),*iflag);
+      
+      // in-place PV*(V'P\V)^+
+      PHIST_CHK_IERR(SUBR(mvec_times_sdMat_inplace)(PV,VtPV,iflag),*iflag);
+      
+      // delete temporary sdMat
+      PHIST_CHK_IERR(SUBR(sdMat_delete)(VtPV,iflag),*iflag);
+      
+      //TODO: when deleting this operator, PV must be deleted!
+      //      We should introduce std::shared_ptr objects (available in C++11, it seems!)
+
+      // use the version with only post-projection:
+      PHIST_CHK_IERR(SUBR(jadaOp_create)(P_op,NULL,V,PV,sigma, nvec, jdPrec,iflag),*iflag);
+      jdPrec->apply=SUBR(jadaOp_apply_project_post);
+    }
+  }
 }

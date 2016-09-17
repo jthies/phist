@@ -76,6 +76,12 @@ int innerSolvRobust; /*! extra effort to get good jada updates
 
   //! option string passed to precon_create alongside preconType (if it is not NO_PRECON or INVALID_PRECON)
   char preconOpts[1024];
+  
+  //! if 0, just apply the preconditioner "as is"
+  //! if 1, apply skew-projection, giving the operator
+  //! (I-P\Q (Q'P\Q)^{-1}Q')P^{-1}. Or, for generalized EVP,
+  //! (I-BP\Q (Q'BP\BQ)^{-1}Q'B)P^{-1}
+  int preconSkewProject;
 
   //! pointer to solver object if innerSolvType==USER_DEFINED
   void* customSolver;

@@ -15,6 +15,7 @@ void SUBR(jadaCorrectionSolver_create)(TYPE(jadaCorrectionSolver_ptr) *me, phist
     (*me)->blockedGMRESstates_  = new TYPE(blockedGMRESstate_ptr)[(*me)->gmresBlockDim_];
     PHIST_CHK_IERR(SUBR(blockedGMRESstates_create)((*me)->blockedGMRESstates_, opts.innerSolvBlockSize, map, opts.innerSolvMaxBas, iflag), *iflag);
     (*me)->rightPrecon=(TYPE(const_linearOp_ptr))opts.preconOp;
+    (*me)->preconSkewProject=opts.preconSkewProject;
   }
   else if ((*me)->method_==phist_CARP_CG)
   {
@@ -147,11 +148,19 @@ void SUBR(jadaCorrectionSolver_run)(TYPE(jadaCorrectionSolver_ptr) me,
   TYPE(linearOp) jadaOp;
   PHIST_CHK_IERR(SUBR(jadaOp_create)(AB_op, B_op, Qtil, BQtil, &currShifts[0], k, &jadaOp, iflag), *iflag);
 
+    TYPE(linearOp) jadaPrec, *jadaPrecPtr=NULL;
+
   // wrap the preconditioner so that apply_shifted is called
-  TYPE(linearOp) jadaPrec, *jadaPrecPtr=NULL;
   if (me->rightPrecon!=NULL)
   {
-    PHIST_CHK_IERR(SUBR(jadaPrec_create)(me->rightPrecon,&currShifts[0],k,&jadaPrec,iflag),*iflag);
+    if (me->preconSkewProject==0)
+    {
+      PHIST_CHK_IERR(SUBR(jadaPrec_create)(me->rightPrecon,NULL,NULL,&currShifts[0],k,&jadaPrec,iflag),*iflag);
+    }
+    else
+    {
+      PHIST_CHK_IERR(SUBR(jadaPrec_create)(me->rightPrecon,Qtil,BQtil,&currShifts[0],k,&jadaPrec,iflag),*iflag);
+    }
     jadaPrecPtr=&jadaPrec;
   }
 

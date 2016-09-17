@@ -8,6 +8,7 @@
 #include "phist_kernels.h"
 #include "phist_macros.h"
 #include "phist_ScalarTraits.hpp"
+#include "phist_sdFact.h"
 
 #ifdef PHIST_HAVE_SP
 #include "phist_gen_s.h"

@@ -22,7 +22,13 @@ void SUBR(jadaOp_delete)(TYPE(linearOp_ptr)  jdOp, int *iflag);
 //! ditioning operator. Obviously not all preconditioners are able to handle varying shifts without
 //! recomputing, this is not taken into account by this function:in that case the input P_op must be
 //! updated beforehand.
+//!
+//! If V is given, the preconditioner application will include a skew-projection
+//! Y <- (I - P_op\V (V' P_op\ V)^{-1} V' ) P_op\X      or (if BV!=V and BV!=NULL):
+//! Y <- (I -BP_op\V (V'BP_op\BV)^{-1} V'B) P_op\X
+//!
 void SUBR(jadaPrec_create)(TYPE(const_linearOp_ptr) P_op, 
+                           TYPE(const_mvec_ptr)  V,       TYPE(const_mvec_ptr)  BV,
                            const _ST_ sigma[], int nvec, 
                            TYPE(linearOp_ptr) jdPrec,
                            int* iflag);
