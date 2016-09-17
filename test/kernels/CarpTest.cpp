@@ -13,6 +13,8 @@
 #include "KernelTestWithVectors.h"
 #include "KernelTestWithSdMats.h"
 
+#include "phist_normF.h"
+
 #include <complex>
 
 #include "phist_gen_d.h"
