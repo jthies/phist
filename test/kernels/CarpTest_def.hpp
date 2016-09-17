@@ -351,13 +351,17 @@ protected:
       ASSERT_EQ(0,iflag_);
       _MT_ normF;
       SUBR(sdMat_normF)(M,&normF,&iflag_);
-      ASSERT_FALSE(normF==mt::zero());
+      EXPECT_FALSE(normF==mt::zero());
+#if PHIST_OUTLEV>=PHIST_DEBUG
+      SUBR(sdMat_from_device)(M,&iflag_);
+      PHIST_SOUT(PHIST_DEBUG,"CARP: X'*OP*X=\n");
       SUBR(sdMat_print)(M,&iflag_);
+#endif
       max_err=MTest::symmetry_check(M,&iflag_);
       ASSERT_EQ(0,iflag_);
       SUBR(sdMat_delete)(M,&iflag_);
       ASSERT_EQ(0,iflag_);
-      ASSERT_NEAR(mt::one(),max_err+mt::one(),tol);
+      EXPECT_NEAR(mt::one(),max_err+mt::one(),tol);
     }
   }
 
