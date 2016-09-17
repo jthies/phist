@@ -139,7 +139,7 @@ void SUBR(mvec_create_view)(TYPE(mvec_ptr)* V, phist_const_map_ptr map,
 //! construct small dense matrix \ingroup sdmat
 
 //! create a small dense n x m matrix on all procs in comm,   
-//! with column major ordering (unless PHIST_SDMATS_ROW_MAJOR).
+//! with column major ordering.
 //! If comm!=NULL, the object has the capability to communicate
 //! and can be used in functions like mvecT_times_mvec if the  
 //! map of the mvecs uses the same comm. Otherwise, it is a lo-
