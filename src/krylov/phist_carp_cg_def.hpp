@@ -296,7 +296,7 @@ void SUBR(carp_cgState_reset)(TYPE(carp_cgState_ptr) S,
 void SUBR(carp_cgState_iterate)(
         TYPE(carp_cgState_ptr) S,
         TYPE(mvec_ptr) X_r, TYPE(mvec_ptr) X_i,
-        _MT_ tol, int maxIter, bool abortIfOneConverges,
+        _MT_ tol, int maxIter, int abortIfOneConverges,
         int* iflag)
 {
 #include "phist_std_typedefs.hpp"

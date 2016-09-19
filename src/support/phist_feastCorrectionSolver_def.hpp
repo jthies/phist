@@ -186,7 +186,7 @@ void SUBR(feastCorrectionSolver_run)(TYPE(feastCorrectionSolver_ptr) me,
         // (and the same multiple RHS each). 
         PHIST_CHK_NEG_IERR(SUBR(carp_cgState_iterate)
                 (me->carp_cgStates_[i], 
-                x_r[i], x_i[i], tol, maxIter,false,iflag),*iflag);
+                x_r[i], x_i[i], tol, maxIter,0,iflag),*iflag);
         if (*iflag==+1)
         {
           PHIST_SOUT(PHIST_WARNING,"CARP-CG failed to converge\n");
