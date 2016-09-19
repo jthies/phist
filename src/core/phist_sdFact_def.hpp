@@ -352,14 +352,26 @@ void SUBR(sdMat_svd)(TYPE(sdMat_ptr) A, TYPE(sdMat_ptr) U, TYPE(sdMat_ptr) Sigma
     const char jobu='A', jobvt='A';
 #ifdef IS_COMPLEX
     _MT_ rwork[5*mn];
-    PHIST_TG_PREFIX(GESVD)((phist_blas_char*)(&jobu),(phist_blas_char*)(&jobvt),&m,&n,A_val,&ldA,RS_val,U_val,&ldU,Vt_val,&ldVt,&tmp_work,&lwork,rwork,iflag);
+    PHIST_TG_PREFIX(GESVD)((phist_blas_char*)(&jobu),(phist_blas_char*)(&jobvt),&m,&n,
+        (st::blas_scalar_t*)A_val,&ldA,
+        (mt::blas_scalar_t*)RS_val,
+        (st::blas_scalar_t*)U_val,&ldU,
+        (st::blas_scalar_t*)Vt_val,&ldVt,
+        (st::blas_scalar_t*)&tmp_work,&lwork,
+        (mt::blas_scalar_t*)rwork,iflag);
 #else
     PHIST_TG_PREFIX(GESVD)((phist_blas_char*)(&jobu),(phist_blas_char*)(&jobvt),&m,&n,A_val,&ldA,RS_val,U_val,&ldU,Vt_val,&ldVt,&tmp_work,&lwork,iflag);
 #endif
     lwork=(int)st::real(tmp_work);
     work=new _ST_[lwork];
 #ifdef IS_COMPLEX
-    PHIST_TG_PREFIX(GESVD)((phist_blas_char*)(&jobu),(phist_blas_char*)(&jobvt),&m,&n,A_val,&ldA,RS_val,U_val,&ldU,Vt_val,&ldVt,&tmp_work,&lwork,rwork,iflag);
+    PHIST_TG_PREFIX(GESVD)((phist_blas_char*)(&jobu),(phist_blas_char*)(&jobvt),&m,&n,
+        (st::blas_scalar_t*)A_val,&ldA,
+        (mt::blas_scalar_t*)RS_val,
+        (st::blas_scalar_t*)U_val,&ldU,
+        (st::blas_scalar_t*)Vt_val,&ldVt,
+        (st::blas_scalar_t*)&tmp_work,&lwork,
+        (mt::blas_scalar_t*)rwork,iflag);
 #else
     PHIST_TG_PREFIX(GESVD)((phist_blas_char*)(&jobu),(phist_blas_char*)(&jobvt),&m,&n,A_val,&ldA,RS_val,U_val,&ldU,Vt_val,&ldVt,&tmp_work,&lwork,iflag);
 #endif
