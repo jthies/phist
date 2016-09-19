@@ -466,7 +466,7 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,MATNAME>,
       jdOp.apply(st::one(),jdOp.A,q_,st::zero(),qb_,&iflag_);
       ASSERT_EQ(0,iflag_);
       
-      ASSERT_NEAR(st::one(),MvecEqual(qb_,st::zero()),VTest::releps());
+      ASSERT_NEAR(mt::one(),MvecEqual(qb_,st::zero()),VTest::releps());
 
       SUBR(jadaOp_delete)(&jdOp,&iflag_);
       ASSERT_EQ(0,iflag_);
@@ -491,7 +491,7 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,MATNAME>,
       SUBR(mvecT_times_mvec)(st::one(),q_,vec3_,st::zero(),mat1_,&iflag_);
       ASSERT_EQ(0,iflag_);
       
-      ASSERT_NEAR(st::one(),SdMatEqual(mat1_,st::zero()),15*mt::eps());
+      ASSERT_NEAR(mt::one(),SdMatEqual(mat1_,st::zero()),15*mt::eps());
 
       SUBR(jadaOp_delete)(&jdOp,&iflag_);
       ASSERT_EQ(0,iflag_);
@@ -514,7 +514,7 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,MATNAME>,
       jdOp.apply(st::one(),jdOp.A,qb_,st::zero(),q_,&iflag_);
       ASSERT_EQ(0,iflag_);
       
-      ASSERT_NEAR(st::one(),MvecEqual(q_,st::zero()),10*VTest::releps());
+      ASSERT_NEAR(mt::one(),MvecEqual(q_,st::zero()),10*VTest::releps());
 
       // apply
       jdOp.apply(st::one(),jdOp.A,vec2_,st::zero(),vec3_,&iflag_);
@@ -524,7 +524,7 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,MATNAME>,
       SUBR(mvecT_times_mvec)(st::one(),qb_,vec3_,st::zero(),mat1_,&iflag_);
       ASSERT_EQ(0,iflag_);
       
-      ASSERT_NEAR(st::one(),SdMatEqual(mat1_,st::zero()),20*mt::eps());
+      ASSERT_NEAR(mt::one(),SdMatEqual(mat1_,st::zero()),20*mt::eps());
 
       SUBR(jadaOp_delete)(&jdOp,&iflag_);
       ASSERT_EQ(0,iflag_);
@@ -547,7 +547,7 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,MATNAME>,
       SUBR(mvecT_times_mvec)(st::one(),qb_,vec3_,st::zero(),mat1_,&iflag_);
       ASSERT_EQ(0,iflag_);
       
-      ASSERT_NEAR(st::one(),SdMatEqual(mat1_,st::zero()),20*mt::eps());
+      ASSERT_NEAR(mt::one(),SdMatEqual(mat1_,st::zero()),20*mt::eps());
 
       SUBR(jadaOp_delete)(&jdOp,&iflag_);
       ASSERT_EQ(0,iflag_);
