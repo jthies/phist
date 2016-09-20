@@ -317,7 +317,7 @@ void SUBR(sdMat_svd)(TYPE(sdMat_ptr) A, TYPE(sdMat_ptr) U, TYPE(sdMat_ptr) Sigma
   
   if (high_prec)
   {
- #ifdef PHIST_HIGH_PRECISION_KERNELS
+#ifdef PHIST_HIGH_PRECISION_KERNELS
     _ST_ *A_err, *U_err, *Vt_err, *S_err;
     PHIST_CHK_IERR(SUBR(sdMat_extract_error)(A,&A_err,iflag),*iflag);
     PHIST_CHK_IERR(SUBR(sdMat_extract_error)(Sigma,&S_err,iflag),*iflag);
@@ -325,7 +325,7 @@ void SUBR(sdMat_svd)(TYPE(sdMat_ptr) A, TYPE(sdMat_ptr) U, TYPE(sdMat_ptr) Sigma
     PHIST_CHK_IERR(SUBR(sdMat_extract_error)(Vt,&Vt_err,iflag),*iflag);
     int mn=std::min(m,n);
     _MT_ RS_val[mn],RS_err[mn];
-#if defined(IS_DOUBLE)&&(!defined(IS_COMPLEX))
+#if defined(IS_DOUBLE)&&(!defined(IS_COMPLEX))&&defined(PHIST_HAVE_MPACK_QD)
     phist_Drgesvd("A","A",m,n,A_val,A_err,ldA,RS_val,RS_err,U_val,U_err,ldU,Vt_val,Vt_err,ldVt,iflag);
 #else
     *iflag=PHIST_NOT_IMPLEMENTED;
