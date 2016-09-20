@@ -491,7 +491,7 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,MATNAME>,
       SUBR(mvecT_times_mvec)(st::one(),q_,vec3_,st::zero(),mat1_,&iflag_);
       ASSERT_EQ(0,iflag_);
       
-      ASSERT_NEAR(mt::one(),SdMatEqual(mat1_,st::zero()),15*mt::eps());
+      ASSERT_NEAR(mt::one(),SdMatEqual(mat1_,st::zero()),500*mt::eps());
 
       SUBR(jadaOp_delete)(&jdOp,&iflag_);
       ASSERT_EQ(0,iflag_);
@@ -524,7 +524,7 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,MATNAME>,
       SUBR(mvecT_times_mvec)(st::one(),qb_,vec3_,st::zero(),mat1_,&iflag_);
       ASSERT_EQ(0,iflag_);
       
-      ASSERT_NEAR(mt::one(),SdMatEqual(mat1_,st::zero()),20*mt::eps());
+      ASSERT_NEAR(mt::one(),SdMatEqual(mat1_,st::zero()),500*mt::eps());
 
       SUBR(jadaOp_delete)(&jdOp,&iflag_);
       ASSERT_EQ(0,iflag_);
@@ -547,7 +547,7 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,MATNAME>,
       SUBR(mvecT_times_mvec)(st::one(),qb_,vec3_,st::zero(),mat1_,&iflag_);
       ASSERT_EQ(0,iflag_);
       
-      ASSERT_NEAR(mt::one(),SdMatEqual(mat1_,st::zero()),20*mt::eps());
+      ASSERT_NEAR(mt::one(),SdMatEqual(mat1_,st::zero()),500*mt::eps());
 
       SUBR(jadaOp_delete)(&jdOp,&iflag_);
       ASSERT_EQ(0,iflag_);
