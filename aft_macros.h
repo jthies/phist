@@ -1,4 +1,4 @@
-#define KSM_MAIN_BEGIN(comm_working, myrank, argv) \
+#define AFT_BEGIN(comm_working, myrank, argv) \
 { \
 	while(success != true) \
 	try{ \
@@ -25,7 +25,7 @@
 		printf("%d i am back from repair\n", *myrank); \
 	} 
 
-#define KSM_MAIN_END(comm_working) \
+#define AFT_END(comm_working) \
 	}catch(int exception_val){ \
 		sleep(1); \
 		printf("%d: exception value is %d \n", myrank, exception_val); \

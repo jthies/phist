@@ -1,5 +1,5 @@
-#ifndef __KSM_UTILITIES_H__
-#define __KSM_UTILITIES_H__
+#ifndef __AFT_H__
+#define __AFT_H__
 
 #include "mpi.h"
 #include "mpi-ext.h"
@@ -16,6 +16,6 @@ void makeHostList(const char * machinefile, const int failCount, const int nd, c
 
 #endif
 
-// 
+// TODO: kill_all_procs_on_failed_processhosts
 // active_machine_list -> kill_all_procs_on_failed_processhost
 //

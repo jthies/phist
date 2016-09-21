@@ -1,5 +1,5 @@
 cmake_minimum_required (VERSION 2.6)
-project (CPAFTLIB)
+project (CRAFTLIB)
 set (SRC_DIR ${CMAKE_SOURCE_DIR})
 
 
@@ -37,6 +37,7 @@ if(GHOST_CP)
 		message (STATUS "GHOST pacage is found ${GHOST_INCLUDE_DIRS} ")
 		include_directories(${GHOST_INCLUDE_DIRS})
 		set(LIBS ${LIBS} ${GHOST_LIBRARIES})
+		message (STATUS "GHOST LIBS ${GHOST_LIBRARIES} ")
 	else()
 		message (STATUS "GHOST package is NOT found")
 	endif()
@@ -84,7 +85,7 @@ if(SCR)
 	endif()
 endif()
 
-set (CPAFT_SOURCE 	${SRC_DIR}/Checkpoint.cpp
+set (CRAFT_SOURCE 	${SRC_DIR}/Checkpoint.cpp
 		${SRC_DIR}/cp_options.cpp
 		)
 
@@ -94,31 +95,31 @@ if(AFT)
 	if("${MPI_EXT_PATH}" STREQUAL "MPI_EXT_PATH-NOTFOUND")
 		message (FATAL_ERROR "mpi-ext.h is not found. Compile with ULFM-MPI for using AFT feature.")
 	endif()
-		set ( CPAFT_SOURCE 	${CPAFT_SOURCE}
+		set ( CRAFT_SOURCE 	${CRAFT_SOURCE}
 							${SRC_DIR}/aft.cpp
 							${SRC_DIR}/aft_macros.h)
 endif()	
 
-add_library(cpaft SHARED ${CPAFT_SOURCE} ${CPPHISTMVEC_SRC} ${CPPHISTSDMAT_SRC})
+add_library(craft SHARED ${CRAFT_SOURCE} ${CPPHISTMVEC_SRC} ${CPPHISTSDMAT_SRC})
 set(LIBRARY_INSTALL_DIR lib)
 
-configure_file("${SRC_DIR}/cpaft-config.cmake.in" "${SRC_DIR}/cpaft-config.cmake" @ONLY)
+configure_file("${SRC_DIR}/craft-config.cmake.in" "${SRC_DIR}/craft-config.cmake" @ONLY)
 
 
 ##### INSTALL TARGET #####
-install ( TARGETS cpaft EXPORT cpaftLibrary LIBRARY DESTINATION ${LIBRARY_INSTALL_DIR} )
-install ( FILES ${SRC_DIR}/cpaft-config.cmake DESTINATION ${LIBRARY_INSTALL_DIR} )
+install ( TARGETS craft EXPORT craftLibrary LIBRARY DESTINATION ${LIBRARY_INSTALL_DIR} )
+install ( FILES ${SRC_DIR}/craft-config.cmake DESTINATION ${LIBRARY_INSTALL_DIR} )
 
-file(GLOB CPAFT_HEADERS ${CMAKE_SOURCE_DIR}/*.h
+file(GLOB CRAFT_HEADERS ${CMAKE_SOURCE_DIR}/*.h
 												${CMAKE_SOURCE_DIR}/*.hpp	
 												)
 
-file(GLOB CPAFT_TYPE_SRC 
+file(GLOB CRAFT_TYPE_SRC 
 					${CMAKE_SOURCE_DIR}/cpTypes	
 		)	
 set(INCLUDE_INSTALL_DIR include)
-install ( FILES ${CPAFT_HEADERS} DESTINATION ${INCLUDE_INSTALL_DIR} )
-install ( DIRECTORY ${CPAFT_TYPE_SRC} DESTINATION ${INCLUDE_INSTALL_DIR} )
+install ( FILES ${CRAFT_HEADERS} DESTINATION ${INCLUDE_INSTALL_DIR} )
+install ( DIRECTORY ${CRAFT_TYPE_SRC} DESTINATION ${INCLUDE_INSTALL_DIR} )
 
 ##### UNINSTALL TARGET #####
 configure_file(

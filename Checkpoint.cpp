@@ -34,7 +34,7 @@ void Checkpoint::write()
 				filename = fNameScrPath;
 			}
 #endif
-    	std::cout << it->first << " Checkpoint:write is called here " << filename <<std::endl;
+//    	std::cout << it->first << " Checkpoint:write is called here " << filename <<std::endl;
     	it->second->write(&filename);
   	
 		}
@@ -67,7 +67,7 @@ void Checkpoint::read()
 				filename = fNameScrPath;
 			}
 #endif
-    	std::cout << it->first << "Checkpoint::read is called here "<<std::endl;
+//    	std::cout << it->first << " Checkpoint::read is called here "<<std::endl;
     	it->second->read(&filename);
   	}
 }
