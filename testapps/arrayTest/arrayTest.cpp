@@ -6,7 +6,10 @@
 
 #include "arrayTest.h"
 #include <malloc.h>
+
 #include <Checkpoint.hpp>
+#include <cp_options.h>
+
 #include <vector>
 #include <string>
 #include <cstring>
@@ -25,18 +28,34 @@ void printusage(){
 	}
 }
 
-int read_params(int argc, char* argv[] , std::string * cpPath){
+int read_params(int argc, char* argv[] , Cp_Options * myCpOpt){
   prgname = argv[0];
-
+	char * tmp = new char[256];
+	std::string cpPathTemp ;
 	for (int i = 1; i < argc; ++i) {
 		if ((!strcmp(argv[i], "-cppath"))) {
-			char * tmp = new char[256];
-			sprintf(tmp, "%s", argv[++i]);
-			*cpPath = tmp;
-			std::cout << "cpPath: " << *cpPath << std::endl;
+			sprintf(tmp, "%s" ,argv[++i]);
+			myCpOpt->setCpPath(tmp);
+			cpPathTemp = myCpOpt->getCpPath();
+			std::cout << "cpPath: " << cpPathTemp << std::endl;
+		}
+		if ((!strcmp(argv[i], "-restart"))) {
+			bool restart = true;
+			myCpOpt->setRestartStatus( restart );
+			std::cout << "Restart " << restart << std::endl;
+		}
+		if ((!strcmp(argv[i], "-niter"))) {
+			sprintf(tmp, "%s" ,argv[++i]);
+			myCpOpt->setnIter( atoi(tmp) );
+			std::cout << "nIter " << myCpOpt->getnIter() << std::endl;
+		}
+		if ((!strcmp(argv[i], "-cpfreq"))) {
+			sprintf(tmp, "%s" ,argv[++i]);
+			myCpOpt->setCpFreq( atoi(tmp) );
+			std::cout << "nIter " << myCpOpt->getCpFreq() << std::endl;
 		}
 	}
-	if(cpPath->empty()){
+	if(cpPathTemp.empty()){
 		printusage();
 		exit(EXIT_FAILURE);
 	}
@@ -45,23 +64,24 @@ int read_params(int argc, char* argv[] , std::string * cpPath){
 
 int main(int argc, char* argv[])
 {
-	int iteration = 0, nIter = 20;
+	int iteration = 0;
 	MPI_Init(&argc, &argv);
-   	int myrank, numprocs;
+  int myrank, numprocs;
 //	===== AFT BEGIN =====
 	int success = false;
 	int failed = false;
   MPI_Comm FT_Comm;
 	MPI_Comm_dup(MPI_COMM_WORLD, &FT_Comm);
 #ifdef AFT
-   	KSM_MAIN_BEGIN(FT_Comm, &myrank, argv);	
+   	AFT_BEGIN(FT_Comm, &myrank, argv);	
 #endif 
 
 	MPI_Comm_rank(FT_Comm, &myrank);
 	MPI_Comm_size(FT_Comm, &numprocs);
 	printf("%d/%d\n", myrank, numprocs);
-	std::string cpPath;
-  read_params(argc, argv, &cpPath); 
+
+	Cp_Options * myCpOpt = new Cp_Options[1];
+  read_params(argc, argv, myCpOpt); 
 
 	int n = 5;
 	int * a 	= new int[n];
@@ -72,22 +92,22 @@ int main(int argc, char* argv[])
 	}
 	
 	Checkpoint * myCP = new Checkpoint[1];
-	myCP->setCpPath(cpPath);
+	myCP->setCpPath(myCpOpt->getCpPath());
 	myCP->setComm(FT_Comm);
 	myCP->add("a", a, n);
 	myCP->add("d", d, n);
 	myCP->add("iteration", &iteration);
 	myCP->commit(); 
  
-  if( failed == true ) {
+	if( myCpOpt->getRestartStatus() ) {
 		failed = false;
 		printf("RESTART ------> failed == true \n");
 		myCP->read();
 		iteration++;
 	}
-	for(; iteration < nIter ; iteration++)
+	for(; iteration <= myCpOpt->getnIter() ; iteration++)
   {
-		printf("=== iter: %d\t\n", iteration);
+		printf("=== iter: %d\t a[0]: %d\n", iteration, a[0]);
 		for(size_t i = 0; i < n ; ++i){
 			a[i] += 1;
 			d[i] += 1.0;
@@ -97,20 +117,17 @@ int main(int argc, char* argv[])
 			exit(0);
 		}
 */
-		if(iteration % 5 == 0){
+		if(iteration % myCpOpt->getCpFreq() == 0){
 			myCP->update();
 			myCP->write();
 		}
-		usleep(500000);
+		usleep(200000);
 		MPI_Barrier(FT_Comm);
-		if ( iteration+1 == nIter ){
+		if ( iteration+1 == myCpOpt->getnIter() ){
 			success = true;
 			printf("%d/%d: iterations finishied \n", myrank, numprocs);
 	  }
-
   }
-	myCP->update();
-	myCP->write();
 	for(int i = 0; i < n; ++i){
 		printf("a[%d]: %d \n", i, a[i]);
 	}
@@ -118,7 +135,7 @@ int main(int argc, char* argv[])
 		printf("d[%d]: %f \n", i, d[i]);
 	}
 #ifdef AFT
-	KSM_MAIN_END();
+	AFT_END();
 #endif
 
 	MPI_Finalize();

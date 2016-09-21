@@ -44,17 +44,17 @@ int read_params(int argc, char* argv[] , Cp_Options * myCpOpt){
 		if ((!strcmp(argv[i], "-restart"))) {
 			bool restart = true;
 			myCpOpt->setRestartStatus( restart );
-			std::cout << "Restart %d" << restart << std::endl;
+			std::cout << "Restart " << restart << std::endl;
 		}
 		if ((!strcmp(argv[i], "-niter"))) {
 			sprintf(tmp, "%s" ,argv[++i]);
 			myCpOpt->setnIter( atoi(tmp) );
-			std::cout << "nIter %d" << myCpOpt->getnIter() << std::endl;
+			std::cout << "nIter " << myCpOpt->getnIter() << std::endl;
 		}
 		if ((!strcmp(argv[i], "-cpfreq"))) {
 			sprintf(tmp, "%s" ,argv[++i]);
 			myCpOpt->setCpFreq( atoi(tmp) );
-			std::cout << "nIter %d" << myCpOpt->getCpFreq() << std::endl;
+			std::cout << "nIter " << myCpOpt->getCpFreq() << std::endl;
 		}
 	}
 	if(cpPathTemp.empty()){
