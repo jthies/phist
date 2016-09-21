@@ -31,21 +31,45 @@ if(GHOST_TEST)
 	endif()
 endif()
 
-find_package(CPAFT REQUIRED)
-if(CPAFT_FOUND)
-	message (STATUS "CPAFT package is found ${CPAFT_INCLUDE_PATH}")
-	message (STATUS "CPAFT_FLAGS: ${CPAFT_FLAGS}")
-	include_directories(${CPAFT_INCLUDE_PATH})
-	set(LIBS ${LIBS} ${CPAFT_LIBRARIES})
-	link_libraries(${CPAFT_LIBRARIES})
-	set( CMAKE_CXX_FLAGS ${CPAFT_FLAGS})
+find_package(CRAFT REQUIRED)
+if(CRAFT_FOUND)
+	message (STATUS "CRAFT package is found ${CRAFT_INCLUDE_PATH}")
+	message (STATUS "CRAFT_FLAGS: ${CRAFT_FLAGS}")
+	include_directories(${CRAFT_INCLUDE_PATH})
+	set(LIBS ${LIBS} ${CRAFT_LIBRARIES})
+	link_libraries(${CRAFT_LIBRARIES})
+	set( CMAKE_CXX_FLAGS ${CRAFT_FLAGS})
 else()
-	message (STATUS "CPAFT package is NOT found")
+	message (STATUS "CRAFT package is NOT found")
 endif()
 
+
+
+
+
 if(GHOST_TEST)
+
+		find_package(ESSEX-PHYSICS REQUIRED)
+		if (ESSEX-PHYSICS_FOUND)
+    		message(STATUS "Found ESSEX-Physics ${ESSEX-PHYSICS_VERSION}")
+		else()
+    		message(STATUS "Could not find ESSEX-Physics! Some examples will be skipped!")
+		endif()
+
+		include_directories(${ESSEX-PHYSICS_INCLUDE_DIRS})
+		set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${GHOST_C_FLAGS}")
+		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${GHOST_CXX_FLAGS}")
+		set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} ${GHOST_Fortran_FLAGS}")
+		
+		# executables have to link to GHOST_LIBRARIES
+		if (ESSEX-PHYSICS_FOUND)
+    		link_libraries(${ESSEX-PHYSICS_LIBRARIES})
+    		add_definitions(-DHAVE_ESSEX_PHYSICS)
+		endif()
+
 	find_path(ESSEXAMPLES_INC REQURIED)
 	find_path(ESSEXAMPLES_LIB REQURIED)
+	message (STATUS "ESSEXAMPLES_LIB is found ${ESSEXAMPLES_LIB}")
 	include_directories(${ESSEXAMPLES_INC})
 	link_directories("${ESSEXAMPLES_LIB}")
 	link_libraries (essexamples)

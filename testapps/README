@@ -1,5 +1,5 @@
 ===== COMPILING TEST APPS =====
-for compiling any of testapp. Go to the app. folder.
+for compiling any of testapp. Go to the testapps folder.
 
 1) mkdir build; cd build 
 2) env CC=icc CXX=icpc FC=ifort ccmake ../
