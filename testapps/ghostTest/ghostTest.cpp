@@ -6,6 +6,7 @@
 #include "ghostTest.h"
 #include <malloc.h>
 #include <Checkpoint.hpp>
+#include <cp_options.h>
 
 #include <vector>
 #include <string>
@@ -14,7 +15,9 @@
 #include <ghost.h>
 #include <ghost/types.h>
 #include <stdio.h>
+extern "C"{
 #include "essexamples.h"
+}
 #include <math.h>
 
 #include "CpGhost.hpp"
@@ -52,8 +55,9 @@ static void *mainTask(void *varg)
 	args * arg = (args * ) varg;
 	int argc = arg->argc;
 	char **argv = arg->argv;
-
-    int myrank, numprocs;
+	
+	int printRank=0;
+  int myrank, numprocs;
 	MPI_Comm_rank(MPI_COMM_WORLD, &myrank);
 	MPI_Comm_size(MPI_COMM_WORLD, &numprocs);
 	printf("%d/%d\n", myrank, numprocs);
@@ -63,13 +67,13 @@ static void *mainTask(void *varg)
   MPI_Comm FT_Comm;
 	MPI_Comm_dup(MPI_COMM_WORLD, &FT_Comm);
 #ifdef AFT
-  KSM_MAIN_BEGIN(FT_Comm, &myrank, argv);	
+  AFT_BEGIN(FT_Comm, &myrank, argv);	
 #endif 
 
     ghost_context *context;
 	
     matdt_t alpha = 0., alphaold = 0., lambda=0., lambdaold = 0., zero = 0., neg = -1., one = 1., tmp = 0.;
-    int iteration = 0, nIter = 1000, cp_freq = 99999;
+    int iteration = 0, nIter = 1000, cp_freq = 99999, restart = -1;
 	char * cpPath = new char[256];
     double start = 0.;
     matdt_t localdot[3];
@@ -84,6 +88,7 @@ static void *mainTask(void *varg)
     essexamples_get_iterations(&nIter);
 		essexamples_get_cp_freq(&cp_freq);
 		essexamples_get_cp_folder(&cpPath);
+		essexamples_get_restart(&restart);
 
     ghost_densemat_traits vtraits = GHOST_DENSEMAT_TRAITS_INITIALIZER;
     vtraits.datatype = vecdt;
@@ -92,7 +97,7 @@ static void *mainTask(void *varg)
 #ifdef AFT
     essexamples_create_context_and_matrix_ft(&context,&A,&mtraits, FT_Comm);
 #else 
-    essexamples_create_context_and_matrix_ft(&context,&A,&mtraits, MPI_COMM_WORLD);
+    essexamples_create_context_and_matrix(&context,&A,&mtraits);
 #endif
     ghost_spmv_flags spmvmOpt = GHOST_SPMV_DOT;
     ghost_spmv_opts spmvtraits = GHOST_SPMV_OPTS_INITIALIZER;
@@ -118,10 +123,9 @@ static void *mainTask(void *varg)
 
     ghost_densemat_init_densemat(p,r,0,0); // p = r
 
-	printf("%d: Num rows x = %d \n", myrank, b->traits.nrows);
-
-	printf("==== Defining CP ====\n");
-
+		if( myrank == printRank) {
+				printf("==== Defining CP ====\n");
+		}
 	Checkpoint * myCP = new Checkpoint[1];
 	myCP->disableSCR();
 	myCP->setCpPath(cpPath);
@@ -136,9 +140,9 @@ static void *mainTask(void *varg)
   myCP->commit();
     	
 	iteration = 0;
-	if(failed == true){
+	if(restart == true){
 		failed = false;
-		printf("RESTART ----> failed == true \n");
+		if(myrank== printRank) printf("RESTART ----> failed == true \n");
 		myCP->read();
 		iteration++;
 	}
@@ -174,19 +178,21 @@ static void *mainTask(void *varg)
         ghost_axpby(p,r,&one,&tmp);			//	p = 1*r + tmp*p // ghost_axpby(y, x, a, b)
 		
 				usleep(1000);				// TODO: just for testing, in order to see the progress of program
-        if (myrank == 0){
+        if (myrank == printRank){
 					printf("iter=%d, ", iteration);
           printf("alpha[%4d] = %g\n",iteration+1, alpha);
 	   		}
-		if(iteration % cp_freq == 0){
-			myCP->update();
-			myCP->write();
-		}
-        //fflush(stdout);
-	   if ( iteration+1 == nIter || alpha <= EPS){
-			success = true;
-			printf("%d/%d: iterations finishied \n", myrank, numprocs);
-	   }
+				if(iteration % cp_freq == 0){
+					if(myrank == printRank ) 
+							printf("iteration=%d, cp_freq=%d\n", iteration, cp_freq);
+					myCP->update();
+					myCP->write();
+				}
+        		//fflush(stdout);
+	   		if ( iteration+1 == nIter || alpha <= EPS){
+					success = true;
+					printf("%d/%d: iterations finishied \n", myrank, numprocs);
+	   		}
     }
     
     // print norm of residual
@@ -196,9 +202,11 @@ static void *mainTask(void *varg)
     vecdt_t rnorm;
     ghost_dot(&rnorm,r,r,A->context->mpicomm);
     rnorm = sqrt(rnorm);
-    printf("|Ax-b|      = %g\n",rnorm);
-    printf("%d: END-------------------------------------\n", myrank);
-    
+    if(myrank==printRank) 
+		{
+			printf("|Ax-b|      = %g\n",rnorm);
+    	printf("-------------------------------------\n");
+   	} 
 //    essexamples_print_info(A,0);
 
     ghost_densemat_destroy(v);
@@ -210,7 +218,7 @@ static void *mainTask(void *varg)
 
     ghost_context_destroy(context);
 #ifdef AFT	
-	KSM_MAIN_END();
+	AFT_END();
 #endif
 	
     return NULL;

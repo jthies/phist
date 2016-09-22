@@ -52,7 +52,7 @@ int read_params(int argc, char* argv[] , Cp_Options * myCpOpt){
 		if ((!strcmp(argv[i], "-cpfreq"))) {
 			sprintf(tmp, "%s" ,argv[++i]);
 			myCpOpt->setCpFreq( atoi(tmp) );
-			std::cout << "nIter " << myCpOpt->getCpFreq() << std::endl;
+			std::cout << "cpfreq " << myCpOpt->getCpFreq() << std::endl;
 		}
 	}
 	if(cpPathTemp.empty()){

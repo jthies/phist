@@ -54,7 +54,7 @@ int read_params(int argc, char* argv[] , Cp_Options * myCpOpt){
 		if ((!strcmp(argv[i], "-cpfreq"))) {
 			sprintf(tmp, "%s" ,argv[++i]);
 			myCpOpt->setCpFreq( atoi(tmp) );
-			std::cout << "nIter " << myCpOpt->getCpFreq() << std::endl;
+			std::cout << "cpfreq " << myCpOpt->getCpFreq() << std::endl;
 		}
 	}
 	if(cpPathTemp.empty()){
@@ -79,7 +79,6 @@ int main(int argc, char* argv[])
 	Cp_Options * myCpOpt = new Cp_Options[1];
 	MPI_Comm_rank(FT_Comm, &myrank);
 	MPI_Comm_size(FT_Comm, &numprocs);
-	printf("%d/%d\n", myrank, numprocs);
   read_params(argc, argv, myCpOpt); 
 
 	int n = 5;
