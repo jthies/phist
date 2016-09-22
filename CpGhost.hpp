@@ -25,19 +25,16 @@ public:
 	~CpGhostDenseMat(){}	
 
 	void update(){
-		printf("Updating ghost densemat: \n");
 		ghost_densemat_init_densemat(asynData, dataPtr, 0, 0);
 		return;
 	}
 
 	void write( const std::string * filename){
-		printf("Writing ghost densemat: \n");
 		asynData->toFile(asynData, (char *) (*filename).c_str(), MPI_COMM_SELF);	// TODO:  enbale local and private writes.
 		return;
 	}
 	
 	void read(const std::string * filename){
-		printf("Reading ghost densemat: \n");
 		asynData->fromFile(asynData, (char *) (*filename).c_str(), MPI_COMM_SELF); // TODO:  enbale local and private read.
 		ghost_densemat_init_densemat(dataPtr, asynData, 0, 0);
 		return;
@@ -69,30 +66,24 @@ public:
 	~CpGhostDenseMatArray(){}	
 
 	void update(){
-		printf("CpGhostDenseMatArray update function is not implemented: \n");
 		for(size_t i = 0; i < nDenseMat ; ++i)
 		{
-			printf("Updating ghost densemat: %d\n", i);
 			ghost_densemat_init_densemat ( asynData[i], dataPtr[i], 0, 0);	
 		}
 		return;
 	}
 
 	void write( const std::string * filename){
-		//printf("i will write now\n");
 		for(size_t i = 0; i < nDenseMat ; ++i)
 		{
-			printf("Writing ghost densemat: %d\n", i);
 			asynData[i]->toFile(asynData[i], (char *) (*filename).c_str(), MPI_COMM_SELF); // TODO:  enbale local and private writes.
 		}
 		return;
 	}
 	
 	void read(const std::string * filename){
-		printf("CpGhostDenseMatArray read function is not implemented: \n");
 		for(size_t i = 0; i < nDenseMat ; ++i)
 		{
-			printf("Writing ghost densemat: %d\n", i);
 			asynData[i]->fromFile(asynData[i], (char *) (*filename).c_str(), MPI_COMM_SELF); // TODO:  enbale local and private read.
 			ghost_densemat_init_densemat(dataPtr[i], asynData[i], 0, 0);
 		}

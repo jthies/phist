@@ -24,7 +24,7 @@ public:
 		dataPtr  = new T[nRows];
 		dataPtr = dataPtr_;
 		copyArray(dataPtr, asynData, nRows);
-		std::cout << "POD Array is added: " << std::endl;
+//		std::cout << "POD Array is added: " << std::endl;
 		//print();
 	}
 	~CpArray(){}	
@@ -35,7 +35,7 @@ public:
 		fstr.open ((*filename).c_str(), std::ios::in | std::ios::binary);	
 		fstr.read( (char*)dataPtr , sizeof(T) * nRows);	
 		fstr.close();
-		std::cout << "POD Array after reading is: " << std::endl;
+//		std::cout << "POD Array after reading is: " << std::endl;
 		//print();
 		return;
 	}

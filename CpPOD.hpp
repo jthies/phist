@@ -22,7 +22,7 @@ public:
 		dataPtr  = new T[1];
 		dataPtr = dataPtr_;
 		*asynData = *dataPtr;
-		std::cout << "ADDED POD val is: " << *dataPtr << "  " << *asynData << std::endl;
+//		std::cout << "ADDED POD val is: " << *dataPtr << "  " << *asynData << std::endl;
 	}
 	~CpPOD(){}	
 
@@ -31,7 +31,7 @@ public:
 		std::ifstream fstr;
 		fstr.open ((*filename).c_str(), std::ios::in | std::ios::binary);	
 		fstr.read( (char*)dataPtr , sizeof(T));	
-		std::cout << "dataPtr read is: " << *dataPtr << std::endl;
+//		std::cout << "dataPtr read is: " << *dataPtr << std::endl;
 		fstr.close();
 		return;
 	}
@@ -50,7 +50,7 @@ public:
 	void update()
 	{
 		*asynData = *dataPtr;
-		std::cout << "AsynData is:  " << *asynData << std::endl;
+//		std::cout << "AsynData is:  " << *asynData << std::endl;
 		return;
 	}
 };
