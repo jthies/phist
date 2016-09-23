@@ -90,7 +90,7 @@ PHIST_TASK_BEGIN(ComputeTask)
   PHIST_CHK_IERR(phist::ghost_internal::context_create(&ctx,0,0,
         GHOST_CONTEXT_DEFAULT,cfname,GHOST_SPARSEMAT_SRC_MM,*comm,get_proc_weight(),iflag),*iflag);
   PHIST_CHK_GERR(ghost_sparsemat_create(&mat,ctx,&mtraits,1),*iflag);                               
-  PHIST_CHK_GERR(mat->fromMM(mat,cfname),*iflag);
+  PHIST_CHK_GERR(ghost_sparsemat_init_mm(mat,cfname),*iflag);
   char *str;
   ghost_context_string(&str,ctx);
   PHIST_SOUT(outlev,"%s\n",str);
@@ -151,7 +151,7 @@ PHIST_TASK_BEGIN(ComputeTask)
   PHIST_CHK_IERR(phist::ghost_internal::context_create(&ctx,0,0,
         GHOST_CONTEXT_DEFAULT,cfname,GHOST_SPARSEMAT_SRC_FILE,*comm,get_proc_weight(),iflag),*iflag);
   PHIST_CHK_GERR(ghost_sparsemat_create(&mat,ctx,&mtraits,1),*iflag);                               
-  PHIST_CHK_GERR(mat->fromFile(mat,cfname),*iflag);
+  PHIST_CHK_GERR(ghost_sparsemat_init_bin(mat,cfname),*iflag);
 //#if PHIST_OUTLEV >= PHIST_VERBOSE
   char *str;
   ghost_context_string(&str,ctx);
@@ -308,7 +308,7 @@ PHIST_TASK_BEGIN(ComputeTask)
   PHIST_CHK_GERR(ghost_densemat_create(&result,map->ctx,vtraits),*iflag);
   ST zero = st::zero();
   // this allocates the vector and fills it with zeros
-  PHIST_CHK_GERR(result->fromScalar(result,&zero),*iflag);
+  PHIST_CHK_GERR(ghost_densemat_init_val(result,&zero),*iflag);
   PHIST_DEB("mvec nrows: %" PRlidx "\n",result->traits.nrows);
   *vV=(TYPE(mvec_ptr))(result);
 PHIST_TASK_END(iflag);
@@ -354,7 +354,7 @@ extern "C" void SUBR(mvec_create_view)(TYPE(mvec_ptr)* vV, phist_const_map_ptr v
     return;
   }
 #endif
-  PHIST_CHK_GERR(result->viewPlain(result,(void*)values,lda),*iflag);
+  PHIST_CHK_GERR(ghost_densemat_view_plain(result,(void*)values,lda),*iflag);
   *vV=(TYPE(mvec_ptr))(result);
   return;
 }
@@ -396,7 +396,7 @@ PHIST_TASK_BEGIN_SMALLDETERMINISTIC(ComputeTask)
   // I think the sdMat should not have a context
   ghost_densemat_create(&result,NULL,dmtraits);
   ST zero = st::zero();
-  PHIST_CHK_GERR(result->fromScalar(result,&zero),*iflag);
+  PHIST_CHK_GERR(ghost_densemat_init_val(result,&zero),*iflag);
   *vM=(TYPE(sdMat_ptr))result;
 PHIST_TASK_END(iflag);
 }
@@ -478,7 +478,7 @@ extern "C" void SUBR(mvec_extract_view)(TYPE(mvec_ptr) vV, _ST_** val, phist_lid
         *iflag=PHIST_NOT_IMPLEMENTED;
         return;
       }
-      V->download(V);
+      ghost_densemat_download(V);
     }
     else
     {
@@ -530,7 +530,7 @@ extern "C" void SUBR(mvec_to_device)(TYPE(mvec_ptr) vV, int* iflag)
                          V->traits.nrowspadded, V->traits.ncolspadded);
   PHIST_SOUT(PHIST_DEBUG,"V flags: %d\n",(int)V->traits.flags);
 */
-  PHIST_CHK_GERR(V->upload(V),*iflag);
+  PHIST_CHK_GERR(ghost_densemat_upload(V),*iflag);
 #endif
 }
 
@@ -545,7 +545,7 @@ extern "C" void SUBR(mvec_from_device)(TYPE(mvec_ptr) vV, int* iflag)
   PHIST_CHK_GERR(ghost_type_get(&ghost_type),*iflag);
   if (ghost_type == GHOST_TYPE_CUDA) 
   {
-    PHIST_CHK_GERR(V->download(V),*iflag);
+    PHIST_CHK_GERR(ghost_densemat_download(V),*iflag);
   }
 #endif
 }
@@ -561,7 +561,7 @@ extern "C" void SUBR(sdMat_to_device)(TYPE(sdMat_ptr) vM, int* iflag)
   PHIST_CHK_GERR(ghost_type_get(&ghost_type),*iflag);
   if (ghost_type == GHOST_TYPE_CUDA) 
   {
-    PHIST_CHK_GERR(M->upload(M),*iflag);
+    PHIST_CHK_GERR(ghost_densemat_upload(M),*iflag);
   }
 #endif
 }
@@ -573,7 +573,7 @@ extern "C" void SUBR(sdMat_from_device)(TYPE(sdMat_ptr) vM, int* iflag)
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   PHIST_PERFCHECK_VERIFY_SMALL;
   PHIST_CAST_PTR_FROM_VOID(ghost_densemat,M, vM, *iflag);
-  PHIST_CHK_GERR(M->download(M),*iflag);
+  PHIST_CHK_GERR(ghost_densemat_download(M),*iflag);
 #endif
 }
 
@@ -639,9 +639,9 @@ extern "C" void SUBR(mvec_to_mvec)(TYPE(const_mvec_ptr) v_in, TYPE(mvec_ptr) v_o
   
   if (compatible_contexts==false)
   {
-    // I think densemat::fromVec only works if both have the same context and does not call any
+    // I think ghost_densemat_init_densemat only works if both have the same context and does not call any
     // permute function. So what we'll do is temporarily replace the context of the output vec-
-    // tor, copy the data by densemat::fromVec, and then perform the permutations. This only   
+    // tor, copy the data by ghost_densemat_init_densemat, and then perform the permutations. This only   
     // works if the number of local elements is the same in both contexts. We could also work  
     // with a temporary vector, but I think GHOST currently does not allow Zoltan/Scotch to    
     // change the number of local elements.
@@ -665,7 +665,7 @@ extern "C" void SUBR(mvec_to_mvec)(TYPE(const_mvec_ptr) v_in, TYPE(mvec_ptr) v_o
   (_vec)->traits.permutemethod = _permmethod; \
   (_vec)->perm_local=(_lperm);\
   (_vec)->perm_global=(_gperm);\
-  _gerr=(_vec)->_fnc(__VA_ARGS__);\
+  _gerr=_fnc(__VA_ARGS__);\
   (_vec)->context=_orig_ctx;\
   (_vec)->traits.flags = _orig_flags; \
   (_vec)->traits.permutemethod = _orig_permuted; \
@@ -687,7 +687,7 @@ extern "C" void SUBR(mvec_to_mvec)(TYPE(const_mvec_ptr) v_in, TYPE(mvec_ptr) v_o
   if (outputPermuted)
   {
     PHIST_SOUT(PHIST_DEBUG,"mvec_to_mvec: permute output vector\n");
-    PHIST_CHK_GERR(V_out->permute(V_out,ctx_out,GHOST_PERMUTATION_ORIG2PERM),*iflag);
+    PHIST_CHK_GERR(ghost_densemat_permute(V_out,ctx_out,GHOST_PERMUTATION_ORIG2PERM),*iflag);
   }
   return;
 }
@@ -730,7 +730,7 @@ extern "C" void SUBR(mvec_view_block)(TYPE(mvec_ptr) vV,
     ghost_densemat_destroy(Vblock);
     Vblock=NULL;
   }
-  PHIST_CHK_GERR(V->viewCols(V, &Vblock, jmax-jmin+1, jmin),*iflag);
+  PHIST_CHK_GERR(ghost_densemat_create_and_view_densemat_cols(&Vblock, V, jmax-jmin+1, jmin),*iflag);
 
   PHIST_CHK_IERR(*iflag=((Vblock->traits.flags&GHOST_DENSEMAT_VIEW)-GHOST_DENSEMAT_VIEW),*iflag);
   *vVblock = (TYPE(mvec_ptr))Vblock;
@@ -759,16 +759,16 @@ PHIST_TASK_BEGIN(ComputeTask)
   PHIST_CHK_IERR(*iflag=(jmax-jmin+1)-Vblock->traits.ncols,*iflag);
   PHIST_CHK_IERR(*iflag=((jmin<0)||(jmax>=V->traits.ncols))?PHIST_INVALID_INPUT:0,*iflag);
   // The phist kernel interface requires Vblock to be created by mvec_create, 
-  // which calls fromScalar to allocate the block of memory. So we perform a few
+  // which calls ghost_densemat_init_val to allocate the block of memory. So we perform a few
   // safety checks here
   PHIST_CHK_IERR(*iflag=(Vblock->traits.nrows==V->traits.nrows)?0:PHIST_INVALID_INPUT,*iflag)
-  // not sure what the ghost function fromVec actually supports, but I think 
+  // not sure what the ghost function ghost_densemat_init_densemat actually supports, but I think 
   // this makes sense:
   //PHIST_CHK_IERR(*iflag=(Vblock->traits.nrowspadded==V->traits.nrowspadded)?0:PHIST_INVALID_INPUT,*iflag)
 #else
   PHIST_TOUCH(jmax);
 #endif  
-  PHIST_CHK_GERR(Vblock->fromVec(Vblock,V,(ghost_lidx)0,(ghost_lidx)jmin),*iflag);
+  PHIST_CHK_GERR(ghost_densemat_init_densemat(Vblock,V,(ghost_lidx)0,(ghost_lidx)jmin),*iflag);
 PHIST_TASK_END(iflag);
 }
 
@@ -811,10 +811,10 @@ PHIST_CHK_IERR(SUBR(mvec_my_length)(Vblock,&nr_vb,iflag),*iflag);
 
   // create a view of the requested columns of V
   ghost_densemat *Vcols=NULL;
-  V->viewCols(V,&Vcols,(ghost_lidx)(jmax-jmin+1),(ghost_lidx)jmin);
+  ghost_densemat_create_and_view_densemat_cols(&Vcols,V,(ghost_lidx)(jmax-jmin+1),(ghost_lidx)jmin);
 
   // copy the data
-  PHIST_CHK_GERR(Vcols->fromVec(Vcols,Vblock,0,0),*iflag);
+  PHIST_CHK_GERR(ghost_densemat_init_densemat(Vcols,Vblock,0,0),*iflag);
   // delete the view
   ghost_densemat_destroy(Vcols);
 PHIST_TASK_END(iflag);
@@ -845,7 +845,7 @@ extern "C" void SUBR(sdMat_view_block)(TYPE(mvec_ptr) vM, TYPE(mvec_ptr)* vMbloc
 
   // first just create a view of the corresponding columns
   ghost_densemat *Mblock;
-  M->viewVec(M, &Mblock, imax-imin+1,imin,jmax-jmin+1, jmin);
+  ghost_densemat_create_and_view_densemat(&Mblock, M, imax-imin+1,imin,jmax-jmin+1, jmin);
 
   if (*vMblock!=NULL)
   {
@@ -909,7 +909,7 @@ PHIST_TASK_BEGIN_SMALLDETERMINISTIC(ComputeTask)
     return;
   }
   //TODO: check for overlapping data regions?
-  PHIST_CHK_GERR(Mblock->fromVec(Mblock,M,imin,jmin),*iflag);
+  PHIST_CHK_GERR(ghost_densemat_init_densemat(Mblock,M,imin,jmin),*iflag);
 PHIST_TASK_END(iflag);
 }
 
@@ -928,7 +928,7 @@ PHIST_TASK_BEGIN_SMALLDETERMINISTIC(ComputeTask)
 
   ghost_densemat* Mb_view=NULL;
   PHIST_CHK_IERR(SUBR(sdMat_view_block)(vM,(TYPE(sdMat_ptr)*)&Mb_view,imin,imax,jmin,jmax,iflag),*iflag);
-  PHIST_CHK_GERR(Mb_view->fromVec(Mb_view,Mblock,0,0),*iflag);
+  PHIST_CHK_GERR(ghost_densemat_init_densemat(Mb_view,Mblock,0,0),*iflag);
   ghost_densemat_destroy(Mb_view);
 PHIST_TASK_END(iflag);
 }
@@ -996,7 +996,7 @@ PHIST_TASK_DECLARE(ComputeTask)
 PHIST_TASK_BEGIN(ComputeTask)
   PHIST_CAST_PTR_FROM_VOID(ghost_densemat,V,vV,*iflag);
 //  PHIST_DEB("put value, V @ %p. V->traits.nrows=%" PRlidx "\n",V,V->traits.nrows);
-  V->fromScalar(V,(void*)&value);
+  ghost_densemat_init_val(V,(void*)&value);
 PHIST_TASK_END(iflag);
 }
 
@@ -1010,7 +1010,7 @@ extern "C" void SUBR(mvec_put_func)(TYPE(mvec_ptr) vV,
 PHIST_TASK_DECLARE(ComputeTask)
   PHIST_TASK_BEGIN(ComputeTask)
   PHIST_CAST_PTR_FROM_VOID(ghost_densemat,V,vV,*iflag);
-  PHIST_CHK_GERR(V->fromFunc(V,funPtr,last_arg),*iflag);
+  PHIST_CHK_GERR(ghost_densemat_init_func(V,funPtr,last_arg),*iflag);
   PHIST_TASK_END(iflag);
 }
 
@@ -1023,7 +1023,7 @@ extern "C" void SUBR(sdMat_put_value)(TYPE(sdMat_ptr) vV, _ST_ value, int* iflag
 PHIST_TASK_DECLARE(ComputeTask)
 PHIST_TASK_BEGIN_SMALLDETERMINISTIC(ComputeTask)
   PHIST_CAST_PTR_FROM_VOID(ghost_densemat,V,vV,*iflag);
-  V->fromScalar(V,(void*)&value);
+  ghost_densemat_init_val(V,(void*)&value);
 PHIST_TASK_END(iflag);
 }
 
@@ -1085,7 +1085,7 @@ extern "C" void SUBR(mvec_print)(TYPE(const_mvec_ptr) vV, int* iflag)
   if (V->traits.location == GHOST_LOCATION_HOST)
   {
     char *str=NULL;
-    V->string(V,&str);
+    ghost_densemat_string(&str,V);
     std::cout << str <<std::endl;
     free(str); str = NULL;
   }
@@ -1111,7 +1111,7 @@ extern "C" void SUBR(sdMat_print)(TYPE(const_sdMat_ptr) vM, int* iflag)
     char *str=NULL;
     ghost_location locM=M->traits.location;
     M->traits.location=GHOST_LOCATION_HOST;
-    M->string(M,&str);
+    ghost_densemat_string(&str,M);
     M->traits.location=locM;
     std::cout << str <<std::endl;
     free(str); str = NULL;
@@ -1141,7 +1141,7 @@ PHIST_TASK_DECLARE(ComputeTask)
 PHIST_TASK_BEGIN_SMALLDETERMINISTIC(ComputeTask)
   PHIST_CAST_PTR_FROM_VOID(ghost_densemat,M,vM,*iflag);
   PHIST_CAST_PTR_FROM_VOID(ghost_mpi_comm,comm,vcomm,*iflag);
-  M->syncValues(M, *comm, 0);
+  ghost_densemat_sync_vals(M, *comm, 0);
 PHIST_TASK_END(iflag);
 }
 
@@ -1194,7 +1194,7 @@ extern "C" void SUBR(mvec_scale)(TYPE(mvec_ptr) vV,
 PHIST_TASK_DECLARE(ComputeTask)
 PHIST_TASK_BEGIN(ComputeTask)
   PHIST_CAST_PTR_FROM_VOID(ghost_densemat,V,vV,*iflag);  
-  V->scale(V,(void*)&scalar);
+  ghost_scale(V,(void*)&scalar);
 PHIST_TASK_END(iflag);
 }
 
@@ -1209,7 +1209,7 @@ extern "C" void SUBR(mvec_vscale)(TYPE(mvec_ptr) vV,
 PHIST_TASK_DECLARE(ComputeTask)
 PHIST_TASK_BEGIN(ComputeTask)
   PHIST_CAST_PTR_FROM_VOID(ghost_densemat,V,vV,*iflag);  
-  V->vscale(V,(void*)scalar);
+  ghost_vscale(V,(void*)scalar);
 PHIST_TASK_END(iflag);
 }
 
@@ -1231,25 +1231,25 @@ PHIST_TASK_BEGIN(ComputeTask)
   if (alpha==st::one() && beta==st::zero())
   {
       PHIST_DEB("copy Y=X\n");
-    PHIST_CHK_GERR(Y->fromVec(Y,X,0,0),*iflag);
+    PHIST_CHK_GERR(ghost_densemat_init_densemat(Y,X,0,0),*iflag);
   }
   else if (alpha==st::zero())
   {
     if (beta!=st::one())
     {
       PHIST_DEB("scale output Y=beta*Y\n");
-      PHIST_CHK_GERR(Y->scale(Y,(void*)&b),*iflag);
+      PHIST_CHK_GERR(ghost_scale(Y,(void*)&b),*iflag);
     }
   }
   else if (beta==st::one())
   {
     PHIST_DEB("axpy operation: Y=alpha*X+Y\n");
-    PHIST_CHK_GERR(Y->axpy(Y,X,(void*)&a),*iflag);
+    PHIST_CHK_GERR(ghost_axpy(Y,X,(void*)&a),*iflag);
   }
   else
   {
     PHIST_DEB("general case: Y=alpha*X+beta*Y\n");
-    PHIST_CHK_GERR(Y->axpby(Y,X,(void*)&a,(void*)&b),*iflag);
+    PHIST_CHK_GERR(ghost_axpby(Y,X,(void*)&a,(void*)&b),*iflag);
   }
 PHIST_TASK_END(iflag);
 }
@@ -1270,7 +1270,7 @@ PHIST_TASK_BEGIN(ComputeTask)
   PHIST_CAST_PTR_FROM_VOID(ghost_densemat,Y,vY,*iflag);
   if(beta == st::one())
   {
-    Y->vaxpy(Y,X,(void*)alpha);
+    ghost_vaxpy(Y,X,(void*)alpha);
   }
   else
   {
@@ -1281,7 +1281,7 @@ PHIST_TASK_BEGIN(ComputeTask)
     for(int i = 0; i < nvec; i++)
       b[i] = beta;
 
-    Y->vaxpby(Y,X,(void*)alpha,(void*)b);
+    ghost_vaxpby(Y,X,(void*)alpha,(void*)b);
   }
 PHIST_TASK_END(iflag);
 }
@@ -1303,7 +1303,7 @@ PHIST_TASK_BEGIN_SMALLDETERMINISTIC(ComputeTask)
   // and mvecs, so we can simply call mvec_add_mvec.
   TMP_SET_DENSEMAT_LOCATION(vA,A,locA);
   TMP_SET_DENSEMAT_LOCATION(vB,B,locB);
-    PHIST_CHK_GERR(B->axpby(B,A,(void*)&a,(void*)&b),*iflag);
+    PHIST_CHK_GERR(ghost_axpby(B,A,(void*)&a,(void*)&b),*iflag);
   A->traits.location=locA;
   B->traits.location=locB;
 PHIST_TASK_END(iflag);
@@ -1346,11 +1346,11 @@ extern "C" void SUBR(sparseMat_times_mvec_communicate)(TYPE(const_sparseMat_ptr)
     ghost_densemat_halo_comm comm = GHOST_DENSEMAT_HALO_COMM_INITIALIZER;
 PHIST_TASK_DECLARE(ComputeTask)
 PHIST_TASK_BEGIN(ComputeTask)
-    PHIST_CHK_GERR(x->halocommInit(x,A->context,&comm),*iflag);
+    PHIST_CHK_GERR(ghost_densemat_halocomm_init(x,A->context,&comm),*iflag);
 PHIST_TASK_END(iflag)
 PHIST_TASK_POST_STEP(iflag)
-    PHIST_CHK_GERR(x->halocommStart(x,A->context,&comm),*iflag);
-    PHIST_CHK_GERR(x->halocommFinalize(x,A->context,&comm),*iflag);
+    PHIST_CHK_GERR(ghost_densemat_halocomm_start(x,A->context,&comm),*iflag);
+    PHIST_CHK_GERR(ghost_densemat_halocomm_finalize(x,A->context,&comm),*iflag);
 #else
 PHIST_TASK_POST_STEP(iflag)
 #endif
@@ -1621,7 +1621,7 @@ extern "C" void SUBR(mvec_dot_mvec)(TYPE(const_mvec_ptr) vV, TYPE(const_mvec_ptr
 PHIST_TASK_DECLARE(ComputeTask)
 PHIST_TASK_BEGIN(ComputeTask)
   //ghost_dot(s,V,W);
-  PHIST_CHK_GERR(ghost_dot(s,V,W,MPI_COMM_NULL),*iflag);
+  PHIST_CHK_GERR(ghost_localdot(s,V,W),*iflag);
 PHIST_TASK_END(iflag);
 
 PHIST_TASK_POST_STEP(iflag);
@@ -1695,12 +1695,12 @@ PHIST_TASK_BEGIN(ComputeTask)
     ghost_densemat_create(&Ccopy,C->context,vtraits);
 
     // this allocates the memory for the vector, copies and memTransposes the data
-    PHIST_CHK_GERR(Ccopy->fromVec(Ccopy,C,0,0),*iflag);
+    PHIST_CHK_GERR(ghost_densemat_init_densemat(Ccopy,C,0,0),*iflag);
 
     PHIST_CHK_GERR(gemm_err = ghost_gemm(Ccopy,V,trans,W,(char*)"N",(void*)&alpha,(void*)&mybeta,GHOST_GEMM_NO_REDUCE,V->context,GHOST_GEMM_DEFAULT),*iflag);
 
     // memtranspose data
-    PHIST_CHK_GERR(C->fromVec(C,Ccopy,0,0),*iflag);
+    PHIST_CHK_GERR(ghost_densemat_init_densemat(C,Ccopy,0,0),*iflag);
     ghost_densemat_destroy(Ccopy);
   }
   PHIST_CHK_GERR(gemm_err,*iflag);
@@ -1708,7 +1708,7 @@ PHIST_TASK_END(iflag);
 
 PHIST_TASK_POST_STEP(iflag);
 
-  PHIST_CHK_GERR(C->reduce(C,*comm,GHOST_ALLREDUCE),*iflag);
+  PHIST_CHK_GERR(ghost_densemat_reduce(C,*comm,GHOST_ALLREDUCE),*iflag);
 }
 
 
@@ -1956,10 +1956,10 @@ extern "C" void SUBR(mvec_QR)(TYPE(mvec_ptr) vV, TYPE(sdMat_ptr) vR, int* iflag)
   {
     PHIST_ENTER_FCN("TSQR_memtranspose");
     // this allocates the memory for the vector, copies and memTransposes the data
-    PHIST_CHK_GERR(Vcopy->fromVec(Vcopy,V,0,0),*iflag);
+    PHIST_CHK_GERR(ghost_densemat_init_densemat(Vcopy,V,0,0),*iflag);
     // this allocates the result vector
     ST zero = st::zero();
-    PHIST_CHK_GERR(Qcopy->fromScalar(Qcopy,&zero),*iflag);
+    PHIST_CHK_GERR(ghost_densemat_init_val(Qcopy,&zero),*iflag);
   }
 
   // wrapper class for ghost_densemat for calling Belos.
@@ -2011,7 +2011,7 @@ extern "C" void SUBR(mvec_QR)(TYPE(mvec_ptr) vV, TYPE(sdMat_ptr) vR, int* iflag)
   {
     PHIST_ENTER_FCN("TSQR_memtranspose");
     // copy (and memTranspose back if necessary)
-    PHIST_CHK_GERR(V->fromVec(V,Qcopy,0,0),*iflag);
+    PHIST_CHK_GERR(ghost_densemat_init_densemat(V,Qcopy,0,0),*iflag);
   }
   ghost_densemat_destroy(Vcopy);
   ghost_densemat_destroy(Qcopy);
@@ -2049,7 +2049,7 @@ PHIST_TASK_BEGIN(ComputeTask)
   PHIST_CAST_PTR_FROM_VOID(ghost_densemat,re,reV,*iflag);
   PHIST_CAST_PTR_FROM_VOID(ghost_densemat,im,imV,*iflag);
   
-  PHIST_CHK_GERR(re->fromComplex(re,im,src),*iflag);
+  PHIST_CHK_GERR(ghost_densemat_init_complex(re,im,src),*iflag);
   PHIST_TASK_END(iflag);
 }
 
@@ -2075,7 +2075,7 @@ PHIST_TASK_BEGIN(ComputeTask)
   PHIST_CAST_PTR_FROM_VOID(ghost_densemat,re,reV,*iflag);
   PHIST_CAST_PTR_FROM_VOID(ghost_densemat,im,imV,*iflag);
   
-  PHIST_CHK_GERR(vec->fromReal(vec,re,im),*iflag);
+  PHIST_CHK_GERR(ghost_densemat_init_real(vec,re,im),*iflag);
   PHIST_TASK_END(iflag);
 }
 #endif
@@ -2162,7 +2162,7 @@ extern "C" void SUBR(sparseMat_create_fromRowFuncAndMap)(TYPE(sparseMat_ptr) *vA
     // register a new map that owns the context ctx, but *not* the permutations
     mapGarbageCollector.new_map(mat,ctx,NONE,true,false);
   }
-  PHIST_CHK_GERR(mat->fromRowFunc(mat,&src),*iflag);
+  PHIST_CHK_GERR(ghost_sparsemat_init_rowfunc(mat,&src),*iflag);
 //#if PHIST_OUTLEV >= PHIST_VERBOSE
   char *str;
   ghost_context_string(&str,ctx);
@@ -2228,7 +2228,7 @@ extern "C" void SUBR(mvec_write_bin)(TYPE(const_mvec_ptr) vV, const char* filena
 #include "phist_std_typedefs.hpp"
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   PHIST_CAST_PTR_FROM_VOID(ghost_densemat,V,vV,*iflag);
-  PHIST_CHK_GERR(V->toFile(V,(char*)filename,V->context->mpicomm),*iflag);
+  PHIST_CHK_GERR(ghost_densemat_to_file(V,(char*)filename,V->context->mpicomm),*iflag);
 }
 
 extern "C" void SUBR(mvec_read_bin)(TYPE(mvec_ptr) vV, const char* filename, int* iflag)
@@ -2236,7 +2236,7 @@ extern "C" void SUBR(mvec_read_bin)(TYPE(mvec_ptr) vV, const char* filename, int
 #include "phist_std_typedefs.hpp"
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   PHIST_CAST_PTR_FROM_VOID(ghost_densemat,V,vV,*iflag);
-  PHIST_CHK_GERR(V->fromFile(V,(char*)filename,V->context->mpicomm),*iflag);
+  PHIST_CHK_GERR(ghost_densemat_init_file(V,(char*)filename,V->context->mpicomm),*iflag);
 }
 
 extern "C" void SUBR(sdMat_write_bin)(TYPE(const_sdMat_ptr) vM, const char* filename, int* iflag)
@@ -2244,7 +2244,7 @@ extern "C" void SUBR(sdMat_write_bin)(TYPE(const_sdMat_ptr) vM, const char* file
 #include "phist_std_typedefs.hpp"
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   PHIST_CAST_PTR_FROM_VOID(ghost_densemat,M,vM,*iflag);
-  PHIST_CHK_GERR(M->toFile(M,(char*)filename,MPI_COMM_SELF),*iflag);
+  PHIST_CHK_GERR(ghost_densemat_to_file(M,(char*)filename,MPI_COMM_SELF),*iflag);
 }
 
 extern "C" void SUBR(sdMat_read_bin)(TYPE(sdMat_ptr) vM, const char* filename, int* iflag)
@@ -2252,5 +2252,5 @@ extern "C" void SUBR(sdMat_read_bin)(TYPE(sdMat_ptr) vM, const char* filename, i
 #include "phist_std_typedefs.hpp"
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   PHIST_CAST_PTR_FROM_VOID(ghost_densemat,M,vM,*iflag);
-  PHIST_CHK_GERR(M->fromFile(M,(char*)filename,MPI_COMM_SELF),*iflag);
+  PHIST_CHK_GERR(ghost_densemat_init_file(M,(char*)filename,MPI_COMM_SELF),*iflag);
 }
