@@ -241,8 +241,8 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,MATNAME>,
         PHIST_CHK_IERR(SUBR(sparseMat_times_mvec)(-st::one(),A_,Vm_,st::one(),AV_,&iflag_),iflag_);
         PHIST_CHK_IERR(SUBR(sparseMat_times_mvec)(-st::one(),B_,V_,st::one(),BV_,&iflag_),iflag_);
         
-        ASSERT_NEAR(st::one(),MvecEqual(AV_,st::zero()),10*VTest::releps());
-        ASSERT_NEAR(st::one(),MvecEqual(BV_,st::zero()),VTest::releps());
+        ASSERT_NEAR(mt::one(),MvecEqual(AV_,st::zero()),10*VTest::releps());
+        ASSERT_NEAR(mt::one(),MvecEqual(BV_,st::zero()),VTest::releps());
         
         PHIST_CHK_IERR(SUBR(sparseMat_times_mvec)(st::one(),B_,V_,st::zero(),BV_,&iflag_),iflag_);
         PHIST_CHK_IERR(SUBR(mvec_from_device)(V_,&iflag_),iflag_);

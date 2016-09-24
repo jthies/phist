@@ -487,7 +487,7 @@ PrintSdMat(PHIST_DEBUG,"reconstructed X",mat2_vp_,m_lda_,1,mpi_comm_);
       SUBR(sdMat_times_sdMatT)(st::one(),A,AplusT,st::zero(),mat_tmp,&iflag_);
       ASSERT_EQ(0,iflag_);
       
-      ASSERT_NEAR(st::one(),st::one()+MTest::symmetry_check(mat_tmp,&iflag_),mt::eps());
+      ASSERT_NEAR(mt::one(),mt::one()+MTest::symmetry_check(mat_tmp,&iflag_),mt::eps());
       SUBR(sdMat_delete)(mat_tmp,&iflag_);
       ASSERT_EQ(0,iflag_);
       
@@ -496,7 +496,7 @@ PrintSdMat(PHIST_DEBUG,"reconstructed X",mat2_vp_,m_lda_,1,mpi_comm_);
       SUBR(sdMatT_times_sdMat)(st::one(),AplusT,A,st::zero(),mat_tmp,&iflag_);
       ASSERT_EQ(0,iflag_);
       
-      ASSERT_NEAR(st::one(),st::one()+MTest::symmetry_check(mat_tmp,&iflag_),mt::eps());
+      ASSERT_NEAR(mt::one(),mt::one()+MTest::symmetry_check(mat_tmp,&iflag_),mt::eps());
       SUBR(sdMat_delete)(mat_tmp,&iflag_);
       ASSERT_EQ(0,iflag_);
     }

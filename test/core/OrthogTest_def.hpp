@@ -188,8 +188,8 @@ public:
 #ifdef PHIST_HIGH_PRECISION_KERNELS
       // the check using ASSERT_NEAR(mt::one(),...,tol)
       // requires at least eps(1.0) to make sense
-      MT tolV=mt::eps();
-      MT tolW=mt::eps();
+      MT tolV=10*mt::eps();
+      MT tolW=10*mt::eps();
       iflag_in|=PHIST_ROBUST_REDUCTIONS;
 #else
       MT tolV=(MT)10.*VTest::releps(V);

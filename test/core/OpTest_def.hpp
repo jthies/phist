@@ -236,7 +236,7 @@ public:
     ASSERT_EQ(0,iflag_);
     A_op.apply(alpha,A_op.A,vec1_,beta,vec3_,&iflag_);
     ASSERT_EQ(0,iflag_);
-    ASSERT_NEAR(st::one(),MvecsEqual(vec2_,vec3_),VTest::releps());
+    ASSERT_NEAR(mt::one(),MvecsEqual(vec2_,vec3_),VTest::releps());
         
     // clean up the operator
     AA_op.destroy(&AA_op,&iflag_);
@@ -258,7 +258,7 @@ public:
     for (int i=0; i<nvec_; i++) sigma[i]=-st::one();
     AA_op.apply_shifted(alpha,AA_op.A,sigma,vec1_,st::zero(),vec2_,&iflag_);
     ASSERT_EQ(0,iflag_);
-    ASSERT_NEAR(st::one(),MvecEqual(vec2_,st::zero()),VTest::releps());
+    ASSERT_NEAR(mt::one(),MvecEqual(vec2_,st::zero()),VTest::releps());
         
     // clean up the operator
     AA_op.destroy(&AA_op,&iflag_);
