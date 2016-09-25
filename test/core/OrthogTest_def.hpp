@@ -88,14 +88,23 @@ public:
 
     if (typeImplemented_ && !problemTooSmall_)
     {
+      phist_const_map_ptr map=this->map_;
+#ifdef ORTHOGTEST_WITH_HPD_B
+      // get the map from the mass matrix. In principle the mass mat is
+      // created using the map_ of the base class, but with GHOST we   
+      // need additional info (like #halo elements) that only the matrix
+      // can provide.
+      SUBR(sparseMat_get_domain_map)(B_,&map,&iflag_);
+      ASSERT_EQ(0,iflag_);
+#endif      
       // create vectors V, W and vector views for setting/checking entries
-      PHISTTEST_MVEC_CREATE(&V_,this->map_,this->m_,&this->iflag_);
+      PHISTTEST_MVEC_CREATE(&V_,map,this->m_,&this->iflag_);
       ASSERT_EQ(0,this->iflag_);
-      PHISTTEST_MVEC_CREATE(&W_,this->map_,this->k_,&this->iflag_);
+      PHISTTEST_MVEC_CREATE(&W_,map,this->k_,&this->iflag_);
       ASSERT_EQ(0,this->iflag_);
-      PHISTTEST_MVEC_CREATE(&Q_,this->map_,this->k_,&this->iflag_);
+      PHISTTEST_MVEC_CREATE(&Q_,map,this->k_,&this->iflag_);
       ASSERT_EQ(0,this->iflag_);
-      PHISTTEST_MVEC_CREATE(&W2_,this->map_,this->k_,&this->iflag_);
+      PHISTTEST_MVEC_CREATE(&W2_,map,this->k_,&this->iflag_);
       ASSERT_EQ(0,this->iflag_);
       SUBR(mvec_extract_view)(W2_,&W2_vp_,&this->ldaW2_,&this->iflag_);
       ASSERT_EQ(0,this->iflag_);
