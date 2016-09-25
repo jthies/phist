@@ -392,7 +392,7 @@ subroutine dgemm_fused_sCD_strided_k_1(nrows,nvecv,v,ldv,w,N,M)
   real(kind=8), intent(out) :: M(nvecv,1)
   real(kind=8) :: work(1)
   integer :: i, j
-!dir$ assume_aligned v:64, w:8, M:64, N:64
+!dir$ assume_aligned v:8, w:64, M:64, N:64
 
   M = 0.
 !$omp parallel do reduction(+:M) private(work) schedule(static)
@@ -416,7 +416,7 @@ subroutine dgemm_fused_sCD_strided_k_2(nrows,nvecv,v,ldv,w,N,M)
   real(kind=8), intent(out) :: M(nvecv,2)
   real(kind=8) :: work(2)
   integer :: i, j
-!dir$ assume_aligned v:64, w:8, M:64, N:64
+!dir$ assume_aligned v:8, w:64, M:64, N:64
 
   M = 0.
 !$omp parallel do reduction(+:M) private(work) schedule(static)
@@ -440,7 +440,7 @@ subroutine dgemm_fused_sCD_strided_k_4(nrows,nvecv,v,ldv,w,N,M)
   real(kind=8), intent(out) :: M(nvecv,4)
   real(kind=8) :: work(4)
   integer :: i, j
-!dir$ assume_aligned v:64, w:8, M:64, N:64
+!dir$ assume_aligned v:8, w:64, M:64, N:64
 
   M = 0.
 !$omp parallel do reduction(+:M) private(work) schedule(static)
@@ -464,7 +464,7 @@ subroutine dgemm_fused_sCD_strided_k_8(nrows,nvecv,v,ldv,w,N,M)
   real(kind=8), intent(out) :: M(nvecv,8)
   real(kind=8) :: work(8)
   integer :: i, j
-!dir$ assume_aligned v:64, w:8, M:64, N:64
+!dir$ assume_aligned v:8, w:64, M:64, N:64
 
   M = 0.
 !$omp parallel do reduction(+:M) private(work) schedule(static)
