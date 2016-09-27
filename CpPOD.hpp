@@ -26,32 +26,42 @@ public:
 	}
 	~CpPOD(){}	
 
-	void read(const std::string * filename)
+	int read(const std::string * filename)
 	{
 		std::ifstream fstr;
 		fstr.open ((*filename).c_str(), std::ios::in | std::ios::binary);	
-		fstr.read( (char*)dataPtr , sizeof(T));	
+		if(fstr.is_open()){
+			fstr.read( (char*)dataPtr , sizeof(T));	
 //		std::cout << "dataPtr read is: " << *dataPtr << std::endl;
-		fstr.close();
-		return;
+			fstr.close();
+		}
+		else{
+			std::cerr << "Can't open file " << *filename << std::endl;			
+			return EXIT_FAILURE;
+		}
+		return EXIT_SUCCESS;
 	}
 	
-	void write(const std::string * filename)
+	int write(const std::string * filename)
 	{
 		std::ofstream fstr;
 		fstr.open ((*filename).c_str(), std::ios::out | std::ios::binary );	
 		if(fstr.is_open()){
 			fstr.write( (char *)asynData, sizeof (T) );
+			fstr.close();
 		}
-		fstr.close();
-		return;
+		else{
+			std::cerr << "Can't open file " << *filename << std::endl;			
+			return EXIT_FAILURE;
+		}
+		return EXIT_SUCCESS;
 	}
 	
-	void update()
+	int update()
 	{
 		*asynData = *dataPtr;
 //		std::cout << "AsynData is:  " << *asynData << std::endl;
-		return;
+		return EXIT_SUCCESS;
 	}
 };
 

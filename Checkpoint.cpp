@@ -1,16 +1,21 @@
 #include "Checkpoint.hpp"
+#include <openssl/md5.h>
+#include <cstdio>
+#include <iostream>
+#include <memory>
+#include <stdexcept>
+#include <string>
 
-void Checkpoint::update(){
+int Checkpoint::update(){
 	for(cp_const_map:: iterator it = objects.begin(); it != objects.end(); ++it)
 	{
 		std::cout << "updating: " << it->first << std::endl;
 		it->second->update();
 	}	
-
-
+	return EXIT_SUCCESS;
 }
 
-void Checkpoint::write()
+int Checkpoint::write()
 {
 #ifdef SCR
 	if(useSCR == true){
@@ -21,60 +26,73 @@ void Checkpoint::write()
 	MPI_Comm_rank(cpMpiComm, &myrank_);
 	std::string myrank = NumberToString(myrank_);
 	std::string filename;
-  	for (cp_const_map::iterator it=objects.begin(); it!=objects.end(); it++)
-  	{
-			filename = cpPath + "/" + (it->first) + myrank + ".ckpt"; 
-#ifdef SCR
-			char * fNameScrPath = new char[256]; 
-			if(useSCR == true){
-				char * tmpFilename = new char[256];
-				strcpy(tmpFilename, filename.c_str()); 
-				SCR_Route_file(tmpFilename, fNameScrPath);
-				printf("new filename %s\n", fNameScrPath);
-				filename = fNameScrPath;
-			}
+	cpPathVersion = cpPath + "/" + cpVersionPrefix + SSTR(cpVersion);
+#ifndef SCR
+	mkCpDir(cpPathVersion);	
 #endif
-//    	std::cout << it->first << " Checkpoint:write is called here " << filename <<std::endl;
-    	it->second->write(&filename);
-  	
-		}
 
+  for (cp_const_map::iterator it=objects.begin(); it!=objects.end(); it++)
+ 	{
+		filename = cpPathVersion + "/" + (it->first) + myrank + ".ckpt"; 
+#ifdef SCR
+		char * fNameScrPath = new char[256]; 
+		if(useSCR == true){
+			char * tmpFilename = new char[256];
+			strcpy(tmpFilename, filename.c_str()); 
+			SCR_Route_file(tmpFilename, fNameScrPath);
+			printf("new filename %s\n", fNameScrPath);
+			filename = fNameScrPath;
+		}
+#endif	
+//    	std::cout << it->first << " Checkpoint:write is called here " << filename <<std::endl;
+    it->second->write(&filename);
+	}
+	
+#ifndef SCR
+	MPI_Barrier(cpMpiComm);
+	writeCpMetaData();
+	++cpVersion;
+	deleteBackupCp();
+	MPI_Barrier(cpMpiComm);
+#endif	
+	
 #ifdef SCR
 	if(useSCR == true){
 		int valid = 1;
 		SCR_Complete_checkpoint(valid);     // valid flag should be 1 if every CP is successfully written. TODO: check the flag from each write call.
 	}
 #endif
-
+	return EXIT_SUCCESS;
 }
 
-void Checkpoint::read()
+int Checkpoint::read()
 {
+	readCpMetaData();
 	int myrank_ = -1;
 	MPI_Comm_rank(cpMpiComm, &myrank_);
 	std::string myrank = NumberToString(myrank_);
 	std::string filename;
-  	for (cp_const_map::iterator it=objects.begin(); it!=objects.end(); it++)
-  	{
-			filename = cpPath + "/" + (it->first) + myrank + ".ckpt"; 
+	cpPathVersion = cpPath + "/" + cpVersionPrefix + SSTR(cpVersion); 
+  for (cp_const_map::iterator it=objects.begin(); it!=objects.end(); it++)
+ 	{			
+		filename = cpPathVersion + "/" + (it->first) + myrank + ".ckpt"; 
 #ifdef SCR 
-			char * fNameScrPath = new char[256]; 
-			if(useSCR == true){
-				char * tmpFilename = new char[256];
-				strcpy(tmpFilename, filename.c_str()); 
-				SCR_Route_file(tmpFilename, fNameScrPath);
-				printf("new filename %s\n", fNameScrPath);
-				filename = fNameScrPath;
-			}
+		char * fNameScrPath = new char[256]; 
+		if(useSCR == true){
+			char * tmpFilename = new char[256];
+			strcpy(tmpFilename, filename.c_str()); 
+			SCR_Route_file(tmpFilename, fNameScrPath);
+			printf("new filename %s\n", fNameScrPath);
+			filename = fNameScrPath;
+		}
 #endif
 //    	std::cout << it->first << " Checkpoint::read is called here "<<std::endl;
-    	it->second->read(&filename);
-  	}
+		if(EXIT_SUCCESS != it->second->read(&filename))	
+			return EXIT_FAILURE;
+  }
+	MPI_Barrier(cpMpiComm);
+	++cpVersion;
+	return EXIT_SUCCESS;
 }
-
-
-
-
-				
 
 
