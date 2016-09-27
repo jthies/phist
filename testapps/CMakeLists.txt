@@ -73,6 +73,7 @@ if(GHOST_TEST)
 endif()
 
 add_subdirectory(minimal)
+add_subdirectory(multilevelCP)
 add_subdirectory(arrayTest)
 if(GHOST_TEST)
 	add_subdirectory(ghostTest)
