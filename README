@@ -2,6 +2,7 @@
 This library provides an easier interface to introduce Checkpoint/Restart and Automatic Fault Tolerance(AFT) capabilities in your program.
 AFT-option can only be used if compliled with ULFM-MPI.
 
+
 ===== Supported types and features =====
 
 1) POD (double, int, float etc.)
@@ -18,3 +19,38 @@ AFT-option can only be used if compliled with ULFM-MPI.
 2) env CC=icc CXX=icpc FC=ifort ccmake ../
  Provide CMAKE_INSTALL_PREFIX. Configure according to your requirements. 
 3) make; make install
+
+
+===== USAGE ===== 
+1) A Checkpoint object can be initialized by giving it a unique name, base-directory-path and an MPI-communicator.
+2) Various objects can be added to by called .add function and giving the appropriate parameters.
+3) Other Checkpoint objects can be added at different levels of the program.
+
+The directory-structure of the program looks like this.
+CPBASEPATH:
+		|	
+		|	
+		|	
+		|	
+		-----CP-level1			
+				 |	
+				 -----CP1/a.ckpt, b.ckpt	
+				 -----CP2/	
+				 -----CP3/	
+				 -----metadata.ckpt	
+		|	
+		|	
+		|	
+		|	
+		-----CP-level2			
+				 |	
+				 -----CP1/x.ckpt, y.ckpt	
+				 -----CP2/	
+				 -----CP3/	
+				 -----metadata.ckpt
+
+
+
+
+
+
