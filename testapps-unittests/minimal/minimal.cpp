@@ -66,7 +66,8 @@ int read_params(int argc, char* argv[] , Cp_Options * myCpOpt){
 int main(int argc, char* argv[])
 {
 	MPI_Init(&argc, &argv);
-  int myrank, numprocs;
+  int myrank, numprocs, printRank = 0;
+
 //	===== AFT BEGIN =====
 	int success = false;
 	int failed = false;
@@ -98,14 +99,16 @@ int main(int argc, char* argv[])
 	myCP.add("myarray", myarray, n);
 	myCP.commit(); 
 	
+
+	int READ_STATUS=-1;
 	if( myCpOpt->getRestartStatus() ) {
 		failed = false;
 		printf("RESTART ------> failed == true \n");
-		myCP.read();
+		READ_STATUS = myCP.read();
 		iteration++;
 		printf("iteration = %d \n", iteration);
 	}
-  for(; iteration <= myCpOpt->getnIter() ; iteration++)
+  for(; iteration < myCpOpt->getnIter() ; iteration++)
   {
 		myint++;
 		for(size_t i = 0; i < n ; ++i){
@@ -124,6 +127,27 @@ int main(int argc, char* argv[])
 			printf("%d/%d: iterations finishied \n", myrank, numprocs);
 	  }
 	}
+	{
+	if(myrank==printRank) 
+   	printf("-------------------------------------\n");
+		if(myCpOpt->getRestartStatus() == true && iteration == 60 && READ_STATUS == EXIT_SUCCESS )
+		{
+			if(myrank==printRank) 
+				std::cout << "CRAFT TEST PASSED" << std::endl;	
+		}
+		else if(myCpOpt->getRestartStatus()==false || READ_STATUS != EXIT_SUCCESS)
+		{
+			if(myrank==printRank) 
+				std::cout << "CRAFT TEST FAILED: program was not restarted or READ_STATUS==EXIT_FAILURE" << std::endl;	
+		}
+		else
+		{
+			if(myrank==printRank) 
+				std::cout << "CRAFT TEST FAILED" << std::endl;	
+		}
+   } 
+
+
 
 #ifdef AFT
 	AFT_END();

@@ -66,7 +66,7 @@ int main(int argc, char* argv[])
 {
 	int iteration = 0;
 	MPI_Init(&argc, &argv);
-  int myrank, numprocs;
+	int myrank, numprocs, printRank = 0;
 //	===== AFT BEGIN =====
 	int success = false;
 	int failed = false;
@@ -96,30 +96,25 @@ int main(int argc, char* argv[])
 	myCP.add("d", d, n);
 	myCP.add("iteration", &iteration);
 	myCP.commit(); 
- 
+	int READ_STATUS = -1;
 	if( myCpOpt->getRestartStatus() ) {
 		failed = false;
 		printf("RESTART ------> failed == true \n");
-		myCP.read();
+		READ_STATUS = myCP.read();
 		iteration++;
 	}
-	for(; iteration <= myCpOpt->getnIter() ; iteration++)
+	for(; iteration < myCpOpt->getnIter() ; iteration++)
   {
 		printf("=== iter: %d\t a[0]: %d\n", iteration, a[0]);
 		for(size_t i = 0; i < n ; ++i){
 			a[i] += 1;
 			d[i] += 1.0;
 		}
-/*		if(iteration == 7 && myrank == 1){
-			printf("%d_going for kill \n", myrank);	
-			exit(0);
-		}
-*/
 		if(iteration % myCpOpt->getCpFreq() == 0){
 			myCP.update();
 			myCP.write();
 		}
-		usleep(200000);
+		usleep(100000);
 		MPI_Barrier(FT_Comm);
 		if ( iteration+1 == myCpOpt->getnIter() ){
 			success = true;
@@ -127,11 +122,39 @@ int main(int argc, char* argv[])
 	  }
   }
 	for(int i = 0; i < n; ++i){
-		printf("a[%d]: %d \n", i, a[i]);
+		if(myrank==printRank) 
+			printf("a[%d]: %d \n", i, a[i]);
 	}
 	for(int i = 0; i < n; ++i){
-		printf("d[%d]: %f \n", i, d[i]);
+		if(myrank==printRank) 
+			printf("d[%d]: %f \n", i, d[i]);
 	}
+
+	MPI_Barrier(FT_Comm);
+	{
+	if(myrank==printRank) 
+   	printf("-------------------------------------\n");
+		if(myCpOpt->getRestartStatus() == true && iteration == 60 && READ_STATUS == EXIT_SUCCESS)
+		{
+			if(myrank==printRank) 
+				std::cout << "CRAFT TEST PASSED" << std::endl;	
+		}
+		else if(myCpOpt->getRestartStatus()==false || READ_STATUS != EXIT_SUCCESS)
+		{
+			if(myrank==printRank) 
+				std::cout << "CRAFT TEST FAILED: program was not restarted. " << std::endl;	
+		}
+		else
+		{
+			if(myrank==printRank) 
+				std::cout << "CRAFT TEST FAILED" << std::endl;	
+		}
+   } 
+
+
+
+
+
 #ifdef AFT
 	AFT_END();
 #endif

@@ -143,15 +143,10 @@ static void *mainTask(void *varg)
 		failed = false;
 		if(myrank== printRank) printf("RESTART ----> failed == true \n");
 		READ_STATUS = myCP.read();
-
-		if(READ_STATUS != EXIT_SUCCESS) { 
-			std::cout << "CRAFT TEST FAILED: Checkpoints not read successfully." << std::endl;	
-			return;
-		}
 		iteration++;
 	}
-	
     for(; iteration < nIter && alpha > EPS; iteration++)
+
     {
         alphaold = alpha;
         lambdaold = lambda;
@@ -210,29 +205,20 @@ static void *mainTask(void *varg)
 		{
 			printf("|Ax-b|      = %g\n",rnorm);
     	printf("-------------------------------------\n");
-			if(restart==true && alpha <=EPS)
+			if(restart==true && alpha <=EPS && READ_STATUS == EXIT_SUCCESS)
 			{
 					std::cout << "CRAFT TEST PASSED" << std::endl;	
 			}
-			else if(restart==false && alpha <=EPS && READ_STATUS == EXIT_FAILURE)
+			else if(restart==false || alpha >EPS ||  READ_STATUS != EXIT_SUCCESS)
 			{
-					std::cout << "CRAFT TEST FAILED: program was not restarted, but SUCCESSFULLY completed on the first run" << std::endl;	
+				std::cout << "CRAFT TEST FAILED: program was not restarted or READ_STATUS==EXIT_FAILURE or not converged" << std::endl;	
 			}
-			else if(restart==false && alpha <=EPS && READ_STATUS == EXIT_SUCCESS)
+			else
 			{
-					std::cout << "CRAFT TEST FAILED: program was not restarted, but SUCCESSFULLY completed on the first run" << std::endl;	
-			}
-			else if(restart == false && alpha > EPS)
-			{
-					std::cout << "CRAFT TEST FAILED: convergence not achieved" << std::endl;	
-			}
-			else if(restart == false && alpha <= EPS)
-			{
-					std::cout << "CRAFT TEST FAILED: convergence achieved but CRAFT-restart not tested" << std::endl;	
-			}
-   	} 
+				std::cout << "CRAFT TEST FAILED" << std::endl;
+   		} 
+		}
     essexamples_print_info(A,0);
-
     ghost_densemat_destroy(v);
     ghost_densemat_destroy(r);
     ghost_densemat_destroy(x);

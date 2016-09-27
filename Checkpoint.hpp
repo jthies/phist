@@ -240,13 +240,8 @@ int Checkpoint::deleteBackupCp(){
 		struct stat sb;
 		if (stat(toRmDir.c_str(), &sb) == 0 && S_ISDIR(sb.st_mode))
 		{
-			printf("EXists%d \n", cpVersion - numBufferCps - 1 );
 			system ( cmd.c_str());
  		}
-			else
-		{
-			printf("doNOTExists%d\n", cpVersion - numBufferCps - 1 );
-		}
 	}
 	return 0;
 }

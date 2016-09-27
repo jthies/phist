@@ -123,7 +123,7 @@ int main(int argc, char* argv[])
 	
 	Checkpoint  myCP("CP-L1", myCpOpt->getCpPath(), FT_Comm);
 	myCP.add("a", a, n);
-	myCP.add("aa", aa, nRows, nCols, ALL);
+	myCP.add("aa", aa, nRows, nCols, CYCLIC);
 	myCP.add("d", d, n);
 	myCP.add("iteration", &iteration);
 	myCP.commit(); 

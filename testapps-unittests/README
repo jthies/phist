@@ -6,3 +6,21 @@ for compiling any of testapp. Go to the testapps folder.
 	i) provide CPAFT_DIR, in which cpaft-config.cmake resides. This is <INSTALLATION-PATH-OF-CPAFT>/lib/.
 	ii) for ghostTest app., GHOST_DIR, ESSEXAMPLES_INC and ESSEXAMPLES_LIB paths need to be provided as well.
 3) make 
+
+
+===== Performing UnitTests ===== 
+
+script for minimal:
+ 	mpirun_rrze -np 2 ./minimal.bin -cppath <CHECKPOINT-PATH> -cpfreq 10 -niter 30
+ 	mpirun_rrze -np 2 ./minimal.bin -cppath <CHECKPOINT-PATH> -cpfreq 10 -niter 60 -restart
+
+script for arraytest:
+	mpirun_rrze -np 2	./arrayTest.bin -cppath <CHECKPOINT-PATH> -cpfreq 10 -niter 30
+ 	mpirun_rrze -np 2 ./arrayTest.bin -cppath <CHECKPOINT-PATH> -cpfreq 10 -niter 60 -restart
+
+sctipt for ghosttest:
+	mpirun_rrze -np 2 ./ghostTest.bin -w 1 -m Graphene-500-500 -x 200 -X <CHECKPOINT-PATH> -i 500
+	mpirun_rrze -np 2 ./ghostTest.bin -w 1 -m Graphene-500-500 -x 200 -X <CHECKPOINT-PATH> -i 5000 -Y
+
+
+
