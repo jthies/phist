@@ -84,6 +84,7 @@ static void *mainTask(void *varg)
     ghost_densemat *b;
     ghost_densemat *p;
     ghost_densemat *v;
+    ghost_densemat **vv;
 	
     essexamples_get_iterations(&nIter);
 		essexamples_get_cp_freq(&cp_freq);
@@ -126,24 +127,23 @@ static void *mainTask(void *varg)
 		if( myrank == printRank) {
 				printf("==== Defining CP ====\n");
 		}
-	Checkpoint * myCP = new Checkpoint[1];
-	myCP->disableSCR();
-	myCP->setCpPath(cpPath);
-	myCP->setComm(FT_Comm);
-	myCP->add("iteration", &iteration);	
-	myCP->add("lambda", &lambda);	
-	myCP->add("alpha", &alpha);	
-	myCP->add("x", x);
-	myCP->add("r", r);
-	myCP->add("p", p);
+	Checkpoint  myCP("CP-L1", cpPath, FT_Comm);
+	myCP.disableSCR();
+	myCP.add("iteration", &iteration);	
+	myCP.add("lambda", &lambda);	
+	myCP.add("alpha", &alpha);	
+	myCP.add("x", x);
+	myCP.add("r", r);
+//	myCP.add("vv", vv, 4);
+	myCP.add("p", p);
 	// this class object contains only an integer
-  myCP->commit();
+  myCP.commit();
     	
 	iteration = 0;
 	if(restart == true){
 		failed = false;
 		if(myrank== printRank) printf("RESTART ----> failed == true \n");
-		myCP->read();
+		myCP.read();
 		iteration++;
 	}
 	
@@ -185,8 +185,8 @@ static void *mainTask(void *varg)
 				if(iteration % cp_freq == 0){
 					if(myrank == printRank ) 
 							printf("iteration=%d, cp_freq=%d\n", iteration, cp_freq);
-					myCP->update();
-					myCP->write();
+					myCP.update();
+					myCP.write();
 				}
         		//fflush(stdout);
 	   		if ( iteration+1 == nIter || alpha <= EPS){

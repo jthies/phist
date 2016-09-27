@@ -18,6 +18,24 @@
 
 static char *prgname = "a.out";
 
+template < typename T>
+void printArray( T * ptr, const int nRows){
+	for(size_t i = 0; i < nRows; ++i){
+		std::cout << ptr[i] << std::endl;
+	}
+	return;
+}
+
+template < typename T>
+void printDoubleArray( T ** ptr, const int nRows, const int nCols){
+	for(size_t i = 0; i < nRows; ++i){
+		for(size_t j = 0; j < nCols; ++j){
+			std::cout << ptr[j][i] << "\t";
+		}
+		std::cout << std::endl;
+	}
+	return;
+}
 void printusage(){
   int myrank;
 	MPI_Comm_rank(MPI_COMM_WORLD, &myrank);
@@ -83,34 +101,50 @@ int main(int argc, char* argv[])
 	Cp_Options * myCpOpt = new Cp_Options[1];
   read_params(argc, argv, myCpOpt); 
 
-	int n = 5;
+	int n = 5, nRows=5, nCols=5;
+	printf("sizeof(float)=%d\n", sizeof(float));
+
 	int * a 	= new int[n];
+	float ** aa = new float*[nCols];
+	for(int i=0; i<nRows; ++i){
+		aa[i] = new float[nRows];	
+	} 
+	for(int i=0; i<nCols; ++i){
+		for(int j=0; j<nRows; ++j){
+			aa[i][j] = j+(0.1*i);
+		}
+	}
+	printDoubleArray(aa, nRows, nCols);
 	double * d 	= new double[n];
 	for(int i = 0; i < n; ++i){
 			a[i] = 0;
 			d[i] = 0.55;
 	}
 	
-	Checkpoint * myCP = new Checkpoint[1];
-	myCP->setCpPath(myCpOpt->getCpPath());
-	myCP->setComm(FT_Comm);
-	myCP->add("a", a, n);
-	myCP->add("d", d, n);
-	myCP->add("iteration", &iteration);
-	myCP->commit(); 
- 
+	Checkpoint  myCP("CP-L1", myCpOpt->getCpPath(), FT_Comm);
+	myCP.add("a", a, n);
+	myCP.add("aa", aa, nRows, nCols, ALL);
+	myCP.add("d", d, n);
+	myCP.add("iteration", &iteration);
+	myCP.commit(); 
+
 	if( myCpOpt->getRestartStatus() ) {
-		failed = false;
 		printf("RESTART ------> failed == true \n");
-		myCP->read();
+		failed = false;
+		myCP.read();
 		iteration++;
 	}
 	for(; iteration <= myCpOpt->getnIter() ; iteration++)
   {
-		printf("=== iter: %d\t a[0]: %d\n", iteration, a[0]);
+		printf("=== iter: %d\t a[0]: %d\t aa[0][0]:%f\n", iteration, a[0], aa[0][0]);
 		for(size_t i = 0; i < n ; ++i){
 			a[i] += 1;
 			d[i] += 1.0;
+		}
+		for(int i=0; i<nCols; ++i){
+			for(int j=0; j<nRows; ++j){
+				aa[i][j] += 0.001;
+			}
 		}
 /*		if(iteration == 7 && myrank == 1){
 			printf("%d_going for kill \n", myrank);	
@@ -118,8 +152,8 @@ int main(int argc, char* argv[])
 		}
 */
 		if(iteration % myCpOpt->getCpFreq() == 0){
-			myCP->update();
-			myCP->write();
+			myCP.update();
+			myCP.write();
 		}
 		usleep(200000);
 		MPI_Barrier(FT_Comm);
@@ -128,12 +162,9 @@ int main(int argc, char* argv[])
 			printf("%d/%d: iterations finishied \n", myrank, numprocs);
 	  }
   }
-	for(int i = 0; i < n; ++i){
-		printf("a[%d]: %d \n", i, a[i]);
-	}
-	for(int i = 0; i < n; ++i){
-		printf("d[%d]: %f \n", i, d[i]);
-	}
+	printArray(a, n);
+	printArray(d, n);
+	printDoubleArray(aa , nRows, nCols);
 #ifdef AFT
 	AFT_END();
 #endif

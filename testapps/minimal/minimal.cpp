@@ -91,20 +91,18 @@ int main(int argc, char* argv[])
 
 	int iteration = 0;
 	
-	Checkpoint * myCP = new Checkpoint[1];
-	myCP->setCpPath(myCpOpt->getCpPath());
-//	myCP->disableSCR();
-	myCP->setComm(FT_Comm);
-	myCP->add("myint", &myint);
-	myCP->add("mydouble", &mydouble);
-	myCP->add("iteration", &iteration);
-	myCP->add("myarray", myarray, n);
-	myCP->commit(); 
+	Checkpoint  myCP("CP-L1", myCpOpt->getCpPath(), FT_Comm);
+//	myCP.disableSCR();
+	myCP.add("myint", &myint);
+	myCP.add("mydouble", &mydouble);
+	myCP.add("iteration", &iteration);
+	myCP.add("myarray", myarray, n);
+	myCP.commit(); 
 	
 	if( myCpOpt->getRestartStatus() ) {
 		failed = false;
 		printf("RESTART ------> failed == true \n");
-		myCP->read();
+		myCP.read();
 		iteration++;
 		printf("iteration = %d \n", iteration);
 	}
@@ -117,8 +115,8 @@ int main(int argc, char* argv[])
 		usleep(100000);
 		printf("=== iter: %d , myint: %d \t\n", iteration, myint-1);
 		if(iteration % myCpOpt->getCpFreq() == 0){
-			myCP->update();
-			myCP->write();
+			myCP.update();
+			myCP.write();
 		}
 		
 		MPI_Barrier(FT_Comm);
