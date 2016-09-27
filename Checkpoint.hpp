@@ -59,8 +59,6 @@ protected:
 public:
 	Checkpoint(const std::string name_, const std::string cpBasePath_, const MPI_Comm cpMpiComm_);
 	~Checkpoint();  
-	void setCpPath (const std::string cpPath_);
-	void setComm (const MPI_Comm cpMpiComm_);
 	void disableSCR();
 	void commit();
 
@@ -71,7 +69,6 @@ public:
   	// contains asynchronous copies of objects
 //  	cp_copy_map async_copies;
 
- 
   int read();
  	int write();
 	int update();
