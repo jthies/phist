@@ -73,7 +73,7 @@ static void *mainTask(void *varg)
     ghost_context *context;
 	
     matdt_t alpha = 0., alphaold = 0., lambda=0., lambdaold = 0., zero = 0., neg = -1., one = 1., tmp = 0.;
-    int iteration = 0, nIter = 1000, cp_freq = 99999, restart = -1;
+    int iteration = 0, nIter = 1000, cp_freq = 99999, restart = false;
 	char * cpPath = new char[256];
     double start = 0.;
     matdt_t localdot[3];
@@ -126,24 +126,28 @@ static void *mainTask(void *varg)
 		if( myrank == printRank) {
 				printf("==== Defining CP ====\n");
 		}
-	Checkpoint * myCP = new Checkpoint[1];
-	myCP->disableSCR();
-	myCP->setCpPath(cpPath);
-	myCP->setComm(FT_Comm);
-	myCP->add("iteration", &iteration);	
-	myCP->add("lambda", &lambda);	
-	myCP->add("alpha", &alpha);	
-	myCP->add("x", x);
-	myCP->add("r", r);
-	myCP->add("p", p);
+	Checkpoint  myCP("CP-L1", cpPath, FT_Comm);
+	myCP.disableSCR();
+	myCP.add("iteration", &iteration);	
+	myCP.add("lambda", &lambda);	
+	myCP.add("alpha", &alpha);	
+	myCP.add("x", x);
+	myCP.add("r", r);
+	myCP.add("p", p);
 	// this class object contains only an integer
-  myCP->commit();
+  myCP.commit();
     	
 	iteration = 0;
+	int READ_STATUS=-1;
 	if(restart == true){
 		failed = false;
 		if(myrank== printRank) printf("RESTART ----> failed == true \n");
-		myCP->read();
+		READ_STATUS = myCP.read();
+
+		if(READ_STATUS != EXIT_SUCCESS) { 
+			std::cout << "CRAFT TEST FAILED: Checkpoints not read successfully." << std::endl;	
+			return;
+		}
 		iteration++;
 	}
 	
@@ -185,8 +189,8 @@ static void *mainTask(void *varg)
 				if(iteration % cp_freq == 0){
 					if(myrank == printRank ) 
 							printf("iteration=%d, cp_freq=%d\n", iteration, cp_freq);
-					myCP->update();
-					myCP->write();
+					myCP.update();
+					myCP.write();
 				}
         		//fflush(stdout);
 	   		if ( iteration+1 == nIter || alpha <= EPS){
@@ -206,8 +210,28 @@ static void *mainTask(void *varg)
 		{
 			printf("|Ax-b|      = %g\n",rnorm);
     	printf("-------------------------------------\n");
+			if(restart==true && alpha <=EPS)
+			{
+					std::cout << "CRAFT TEST PASSED" << std::endl;	
+			}
+			else if(restart==false && alpha <=EPS && READ_STATUS == EXIT_FAILURE)
+			{
+					std::cout << "CRAFT TEST FAILED: program was not restarted, but SUCCESSFULLY completed on the first run" << std::endl;	
+			}
+			else if(restart==false && alpha <=EPS && READ_STATUS == EXIT_SUCCESS)
+			{
+					std::cout << "CRAFT TEST FAILED: program was not restarted, but SUCCESSFULLY completed on the first run" << std::endl;	
+			}
+			else if(restart == false && alpha > EPS)
+			{
+					std::cout << "CRAFT TEST FAILED: convergence not achieved" << std::endl;	
+			}
+			else if(restart == false && alpha <= EPS)
+			{
+					std::cout << "CRAFT TEST FAILED: convergence achieved but CRAFT-restart not tested" << std::endl;	
+			}
    	} 
-//    essexamples_print_info(A,0);
+    essexamples_print_info(A,0);
 
     ghost_densemat_destroy(v);
     ghost_densemat_destroy(r);

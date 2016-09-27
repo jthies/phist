@@ -91,18 +91,16 @@ int main(int argc, char* argv[])
 			d[i] = 0.55;
 	}
 	
-	Checkpoint * myCP = new Checkpoint[1];
-	myCP->setCpPath(myCpOpt->getCpPath());
-	myCP->setComm(FT_Comm);
-	myCP->add("a", a, n);
-	myCP->add("d", d, n);
-	myCP->add("iteration", &iteration);
-	myCP->commit(); 
+	Checkpoint  myCP("CP-L1", myCpOpt->getCpPath(), FT_Comm);
+	myCP.add("a", a, n);
+	myCP.add("d", d, n);
+	myCP.add("iteration", &iteration);
+	myCP.commit(); 
  
 	if( myCpOpt->getRestartStatus() ) {
 		failed = false;
 		printf("RESTART ------> failed == true \n");
-		myCP->read();
+		myCP.read();
 		iteration++;
 	}
 	for(; iteration <= myCpOpt->getnIter() ; iteration++)
@@ -118,8 +116,8 @@ int main(int argc, char* argv[])
 		}
 */
 		if(iteration % myCpOpt->getCpFreq() == 0){
-			myCP->update();
-			myCP->write();
+			myCP.update();
+			myCP.write();
 		}
 		usleep(200000);
 		MPI_Barrier(FT_Comm);
