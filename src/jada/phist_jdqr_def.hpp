@@ -312,7 +312,7 @@ extern "C" void SUBR(jdqr)(TYPE(const_linearOp_ptr) A_op, TYPE(const_linearOp_pt
     //ALG if (expand)
     if (expand)
     {
-      PHIST_DEB("EXPAND basis by %d vector(s)\n",nv);
+      PHIST_DEB("EXPAND basis by %d vector(s)\n",expand);
       int m0=m;
       m+=expand;
       mm++;
@@ -340,6 +340,7 @@ extern "C" void SUBR(jdqr)(TYPE(const_linearOp_ptr) A_op, TYPE(const_linearOp_pt
           }
         int rankV;
         //ALG orthogonalize t against [Q V(:,0:m-1)]
+        *iflag=PHIST_ORTHOG_RANDOMIZE_NULLSPACE;
         PHIST_CHK_NEG_IERR(SUBR(orthog)(Vv,t_ptr,B_op,Tv,Sv,3,&rankV,iflag),*iflag);
         // reset the view of V without the Q.
         PHIST_CHK_IERR(SUBR(mvec_view_block)(V,&Vv,0,m0-1,iflag),*iflag);

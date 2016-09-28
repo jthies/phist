@@ -444,3 +444,60 @@ PrintSdMat(PHIST_DEBUG,"reconstructed X",mat2_vp_,m_lda_,1,mpi_comm_);
 #endif
   }
 
+  // under construction... (TODO)
+  TEST_F(CLASSNAME, DISABLED_pseudo_inverse)
+  {
+    if( typeImplemented_ )
+    {
+      int iflag_in=0;
+#ifdef HIGH_PRECISION_KERNELS
+      iflag_in=PHIST_ROBUST_REDUCTIONS;
+#endif
+      // copy mat2=mat1
+      SUBR(sdMat_add_sdMat)(st::one(),mat1_,st::zero(),mat2_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      // these kernels only work on the host, so we need to manually perform up/downloads
+      SUBR(sdMat_from_device)(mat1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      
+      // aliases for clarity: AplusT is A^{+,T}, the transpose of the Moore-Penrose Pseudo-Inverse
+      TYPE(sdMat_ptr) A = mat2_, AplusT=mat1_;
+      
+      int rank;
+      SUBR(sdMat_pseudo_inverse)(AplusT,&rank,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      // for a random n x m matrix, we expect min(n,m) to be the rank
+      ASSERT_EQ(std::min(nrows_,ncols_),rank);
+      
+      // check the four defining properties of A+:
+#if 0      
+      // 1. A A+ A = A
+      TripleProduct(A,false,AplusT,true,A,false,mat3_);
+      ASSERT_EQ(0,iflag_);
+      ASSERT_NEAR(st::one(),SdMatsEqual(A,mat3_),st::eps());
+      
+      // 2. A+ A A+ = A+ => A+^T A^T A+^T = A+^T
+      TripleProduct(AplusT,false,A,false,AplusT,false,mat3_);
+      ASSERT_EQ(0,iflag_);
+      ASSERT_NEAR(st::one(),SdMatsEqual(AplusT,mat3_),st::eps());
+#endif
+      // 3. (AA+)^* = AA+
+      TYPE(sdMat_ptr) mat_tmp=NULL;
+      SUBR(sdMat_create)(&mat_tmp, nrows_,nrows_,comm_,&iflag_);
+      SUBR(sdMat_times_sdMatT)(st::one(),A,AplusT,st::zero(),mat_tmp,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      
+      ASSERT_NEAR(mt::one(),mt::one()+MTest::symmetry_check(mat_tmp,&iflag_),mt::eps());
+      SUBR(sdMat_delete)(mat_tmp,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      
+      // 4. (A+ A)^* = A+ A
+      SUBR(sdMat_create)(&mat_tmp, ncols_,ncols_,comm_,&iflag_);
+      SUBR(sdMatT_times_sdMat)(st::one(),AplusT,A,st::zero(),mat_tmp,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      
+      ASSERT_NEAR(mt::one(),mt::one()+MTest::symmetry_check(mat_tmp,&iflag_),mt::eps());
+      SUBR(sdMat_delete)(mat_tmp,&iflag_);
+      ASSERT_EQ(0,iflag_);
+    }
+  }

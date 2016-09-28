@@ -12,6 +12,7 @@
 #ifdef PHIST_HAVE_OPENMP
 #include <omp.h>
 #endif
+#include "phist_defs.h"
 #include "prec_helpers.h"
 
 // precise reduction of gathered MPI results of all processes for block size 1

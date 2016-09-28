@@ -72,6 +72,66 @@ int PHIST_TG_PREFIX(some_rowFunc)(ghost_gidx row, ghost_lidx *len, ghost_gidx* c
   return 0;
 }
 */
+
+int PHIST_TG_PREFIX(hpd_tridiag)(ghost_gidx row, ghost_lidx *len, ghost_gidx* cols, void* vval, void *arg)
+{
+#include "phist_std_typedefs.hpp"
+  static ghost_gidx gnrows=-1;
+  _ST_ *vals=(_ST_*)vval;
+  
+  if (vals) vals[0]=st::one();
+  if (cols && row>=0) cols[0]=row;
+
+// create identity matrix (just while developing stuff with B-inner products
+//  if (len) *len=1;
+//  return 0;
+
+  if (row<0)
+  {
+    gnrows=cols[0];
+    return 0;
+  }
+  else if (gnrows<0)
+  {
+    PHIST_SOUT(PHIST_ERROR,"%s not correctly initialized, call with row=-1 and cols[0]=gnrows first!",__FUNCTION__);
+    return -1;
+  }
+  else if (row==0)
+  {
+    *len=2;
+    cols[1]=row+1;
+#ifdef IS_COMPLEX
+    vals[1]=(_ST_)-0.5*st::cmplx_I();
+#else
+    vals[1]=-0.5*st::one();
+#endif
+  }
+  else if (row==gnrows-1)
+  {
+    *len=2;
+    cols[1]=row-1;
+#ifdef IS_COMPLEX
+    vals[1]=(_ST_)+0.5*st::cmplx_I();
+#else
+    vals[1]=-0.5*st::one();
+#endif
+  }
+  else
+  {
+    *len=3;
+    cols[1]=row-1;
+    cols[2]=row+1;
+#ifdef IS_COMPLEX
+    vals[1]=(_ST_)+0.5*st::cmplx_I();
+    vals[2]=(_ST_)-0.5*st::cmplx_I();
+#else
+    vals[1]=-0.5*st::one();
+    vals[2]=-0.5*st::one();
+#endif
+  }
+  return 0;
+}
+
   int PHIST_TG_PREFIX(mvec123func)(ghost_gidx i, ghost_lidx j, void* val, void* last_arg)
   {
     _ST_* v= (_ST_*)val;

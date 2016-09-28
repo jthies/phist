@@ -1,61 +1,3 @@
-// simple wrapper, try to call mvec_QR and if it is not implemented,
-// use our own Cholesky-QR instead. This way we allow the kernel library
-// to override our choice of Cholesky QR by e.g. TSQR. normsV on exit contains
-// the norm of each column of V before the normalization.
-void SUBR(my_mvec_QR)(TYPE(mvec_ptr) V, TYPE(sdMat_ptr) R, _MT_* normsV, int* iflag)
-{
-#include "phist_std_typedefs.hpp"
-  static bool first_call=true;
-  _ST_* R_raw=NULL;
-  phist_lidx ldR;
-  int iflag_in=*iflag;
-  int iflag_out=0;
-  int m;
-  PHIST_CHK_IERR(SUBR(mvec_num_vectors)(V,&m,iflag),*iflag);
-  int perm[m];
-  for (int i=0;i<m;i++) perm[i]=i;
-
-  SUBR(mvec_QR)(V,R,iflag);
-  
-  if (*iflag==PHIST_NOT_IMPLEMENTED)
-  {
-    *iflag=iflag_in;
-    SUBR(chol_QRp)(V,R,perm,iflag);
-    if (first_call)
-    {
-      first_call=false; 
-      PHIST_SOUT(PHIST_VERBOSE,"orthog: using fallback chol_QR\n");
-    }
-  }
-  
-  iflag_out=*iflag;
-  
-  // norms(V) = diag(R)
-  // note: R is already up-to-date on the host after chol_QR and mvec_QR
-  PHIST_CHK_IERR(SUBR(sdMat_extract_view)(R,&R_raw,&ldR,iflag),*iflag);
-  for (int i=0; i<m; i++)
-  {
-    normsV[i]=st::abs(R_raw[ldR*perm[i]+i]);
-  }
-  *iflag=iflag_out;
-}
-
-// allow using orthog routines from Trilinos because we don't have
-// B-orthogonalization yet
-
-// possibly we could even do this for ghost and builtin, but
-// we just use Trilinos as a fallback for B-orthogonalization
-// with HYMLS right now and will eventually provide our own
-// kernels for it
-#if defined(PHIST_KERNEL_LIB_TPETRA)||defined(PHIST_KERNEL_LIB_EPETRA)
-# if defined(PHIST_HAVE_BELOS)&&defined(IS_DOUBLE)&&!defined(IS_COMPLEX)
-#  define HAVE_TRILINOS_ORTHO_MANAGER
-# endif
-#endif
-
-// provide trili_orthog as fallback if B!=NULL
-#include "trili_orthog_def.hpp"
-
 //! orthogonalize an mvec against an already orthogonal one.
 extern "C" void SUBR(orthog)(TYPE(const_mvec_ptr) V,
                      TYPE(mvec_ptr) W,
@@ -68,333 +10,151 @@ extern "C" void SUBR(orthog)(TYPE(const_mvec_ptr) V,
 {
   PHIST_ENTER_FCN(__FUNCTION__);
 #include "phist_std_typedefs.hpp"
-
-  int m,k;
-  MT breakdown; // to check for V'W becoming near 0 for some vector in W
-  int rankW;
-  bool stopGS=false;
+  int robust    =(*iflag&PHIST_ROBUST_REDUCTIONS);
+  int randomize =(*iflag&PHIST_ORTHOG_RANDOMIZE_NULLSPACE);
+  int m=0,k;
   
-  // auxiliary matrices
-  st::sdMat_t *R1p,*R2p,*R1pp;
+  _MT_ orthoEps = mt::eps();
+  
+  PHIST_CHK_IERR(SUBR(mvec_num_vectors)(W,&k,iflag),*iflag);
+  if (V!=NULL) PHIST_CHK_IERR(SUBR(mvec_num_vectors)(V,&m,iflag),*iflag);
 
-  phist_const_comm_ptr comm=NULL;
+    phist_const_map_ptr map=NULL;
+    PHIST_CHK_IERR(SUBR(mvec_get_map)(W,&map,iflag),*iflag);
+    phist_const_comm_ptr comm=NULL;
+    PHIST_CHK_IERR(phist_map_get_comm(map,&comm,iflag),*iflag);
+  
+  TYPE(mvec_ptr) BW= W;
+  
+  TYPE(sdMat_ptr) WtW=NULL;
+  PHIST_CHK_IERR(SUBR(sdMat_create)(&WtW,k,k,comm,iflag),*iflag);
+  
 
   if (B!=NULL)
   {
-#ifdef HAVE_TRILINOS_ORTHO_MANAGER
-  static bool first_call=true;
-  if (first_call)
-  {
-    PHIST_SOUT(PHIST_WARNING,"using trilinos ortho manager for B-orthogonalization\n");
-    first_call=false;
-  }
-  
-  SUBR(trili_orthog)(V,W,B,R1,R2,numSweeps,rankVW,iflag);
-  return;    
-#else
-    PHIST_SOUT(PHIST_ERROR,"case B!=I not implemented (file %s, line %d)\n",__FILE__,__LINE__);
-    *iflag=PHIST_NOT_IMPLEMENTED;
-    return;
-#endif
-  }
-
-  int iflag_in=*iflag;
-  *iflag=0;
-  *rankVW=-1;
-  
-  if (V==NULL)
-  {
-    m=0;
+    PHIST_CHK_IERR(SUBR(mvec_create)(&BW,map,k,iflag),*iflag);
+    if (robust) *iflag=PHIST_ROBUST_REDUCTIONS;
+    // note: we pass in WtW as the "VtW" argument because it should contain W'BW
+    PHIST_CHK_IERR(B->fused_apply_mvTmv(st::one(),B->A,W,st::zero(),BW,NULL,WtW,iflag),*iflag);
   }
   else
   {
-    PHIST_CHK_IERR(SUBR(mvec_num_vectors)(V,&m,iflag),*iflag);
+    if (robust) *iflag=PHIST_ROBUST_REDUCTIONS;
+    PHIST_CHK_IERR(SUBR(mvecT_times_mvec)(st::one(),W,W,st::zero(),WtW,iflag),*iflag);
   }
-  if (W==NULL)
+  
+  int dim0;
+
+  if (V!=NULL)
   {
-    k=0;
+    if (robust) *iflag=PHIST_ROBUST_REDUCTIONS;
+// the fused variant currently doesn't detect the rank of [V W] correctly in all cases, see issue #188
+//    PHIST_CHK_NEG_IERR(SUBR(orthogrrfused)(V, BW, R2, R1, WtW, iflag),*iflag);
+    PHIST_CHK_NEG_IERR(SUBR(orthogrrB)(V, W, BW, B, R2, R1, NULL,WtW, orthoEps,numSweeps,iflag),*iflag);
+    dim0=*iflag; // return value of orthog is rank of null space of [V W] on entry
+    *rankVW=m+k-dim0;
   }
   else
   {
-    PHIST_CHK_IERR(SUBR(mvec_num_vectors)(W,&k,iflag),*iflag);
+    // fused orthog core doesn't allow V==NULL, so use orthogrr instead
+    if (robust) *iflag=PHIST_ROBUST_REDUCTIONS;
+    PHIST_CHK_NEG_IERR(SUBR(orthogrrB)(V, W, BW, B, R2, R1, NULL,WtW, orthoEps,numSweeps,iflag),*iflag);
+    dim0=*iflag; // return value of orthog is rank of null space of [V W] on entry
+    *rankVW=k-dim0;
   }
-  if (k==0) // no vectors to be orthogonalized
+
+  int num_attempts=0;
+  const int max_attempts=5;
+  TYPE(sdMat_ptr) R1p=NULL,R1pp=NULL,R2p=NULL;
+  if (randomize&&dim0>0)
   {
-    *rankVW=m;
-    return;
+    if (m>0) PHIST_CHK_IERR(SUBR(sdMat_create)(&R2p,m,k,comm,iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(sdMat_create)(&R1p,k,k,comm,iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(sdMat_create)(&R1pp,k,k,comm,iflag),*iflag);
   }
-  if (R1==NULL)
+  while (randomize && dim0>0 && num_attempts++<max_attempts)
   {
-    // return "bad cast or null pointer"
-    *iflag=PHIST_BAD_CAST;
-    return;
-  }
-
-  MT normW0[k];
-  MT normW1[k];
-  MT normWtmp[k];
-
-  if (m==0)
-  {
-    PHIST_CHK_NEG_IERR(SUBR(my_mvec_QR)(W,R1,normW0,iflag),*iflag);
-    *rankVW=k-*iflag;
-    *iflag=std::min(*iflag,+1); // iflag=+1 means: [V,W] is rank deficient
-    return;
-  }
-
-  if (R2==NULL)
-  {
-    // return "bad cast or null pointer"
-    *iflag=PHIST_BAD_CAST;
-    return;
-  }
-
-      PHIST_CHK_IERR(SUBR(mvec_get_comm)(V,&comm,iflag),*iflag);
-
-  PHIST_CHK_IERR(SUBR(sdMat_create)(&R1p,k,k,comm,iflag),*iflag);
-  PHIST_CHK_IERR(SUBR(sdMat_create)(&R1pp,k,k,comm,iflag),*iflag);
-  PHIST_CHK_IERR(SUBR(sdMat_create)(&R2p,m,k,comm,iflag),*iflag);
-
-
-  // check that all array dimensions are correct
-  PHIST_CHK_IERR(*iflag=(int)(V==NULL || W==NULL || R1==NULL || R2==NULL),*iflag);
-
-  int nrR1,ncR1,nrR2,ncR2;
-  phist_lidx n, tmp;
-
-  PHIST_CHK_IERR(SUBR(mvec_my_length)(V,&n,iflag),*iflag);
-  PHIST_CHK_IERR(SUBR(mvec_my_length)(W,&tmp,iflag),*iflag);
-
-  PHIST_CHK_IERR(*iflag=((n==tmp)?0:-1),*iflag);
-
-  PHIST_CHK_IERR(SUBR(sdMat_get_nrows)(R1,&nrR1,iflag),*iflag);
-  PHIST_CHK_IERR(SUBR(sdMat_get_ncols)(R1,&ncR1,iflag),*iflag);
-  PHIST_CHK_IERR(SUBR(sdMat_get_nrows)(R2,&nrR2,iflag),*iflag);
-  PHIST_CHK_IERR(SUBR(sdMat_get_ncols)(R2,&ncR2,iflag),*iflag);
-
-  // Q (and W) must match R1, R1 must be square
-  PHIST_CHK_IERR(*iflag=((k==nrR1)?0:-1),*iflag);
-  PHIST_CHK_IERR((*iflag=(k==ncR1)?0:-1),*iflag);
-  // V must match R2, and V*R2 must match W
-  PHIST_CHK_IERR((*iflag=(m==nrR2)?0:-1),*iflag);
-  PHIST_CHK_IERR((*iflag=(k==ncR2)?0:-1),*iflag);
-
-#ifdef PHIST_TESTING
-  PHIST_DEB("orthog: V is %dx%d,  W is %dx%d\n"
-                        "       R1 is %dx%d, R2 is %dx%d\n",n,m,n,k,nrR1,ncR1,nrR2,ncR2);
-#endif
-
-  // compute the norms of the columns in W (for checking the result later)
+    PHIST_SOUT(PHIST_DEBUG,"orthog: randomize %d column(s) to compensate rank deficiency (attempt %d)\n",
+        dim0, num_attempts);
+    // randomize last few columns, redo
+    int rankW=k-dim0;
+    TYPE(mvec_ptr) Wrnd=NULL;
+    PHIST_CHK_IERR(SUBR(mvec_view_block)(W,&Wrnd,rankW,k-1,iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(mvec_random)(Wrnd,iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(mvec_delete)(Wrnd,iflag),*iflag);
   
-  // determine original norms of W vectors and breakdown tolerance
-  PHIST_CHK_IERR(SUBR(mvec_norm2)(W,normW0,iflag),*iflag);
-  breakdown = normW0[0];
-  PHIST_DEB("orthog: normW0 is");
-  for (int i=0;i<k;i++)
-  {
-    breakdown=std::min(normW0[i], breakdown);
-    PHIST_DEB(" %e", normW0[i]);
-  }
-  breakdown*=mt::eps()*1000;
-  PHIST_DEB("\n");
-  
-  // orthogonalize against V (first CGS sweep)
-#ifdef PHIST_TESTING
-{
-  _MT_ normV[m];
-  PHIST_CHK_IERR(SUBR(mvec_norm2)(V,normV,iflag),*iflag);
-  PHIST_DEB("orthog: normV is");
-  for(int i = 0; i < m; i++)
-  {
-    PHIST_DEB(" %e", normV[i]);
-  }
-  PHIST_DEB("\n");
-}
-#endif
-
-
-
-  //R2=V'*W;
-  PHIST_CHK_IERR(SUBR(mvecT_times_mvec)(st::one(),V,W,st::zero(),R2,iflag),*iflag);
-#ifdef PHIST_TESTING
-  //PHIST_SOUT(PHIST_INFO,"R2:\n");
-  //PHIST_CHK_IERR(SUBR(sdMat_print)(R2, iflag), *iflag);
-#endif
-  //W=W-V*R2;
-  PHIST_CHK_IERR(SUBR(mvec_times_sdMat)(-st::one(),V,R2,st::one(),W,iflag),*iflag);
-  // norms after first CGS sweep. This could be done cheaper by using R1 computed below,
-  // since ||W_j||_2 = ||R1_j||_2. Since this is assuming exact arithmetic, we leave it
-  // for now and check for a (near) breakdown before the normalization step. The 
-  // normalization (mvec_QR) will fill in random numbers in that case.
-  PHIST_CHK_IERR(SUBR(mvec_norm2)(W,normW1,iflag),*iflag);
-  PHIST_DEB("orthog: normW1[0] is %e\n", normW1[0]);
-
-  // special case which cannot be detected in mvec_QR if W in span(V) (because mvec_QR uses a relative tolerance):
-  MT maxNormW1 = 0;
-  for(int i = 0; i < k; i++)
-    maxNormW1 = std::max(normW1[i],maxNormW1);
-  if(maxNormW1 < breakdown)
-  {
-    PHIST_SOUT(PHIST_INFO,"breakdown in phist_orthog: W in span(V), filling in random vectors!\n");
-    PHIST_CHK_IERR(SUBR(mvec_put_value)(W,st::zero(),iflag),*iflag);
-  }
-  // orthogonalize W after the first GS pass. This gives us the rank  
-  // of W (iflag>0 indicates the dimension of the null space of W, i.e.
-  // the rank of W is k-iflag). If W is not full rank, it is augmented 
-  // by random vectors. These still have to be orthogonalized against 
-  // V, which we do next. The projection coefficients for this part   
-  // are thrown away as the randomized vectors are not really related 
-  //to W anyway.
-  PHIST_CHK_NEG_IERR(SUBR(my_mvec_QR)(W,R1,normWtmp,iflag),*iflag);
-  rankW=k-*iflag;
-  // set normW1 to diag(R1)
-  for(int i = 0; i < k; i++)
-  {
-      normW1[i] = std::min(normW1[i],normWtmp[i]);
-  }
-  *iflag = 0;
-
-
-  if (rankW < k )
-  {
-    int random_iter = 0;
-    do
+    // compute W'W (or W'BW) with the new randomized column(s)
+    if (B!=NULL)
     {
-      // terminate even if random vectors are not "random" enough, e.g. random number generator is broken
-      if( random_iter++ > 10 )
-      {
-        PHIST_SOUT(PHIST_ERROR,"could not create random orthogonal vectors, possibly the random vector generator is broken!\n");
-        *iflag = -8;
-        return;
-      }
-      st::sdMat_t *Rrnd;
-      PHIST_SOUT(PHIST_INFO,"Matrix W does not have full rank (%d cols, rank=%d)\n",k,rankW);
-      PHIST_CHK_IERR(SUBR(sdMat_create)(&Rrnd,m,k,comm,iflag),*iflag);
-      //R2=V'*W;
-      PHIST_CHK_IERR(SUBR(mvecT_times_mvec)(st::one(),V,W,st::zero(),Rrnd,iflag),*iflag);
-      //W=W-V*R2;
-      PHIST_CHK_IERR(SUBR(mvec_times_sdMat)(-st::one(),V,Rrnd,st::one(),W,iflag),*iflag);
-      // throw away projection coefficients.
-      PHIST_CHK_IERR(SUBR(sdMat_delete)(Rrnd,iflag),*iflag);
+      if (robust) *iflag=PHIST_ROBUST_REDUCTIONS;
+      PHIST_CHK_IERR(B->fused_apply_mvTmv(st::one(),B->A,W,st::zero(),BW,NULL,WtW,iflag),*iflag);
+    }
+    else
+    {
+      if (robust) *iflag=PHIST_ROBUST_REDUCTIONS;
+      PHIST_CHK_IERR(SUBR(mvecT_times_mvec)(st::one(),W,W,st::zero(),WtW,iflag),*iflag);
+    }
 
-      PHIST_CHK_NEG_IERR(SUBR(my_mvec_QR)(W,R1,normWtmp,iflag),*iflag);
+    // TODO: we do not use the fused core routine here either,
+    //       it is not equipped for B-orthogonalization and I'm
+    //       not sure about the consquences of issue #188 here,
+    //       if the randomization fails and the rank is not    
+    //       correctly determined, the result may be wrong.
+    if (V!=NULL && false)
+    {
+      if (robust) *iflag=PHIST_ROBUST_REDUCTIONS;
+      SUBR(orthogrrfused)(V, BW, R2p, R1p, WtW, iflag);
+      dim0=*iflag;
+    }
+    else
+    {
+      // fused orthog core doesn't allow V==NULL, so use orthogrr instead
+      if (robust) *iflag=PHIST_ROBUST_REDUCTIONS;
+      SUBR(orthogrrB)(V, W,BW,B,R2p, R1p, NULL,WtW, orthoEps,numSweeps,iflag);
+      dim0=*iflag; // return value of orthog is rank of null space of [V W] on entry
+    }
 
-    } while (*iflag > 0);
+    // update R1 and R2
 
-    // we must fill the appropriate columns of R1 with zeros (where random values were used)
+    // we must not modify columns in R2 corresponding to random vectors!
+    if (m>0)
+    {
+      TYPE(sdMat_ptr) R2p_r = NULL;
+      PHIST_CHK_IERR(SUBR(sdMat_view_block)(R2p,&R2p_r,0,m-1,rankW,k-1,iflag),*iflag);
+      PHIST_CHK_IERR(SUBR(sdMat_put_value)(R2p_r,st::zero(),iflag),*iflag);
+      PHIST_CHK_IERR(SUBR(sdMat_delete)(R2p_r,iflag),*iflag);
+
+      //R2=R2+R2'*R1;
+      PHIST_CHK_IERR(SUBR(sdMat_times_sdMat)(st::one(),R2p,R1,st::one(),R2,iflag),*iflag);
+    }
+    
+    //R1=R1p*R1;
+    PHIST_CHK_IERR(SUBR(sdMat_add_sdMat)(st::one(),R1,st::zero(),R1pp,iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(sdMat_times_sdMat)(st::one(),R1p,R1pp,st::zero(),R1,iflag),*iflag);
+    
+    // zero-out the last dim0 columns of R2
     TYPE(sdMat_ptr) R1_r = NULL;
     PHIST_CHK_IERR(SUBR(sdMat_view_block)(R1,&R1_r,0,k-1,rankW,k-1,iflag),*iflag);
     PHIST_CHK_IERR(SUBR(sdMat_put_value)(R1_r,st::zero(),iflag),*iflag);
     PHIST_CHK_IERR(SUBR(sdMat_delete)(R1_r,iflag),*iflag);
   }
-    
-  int step=1;
-  while (true)
-  {
-    MT maxRed=1.0;
-    for (int j=0;j<k;j++)
-    {
-      maxRed=std::min(maxRed,normW1[j]/normW0[j]);
-      normW0[j]=1.; // after mvec_QR the norm is 1!
-    }
-    PHIST_SOUT(PHIST_VERBOSE,"reduction in norm, GS step %d: %4.2f\n",step,maxRed);
-    if (maxRed>0.85)
-    {
-      stopGS=true;
-      PHIST_SOUT(PHIST_VERBOSE,"stopping Gram-Schmidt\n");
-      break;
-    }
-    if (step>=numSweeps)
-    {
-      PHIST_SOUT(PHIST_VERBOSE,"stopping Gram-Schmidt because %d steps have been performed\n", 
-                numSweeps);
-      break;
-    }
-    step++;
-    //R2p=V'*W;
-    PHIST_CHK_IERR(SUBR(mvecT_times_mvec)(st::one(),V,W,st::zero(),R2p,iflag),*iflag);
-
-    //W=W-V*R2';
-    PHIST_CHK_IERR(SUBR(mvec_times_sdMat)(-st::one(),V,R2p,st::one(),W,iflag),*iflag);
-
-    // we must not modify columns in R2 corresponding to random vectors!
-    if( rankW < k )
-    {
-      TYPE(sdMat_ptr) R2p_rand = NULL;
-      PHIST_CHK_IERR(SUBR(sdMat_view_block)(R2p,&R2p_rand,0,m-1,rankW,k-1,iflag),*iflag);
-      PHIST_CHK_IERR(SUBR(sdMat_put_value)(R2p_rand,st::zero(),iflag),*iflag);
-      PHIST_CHK_IERR(SUBR(sdMat_delete)(R2p_rand,iflag),*iflag);
-    }
-
-    //R2=R2+R2'*R1;
-    PHIST_CHK_IERR(SUBR(sdMat_times_sdMat)(st::one(),R2p,R1,st::one(),R2,iflag),*iflag);
-
-    // again, the norm can be computed from the coefficients in R2p (TODO)
-    PHIST_CHK_IERR(SUBR(mvec_norm2)(W,normW1,iflag),*iflag);    
-
-    PHIST_CHK_NEG_IERR(SUBR(my_mvec_QR)(W,R1p,normWtmp,iflag),*iflag);
-
-    if (*iflag>0)
-    {
-      PHIST_SOUT(PHIST_ERROR,"Unexpected rank deficiency in orthog routine\n(file %s, line %d)\n",
-              __FILE__,__LINE__);
-      *iflag=-10;
-      return;
-    }
-
-    for(int i = 0; i < k; i++)
-    {
-      normW1[i] = std::min(normW1[i],normWtmp[i]);
-    }
-
-    //R1pp=R1
-    PHIST_CHK_IERR(SUBR(sdMat_add_sdMat)(st::one(),R1,st::zero(),R1pp,iflag),*iflag);
-    //R1=R1p*R1pp;
-    PHIST_CHK_IERR(SUBR(sdMat_times_sdMat)(st::one(),R1p,R1pp,st::zero(),R1,iflag),*iflag);
-    // keep zero entries in R1 for rank(W-V*V'*W) < k
-    if( rankW < k )
-    {
-      // we must fill the appropriate columns of R1 with zeros (where random values were used)
-      TYPE(mvec_ptr) R1_r = NULL;
-      PHIST_CHK_IERR(SUBR(sdMat_view_block)(R1,&R1_r,0,k-1,rankW,k-1,iflag),*iflag);
-      PHIST_CHK_IERR(SUBR(sdMat_put_value)(R1_r,st::zero(),iflag),*iflag);
-      PHIST_CHK_IERR(SUBR(sdMat_delete)(R1_r,iflag),*iflag);
-    }
-  }//while
-
-  PHIST_CHK_IERR(SUBR(sdMat_delete)(R1p,iflag),*iflag);
-  PHIST_CHK_IERR(SUBR(sdMat_delete)(R2p,iflag),*iflag);
-  PHIST_CHK_IERR(SUBR(sdMat_delete)(R1pp,iflag),*iflag);
-
-  if (rankW < k)
-  { 
-    *iflag = +1;
-  }
-
-  // if in the last CGS sweep a column decreased too much in norm, 
-  // return an error (we could return a warning, but since we used 
-  // all positive numbers for the case of rank deficient W already,
-  // the caller will have to deal with the -9 case specially.      
-  if (stopGS==false)
-  {
-    // we need to check again, for instance, the 2nd pass may have given
-    // the desired small reduction but the check would have been performed
-    // at the beginning of pass 3, which was not done.
-    for (int i=0;i<k;i++)
-    {
-      if (normW1[i]<0.7*normW0[i])
-      {
-        // more orthogonalization steps may be required.
-        *iflag=-9;
-      }
-    }
-  }//stopGS?
-
-  *rankVW=m+rankW;
   
-  return;
+  if (B!=NULL)
+  {
+    PHIST_CHK_IERR(SUBR(mvec_delete)(BW,iflag),*iflag);
+  }
+  PHIST_CHK_IERR(SUBR(sdMat_delete)(WtW,iflag),*iflag);
+  if (R1p) PHIST_CHK_IERR(SUBR(sdMat_delete)(R1p,iflag),*iflag);
+  if (R2p) PHIST_CHK_IERR(SUBR(sdMat_delete)(R2p,iflag),*iflag);
+  if (num_attempts==max_attempts)
+  {
+    *iflag=-8;
+  }
+  else if (*rankVW<m+k)
+  {
+    *iflag=+1;
+  }
 }
 
-#ifdef HAVE_TRILINOS_ORTHO_MANAGER
-#undef HAVE_TRILINOS_ORTHO_MANAGER
-#endif
+
+

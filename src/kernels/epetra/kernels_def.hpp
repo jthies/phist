@@ -50,6 +50,28 @@ if (repart)
   */
 }
 
+//! read a matrix from a MatrixMarket (ASCII) file
+extern "C" void SUBR(sparseMat_read_mm_with_map)(TYPE(sparseMat_ptr)* vA, phist_const_map_ptr vmap,
+        const char* filename,int* iflag)
+{
+  PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
+  *iflag=0;
+  PHIST_CAST_PTR_FROM_VOID(const Epetra_Map,map,vmap,*iflag);
+  if (filename==NULL)
+  {
+    *iflag=PHIST_INVALID_INPUT;
+    return;
+  }
+  Epetra_CrsMatrix* A=NULL;
+#if defined(EPETRA_NO_64BIT_GLOBAL_INDICES)||defined(PHIST_FORCE_INT_GIDX)
+  *iflag=EpetraExt::MatrixMarketFileToCrsMatrix(filename,*map,A);
+#else
+  *iflag=EpetraExt::MatrixMarketFileToCrsMatrix64(filename,*map,A);
+#endif
+
+  *vA = (TYPE(sparseMat_ptr))(A);
+}
+
 //! read a matrix from a Ghost CRS (binary) file.
 extern "C" void SUBR(sparseMat_read_bin)(TYPE(sparseMat_ptr)* vA, phist_const_comm_ptr vcomm,
 const char* filename,int* iflag)
@@ -59,8 +81,25 @@ const char* filename,int* iflag)
   *iflag=PHIST_NOT_IMPLEMENTED;
 }
 
+//! read a matrix from a Ghost CRS (binary) file.
+extern "C" void SUBR(sparseMat_read_bin_with_map)(TYPE(sparseMat_ptr)* vA, phist_const_map_ptr vmap,
+const char* filename,int* iflag)
+{
+  PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
+  // TODO - not implemented (should read the binary file format defined by ghost)
+  *iflag=PHIST_NOT_IMPLEMENTED;
+}
+
 //! read a matrix from a Harwell-Boeing (HB) file
 extern "C" void SUBR(sparseMat_read_hb)(TYPE(sparseMat_ptr)* vA, phist_const_comm_ptr vcomm,
+const char* filename,int* iflag)
+{
+  PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
+  *iflag=PHIST_NOT_IMPLEMENTED; // not implemented in epetra
+}
+
+//! read a matrix from a Harwell-Boeing (HB) file
+extern "C" void SUBR(sparseMat_read_hb_with_map)(TYPE(sparseMat_ptr)* vA, phist_const_map_ptr vmap,
 const char* filename,int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);

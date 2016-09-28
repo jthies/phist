@@ -38,16 +38,25 @@ static void SUBR(sdMat_rank_identity)(TYPE(sdMat_ptr) I, const int k, int* iflag
 #include "phist_std_typedefs.hpp"
   PHIST_CHK_IERR(SUBR(sdMat_put_value)(I,st::zero(),iflag),*iflag);
   TYPE(sdMat_ptr) Ik = NULL;
-  PHIST_CHK_IERR(SUBR(sdMat_view_block)(I,&Ik,0,k-1,0,k-1,iflag),*iflag);
-  PHIST_CHK_IERR(SUBR(sdMat_identity)(Ik,iflag),*iflag);
-  PHIST_CHK_IERR(SUBR(sdMat_delete)(Ik,iflag),*iflag);
+  if (k>0)
+  {
+    PHIST_CHK_IERR(SUBR(sdMat_view_block)(I,&Ik,0,k-1,0,k-1,iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(sdMat_identity)(Ik,iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(sdMat_delete)(Ik,iflag),*iflag);
+  }
 }
 
+//
+void SUBR(orthogrr)(TYPE(const_mvec_ptr) W, TYPE(mvec_ptr) V, TYPE(sdMat_ptr) R2, TYPE(sdMat_ptr) R1, TYPE(const_sdMat_ptr) WtW_I, TYPE(sdMat_ptr) VtV, _MT_ desiredEps, int maxIter, int* iflag)
+{
+  SUBR(orthogrrB)(W,V,V,NULL,R2,R1,WtW_I,VtV,desiredEps,maxIter,iflag);
+}
 
 // Q*R_1 = V - W*R_2 with R_2=W'*V
 // result returned in place as V
 // correct V'V must be supplied and is returned!
-void SUBR(orthogrr)(TYPE(const_mvec_ptr) W, TYPE(mvec_ptr) V, TYPE(sdMat_ptr) R2, TYPE(sdMat_ptr) R1, TYPE(const_sdMat_ptr) WtW_I, TYPE(sdMat_ptr) VtV, _MT_ desiredEps, int maxIter, int* iflag)
+void SUBR(orthogrrB)(TYPE(const_mvec_ptr) W, TYPE(mvec_ptr) V, TYPE(mvec_ptr) BV, TYPE(const_linearOp_ptr) B_op,
+        TYPE(sdMat_ptr) R2, TYPE(sdMat_ptr) R1, TYPE(const_sdMat_ptr) WtW_I, TYPE(sdMat_ptr) VtV, _MT_ desiredEps, int maxIter, int* iflag)
 {
 #include "phist_std_typedefs.hpp"
     PHIST_ENTER_FCN(__FUNCTION__);
@@ -75,6 +84,10 @@ void SUBR(orthogrr)(TYPE(const_mvec_ptr) W, TYPE(mvec_ptr) V, TYPE(sdMat_ptr) R2
     TYPE(sdMat_ptr) WtW_inv = NULL;
     TYPE(sdMat_ptr) EWtV = NULL;
     int rankWtW, *permWtW = NULL;
+    // sanity checks - if your B operator is the identity matrix, just leave it away and set W==BW
+    PHIST_CHK_IERR(*iflag=(B_op!=NULL && V==BV)?PHIST_INVALID_INPUT:0,*iflag);
+    PHIST_CHK_IERR(*iflag=(B_op==NULL && V!=BV)?PHIST_INVALID_INPUT:0,*iflag);
+
     if( k > 0 && WtW_I )
     {
       PHIST_CHK_IERR(SUBR(sdMat_create)(&WtW_inv,k,k,comm,iflag),*iflag);
@@ -119,10 +132,14 @@ void SUBR(orthogrr)(TYPE(const_mvec_ptr) W, TYPE(mvec_ptr) V, TYPE(sdMat_ptr) R2
         break;
       }
 
-      // V <- V*R_1 and WtV <- W'*V
-      if( robust )
-        *iflag = PHIST_ROBUST_REDUCTIONS;
-      PHIST_CHK_IERR(SUBR(fused_mvsdi_mvTmv)(st::one(),W,V,R_1,st::zero(),WtV,iflag),*iflag);
+      // BV <- BV*R_1 and WtV <- W'*BV
+      if( robust ) *iflag = PHIST_ROBUST_REDUCTIONS;
+      PHIST_CHK_IERR(SUBR(fused_mvsdi_mvTmv)(st::one(),W,BV,R_1,st::zero(),WtV,iflag),*iflag);
+      if (B_op!=NULL)
+      {
+        if( robust ) *iflag = PHIST_ROBUST_REDUCTIONS;
+        PHIST_CHK_IERR(SUBR(mvec_times_sdMat_inplace)(V,R_1,iflag),*iflag);
+      }
       if( WtW_I )
       {
         // correct WtV by error of WtW from
@@ -146,7 +163,7 @@ void SUBR(orthogrr)(TYPE(const_mvec_ptr) W, TYPE(mvec_ptr) V, TYPE(sdMat_ptr) R2
         PHIST_CHK_IERR(SUBR(sdMat_times_sdMat)(st::one(),R,R1_tmp,st::zero(),R1,iflag),*iflag);
       }
       // check if we really need another orthogonalization step with W
-      if( robust )
+      if( robust ) 
         VtV_err = std::max(VtV_err*mt::eps(),mt::eps());
       else
         VtV_err = std::max(VtV_err*mt::sqrt(mt::eps()),mt::eps());
@@ -154,7 +171,7 @@ void SUBR(orthogrr)(TYPE(const_mvec_ptr) W, TYPE(mvec_ptr) V, TYPE(sdMat_ptr) R2
       VtV_err += WtV_err;
       PHIST_SOUT(PHIST_INFO, "orthogRR: iter %d phase 1, desired eps %8.4e, WtV err. %8.4e, (est.) VtV err. %8.4e\n", iter, desiredEps, WtV_err, VtV_err);
       if( WtV_err <= desiredEps && WtV_err*VtV_err <= desiredEps*desiredEps )
-      { 
+      {
         // calculated WtV_err is small enough (in contrast to estimated WtV_err from the previous iteration)
         // we may need to recalculate VtV below
         VtV_updated = false;
@@ -164,10 +181,19 @@ void SUBR(orthogrr)(TYPE(const_mvec_ptr) W, TYPE(mvec_ptr) V, TYPE(sdMat_ptr) R2
       // update R2 <- R2 + W'*V = R2 + WtV*R
       if( R2 != NULL ) {PHIST_CHK_IERR(SUBR(sdMat_times_sdMat)(st::one(),WtV,R,st::one(),R2,iflag),*iflag);}
 
-      // V <- V - W*WtV, updating VtV
-      if( robust )
-        *iflag = PHIST_ROBUST_REDUCTIONS;
-      PHIST_CHK_IERR(SUBR(fused_mvsd_mvTmv)(-st::one(),W,WtV,st::one(),V,VtV,iflag),*iflag);
+      // V <- V - W*WtV, updating VtV. TODO: fused kernel with B
+      if (B_op==NULL)
+      {
+        if( robust ) *iflag = PHIST_ROBUST_REDUCTIONS;
+        PHIST_CHK_IERR(SUBR(fused_mvsd_mvTmv)(-st::one(),W,WtV,st::one(),V,VtV,iflag),*iflag);
+      }
+      else
+      {
+        if( robust ) *iflag = PHIST_ROBUST_REDUCTIONS;
+        PHIST_CHK_IERR(SUBR(mvec_times_sdMat)(-st::one(),W,WtV,st::one(),V,iflag),*iflag);
+        if( robust ) *iflag = PHIST_ROBUST_REDUCTIONS;
+        PHIST_CHK_IERR(B_op->fused_apply_mvTmv(st::one(),B_op->A,V,st::zero(),BV,NULL,VtV,iflag),*iflag);
+      }
 
       // calculate new R factor
       int WVrank = 0;
@@ -198,23 +224,38 @@ void SUBR(orthogrr)(TYPE(const_mvec_ptr) W, TYPE(mvec_ptr) V, TYPE(sdMat_ptr) R2
     // continue iteration with VtV
     for(; iter <= maxIter; iter++)
     {
-      if( VtV_err <= desiredEps )
-        break;
+      if( VtV_err <= desiredEps ) break;
 
       // we need to recalculate VtV
       if( !VtV_updated )
       {
-        if( robust )
-          *iflag = PHIST_ROBUST_REDUCTIONS;
-        PHIST_CHK_IERR(SUBR(mvecT_times_mvec)(st::one(),V,V,st::zero(),VtV,iflag),*iflag);
+        if( robust ) *iflag = PHIST_ROBUST_REDUCTIONS;
+        if (B_op!=NULL)
+        {
+          PHIST_CHK_IERR(B_op->fused_apply_mvTmv(st::one(),B_op->A,V,st::zero(),BV,NULL,VtV,iflag),*iflag);
+        }
+        else
+        {
+          PHIST_CHK_IERR(SUBR(mvecT_times_mvec)(st::one(),V,V,st::zero(),VtV,iflag),*iflag);
+        }
         VtV_updated = true;
       }
       else
       {
-        // V <- V*R_1, VtV <- V'*V
-        if( robust )
-          *iflag = PHIST_ROBUST_REDUCTIONS;
-        PHIST_CHK_IERR(SUBR(fused_mvsdi_mvTmv)(st::one(),V,V,R_1,st::zero(),VtV,iflag),*iflag);
+        // V <- V*R_1, VtV <- V'*BV. TODO: fused kernel with B
+        if (B_op!=NULL)
+        {
+          if( robust ) *iflag = PHIST_ROBUST_REDUCTIONS;
+          PHIST_CHK_IERR(SUBR(mvec_times_sdMat_inplace)(BV,R_1,iflag),*iflag);
+          if( robust ) *iflag = PHIST_ROBUST_REDUCTIONS;
+          PHIST_CHK_IERR(SUBR(fused_mvsdi_mvTmv)(st::one(),BV,V,R_1,st::zero(),VtV,iflag),*iflag);
+          
+        }
+        else
+        {
+          if( robust ) *iflag = PHIST_ROBUST_REDUCTIONS;
+          PHIST_CHK_IERR(SUBR(fused_mvsdi_mvTmv)(st::one(),V,V,R_1,st::zero(),VtV,iflag),*iflag);
+        }
 
         // update R1 <- R * R1
         if( R1 != NULL )

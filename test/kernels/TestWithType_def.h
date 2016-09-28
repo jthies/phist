@@ -293,6 +293,9 @@ phist_lidx lda1, phist_lidx lda2, phist_lidx stride, bool swap_n_m=false, _MT_ r
   int N = swap_n_m? m: n;
   int M = swap_n_m? n: m;
   _MT_ maxval=mt::zero();
+#ifdef PHIST_TESTING
+  int max_i=0,max_j=0;
+#endif
   for (int i=0;i<N*stride;i+=stride)
   {
     for (int j=0;j<M;j++)
@@ -302,8 +305,30 @@ phist_lidx lda1, phist_lidx lda2, phist_lidx stride, bool swap_n_m=false, _MT_ r
       if (pl==mt::zero()) pl = (st::abs(arr1[j*lda1+i])+st::abs(arr2[j*lda2+i]))*(MT)0.5;
       if (pl==mt::zero()) pl=mt::one();
       maxval=mt::max(mn/pl,maxval);
+#ifdef PHIST_TESTING
+      if (maxval==mn/pl) 
+      {
+        max_i=i;
+        max_j=j;
+      }
+#endif
     }
   }
+#ifdef PHIST_TESTING
+  if (maxval>std::sqrt(mt::eps()))
+  {
+    PHIST_OUT(PHIST_INFO,"max relative difference is %e in location (i=%d,j=%d)\n",maxval,max_i,max_j);
+#ifdef IS_COMPLEX
+    PHIST_OUT(PHIST_INFO,"a1(%d,%d)=%16.8e%+16.8ei, a2(%d,%d)=%16.8e%+16.8ei\n",
+        max_i,max_j, st::real(arr1[max_j*lda1+max_i]), st::imag(arr1[max_j*lda1+max_i]),
+        max_i,max_j, st::real(arr2[max_j*lda2+max_i]), st::imag(arr2[max_j*lda2+max_i]));
+#else
+    PHIST_OUT(PHIST_INFO,"a1(%d,%d)=%16.8e, a2(%d,%d)=%16.8e\n",max_i,max_j,
+        arr1[max_j*lda1+max_i],max_i,max_j,arr2[max_j*lda2+max_i]);
+#endif
+    PHIST_OUT(PHIST_INFO,"With lda1=%d, lda2=%d, N=%d, M=%d\n",lda1,lda2,n,m);
+  }
+#endif
   return mt::one()+maxval;
 }
 

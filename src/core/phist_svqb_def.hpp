@@ -14,13 +14,13 @@ void SUBR(svqb)(TYPE(mvec_ptr) V, TYPE(sdMat_ptr) B, _MT_* D, int* iflag)
     bool robust = *iflag & PHIST_ROBUST_REDUCTIONS;
     *iflag=0;
     int m, rank;
+    _MT_ rankTol=mt::rankTol(robust);
     phist_lidx ldb;
     _ST_*  B_raw;
     PHIST_CHK_IERR(SUBR(mvec_num_vectors)(V,&m,iflag),*iflag);
 
     // S=V'V
-    if( robust )
-      *iflag = PHIST_ROBUST_REDUCTIONS;
+    if( robust ) *iflag = PHIST_ROBUST_REDUCTIONS;
     PHIST_CHK_IERR(SUBR(mvecT_times_mvec)(st::one(),V,V,st::zero(),B,iflag),*iflag);
     PHIST_CHK_IERR(SUBR(sdMat_from_device)(B,iflag),*iflag);
 
@@ -93,7 +93,7 @@ for (int i=0;i<m;i++) PHIST_SOUT(PHIST_DEBUG,"%24.16e\n",sqrt(E[i]));
     MT emax=mt::abs(E[m-1]); 
     rank=m;
     
-    if (emax<10*mt::eps())
+    if (emax<rankTol)
     {
       rank=0;
       for(int i = 0; i < m; i++)
@@ -106,7 +106,7 @@ for (int i=0;i<m;i++) PHIST_SOUT(PHIST_DEBUG,"%24.16e\n",sqrt(E[i]));
     {
       for(int i=0; i<m; i++)
       {
-        if ( mt::abs(E[i]) < 10*emax*mt::eps() )
+        if ( mt::abs(E[i]) < emax*rankTol )
         {
           rank--;
           E[i]=mt::zero();

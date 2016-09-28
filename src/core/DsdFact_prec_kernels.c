@@ -25,7 +25,9 @@
 #error "functionality not implemented for row-major sdMats"
 #endif
 
-// threshold at which to call a matrix rank deficient
+// threshold at which to call a matrix rank deficient.
+// This is actually ScalarTraits<double>::rankTol, but
+// this is a C source file, so we define it here.
 #ifdef SINGTOL
 #undef SINGTOL
 #endif
@@ -57,6 +59,7 @@ void phist_Dprec_cholesky(double *__restrict__ a, double *__restrict__ aC, phist
     DOUBLE_FAST2SUM(a[i*lda+i],aC[i*lda+i],d[i],dC[i]);
     diagNorm += d[i]*d[i];
   }
+  diagNorm = sqrt(diagNorm);
   if( diagNorm == 0 )
   {
     printf("Warning zero diagonal in %s\n", __FUNCTION__);

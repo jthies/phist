@@ -133,6 +133,10 @@ TEST_F(CLASSNAME,fused_spmv_mvTmv)
     SUBR(fused_spmv_mvTmv)(alpha,A_,vec1_,beta,vec2_,mat1_,mat2_,&iflag_);
     ASSERT_EQ(0,iflag_);
 
+#if MATNAME!=MATNAME_spzero
+    // make sure the vector was updated at all
+    ASSERT_NE(mt::one(), MvecsEqual(vec2_,vec3_));
+#endif
     // check y = A * x
     SUBR(sparseMat_times_mvec)(alpha,A_,vec1_,beta,vec3_,&iflag_);
     ASSERT_EQ(0,iflag_);
@@ -147,6 +151,42 @@ TEST_F(CLASSNAME,fused_spmv_mvTmv)
     SUBR(mvecT_times_mvec)(st::one(),vec3_,vec3_,st::zero(),mat3_,&iflag_);
     ASSERT_EQ(0,iflag_);
     ASSERT_NEAR(mt::one(), SdMatsEqual(mat1_,mat3_), std::sqrt(VTest::releps()));
+    
+}
+
+// check that we can set W, WtW or VtW to NULL. WtV and WtW should be independent of alpha and beta.
+TEST_F(CLASSNAME,fused_spmv_mvTmv_with_null_args)
+{
+    int stride = 1;
+    SUBR(mvec_random)(vec1_,&iflag_);
+    ASSERT_EQ(0,iflag_);
+    SUBR(mvec_random)(vec2_,&iflag_);
+    ASSERT_EQ(0,iflag_);
+    SUBR(mvec_add_mvec)(st::one(),vec2_,st::zero(),vec3_,&iflag_);
+    ASSERT_EQ(0,iflag_);
+    _ST_ alpha = st::prand();
+    _ST_ beta = st::prand();
+
+    // pathological case without output args should not segfault and return iflag=0
+    SUBR(fused_spmv_mvTmv)(alpha,A_,vec1_,beta,NULL,NULL,NULL,&iflag_);
+    ASSERT_EQ(0,iflag_);
+    
+    // standard operation with all output args for comparison
+    SUBR(fused_spmv_mvTmv)(alpha,A_,vec1_,beta,vec2_,mat1_,mat2_,&iflag_);
+    ASSERT_EQ(0,iflag_);
+return;
+    // use other alpha and beta, this should not change WtV and WtW
+    _ST_ alpha2 = st::prand();
+    _ST_ beta2 = st::prand();
+
+    SUBR(fused_spmv_mvTmv)(alpha2,A_,vec1_,beta2,NULL,mat3_,NULL,&iflag_);
+    ASSERT_EQ(0,iflag_);
+    ASSERT_NEAR(mt::one(), SdMatsEqual(mat1_,mat3_), mt::sqrt(mt::eps()));
+
+    SUBR(fused_spmv_mvTmv)(alpha2,A_,vec1_,beta2,NULL,NULL,mat3_,&iflag_);
+    ASSERT_EQ(0,iflag_);
+    ASSERT_NEAR(mt::one(), SdMatsEqual(mat2_,mat3_), mt::sqrt(mt::eps()));
+    
 }
 
 TEST_F(CLASSNAME,fused_spmv_mvdot_mvadd)

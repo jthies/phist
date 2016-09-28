@@ -13,7 +13,7 @@ fi
 KERNELS="builtin" # ghost epetra tpetra
 PRGENV="gcc-5.1.0-openmpi" # intel-13.0.1-mpich gcc-4.9.2-openmpi
 FLAGS="default" # optional-libs
-ADD_CMAKE_FLAGS="-DPHIST_BENCH_LARGE_N=100000" #optional CMake flags # LARGE_N set to small value to speed up build jobs!
+ADD_CMAKE_FLAGS="-DPHIST_BENCH_LARGE_N=-1" #optional CMake flags # -1 disables benchmarks to speed up build jobs!
 VECT_EXT="native"
 TRILINOS_VERSION="11.12.1"
 # list of modules to load

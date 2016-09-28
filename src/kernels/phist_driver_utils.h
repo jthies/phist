@@ -74,6 +74,10 @@ void SUBR(sparseMat_read)(TYPE(sparseMat_ptr)* A, phist_const_comm_ptr comm,
 void SUBR(create_matrix)(TYPE(sparseMat_ptr)* mat, phist_const_comm_ptr comm,
         const char* problem, int* iflag);
 
+//!
+void SUBR(create_matrix_with_map)(TYPE(sparseMat_ptr)* mat, phist_const_map_ptr map,
+        const char* problem, int* iflag);
+
 //! For testing linear solvers, generates an 'exact solution' sol and right-hand side rhs
 //! for some matrix creted by create_matrix. For most test cases, this will be some random
 //! sol vector and the rhs is computed by rhs=A*sol, but for the cases stemming from PDEs

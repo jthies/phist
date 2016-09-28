@@ -113,9 +113,13 @@ class DSparseMatRepartTest: public virtual TestWithType<double>,
     phist_map_get_iupper(linearMap_,&iupper,&iflag_);
     EXPECT_EQ(0,iflag_);
 
-    // note: since we just constructed the spin matrix, the matfunc is already initialized
-    // and ready to use. We don't know things like max entries per row, but since this is a
-    // small test we just use _N_ there.
+    phist_gidx DIM;
+    ghost_lidx conf_spinZ[3] = {_L_,_L_/2,0};
+    SpinChainSZ( -2, conf_spinZ, &DIM, NULL, NULL);
+
+    matfuncs_info_t info;
+    SpinChainSZ( -1, NULL, NULL, &info, NULL);
+
     double      vals[_N_];
     ghost_gidx  cols[_N_];
   
@@ -132,6 +136,9 @@ class DSparseMatRepartTest: public virtual TestWithType<double>,
         V_out_exact_raw[iloc] += vals[j]*((double)(cols[j]+1)); 
       }
     }
+
+    // clean up
+    SpinChainSZ( -3, conf_spinZ, &DIM, NULL, NULL);
     
     // upload V_in and V_out_exact to device (if applicable)
     phist_Dmvec_to_device(linearV_in_,&iflag_);

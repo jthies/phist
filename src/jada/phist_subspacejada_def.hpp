@@ -67,7 +67,7 @@ void SUBR(sdMat_check_symmetry)(TYPE(const_sdMat_ptr) mat, _MT_ tol, int*iflag)
 //!
 //! see header file for further documentation of the parameters
 //!
-extern "C" void SUBR(subspacejada)( TYPE(const_linearOp_ptr) A_op,  TYPE(const_linearOp_ptr) B_op,
+extern "C" void SUBR(subspacejada)( TYPE(const_linearOp_ptr) AB_op,  TYPE(const_linearOp_ptr) B_op,
                          phist_jadaOpts opts,
                          TYPE(mvec_ptr) Q__,       TYPE(sdMat_ptr) R_,
                          _CT_* ev,                 _MT_* resNorm,
@@ -91,7 +91,7 @@ int maxBase=opts.maxBas;
 int innerBlockDim=opts.innerSolvBlockSize;        
 int innerMaxBase=opts.innerSolvMaxBas;
 int initialShiftIter=opts.initialShiftIters;   
-_ST_ initialShift   =(_ST_)opts.initialShift_r;
+_ST_ initialShift   =(_ST_)opts.initialShift_r
                     +(_ST_)opts.initialShift_i*st::cmplx_I();
                          
 bool innerIMGS=(opts.innerSolvRobust!=0);
@@ -108,7 +108,7 @@ symmetric=symmetric||(opts.symmetry==phist_COMPLEX_SYMMETRIC);
   // print input options to stdout on root 
     int me=0;
     phist_const_comm_ptr comm;
-    PHIST_CHK_IERR(phist_map_get_comm(A_op->domain_map,&comm,iflag),*iflag);
+    PHIST_CHK_IERR(phist_map_get_comm(AB_op->domain_map,&comm,iflag),*iflag);
     PHIST_CHK_IERR(phist_comm_get_rank(comm,&me,iflag),*iflag);
     if (me==0)
     {
@@ -127,7 +127,7 @@ symmetric=symmetric||(opts.symmetry==phist_COMPLEX_SYMMETRIC);
   {
     PHIST_SOUT(PHIST_ERROR,"only standard Ritz extraction is implemented (jadaOpts.how=%s), found %s\n",
         eigExtr2str(phist_STANDARD),eigExtr2str(how));
-    *iflag=PHIST_NOT_IMPLEMENTED;
+    *iflag=PHIST_INVALID_INPUT;
     return;
   }
 
@@ -144,32 +144,27 @@ symmetric=symmetric||(opts.symmetry==phist_COMPLEX_SYMMETRIC);
   if( blockDim < 1 )
   {
     PHIST_SOUT(PHIST_ERROR, "parameter blockDim < 1!\n");
-    PHIST_CHK_IERR(*iflag = PHIST_NOT_IMPLEMENTED, *iflag);
+    PHIST_CHK_IERR(*iflag = PHIST_INVALID_INPUT, *iflag);
   }
   if( innerBlockDim > blockDim || innerBlockDim < 1)
   {
     PHIST_SOUT(PHIST_ERROR, "parameter innerBlockDim > blockDim || innerBlockDim < 1!\n");
-    PHIST_CHK_IERR(*iflag = PHIST_NOT_IMPLEMENTED, *iflag);
+    PHIST_CHK_IERR(*iflag = PHIST_INVALID_INPUT, *iflag);
   }
   if( minBase < nEig_ )
   {
     PHIST_SOUT(PHIST_ERROR, "parameter minBase < nEig+blockDim-1!\n");
-    PHIST_CHK_IERR(*iflag = PHIST_NOT_IMPLEMENTED, *iflag);
+    PHIST_CHK_IERR(*iflag = PHIST_INVALID_INPUT, *iflag);
   }
   if( minBase+blockDim > maxBase )
   {
     PHIST_SOUT(PHIST_ERROR, "parameter minBase+blockDim > maxBase!\n");
-    PHIST_CHK_IERR(*iflag = PHIST_NOT_IMPLEMENTED, *iflag);
+    PHIST_CHK_IERR(*iflag = PHIST_INVALID_INPUT, *iflag);
   }
   if( maxBase < nEig+blockDim )
   {
     PHIST_SOUT(PHIST_ERROR, "paramater maxBase < nEig+blockDim!\n");
-    PHIST_CHK_IERR(*iflag = PHIST_NOT_IMPLEMENTED, *iflag);
-  }
-  if( B_op != NULL )
-  {
-    PHIST_SOUT(PHIST_ERROR,"case B_op != NULL (e.g. B != I) not implemented yet!\n");
-    PHIST_CHK_IERR(*iflag = PHIST_NOT_IMPLEMENTED, *iflag);
+    PHIST_CHK_IERR(*iflag = PHIST_INVALID_INPUT, *iflag);
   }
 /*
   if( minBase % innerBlockDim != 0 )
@@ -185,9 +180,9 @@ symmetric=symmetric||(opts.symmetry==phist_COMPLEX_SYMMETRIC);
   //------------------------------- create vectors and matrices --------------------
   // get communicator for sdMats
   phist_const_comm_ptr domain_comm;
-  PHIST_CHK_IERR(phist_map_get_comm(A_op->domain_map, &domain_comm, iflag), *iflag);
+  PHIST_CHK_IERR(phist_map_get_comm(AB_op->domain_map, &domain_comm, iflag), *iflag);
   phist_const_comm_ptr range_comm;
-  PHIST_CHK_IERR(phist_map_get_comm(A_op->range_map,  &range_comm,  iflag), *iflag);
+  PHIST_CHK_IERR(phist_map_get_comm(AB_op->range_map,  &range_comm,  iflag), *iflag);
 
   // create mvecs and sdMats
   mvec_ptr  V_      = NULL;    //< space for V
@@ -201,7 +196,7 @@ symmetric=symmetric||(opts.symmetry==phist_COMPLEX_SYMMETRIC);
   mvec_ptr  res     = NULL;    //< residuum A*Q-Q*R
 
   // For standard Ritz values (approximating extreme eigenvalues), we have
-  // V'V=I, V'Q=0, H=V'AV, and the Schur decomposition H=Q_H R_H    
+  // V'BV=I, V'BQ=0, H=V'AV, and the Schur decomposition H=Q_H R_H    
 
   sdMat_ptr H_      = NULL;    //< space for H
   sdMat_ptr Htmp_   = NULL;    //< temporary space for H used only for checking invariants
@@ -215,16 +210,16 @@ symmetric=symmetric||(opts.symmetry==phist_COMPLEX_SYMMETRIC);
   _ST_ *Htmp_raw      = NULL;
   phist_lidx ldaQ_H, ldaR_H, ldaHtmp;
 
-  PHIST_CHK_IERR(SUBR( mvec_create  ) (&V_,     A_op->domain_map, maxBase,        iflag), *iflag);
+  PHIST_CHK_IERR(SUBR( mvec_create  ) (&V_,     AB_op->domain_map, maxBase,        iflag), *iflag);
   // TODO: remove Vtmp
 #ifdef PHIST_TESTING
-  PHIST_CHK_IERR(SUBR( mvec_create  ) (&Vtmp_,  A_op->domain_map, maxBase,                iflag), *iflag);
+  PHIST_CHK_IERR(SUBR( mvec_create  ) (&Vtmp_,  AB_op->domain_map, maxBase,                iflag), *iflag);
 #endif
-  PHIST_CHK_IERR(SUBR( mvec_create  ) (&AV_,    A_op->range_map,  maxBase,                iflag), *iflag);
-  PHIST_CHK_IERR(SUBR( mvec_create  ) (&t_,     A_op->domain_map, blockDim,               iflag), *iflag);
-  PHIST_CHK_IERR(SUBR( mvec_create  ) (&At_,    A_op->range_map,  blockDim,               iflag), *iflag);
+  PHIST_CHK_IERR(SUBR( mvec_create  ) (&AV_,    AB_op->range_map,  maxBase,                iflag), *iflag);
+  PHIST_CHK_IERR(SUBR( mvec_create  ) (&t_,     AB_op->domain_map, blockDim,               iflag), *iflag);
+  PHIST_CHK_IERR(SUBR( mvec_create  ) (&At_,    AB_op->range_map,  blockDim,               iflag), *iflag);
   int resDim = std::min(2*blockDim, nEig+blockDim-1);
-  PHIST_CHK_IERR(SUBR( mvec_create  ) (&res,    A_op->range_map,  resDim,                 iflag), *iflag);
+  PHIST_CHK_IERR(SUBR( mvec_create  ) (&res,    AB_op->range_map,  resDim,                 iflag), *iflag);
 
   PHIST_CHK_IERR(SUBR( sdMat_create ) (&H_,     maxBase,          maxBase,  range_comm,   iflag), *iflag);
   PHIST_CHK_IERR(SUBR( sdMat_create ) (&Htmp_,  maxBase,          maxBase,  range_comm,   iflag), *iflag);
@@ -288,7 +283,7 @@ symmetric=symmetric||(opts.symmetry==phist_COMPLEX_SYMMETRIC);
   //------------------------------- initialize correction equation solver solver ------------------------
   TYPE(jadaCorrectionSolver_ptr) innerSolv = NULL;
   phist_ElinSolv method = symmetric? phist_MINRES: phist_GMRES;
-  PHIST_CHK_IERR(SUBR(jadaCorrectionSolver_create)(&innerSolv, opts, A_op->domain_map, iflag), *iflag);
+  PHIST_CHK_IERR(SUBR(jadaCorrectionSolver_create)(&innerSolv, opts, AB_op->domain_map, iflag), *iflag);
   std::vector<_MT_> innerTol(nEig_,0.1);
   std::vector<_MT_> lastOuterRes(nEig_,mt::zero());
 
@@ -307,7 +302,7 @@ symmetric=symmetric||(opts.symmetry==phist_COMPLEX_SYMMETRIC);
     PHIST_CHK_IERR(SUBR( mvec_view_block  ) (BV_,     &BV,                      0,     nV+bs-1,   iflag), *iflag);
     PHIST_CHK_IERR(SUBR( sdMat_view_block ) (H_,      &H,     0,      nV+bs-1,  0,     nV-1,      iflag), *iflag);
 
-    PHIST_CHK_IERR(SUBR( simple_blockArnoldi ) (A_op, B_op, V, AV, BV, H, nV, innerBlockDim, iflag), *iflag);
+    PHIST_CHK_IERR(SUBR( simple_blockArnoldi ) (AB_op, B_op, V, AV, BV, H, nV, innerBlockDim, iflag), *iflag);
   }
   else
 */
@@ -317,7 +312,7 @@ symmetric=symmetric||(opts.symmetry==phist_COMPLEX_SYMMETRIC);
     PHIST_CHK_IERR(SUBR( mvec_view_block  ) (BV_,     &BV,                      0,     nV,        iflag), *iflag);
     PHIST_CHK_IERR(SUBR( sdMat_view_block ) (H_,      &H,     0,      minBase,  0,     nV-1,      iflag), *iflag);
 
-    PHIST_CHK_IERR(SUBR( simple_arnoldi ) (A_op, B_op, v0, V, AV, BV, H, nV, iflag), *iflag);
+    PHIST_CHK_IERR(SUBR( simple_arnoldi ) (AB_op, B_op, v0, V, AV, BV, H, nV, iflag), *iflag);
   }
 
   // set views
@@ -356,7 +351,7 @@ symmetric=symmetric||(opts.symmetry==phist_COMPLEX_SYMMETRIC);
  \
   /* check AV = A*V */ \
   PHIST_CHK_IERR(SUBR( mvec_view_block  ) (Vtmp_, &Vtmp,                  0,       nV-1,          iflag), *iflag); \
-  PHIST_CHK_IERR( A_op->apply(st::one(), A_op->A, Vful, st::zero(), Vtmp, iflag), *iflag); \
+  PHIST_CHK_IERR( AB_op->apply(st::one(), AB_op->A, Vful, st::zero(), Vtmp, iflag), *iflag); \
   PHIST_CHK_IERR(SUBR( mvec_add_mvec ) (-st::one(), AVful, st::one(), Vtmp, iflag), *iflag); \
   _MT_ normVtmp[nV]; \
   PHIST_CHK_IERR(SUBR( mvec_norm2 ) (Vtmp, normVtmp, iflag), *iflag); \
@@ -364,15 +359,27 @@ symmetric=symmetric||(opts.symmetry==phist_COMPLEX_SYMMETRIC);
   for(int i = 0; i < nV; i++) \
     equalEps = mt::max(equalEps, normVtmp[i]); \
   PHIST_OUT(PHIST_INFO, "Line %d: AV - A*V: %e\n", __LINE__, equalEps); \
-  /* check H = V'*A*V */ \
+  /* check BV = B*V */ \
+  if (B_op!=NULL) { \
+  PHIST_CHK_IERR(SUBR( mvec_view_block  ) (Vtmp_, &Vtmp,                  0,       nV-1,          iflag), *iflag); \
+  PHIST_CHK_IERR( B_op->apply(st::one(), B_op->A, Vful, st::zero(), Vtmp, iflag), *iflag); \
+  PHIST_CHK_IERR(SUBR( mvec_add_mvec ) (-st::one(), BVful, st::one(), Vtmp, iflag), *iflag); \
+  _MT_ normVtmp[nV]; \
+  PHIST_CHK_IERR(SUBR( mvec_norm2 ) (Vtmp, normVtmp, iflag), *iflag); \
+  _MT_ equalEps = normVtmp[0]; \
+  for(int i = 0; i < nV; i++) \
+    equalEps = mt::max(equalEps, normVtmp[i]); \
+  PHIST_OUT(PHIST_INFO, "Line %d: BV - B*V: %e\n", __LINE__, equalEps); \
+  } \
+  /* check H = V'*B*A*V */ \
   PHIST_CHK_IERR(SUBR( sdMat_view_block ) (Htmp_,&Htmp,0,    nV-1,      0,     nV-1,      iflag), *iflag); \
-  PHIST_CHK_IERR(SUBR( mvecT_times_mvec ) (st::one(), Vful, AVful, st::zero(), Htmp, iflag), *iflag); \
+  PHIST_CHK_IERR(SUBR( mvecT_times_mvec ) (st::one(), BVful, AVful, st::zero(), Htmp, iflag), *iflag); \
   PHIST_CHK_IERR(SUBR( sdMat_add_sdMat ) (-st::one(), Hful, st::one(), Htmp, iflag), *iflag); \
   equalEps = st::abs(Htmp_raw[0]); \
   for(int i = 0; i < nV; i++) \
     for(int j = 0; j < nV; j++) \
       equalEps = mt::max(equalEps, st::abs(Htmp_raw[i*ldaHtmp+j])); \
-  PHIST_OUT(PHIST_INFO, "Line %d: H - V'*AV: %e\n", __LINE__, equalEps); \
+  PHIST_OUT(PHIST_INFO, "Line %d: H - (BV)'*AV: %e\n", __LINE__, equalEps); \
   /* PHIST_SOUT(PHIST_INFO, "H:\n"); */ \
   /* PHIST_CHK_IERR(SUBR( sdMat_print )(H, iflag), *iflag); */ \
   /* PHIST_SOUT(PHIST_INFO, "H - V'*AV:\n"); */ \
@@ -402,7 +409,7 @@ if( Qsize < nEig_ )
     newQsize++;
   while( newQsize % innerBlockDim != 0 )
     newQsize++;
-  PHIST_CHK_IERR(SUBR(mvec_create)(&newQ, A_op->range_map, newQsize, iflag), *iflag);
+  PHIST_CHK_IERR(SUBR(mvec_create)(&newQ, AB_op->range_map, newQsize, iflag), *iflag);
   if( Qsize > 0 )
   {
     PHIST_CHK_IERR(SUBR(mvec_set_block)(newQ, Q_, 0, Qsize-1, iflag), *iflag);
@@ -413,12 +420,12 @@ if( Qsize < nEig_ )
   mvec_ptr newBQ = NULL;
   if( B_op != NULL )
   {
-    PHIST_CHK_IERR(SUBR(mvec_create)(&newBQ, A_op->range_map, newQsize, iflag), *iflag);
+    PHIST_CHK_IERR(SUBR(mvec_create)(&newBQ, AB_op->range_map, newQsize, iflag), *iflag);
     if( Qsize > 0 )
     {
       PHIST_CHK_IERR(SUBR(mvec_set_block)(newBQ, BQ_, 0, Qsize-1, iflag), *iflag);
     }
-    PHIST_CHK_IERR(SUBR(mvec_delete)(Q_, iflag), *iflag);
+    PHIST_CHK_IERR(SUBR(mvec_delete)(BQ_, iflag), *iflag);
     BQ_ = newBQ;
   }
   else
@@ -537,7 +544,7 @@ PHIST_CHK_IERR(SUBR( sdMat_view_block ) (R_,  &R, 0, nEig_-1, 0, nEig_-1, iflag)
   // calculate explicit residual
   // AQ - BQR
   PHIST_CHK_IERR( SUBR( mvec_view_block ) (Vtmp_, &Vtmp, 0, nEig_-1, iflag), *iflag);
-  PHIST_CHK_IERR( A_op->apply(st::one(), A_op->A, Q, st::zero(), Vtmp, iflag), *iflag);
+  PHIST_CHK_IERR( AB_op->apply(st::one(), AB_op->A, Q, st::zero(), Vtmp, iflag), *iflag);
   PHIST_CHK_IERR( SUBR( mvec_times_sdMat ) (-st::one(), BQ, R, st::one(), Vtmp, iflag), *iflag);
   _MT_ expRes[nEig_];
   PHIST_CHK_IERR( SUBR( mvec_norm2 )(Vtmp, expRes, iflag), *iflag);
@@ -599,7 +606,7 @@ PHIST_SOUT(PHIST_INFO,"\n");
 {
   // check that Q is in correct order
   PHIST_CHK_IERR( SUBR(mvec_view_block)(Vtmp_, &t, 0, nEig_-1, iflag), *iflag);
-  PHIST_CHK_IERR(A_op->apply(st::one(), A_op->A, Q, st::zero(), t, iflag), *iflag);
+  PHIST_CHK_IERR(AB_op->apply(st::one(), AB_op->A, Q, st::zero(), t, iflag), *iflag);
   PHIST_CHK_IERR(SUBR(mvec_times_sdMat)(-st::one(), BQ, R, st::one(), t, iflag), *iflag);
   _MT_ reorderedResNorm[nEig_];
   PHIST_CHK_IERR(SUBR(mvec_norm2)(t, reorderedResNorm, iflag), *iflag);
@@ -828,7 +835,7 @@ PHIST_SOUT(PHIST_INFO,"\n");
 
       for(int i = 0; i < blockDim; i++)
         selectedRes[i] -= nConvEig-nNewConvEig;
-      PHIST_CHK_NEG_IERR(SUBR(jadaCorrectionSolver_run)(innerSolv, A_op, B_op, Qtil, BQtil, sigma, res, &selectedRes[0],
+      PHIST_CHK_NEG_IERR(SUBR(jadaCorrectionSolver_run)(innerSolv, AB_op, B_op, Qtil, BQtil, sigma, res, &selectedRes[0],
                                                     &innerTol[nConvEig], innerMaxBase, t, innerIMGS, innerGMRESabortAfterFirstConverged, iflag), *iflag);
 
       // get solution and reuse res for At
@@ -844,10 +851,11 @@ PHIST_SOUT(PHIST_INFO,"\n");
       PHIST_CHK_IERR(SUBR( sdMat_view_block ) (R_H_,&R_H, 0,     nV-1,      0,     k-1,       iflag), *iflag);
       PHIST_CHK_IERR(SUBR( sdMat_view_block ) (R_H_,&Rr_H,nV,    nV+k-1,    nV,    nV+k-1,    iflag), *iflag);
       int rankV;
+      *iflag=PHIST_ORTHOG_RANDOMIZE_NULLSPACE;
       PHIST_CHK_NEG_IERR(SUBR( orthog ) (Vful, Vv, NULL, Rr_H, R_H, 5, &rankV, iflag), *iflag);
       // TODO: only take non-random vector if *iflag > 0
       // calculate AVv, BVv
-      PHIST_CHK_IERR( A_op->apply(st::one(), A_op->A, Vv, st::zero(), AVv, iflag), *iflag);
+      PHIST_CHK_IERR( AB_op->apply(st::one(), AB_op->A, Vv, st::zero(), AVv, iflag), *iflag);
       if( B_op != NULL )
       {
         PHIST_CHK_IERR(SUBR( mvec_view_block  ) (BV_, &BVv,                   nV,    nV+k-1,    iflag), *iflag);

@@ -102,6 +102,6 @@ void SUBR(orthogrrfused)(TYPE(const_mvec_ptr) W, TYPE(mvec_ptr) V, TYPE(sdMat_pt
     PHIST_CHK_IERR(SUBR(sdMat_delete)(WtV,iflag),*iflag);
     PHIST_CHK_IERR(SUBR(sdMat_delete)(WtV_,iflag),*iflag);
 
-    // the return value of this function is the rank of the null space of V on entry
+    // the return value of this function is the rank of the null space of [W V] on entry
     *iflag=m-WVrank;
 }

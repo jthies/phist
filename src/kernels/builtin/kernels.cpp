@@ -73,21 +73,22 @@ void pinThreads()
   int ranksPerNode = 1;
   int myRankInNode = 0;
   {
-    char myNodeId[MPI_MAX_PROCESSOR_NAME];
+    char *myNodeId=new char[MPI_MAX_PROCESSOR_NAME];
+    char *allNodeId=new char[nRanks*MPI_MAX_PROCESSOR_NAME];
     int nodeId_strlen = 0;
     PHIST_CHK_IERR( iflag = MPI_Get_processor_name(myNodeId, &nodeId_strlen), iflag);
-    char allNodeId[nRanks][MPI_MAX_PROCESSOR_NAME];
     PHIST_CHK_IERR( iflag = MPI_Allgather(myNodeId, MPI_MAX_PROCESSOR_NAME, MPI_CHAR, allNodeId, MPI_MAX_PROCESSOR_NAME, MPI_CHAR, MPI_COMM_WORLD), iflag);
     // on the same node the node ids are identical
     std::map<std::string,int> nodeNameSet;
-    std::string myNodeIdStr(myNodeId);
     for(int i = 0; i < nRanks; i++)
     {
-      if( i == myRank )
-        myRankInNode = nodeNameSet[myNodeIdStr];
-      nodeNameSet[myNodeIdStr]++;
+      std::string curNodeIdStr(&(allNodeId[i*MPI_MAX_PROCESSOR_NAME]));
+      if( i == myRank ) myRankInNode = nodeNameSet[curNodeIdStr];
+      nodeNameSet[curNodeIdStr]++;
     }
     ranksPerNode = nRanks / nodeNameSet.size();
+    delete [] myNodeId;
+    delete [] allNodeId;
   }
   int myCPU_SETSIZE = std::max(CPU_SETSIZE, ranksPerNode*nThreads);
 

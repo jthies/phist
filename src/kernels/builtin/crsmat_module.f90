@@ -49,6 +49,7 @@ module crsmat_module
 
   public :: CrsMat_t
   !public :: phist_DcrsMat_read_mm
+  !public :: phist_DcrsMat_read_mm_with_map
   !public :: phist_DcrsMat_create_fromRowFunc
   !public :: phist_DcrsMat_delete
   !public :: phist_DcrsMat_times_mvec
@@ -1489,7 +1490,6 @@ end subroutine permute_local_matrix
     integer :: nvec, ldx, ldy, recvBuffSize, sendBuffSize
     logical :: strided_x, strided_y, strided
     logical :: y_is_aligned, x_is_aligned, handled
-    integer :: i, k, l
     !--------------------------------------------------------------------------------
 
     ! check arguments
@@ -1672,59 +1672,20 @@ end subroutine permute_local_matrix
     !--------------------------------------------------------------------------------
   end subroutine crsmat_times_mvec
 
+  !! helper function to read MatrixMarket header 
+  subroutine read_mm_header(funit,globalLines,globalRows,globalCols,globalEntries,symmetric,verbose,ierr)
 
-  !==================================================================================
-  !> read MatrixMarket file
-  subroutine phist_DcrsMat_read_mm(A_ptr, comm_ptr, filename_len, filename_ptr, ierr) &
-    & bind(C,name='phist_DcrsMat_read_mm_f') ! circumvent bug in opari (openmp instrumentalization)
-    use, intrinsic :: iso_c_binding
-    use env_module, only: newunit
-    use mpi
-    !--------------------------------------------------------------------------------
-    type(C_PTR),        intent(out) :: A_ptr
-    type(C_PTR),        value  :: comm_ptr
-    integer, pointer :: comm
-    integer(C_INT),     value       :: filename_len
-    character(C_CHAR),  intent(in)  :: filename_ptr(filename_len)
-    integer(C_INT),     intent(out) :: ierr
-    !--------------------------------------------------------------------------------
-    logical :: repart, d2clr, d2clr_and_permute
-    type(CrsMat_t), pointer :: A
-    character(len=filename_len) :: filename
-    !--------------------------------------------------------------------------------
-    integer :: funit
+    implicit none
+
+    integer, intent(in) :: funit
+    logical, intent(in) :: verbose
+    logical, intent(out) :: symmetric
+    integer(kind=8), intent(out) :: globalLines, globalRows, globalCols, globalEntries
+    integer, intent(out) :: ierr
     character(len=100) :: line
-    integer(kind=8), allocatable :: idx(:,:)
-    real(kind=8), allocatable :: val(:)
-    integer(kind=8) :: i, j, k, globalRows, globalCols, globalEntries, nRows
-    !integer(kind=8) :: i_
-    logical :: symmetric
-    integer(kind=8) :: tmp_idx(2,2)
-    real(kind=8) :: tmp_val(2)
-    integer :: newEntries
-    logical :: verbose
-    !--------------------------------------------------------------------------------
-    
-    repart = CHECK_IFLAG(ierr,PHIST_SPARSEMAT_PERM_GLOBAL)
-    d2clr_and_permute =  CHECK_IFLAG(ierr,PHIST_SPARSEMAT_DIST2_COLOR)
-    d2clr = CHECK_IFLAG(ierr,PHIST_SPARSEMAT_OPT_CARP)
-    verbose = .not. CHECK_IFLAG(ierr,PHIST_SPARSEMAT_QUIET)
+
     ierr=0
     
-    do i = 1, filename_len
-      filename(i:i) = filename_ptr(i)
-    end do
-
-    ! open the file
-    if( verbose ) then
-      write(*,*) 'reading file:', filename
-      flush(6)
-    end if
-    open(unit   = newunit(funit), file    = filename, &
-      &  action = 'read',         status  = 'old',    &
-      &  iostat = ierr)
-    if( ierr .ne. 0 ) return
-
     ! read first line
     read(funit,'(A)') line
     if( verbose ) then
@@ -1752,22 +1713,38 @@ end subroutine permute_local_matrix
       line = adjustl(line)
     end do
 
-    allocate(A)
-
     ! now read the dimensions
-    read(line,*) globalRows, globalCols, nRows
+    read(line,*) globalRows, globalCols, globalLines
     if( symmetric ) then
-      globalEntries = nRows * 2 - min(globalRows,globalCols)
+      globalEntries = globalLines * 2 - globalRows
     else
-      globalEntries = nRows
+      globalEntries = globalLines
     end if
     if( verbose ) then
       write(*,*) 'CrsMat:', globalRows, globalCols, globalEntries
       flush(6)
     end if
-    call c_f_pointer(comm_ptr, comm)
-    call map_setup(A%row_map, comm, globalRows, verbose, ierr)
-    if( ierr .ne. 0 ) return
+  
+  end subroutine read_mm_header
+  
+  subroutine read_mm_data(funit,A,nLines,globalEntries,symmetric,ierr)
+    
+    implicit none
+    
+    integer, intent(in) :: funit
+    TYPE(crsMat_t) :: A
+    integer(kind=8), intent(in) :: nLines, globalEntries
+    logical, intent(in) :: symmetric
+    integer, intent(out) :: ierr
+
+    integer(kind=8), allocatable :: idx(:,:)
+    real(kind=8), allocatable :: val(:)
+    integer(kind=8) :: i, j, k
+    integer(kind=8) :: tmp_idx(2,2)
+    real(kind=8) :: tmp_val(2)
+    integer :: newEntries
+        
+    ierr=0
 
     A%nRows = A%row_map%nlocal(A%row_map%me)
     A%nCols = A%nRows
@@ -1783,7 +1760,7 @@ end subroutine permute_local_matrix
 
     ! read data
     j = 0
-    do i = 1, nRows, 1
+    do i = 1, nLines, 1
       read(funit,*) tmp_idx(1,1), tmp_idx(1,2), tmp_val(1)
       if( symmetric .and. tmp_idx(1,1) .ne. tmp_idx(1,2) ) then
         tmp_idx(2,1) = tmp_idx(1,2)
@@ -1808,11 +1785,7 @@ end subroutine permute_local_matrix
 
     end do
     A%nEntries = j
-
-    ! close the file
-    close(funit)
-
-
+  
     ! allocate crs matrix
     allocate(A%row_offset(A%nRows+1),&
              A%global_col_idx(A%nEntries),&
@@ -1860,20 +1833,83 @@ end subroutine permute_local_matrix
     end do
     A%row_offset( 1 ) = 1
 
+  end subroutine read_mm_data
+
+  !==================================================================================
+  !> read MatrixMarket file
+  subroutine phist_DcrsMat_read_mm(A_ptr, comm_ptr, filename_len, filename_ptr, ierr) &
+    & bind(C,name='phist_DcrsMat_read_mm_f') ! circumvent bug in opari (openmp instrumentalization)
+    use, intrinsic :: iso_c_binding
+    use env_module, only: newunit
+    use mpi
+    !--------------------------------------------------------------------------------
+    type(C_PTR),        intent(out) :: A_ptr
+    type(C_PTR),        value  :: comm_ptr
+    integer, pointer :: comm
+    integer(C_INT),     value       :: filename_len
+    character(C_CHAR),  intent(in)  :: filename_ptr(filename_len)
+    integer(C_INT),     intent(out) :: ierr
+    !--------------------------------------------------------------------------------
+    logical :: repart, d2clr, d2clr_and_permute
+    type(CrsMat_t), pointer :: A
+    character(len=filename_len) :: filename
+    !--------------------------------------------------------------------------------
+    integer :: funit
+    integer(kind=8) :: globalLines, globalRows, globalCols, globalEntries
+    !integer(kind=8) :: i_
+    logical :: symmetric
+    logical :: verbose
+    integer :: i
+    !--------------------------------------------------------------------------------
+    
+    repart = CHECK_IFLAG(ierr,PHIST_SPARSEMAT_PERM_GLOBAL)
+    d2clr_and_permute =  CHECK_IFLAG(ierr,PHIST_SPARSEMAT_DIST2_COLOR)
+    d2clr = CHECK_IFLAG(ierr,PHIST_SPARSEMAT_OPT_CARP)
+    verbose = .not. CHECK_IFLAG(ierr,PHIST_SPARSEMAT_QUIET)
+    ierr=0
+    
+    do i = 1, filename_len
+      filename(i:i) = filename_ptr(i)
+    end do
+
+    ! open the file
+    if( verbose ) then
+      write(*,*) 'reading file:', filename
+      flush(6)
+    end if
+    open(unit   = newunit(funit), file    = filename, &
+      &  action = 'read',         status  = 'old',    &
+      &  iostat = ierr)
+    if( ierr .ne. 0 ) return
+    
+    ! read the header
+    call read_mm_header(funit,globalLines,globalRows,globalCols,globalEntries,symmetric,verbose,ierr)
+
+    if( ierr .ne. 0 ) return
+    
+    allocate(A)
+
+    ! create the default map
+    call c_f_pointer(comm_ptr, comm)
+    call map_setup(A%row_map, comm, globalRows, verbose, ierr)
+    if( ierr .ne. 0 ) return
+    
+    ! read the matrix data
+    call read_mm_data(funit,A,globalLines,globalEntries,symmetric,ierr)
+    if( ierr .ne. 0 ) return
+
     call sort_global_cols(A)
+
+    ! close the file
+    close(funit)
+
 #ifdef PHIST_HAVE_PARMETIS
-!write(*,*) 'row_offset', A%row_offset
-!write(*,*) 'col_idx', A%global_col_idx
-!write(*,*) 'val', A%val
     if (repart) then
       call repartcrs(A,3,ierr)
     end if
     if (ierr/=0) then
       return
     end if
-!write(*,*) 'row_offset', A%row_offset
-!write(*,*) 'col_idx', A%global_col_idx
-!write(*,*) 'val', A%val
 #endif
 
 
@@ -1938,6 +1974,84 @@ end subroutine permute_local_matrix
 
     !--------------------------------------------------------------------------------
   end subroutine phist_DcrsMat_read_mm
+
+  !==================================================================================
+  !> read MatrixMarket file
+  subroutine phist_DcrsMat_read_mm_with_map(A_ptr, map_ptr, filename_len, filename_ptr, ierr) &
+    & bind(C,name='phist_DcrsMat_read_mm_with_map_f') ! circumvent bug in opari (openmp instrumentalization)
+    use, intrinsic :: iso_c_binding
+    use env_module, only: newunit
+    use mpi
+    !--------------------------------------------------------------------------------
+    type(C_PTR),        intent(out) :: A_ptr
+    type(C_PTR),        value  :: map_ptr
+    type(Map_t), pointer :: map
+    integer(C_INT),     value       :: filename_len
+    character(C_CHAR),  intent(in)  :: filename_ptr(filename_len)
+    integer(C_INT),     intent(out) :: ierr
+    !--------------------------------------------------------------------------------
+    type(CrsMat_t), pointer :: A
+    character(len=filename_len) :: filename
+    !--------------------------------------------------------------------------------
+    integer :: funit
+    integer(kind=8) :: globalLines, globalRows, globalCols, globalEntries, nRows
+    integer :: i
+    logical :: symmetric
+    logical :: verbose
+    !--------------------------------------------------------------------------------
+    
+    verbose = .not. CHECK_IFLAG(ierr,PHIST_SPARSEMAT_QUIET)
+    ierr=0
+    
+    do i = 1, filename_len
+      filename(i:i) = filename_ptr(i)
+    end do
+
+    ! open the file
+    if( verbose ) then
+      write(*,*) 'reading file:', filename
+      flush(6)
+    end if
+    open(unit   = newunit(funit), file    = filename, &
+      &  action = 'read',         status  = 'old',    &
+      &  iostat = ierr)
+    if( ierr .ne. 0 ) return
+    
+    call read_mm_header(funit,globalLines,globalRows,globalCols,globalEntries,symmetric,verbose,ierr)
+    if( ierr .ne. 0 ) return
+
+    call c_f_pointer(map_ptr, map)
+    if( ierr .ne. 0 ) return
+    
+    if (globalCols .ne. globalRows .or. map%distrib(map%nProcs)-1 .ne. globalCols ) then
+      if( verbose ) write(6,*) "input map incompatible with file contents"
+      ierr=PHIST_INVALID_INPUT
+      return
+    end if
+    
+    allocate(A)
+    A%row_map=map
+    
+    ! TODO: respect permutation stored in map!
+    call read_mm_data(funit,A,globalLines,globalEntries,symmetric,ierr)
+
+    ! close the file
+    close(funit)
+
+    call sort_global_cols(A)
+    call setup_commBuff(A, A%comm_buff, verbose)
+    call sort_rows_local_nonlocal(A)
+
+    if( verbose ) then
+      write(*,*) 'created new crsMat with dimensions', A%nRows, A%nCols, A%nEntries, ' and predefined map'
+      flush(6)
+    end if
+    A_ptr = c_loc(A)
+
+    ierr = 0
+
+    !--------------------------------------------------------------------------------
+  end subroutine phist_DcrsMat_read_mm_with_map
 
 
   !==================================================================================

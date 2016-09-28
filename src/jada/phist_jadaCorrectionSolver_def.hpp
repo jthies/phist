@@ -64,7 +64,7 @@ void SUBR(jadaCorrectionSolver_delete)(TYPE(jadaCorrectionSolver_ptr) me, int *i
 //!
 //! arguments:
 //! jdCorrSolver    the jadaCorrectionSolver object
-//! A_op            matrix A passed to jadaOp_create
+//! AB_op            matrix A passed to jadaOp_create
 //! B_op            matrix B passed to jadaOp_create
 //! Qtil            projection vectors V passed to jadaOp_create
 //! BQtil           projection vectors BV passed to jadaOp_create
@@ -76,7 +76,7 @@ void SUBR(jadaCorrectionSolver_delete)(TYPE(jadaCorrectionSolver_ptr) me, int *i
 //! t               returns approximate solution vectors
 //! iflag            a value > 0 indicates the number of systems that have not converged to the desired tolerance
 void SUBR(jadaCorrectionSolver_run)(TYPE(jadaCorrectionSolver_ptr) me,
-                                    TYPE(const_linearOp_ptr)    A_op,     TYPE(const_linearOp_ptr)    B_op, 
+                                    TYPE(const_linearOp_ptr)    AB_op,     TYPE(const_linearOp_ptr)    B_op, 
                                     TYPE(const_mvec_ptr)  Qtil,     TYPE(const_mvec_ptr)  BQtil,
                                     const _ST_            sigma[],  TYPE(const_mvec_ptr)  res,      const int resIndex[], 
                                     const _MT_            tol[],    int                   maxIter,
@@ -94,7 +94,7 @@ void SUBR(jadaCorrectionSolver_run)(TYPE(jadaCorrectionSolver_ptr) me,
     PHIST_CHK_IERR(SUBR(mvec_num_vectors)(t,&numSys,iflag),*iflag);
     if (numSys==1 && me->customSolver_run1!=NULL)
     {
-      PHIST_CHK_IERR(me->customSolver_run1(me->customSolver_,A_op,B_op,Qtil,BQtil,(double)st::real(sigma[0]),
+      PHIST_CHK_IERR(me->customSolver_run1(me->customSolver_,AB_op,B_op,Qtil,BQtil,(double)st::real(sigma[0]),
         (double)st::imag(sigma[0]), res,
         (double)tol[0],maxIter,t,useIMGS,iflag),*iflag);
     }
@@ -107,7 +107,7 @@ void SUBR(jadaCorrectionSolver_run)(TYPE(jadaCorrectionSolver_ptr) me,
         si[i]=st::imag(sigma[i]);
         dtol[i]=(double)tol[i];
       }
-      PHIST_CHK_IERR(me->customSolver_run(me->customSolver_,A_op,B_op,Qtil,BQtil,sr,si,res,resIndex,
+      PHIST_CHK_IERR(me->customSolver_run(me->customSolver_,AB_op,B_op,Qtil,BQtil,sr,si,res,resIndex,
         dtol,maxIter,t,useIMGS,abortAfterFirstConvergedInBlock,iflag),*iflag);
     }
     else
@@ -145,7 +145,7 @@ void SUBR(jadaCorrectionSolver_run)(TYPE(jadaCorrectionSolver_ptr) me,
 
   // we need a jadaOp
   TYPE(linearOp) jadaOp;
-  PHIST_CHK_IERR(SUBR(jadaOp_create)(A_op, B_op, Qtil, BQtil, &currShifts[0], k, &jadaOp, iflag), *iflag);
+  PHIST_CHK_IERR(SUBR(jadaOp_create)(AB_op, B_op, Qtil, BQtil, &currShifts[0], k, &jadaOp, iflag), *iflag);
 
   // wrap the preconditioner so that apply_shifted is called
   TYPE(linearOp) jadaPrec, *jadaPrecPtr=NULL;
@@ -200,23 +200,23 @@ PHIST_TASK_BEGIN(ComputeTask)
     // gather systems that are waiting to be iterated
     std::vector<TYPE(blockedGMRESstate_ptr)> activeStates;
     int firstId = max_k;
-    PHIST_SOUT(PHIST_INFO, "Iterating systems:");
+    if (max_k>0) PHIST_SOUT(PHIST_VERBOSE, "Iterating systems:");
     for(int i = 0; i < max_k; i++)
     {
       if( std::abs(me->blockedGMRESstates_[i]->status) == 1 )
       {
 #ifdef IS_COMPLEX
-        PHIST_SOUT(PHIST_INFO, "\t%d (%f%+fi)", index[me->blockedGMRESstates_[i]->id], 
+        PHIST_SOUT(PHIST_VERBOSE, "\t%d (%f%+fi)", index[me->blockedGMRESstates_[i]->id], 
         -st::real(sigma[index[me->blockedGMRESstates_[i]->id]]),
         -st::imag(sigma[index[me->blockedGMRESstates_[i]->id]]));
 #else
-        PHIST_SOUT(PHIST_INFO, "\t%d (%f)", index[me->blockedGMRESstates_[i]->id], -sigma[index[me->blockedGMRESstates_[i]->id]]);
+        PHIST_SOUT(PHIST_VERBOSE, "\t%d (%f)", index[me->blockedGMRESstates_[i]->id], -sigma[index[me->blockedGMRESstates_[i]->id]]);
 #endif
         activeStates.push_back(me->blockedGMRESstates_[i]);
         firstId = std::min(firstId,activeStates.back()->id);
       }
     }
-    PHIST_SOUT(PHIST_INFO, "\n");
+    if (max_k>0) PHIST_SOUT(PHIST_VERBOSE, "\n");
     k = activeStates.size();
 
     // set correct shifts

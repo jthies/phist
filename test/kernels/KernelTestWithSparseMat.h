@@ -10,7 +10,6 @@
 #include "gtest/phist_gtest.h"
 
 #include "phist_typedefs.h"
-#include "phist_kernels.h"
 #include "KernelTestWithMap.h"
 #include "TestWithType.h"
 

@@ -169,8 +169,9 @@ PHIST_MAIN_TASK_BEGIN
     int rank = 0;
     if( trili )
     {
-      PHIST_ICHK_NEG_IERR(SUBR(trili_orthog)(V,Q,NULL,QtX,VtX,maxIter,&rank,&ierr),ierr);
-      rankMisses += m-rank;
+//      PHIST_ICHK_NEG_IERR(SUBR(trili_orthog)(V,Q,NULL,QtX,VtX,maxIter,&rank,&ierr),ierr);
+//      rankMisses += m-rank;
+      PHIST_SOUT(PHIST_WARNING,"Interface to Trilinos OrthoManagers (trili_orthog) currently disabled\n");
     }
     else
     {

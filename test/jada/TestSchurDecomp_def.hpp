@@ -92,17 +92,17 @@ class CLASSNAME: public KernelTestWithSdMats<_ST_,_N_,_N_>
         int nsort = nsort_[c];
         if( onlyDoReorderTest && nsort == 0 )
           continue;
-        PHIST_SOUT(PHIST_INFO,"==================================================\n");
+        PHIST_SOUT(PHIST_VERBOSE,"==================================================\n");
         if( which == phist_LM ) {
-          PHIST_SOUT(PHIST_INFO,"CASE phist_LM nselect %d, nsort %d, tol %e\n",nselect,nsort, tol);
+          PHIST_SOUT(PHIST_VERBOSE,"CASE phist_LM nselect %d, nsort %d, tol %e\n",nselect,nsort, tol);
         } else if( which == phist_SM ) {
-          PHIST_SOUT(PHIST_INFO,"CASE phist_SM nselect %d, nsort %d, tol %e\n",nselect,nsort, tol);
+          PHIST_SOUT(PHIST_VERBOSE,"CASE phist_SM nselect %d, nsort %d, tol %e\n",nselect,nsort, tol);
         } else if( which == phist_LR ) {
-          PHIST_SOUT(PHIST_INFO,"CASE phist_LR nselect %d, nsort %d, tol %e\n",nselect,nsort, tol);
+          PHIST_SOUT(PHIST_VERBOSE,"CASE phist_LR nselect %d, nsort %d, tol %e\n",nselect,nsort, tol);
         } else if( which == phist_SR ) {
-          PHIST_SOUT(PHIST_INFO,"CASE phist_SR nselect %d, nsort %d, tol %e\n",nselect,nsort, tol);
+          PHIST_SOUT(PHIST_VERBOSE,"CASE phist_SR nselect %d, nsort %d, tol %e\n",nselect,nsort, tol);
         }
-        PHIST_SOUT(PHIST_INFO,"==================================================\n");
+        PHIST_SOUT(PHIST_VERBOSE,"==================================================\n");
 
         SUBR(sdMat_add_sdMat)(st::one(),mat3_,st::zero(),mat1_,&this->iflag_);
         ASSERT_EQ(0,this->iflag_);
@@ -125,7 +125,7 @@ class CLASSNAME: public KernelTestWithSdMats<_ST_,_N_,_N_>
                 mat1_vp_, m_lda_, 1,mpi_comm_);
 
 
-        PHIST_SOUT(PHIST_INFO,"Checking results...\n");
+        PHIST_SOUT(PHIST_VERBOSE,"Checking results...\n");
         CheckSchurDecomp(which, nselect, nsort, tol);
         if( HasFatalFailure() )
           return;
@@ -151,7 +151,7 @@ class CLASSNAME: public KernelTestWithSdMats<_ST_,_N_,_N_>
 
 
           // should still be a valid schur decomposition!
-          PHIST_SOUT(PHIST_INFO,"Checking reordering results...\n");
+          PHIST_SOUT(PHIST_VERBOSE,"Checking reordering results...\n");
           CheckSchurDecomp(which, nsort, nsort, tol);
 
           // check if the permutation of resNorm is correct

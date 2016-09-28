@@ -36,20 +36,22 @@ typedef phist_gidx ghost_gidx;
 //!
 //! The kernels are based on a number of abstract concepts, which are
 //! simply void* into a "kernel library":
-//! - comm_t: encapsulates MPI, currently the interface does not really
+//! - phist_comm: encapsulates MPI, currently the interface does not really
 //!   allow you to do much with this object, except use it to build other
 //!   objects.
-//! - map_t: encapsulates the distribution of points (e.g. rows of a matrix)
+//! - phist_map: encapsulates the distribution of points (e.g. rows of a matrix)
 //!   over processors
-//! - multi-vector (mvec_t): a dense matrix with N rows and m<<N columns, with a row-wise
+//! - multi-vector (mvec): a dense matrix with N rows and m<<N columns, with a row-wise
 //!   distribution over computational nodes. The storage may be either column-major or
-//!   or row-major. In the latter case, the macro PHIST_MVECS_ROW_MAJOR should be 
-//!   defined.
-//! - sdMat_t - a small dense matrix, replicated on all MPI processes.
-//! - sparseMat_t: sparse matrix in *any* storage format (TODO: rename it)
+//!   or row-major. In the latter case, the macro PHIST_MVECS_ROW_MAJOR must be 
+//!   defined in the phist_config.h file.
+//! - sdMat - a small dense matrix, replicated on all MPI processes. sdMats are always
+//!   stored in column-major order but may have a leading dimension larger than the number of rows.
+//! - sparseMat: sparse matrix in *any* storage format
 //!
 //! The type-specific objects for mvecs, sdMats and sparseMats are called
-//! Smvec_t, Dmvec_t, Cmvec_t etc. and defined in phist_kernels_def.h
+//! phist_Smvec, phist_Dmvec, phist_Cmvec etc. and their related functions defined in 
+//! phist_kernels_decl.h
 
 #ifdef __cplusplus
 extern "C" {

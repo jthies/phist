@@ -13,6 +13,10 @@
 #include "KernelTestWithMap.h"
 #include "TestWithType.h"
 
+#ifdef PHIST_HIGH_PRECISION_KERNELS
+#include "prec_helpers.h"
+#endif
+
 using namespace testing;
 
 /*! Base class for tests using mvecs. The class is templated on 

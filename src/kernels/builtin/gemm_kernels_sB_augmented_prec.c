@@ -12,6 +12,7 @@
 #ifdef PHIST_HAVE_OPENMP
 #include <omp.h>
 #endif
+#include "phist_defs.h"
 #include "prec_helpers.h"
 
 
@@ -24,13 +25,13 @@ void dgemm_sb_augmented_prec_strided_k_4(int nrows, int k, double alpha, const d
 #endif
   if( !is_aligned(x,32) )
   {
-    printf("%s: not aligned %lx\n", __FUNCTION__, (uintptr_t)(void*)x);
+    printf("%s: x not aligned %lx\n", __FUNCTION__, (uintptr_t)(void*)x);
     exit(1);
     return;
   }
   if( !is_aligned(y,32) )
   {
-    printf("%s: not aligned %lx\n", __FUNCTION__, (uintptr_t)(void*)y);
+    printf("%s: y not aligned %lx\n", __FUNCTION__, (uintptr_t)(void*)y);
     exit(1);
     return;
   }
@@ -337,13 +338,13 @@ void dgemm_sb_augmented_prec_strided_k_1(int nrows, int k, double alpha, const d
 #endif
   if( !is_aligned(x,32) )
   {
-    printf("%s: not aligned %lx\n", __FUNCTION__, (uintptr_t)(void*)x);
+    printf("%s: x not aligned %lx\n", __FUNCTION__, (uintptr_t)(void*)x);
     exit(1);
     return;
   }
   if( !is_aligned(y,32) )
   {
-    printf("%s: not aligned %lx\n", __FUNCTION__, (uintptr_t)(void*)y);
+    printf("%s: y not aligned %lx\n", __FUNCTION__, (uintptr_t)(void*)y);
     exit(1);
     return;
   }

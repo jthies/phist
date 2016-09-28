@@ -67,12 +67,18 @@ class ghost_map
   // blueprints for how to create a sparsemat object from this map
   ghost_sparsemat_traits mtraits_template;
   
-  ghost_map(ghost_context* ctx_in, ghost_densemat_permuted pt=NONE, bool own_ctx=false)
+  //! create a new map which gets a context, a permutation type (defining which permutation object, row/col/none of the
+  //! context should be applied to an mvec based on the map, and two flags:
+  //! own_ctx=true means that when the map is deleted, the context should be deleted, too.
+  //! if own_ctx=true and own_perm=false, the permutation objects of the context are *not* deleted,
+  //! this is used to share permutation objects among multiple contexts/maps.
+  ghost_map(ghost_context* ctx_in, ghost_densemat_permuted pt=NONE, bool own_ctx=false, bool own_perm=true)
   {
     perm_local=NULL;
     perm_global=NULL;
     ctx=ctx_in;
     ownContext_=own_ctx;
+    ownPermutations_=own_perm;
 
     vtraits_template=phist_default_vtraits();
     mtraits_template=(ghost_sparsemat_traits)GHOST_SPARSEMAT_TRAITS_INITIALIZER;
@@ -153,6 +159,13 @@ class ghost_map
   {
     if (ownContext_)
     {
+      if (!ownPermutations_)
+      {
+        // someone else has to take care of this,
+        // we're sharing the data with another context
+        ctx->perm_local=NULL;
+        ctx->perm_global=NULL;
+      }
       ghost_context_destroy(ctx);
     }
     // note: the context owns data structures, these
@@ -165,7 +178,11 @@ class ghost_map
   
   private:
   
+  //! if true, the context will be destroyed when the map is (i.e. in phist_map_delete)
   bool ownContext_;
+
+  //! if true, the context's perm objects will be destroyed when the context is in phist_map_delete
+  bool ownPermutations_;
   
 };
 
@@ -218,8 +235,10 @@ class ghost_map
 
       public:
       
-        //! create a new map and associate it with the object pointed to by p
-        ghost_map* new_map(const void* p, ghost_context* ctx=NULL, ghost_densemat_permuted pt=NONE, bool own_ctx=false);
+        //! create a new map and associate it with the object pointed to by p. If there are already maps
+        //! associated with pointer p, return the first one found *if reuse_if_exists==true*.
+        ghost_map* new_map(const void* p, ghost_context* ctx=NULL, ghost_densemat_permuted pt=NONE, 
+                bool own_ctx=false, bool own_perm=true, bool reuse_if_exists=false);
         //! associate an existing map with the object pointed to by p
         void add_map(const void* p, ghost_map* m);
         //! delete all maps associated with the object pointed to by p

@@ -40,6 +40,32 @@ void printmat(int N, int M, dd_real * A, int LDA)
 }
 #endif
 
+// copy sdMat in (a,aC) to GMP data structure
+#define PHIST_TO_QD(_a,_aC,_lda,_nrows,_ncols,_A) \
+{\
+for (int i=0; i<(_ncols); i++)\
+{\
+  for (int j=0; j<(_nrows); j++)\
+  {\
+    (_A)[i+j*(_nrows)].x[0] = (_a) [i+j*(_lda)];\
+    (_A)[i+j*(_ncols)].x[1] = (_aC)[i+j*(_lda)];\
+  }\
+}\
+}
+
+// copy sdMat in (a,aC) to GMP data structure
+#define QD_TO_PHIST(_a,_aC,_lda,_nrows,_ncols,_A) \
+{\
+for (int i=0; i<(_ncols); i++)\
+{\
+  for (int j=0; j<(_nrows); j++)\
+  {\
+    (_a) [i+j*(_lda)] = (_A)[i+j*(_nrows)].x[0]; \
+    (_aC)[i+j*(_lda)] = (_A)[i+j*(_nrows)].x[1]; \
+  }\
+}\
+}
+
 //! symmetric eigenvalue decomposition in simulated quad precision (using function
 //! Rsyev, cf. lapack routine dsyev)
 //! in contrast to dsyev we return the eigenvalues in reversed order!
@@ -54,16 +80,9 @@ extern "C" void phist_Drsyev(int n, double *restrict a, double *restrict aC, int
 
     dd_real A[n*n];
     dd_real W[n];
+    
+    PHIST_TO_QD(a,aC,lda,n,n,A);
 
-//copy A matrix to GMP data structure
-for (int i=0; i<n; i++)
-{
-  for (int j=0; j<n; j++)
-  {
-    A[i+j*n].x[0] = a[i+j*lda];
-    A[i+j*n].x[1] = aC[i+j*lda];
-  }
-}
 #if( PHIST_OUTLEV >= PHIST_DEBUG )
     printf("%%in Rsyev,\n A =");
     printmat(n, n, A, n);
@@ -111,6 +130,28 @@ for (int i=0; i<n; i++)
     printmat(n, n, A, n);
     printf("\n");
 #endif
+}
+
+extern "C" void phist_Drgesvd(const char *jobu, const char *jobvt, int m, int n,
+            double *restrict a, double *restrict aC, int lda, double *restrict s, double *restrict sC,
+            double *restrict u, double *restrict uC, int ldu, double *restrict vt, double *restrict vtC, 
+            int ldvt, int *iflag)
+{
+  dd_real A[n*m], S[std::min(n,m)],U[m*m],Vt[n*n];  
+  PHIST_TO_QD(a,aC,lda,m,n,A);
+  // create work array
+  dd_real* work=NULL;
+  mpackint lwork=-1, _m=m, _n=n,_iflag;
+  dd_real tmp_work;
+  Rgesvd(jobu,jobvt,_m,_n,A,_m,S,U,_m,Vt,_n,&tmp_work,lwork,&_iflag);
+  *iflag=(int)_iflag;
+  lwork=(mpackint)tmp_work.x[0];
+  work=new dd_real[lwork];
+  Rgesvd(jobu,jobvt,_m,_n,A,_m,S,U,_m,Vt,_n,work,lwork,&_iflag);
+  delete [] work;
+  QD_TO_PHIST( s, sC, m, m, 1, S);
+  QD_TO_PHIST( u, uC, m, m, m, U);
+  QD_TO_PHIST(vt,vtC, n, n, n, Vt);
 }
 
 

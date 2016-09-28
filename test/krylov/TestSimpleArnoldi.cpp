@@ -11,6 +11,7 @@
 #include "phist_enums.h"
 #include "phist_simple_arnoldi.h"
 #include "../kernels/KernelTestWithSparseMat.h"
+#include "../kernels/KernelTestWithMassMat.h"
 #include "../kernels/KernelTestWithSdMats.h"
 #include "../kernels/KernelTestWithVectors.h"
 

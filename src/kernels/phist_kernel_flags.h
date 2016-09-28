@@ -7,6 +7,11 @@
    reducing partitioning, but if the kernel lib does not support the feature, it may
    just ignore the flag.
    
+   The integers 2^[0-15] are reserved for the kernel flags for now, but they may be aliased
+   if there are no functions that accept two flags with the same integer value (e.g. a flag
+   influencing cration of sparse matrices and a flag influencing the computation of a scalar
+   product may both be defined as 32)
+   
    In the documentation of the kernel functions, it is stated which flags are possible
    inputs to the particular function (combined by bitwise ors, '|').
    
@@ -48,7 +53,8 @@
 "     PHIST_SPARSEMAT_OPT_SINGLESPMVM 8 \n" \
 "     PHIST_SPARSEMAT_OPT_BLOCKSPMVM 16 \n" \
 "     PHIST_SPARSEMAT_OPT_CARP 32 \n" \
-"     PHIST_SPARSEMAT_QUIET 64 \n"
+"     PHIST_SPARSEMAT_QUIET 64 \n" \
+"     PHIST_SPARSEMAT_OWN_MAPS 128 \n"
 
 /* When this flag was passed to mvec_create, the memory for
    the multi-vector is allocated both on host and device for CUDA
@@ -60,6 +66,12 @@
    */
 #define PHIST_MVEC_REPLICATE_DEVICE_MEM 1
 
+/* use more accurate reducitons or other floating point operations if available */
+#define PHIST_ROBUST_REDUCTIONS 1
+
+/* do not perform global MPI reduction on inner products */
+#define PHIST_NO_GLOBAL_REDUCTION 2
+
 /* sparseMat_times_mvec* flags, these are GHOST-specific up to now
    and should not be used in the code anywhere because they are subject
    to change. The purpose of these flags is benchmarking only.
@@ -69,15 +81,9 @@
 #define PHIST_SPMVM_OVERLAP 4096
 #define PHIST_SPMVM_TASK 8192
 
-/* use more accurate reducitons or other floating point operations if available */
-#define PHIST_ROBUST_REDUCTIONS 1
-
-/* do not perform global MPI reduction on inner products */
-#define PHIST_NO_GLOBAL_REDUCTION 2
-
 /* explicitly perform sdMat operation on the host CPU (by default GPU processes will execute */
 /* functions like sdMat_add_sdMat only on the GPU)                                           */
-#define PHIST_SDMAT_RUN_ON_HOST 1
+#define PHIST_SDMAT_RUN_ON_HOST 1024
 /* execute sdMat function on device if this is a GPU process (the default). By specifying    */
 /* PHIST_SDMAT_RUN_ON_HOST|PHIST_SDMAT_RUN_ON_DEVICE the operation is executed both on the   */
 /* host and device side. No memory is transferred, so the user has to sync the memory expli- */
@@ -85,9 +91,6 @@
 /*                                                                                           */
 /* this flag is disabled for now, not sure wether we want to implement this complexity.      */
 /*                                                                                           */
-/*#define PHIST_SDMAT_RUN_ON_DEVICE 2*/
-
-/* for KPM */
-#define PHIST_KPM_SINGLEVEC 1
+/*#define PHIST_SDMAT_RUN_ON_DEVICE 2048*/
 
 #endif
