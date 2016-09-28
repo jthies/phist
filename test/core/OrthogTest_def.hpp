@@ -89,11 +89,12 @@ public:
     if (typeImplemented_ && !problemTooSmall_)
     {
       phist_const_map_ptr map=this->map_;
-#ifdef ORTHOGTEST_WITH_HPD_B
+#ifdef ORTHOG_WITH_HPD_B
       // get the map from the mass matrix. In principle the mass mat is
       // created using the map_ of the base class, but with GHOST we   
       // need additional info (like #halo elements) that only the matrix
       // can provide.
+      map=NULL;
       SUBR(sparseMat_get_domain_map)(B_,&map,&iflag_);
       ASSERT_EQ(0,iflag_);
 #endif      
@@ -117,11 +118,11 @@ public:
       ASSERT_EQ(0,iflag_);
       
       // create spaces pre-multiplied by B
-      PHISTTEST_MVEC_CREATE(&BV_,this->map_,this->m_,&this->iflag_);
+      PHISTTEST_MVEC_CREATE(&BV_,map,this->m_,&this->iflag_);
       ASSERT_EQ(0,this->iflag_);
-      PHISTTEST_MVEC_CREATE(&BW_,this->map_,this->k_,&this->iflag_);
+      PHISTTEST_MVEC_CREATE(&BW_,map,this->k_,&this->iflag_);
       ASSERT_EQ(0,this->iflag_);
-      PHISTTEST_MVEC_CREATE(&BQ_,this->map_,this->k_,&this->iflag_);
+      PHISTTEST_MVEC_CREATE(&BQ_,map,this->k_,&this->iflag_);
       ASSERT_EQ(0,this->iflag_);
 #endif
       // create matrices R0,R1, R2 and matrix views for setting/checking entries
