@@ -686,9 +686,13 @@ return;
   {
     if (typeImplemented_ && !problemTooSmall_)
     {
+      phist_const_map_ptr map=map_;
+#ifdef ORTHOG_WITH_HPD_B
+      map=B_op->domain_map;
+#endif      
       TYPE(mvec_ptr) V_big=NULL, V=NULL, W=NULL;
       int ncols = m_+k_+13;// some extra padding to make the test more interesting
-      PHISTTEST_MVEC_CREATE(&V_big,map_,ncols,&iflag_);
+      PHISTTEST_MVEC_CREATE(&V_big,map,ncols,&iflag_);
       ASSERT_EQ(0,iflag_);
 
       // fill entire block with random numbers
@@ -723,9 +727,13 @@ return;
   {
     if (typeImplemented_ && !problemTooSmall_)
     {
+      phist_const_map_ptr map=map_;
+#ifdef ORTHOG_WITH_HPD_B
+      map=B_op->domain_map;
+#endif      
       TYPE(mvec_ptr) V_big=NULL, V=NULL, W=NULL;
       int ncols = m_+k_+13;// some extra padding to make the test more interesting
-      PHISTTEST_MVEC_CREATE(&V_big,map_,ncols,&iflag_);
+      PHISTTEST_MVEC_CREATE(&V_big,map,ncols,&iflag_);
       ASSERT_EQ(0,iflag_);
 
       // fill entire block with ones
