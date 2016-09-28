@@ -2,7 +2,7 @@
 for compiling any of testapp. Go to the testapps folder.
 
 1) mkdir build; cd build 
-2) env CC=icc CXX=icpc FC=ifort ccmake ../
+2) env CC=mpicc CXX=mpiCC ccmake ../
 	i) provide CPAFT_DIR, in which cpaft-config.cmake resides. This is <INSTALLATION-PATH-OF-CPAFT>/lib/.
 	ii) for ghostTest app., GHOST_DIR, ESSEXAMPLES_INC and ESSEXAMPLES_LIB paths need to be provided as well.
 3) make 

@@ -16,7 +16,7 @@ AFT-option can only be used if compliled with ULFM-MPI.
 
 ===== INSTALLATION =====
 1) mkdir install; cd install
-2) env CC=icc CXX=icpc FC=ifort ccmake ../
+2) env CC=mpicc CXX=mpiCC ccmake ../
  Provide CMAKE_INSTALL_PREFIX. Configure according to your requirements. 
 3) make; make install
 
