@@ -92,8 +92,8 @@ option(PHIST_USE_TRILINOS_TPLS
         ON)
 
 # option for using checkpoint/restart + automatic fault-tolerance features
-option(PHIST_USE_CPAFT
-		"enables/desables the use of checkpoint/restart and auto FT features using CPAFT"
+option(PHIST_USE_CRAFT
+		"enables/desables the use of checkpoint/restart and auto FT features using CRAFT"
 		OFF)
 
 ########################################################################
@@ -740,7 +740,7 @@ set (PHIST_KRYLOV_SOURCE ${PROJECT_SOURCE_DIR}/src/krylov/phist_simple_arnoldi.c
                          ${PROJECT_SOURCE_DIR}/src/krylov/phist_anasaziZ.cpp
                          ${PROJECT_SOURCE_DIR}/src/krylov/phist_carp_cg.cpp
                          )
-if(PHIST_USE_CPAFT)
+if(PHIST_USE_CRAFT)
 	set (PHIST_KRYLOV_SOURCE ${PHIST_KRYLOV_SOURCE}
 				                 ${PROJECT_SOURCE_DIR}/src/krylov/phist_simple_lanczos_ft.cpp
 												 )
@@ -777,17 +777,17 @@ include_directories(${PROJECT_SOURCE_DIR}/src/precon)
 include_directories(${PROJECT_SOURCE_DIR}/src/support)
 include_directories(${PROJECT_SOURCE_DIR}/drivers)
 
-if (PHIST_USE_CPAFT)
-	find_package(CPAFT REQUIRED)
-	if(CPAFT_FOUND)
-		message (STATUS "CPAFT package is found ${CPAFT_INCLUDE_PATH}")
-		include_directories(${CPAFT_INCLUDE_PATH})
-		link_libraries(${CPAFT_LIBRARIES})
-		set (CMAKE_C_FLAGS        "${CMAKE_C_FLAGS}      ${CPAFT_FLAGS}")
-    set (CMAKE_CXX_FLAGS      "${CMAKE_CXX_FLAGS}    ${CPAFT_FLAGS}")
+if (PHIST_USE_CRAFT)
+	find_package(CRAFT REQUIRED)
+	if(CRAFT_FOUND)
+		message (STATUS "CRAFT package is found ${CRAFT_INCLUDE_PATH}")
+		include_directories(${CRAFT_INCLUDE_PATH})
+		link_libraries(${CRAFT_LIBRARIES})
+		set (CMAKE_C_FLAGS        "${CMAKE_C_FLAGS}      ${CRAFT_FLAGS}")
+    set (CMAKE_CXX_FLAGS      "${CMAKE_CXX_FLAGS}    ${CRAFT_FLAGS}")
 
 	else()
-		message (STATUS "CPAFT package is NOT found")
+		message (STATUS "CRAFT package is NOT found")
 	endif()
 endif()
 

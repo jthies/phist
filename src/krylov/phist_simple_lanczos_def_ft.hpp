@@ -70,7 +70,8 @@ void SUBR(simple_lanczos_ft)(TYPE(const_linearOp_ptr) A_op,
   PHIST_CHK_IERR(SUBR(mvec_create)(&vnew,A_op->domain_map,1,iflag),*iflag);
 
   PHIST_CHK_IERR(SUBR(mvec_put_value)(vnew,st::zero(),iflag),*iflag);
-  PHIST_CHK_IERR(SUBR(mvec_random)(vold,iflag),*iflag);
+//  PHIST_CHK_IERR(SUBR(mvec_random)(vold,iflag),*iflag);
+  PHIST_CHK_IERR(SUBR(mvec_put_value)(vold,st::one(),iflag),*iflag);
   _MT_ nrm;
   PHIST_CHK_IERR(SUBR(mvec_norm2)(vold,&nrm,iflag),*iflag);
   _ST_ scal=st::one()/nrm;
@@ -80,17 +81,15 @@ void SUBR(simple_lanczos_ft)(TYPE(const_linearOp_ptr) A_op,
 	int i = 0;
 // ===== CHECKPOINT DEFINITION ==== // 
 
-	Checkpoint * myCP = new Checkpoint[1];
-	std::string cpPath = "/lxfs/unrz/unrza354/checkpoints/"; 
-	myCP->setCpPath(cpPath);
-	myCP->add("i", &i);	
-	myCP->add("alpha", &alpha);	
-	myCP->add("beta", &beta);	
-	myCP->add("alphas", alphas, maxIter);
-	myCP->add("betas", betas, maxIter);
-	myCP->add("vold", vold);
-	myCP->add("vnew", vnew);
-
+	Checkpoint  myCP("CP-L1", cpOpt->getCpPath(), MPI_COMM_WORLD);
+	myCP.add("i", &i);	
+	myCP.add("alpha", &alpha);	
+	myCP.add("beta", &beta);	
+	myCP.add("alphas", alphas, maxIter);
+	myCP.add("betas", betas, maxIter);
+	myCP.add("vold", vold);
+	myCP.add("vnew", vnew);
+	myCP.commit();
 //	SUBRX(wrapperWrite(vold));
 // put all iterations in one big compute task; this speeds up the tests with ghost (significantly)
 	PHIST_TASK_DECLARE(ComputeTask)
@@ -98,7 +97,7 @@ void SUBR(simple_lanczos_ft)(TYPE(const_linearOp_ptr) A_op,
 	
 	if(cpOpt->getRestartStatus() == true) {
 		printf("===== Program is restarted =====\n");	
-		myCP->read();
+		myCP.read();
 		i += 1;
     std::swap(vold,vnew);
 	}
@@ -151,11 +150,9 @@ void SUBR(simple_lanczos_ft)(TYPE(const_linearOp_ptr) A_op,
         if (SUBR(converged)(*evmin)) break;
 
 		if( i % cpOpt->getCpFreq() == 0){ 
-			myCP->update();
-			myCP->write();
+			myCP.update();
+			myCP.write();
 		}
-		
-		usleep(100000);
   }
   
 

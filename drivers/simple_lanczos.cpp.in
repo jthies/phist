@@ -28,15 +28,44 @@
 
 // Computes the largest and smallest eigenvalue of a Hermitian matrix using the Lanczos
 // method. This driver is intended for testing fault tolarance concepts in PHIST.
+#ifdef PHIST_CP
+int read_params(int argc, char* argv[] , Cp_Options * myCpOpt){
+	static char *prgname = "";
+  prgname = argv[0];
+	char * tmp = new char[256];
+	std::string cpPathTemp ;
+	for (int i = 1; i < argc; ++i) {
+		if ((!strcmp(argv[i], "-cppath"))) {
+			sprintf(tmp, "%s" ,argv[++i]);
+			myCpOpt->setCpPath(tmp);
+			cpPathTemp = myCpOpt->getCpPath();
+			std::cout << "cpPath: " << cpPathTemp << std::endl;
+		}
+		if ((!strcmp(argv[i], "-restart"))) {
+			bool restart = true;
+			myCpOpt->setRestartStatus( restart );
+			std::cout << "Restart " << restart << std::endl;
+		}
+		if ((!strcmp(argv[i], "-niter"))) {
+			sprintf(tmp, "%s" ,argv[++i]);
+			myCpOpt->setnIter( atoi(tmp) );
+			std::cout << "nIter " << myCpOpt->getnIter() << std::endl;
+		}
+		if ((!strcmp(argv[i], "-cpfreq"))) {
+			sprintf(tmp, "%s" ,argv[++i]);
+			myCpOpt->setCpFreq( atoi(tmp) );
+			std::cout << "cpfreq " << myCpOpt->getCpFreq() << std::endl;
+		}
+	}
+}
+#endif
+
 int main(int argc, char** argv)
 {
   int iflag=0;
   PHIST_ICHK_IERR(phist_kernels_init(&argc,&argv,&iflag),iflag);
-
   // this macro will take care of fault tolerance
   PHIST_MAIN_TASK_BEGIN
-  
-  
   comm_ptr comm;
   sparseMat_ptr A;
   
@@ -47,7 +76,6 @@ int main(int argc, char** argv)
   int num_iters;
   
   PHIST_ICHK_IERR(phist_comm_create(&comm,&iflag),iflag);
-
   if (argc<2)
   {
     PHIST_SOUT(PHIST_ERROR,"Usage: %s <matrix>\n",argv[0]);
@@ -67,17 +95,22 @@ int main(int argc, char** argv)
   PHIST_ICHK_IERR(SUBR(linearOp_wrap_sparseMat)(&A_op,A,&iflag),iflag);
 
 #ifdef PHIST_CP
- 	char * cpPath = new char [256];
-	sprintf(cpPath , "%s", argv[2]);
-	printf("CPPATH : %s", cpPath); 
-
 	Cp_Options * cpOpt=new Cp_Options[1]; 
-	cpOpt->setCpFreq(70);
-	cpOpt->setCpPath(cpPath);
+	read_params(argc, argv ,cpOpt);
+	
+	printf("CPPATH : %s\n", cpOpt->getCpPath()); 
+	if (argc<3)
+  {
+ 		printf ( "Usage: %s <matrix> <CP-PATH> -restart(InCaseOfRestart)\n", argv[0]); 
+    return 1;
+  }
+
+	cpOpt->setCpFreq(cpOpt->getCpFreq());
+	cpOpt->setCpPath(cpOpt->getCpPath());
 #endif
  
   // call Lanczos iteration routine
-  num_iters=10000;
+  num_iters=cpOpt->getnIter();
 #ifdef PHIST_CP
 	printf("===== Simple_lanczos_ft =====\n"); 
 	SUBR(simple_lanczos_ft)(&A_op,&lambda_min,&lambda_max,&num_iters,cpOpt, &iflag);
