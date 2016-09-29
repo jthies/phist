@@ -600,10 +600,10 @@ extern "C" void SUBR(mvec_to_mvec)(TYPE(const_mvec_ptr) v_in, TYPE(mvec_ptr) v_o
   outputPermuted=(lperm_out!=NULL || gperm_out!=NULL);
   inputPermuted= (lperm_in!=NULL || gperm_in!=NULL);
   
-  bool same_lperm = lperm_in==lperm_out ||
-                    lperm_in&&lperm_out&&(lperm_in->perm==lperm_out->perm)&&(lperm_in->invPerm==lperm_out->invPerm);
-  bool same_gperm = gperm_in==gperm_out ||
-                    gperm_in&&gperm_out&&(gperm_in->perm==gperm_out->perm)&&(gperm_in->invPerm==gperm_out->invPerm);
+  bool same_lperm = (lperm_in==lperm_out) ||
+                    (lperm_in&&lperm_out&&(lperm_in->perm==lperm_out->perm)&&(lperm_in->invPerm==lperm_out->invPerm));
+  bool same_gperm = (gperm_in==gperm_out) ||
+                    (gperm_in&&gperm_out&&(gperm_in->perm==gperm_out->perm)&&(gperm_in->invPerm==gperm_out->invPerm));
   
   // if both are permuted with the same permutation, just copy
   bool no_perm_needed = (outputPermuted==inputPermuted && 
@@ -1405,6 +1405,10 @@ _ST_* ydoty, _ST_* xdoty, int* iflag)
 
   int nvec = 0;
   PHIST_CHK_IERR(SUBR(mvec_num_vectors)(vy,&nvec,iflag),*iflag);
+
+  // this is not checked by maps_compatible because you can still add or dot-product
+  // vectors with different number of halo elements
+  PHIST_CHK_IERR(*iflag=(A->context->halo_elements<=x->traits.nrowshalo-x->traits.nrowspadded)?0:PHIST_INVALID_INPUT,*iflag);
 
   if (alpha==st::zero())
   {
