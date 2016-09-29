@@ -110,9 +110,10 @@ int main(int argc, char** argv)
 #endif
  
   // call Lanczos iteration routine
-  num_iters=cpOpt->getnIter();
+  num_iters=1000; 
 #ifdef PHIST_CP
 	printf("===== Simple_lanczos_ft =====\n"); 
+  num_iters= cpOpt->getnIter();
 	SUBR(simple_lanczos_ft)(&A_op,&lambda_min,&lambda_max,&num_iters,cpOpt, &iflag);
 #else
 	printf("===== Simple_lanczos =====\n"); 
