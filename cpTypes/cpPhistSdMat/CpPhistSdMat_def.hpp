@@ -25,21 +25,21 @@ public:
 	}
 
 	
-	void update(){
+	int update(){
 		printf("CpPhistSdMat Before update: \n");
 		PHIST_CHK_IERR(SUBR(sdMat_add_sdMat)(st::one(),dataPtr,st::zero(),asynData,&iflag),iflag);
-		return;
+		return 0;
 	}
 
-	void write( const std::string * filename){
+	int write( const std::string * filename){
 		printf("CpPhistSdMat: i will write now %s\n", (*filename).c_str());
 		PHIST_CHK_IERR(SUBR(mvec_write_bin)(asynData, (*filename).c_str() ,&iflag),iflag);
-		return;
+		return 0;
 	}
 	
-	void read(const std::string * filename){
+	int read(const std::string * filename){
 		printf("CpPhistSdMat: i will read now\n");
 		PHIST_CHK_IERR(SUBR(mvec_read_bin)(dataPtr, (*filename).c_str() ,&iflag),iflag);
-		return;
+		return 0;
 	}
 };
