@@ -127,7 +127,7 @@ static void *mainTask(void *varg)
 		if( myrank == printRank) {
 				printf("==== Defining CP ====\n");
 		}
-	Checkpoint  myCP("CP-L1", cpPath, FT_Comm);
+	Checkpoint  myCP( cpPath, FT_Comm);
 	myCP.disableSCR();
 	myCP.add("iteration", &iteration);	
 	myCP.add("lambda", &lambda);	

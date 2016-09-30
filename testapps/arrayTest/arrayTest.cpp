@@ -121,7 +121,7 @@ int main(int argc, char* argv[])
 			d[i] = 0.55;
 	}
 	
-	Checkpoint  myCP("CP-L1", myCpOpt->getCpPath(), FT_Comm);
+	Checkpoint  myCP( myCpOpt->getCpPath(), FT_Comm);
 	myCP.add("a", a, n);
 	myCP.add("aa", aa, nRows, nCols, CYCLIC);
 	myCP.add("d", d, n);

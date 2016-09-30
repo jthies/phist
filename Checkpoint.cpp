@@ -15,8 +15,8 @@ int Checkpoint::update(){
 	return EXIT_SUCCESS;
 }
 
-int Checkpoint::write()
-{
+int Checkpoint::write()				// TODO: make two version of write. 1) PFS 2) SCR
+{					
 #ifdef SCR
 	if(useSCR == true){
 		SCR_Start_checkpoint();
@@ -65,7 +65,7 @@ int Checkpoint::write()
 	return EXIT_SUCCESS;
 }
 
-int Checkpoint::read()
+int Checkpoint::read()				// TODO: make two version of read. 1) PFS 2) SCR
 {
 	readCpMetaData();
 	int myrank_ = -1;
@@ -94,5 +94,4 @@ int Checkpoint::read()
 	++cpVersion;
 	return EXIT_SUCCESS;
 }
-
 

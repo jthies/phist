@@ -91,7 +91,7 @@ int main(int argc, char* argv[])
 
 	int iteration = 0;
 	
-	Checkpoint  myCP("CP-L1", myCpOpt->getCpPath(), FT_Comm);
+	Checkpoint  myCP( myCpOpt->getCpPath(), FT_Comm);
 //	myCP.disableSCR();
 	myCP.add("myint", &myint);
 	myCP.add("mydouble", &mydouble);

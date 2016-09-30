@@ -74,6 +74,7 @@ endif()
 
 add_subdirectory(minimal)
 add_subdirectory(multilevelCP)
+add_subdirectory(multilevelCP2)
 add_subdirectory(arrayTest)
 if(GHOST_TEST)
 	add_subdirectory(ghostTest)

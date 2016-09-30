@@ -39,6 +39,28 @@ extern "C"{
 								        ( std::ostringstream() << std::dec << x ) ).str()
 
 
+std::string exec(const char* cmd) {
+  char buffer[128];
+  std::string result = "";
+  FILE* pipe = popen(cmd, "r");
+//  if (!pipe) 
+//				throw std::runtime_error("popen() failed!");
+  try {
+    while (!feof(pipe)) {
+       if (fgets(buffer, 128, pipe) != NULL)
+         result = buffer;
+  	}
+  } 
+	catch (...) {
+    pclose(pipe);
+  	throw;
+	}
+	pclose(pipe);
+	result.erase(result.end()-1);
+	return result;
+}
+
+
 class Checkpoint
 {
 protected:
@@ -48,6 +70,7 @@ protected:
 	std::string cpPathVersion;
 	std::string name;
 	std::string cpVersionPrefix;
+	int cpIdx;
 	bool useSCR;
 	bool cpCommitted;
 	size_t cpVersion; 	
@@ -57,13 +80,13 @@ protected:
 	int readCpMetaData();
 	int deleteBackupCp();
 public:
-	Checkpoint(const std::string name_, const std::string cpBasePath_, const MPI_Comm cpMpiComm_);
+	Checkpoint(const std::string cpBasePath_, const MPI_Comm cpMpiComm_);
 	~Checkpoint();  
 	void disableSCR();
 	void commit();
 
 	typedef std::map<const std::string,CpBase *> cp_const_map;		// TODO: check if they can be privatly declared
-  	typedef std::map<const std::string,CpBase *> cp_copy_map;
+  typedef std::map<const std::string,CpBase *> cp_copy_map;
  	// contains points to user workspace
   	cp_const_map objects;
   	// contains asynchronous copies of objects
@@ -77,7 +100,10 @@ public:
 // anything else will give an error message
 void add(std::string label, CpBase * p)
 {
-		assert (cpCommitted == false );
+		if (cpCommitted == true ){
+			printf("This checkpoint is already committed. No data can be added to checkpoint after commit() call of a checkpoint.\n");
+			return;
+		}
 		objects[label] = p;
 }
 
@@ -153,16 +179,21 @@ void add(std::string label, TYPE(sdMat_ptr) const sdMat, TYPE(sdMat_ptr) const t
 
 };
 
-Checkpoint::Checkpoint(const std::string name_, const std::string cpBasePath_, const MPI_Comm cpMpiComm_=MPI_COMM_WORLD){
-	name 				= name_;
+Checkpoint::Checkpoint(const std::string cpBasePath_=exec("pwd"), const MPI_Comm cpMpiComm_=MPI_COMM_WORLD){
+	static int idx=0;										
+	++idx;	
+//	name 				= name_;
+	name 				= SSTR(idx);
 	cpMpiComm 	= cpMpiComm_;	
 	cpBasePath 	= cpBasePath_;
 	cpPath 			= cpBasePath_ + "/" + name;
+	std::cout << "cpPath:" << cpPath << std::endl;
+	cpIdx				= idx;
 	cpVersionPrefix = "CP-";
 	cpCommitted = false;
 	cpVersion 	= 0;
 	numBufferCps=2;
-	std::cout << "constructor is being called here" << std::endl;
+	std::cout << "constructor is being called here idx = " << name << std::endl;
 	mkCpDir(cpPath);	
 #ifdef SCR																		// check if CPAFTLIB was compiled with SCR
 	useSCR 		= true;

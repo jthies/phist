@@ -9,7 +9,7 @@
 	#include <aft_macros.h>
 #endif
 
-#include "multilevelCP.h"
+#include "multilevelCP2.h"
 #include <Checkpoint.hpp>
 #include <cstring>
 #include <unistd.h>
@@ -38,6 +38,7 @@ void printusage(){
 
 int read_params(int argc, char* argv[] , Cp_Options * myCpOpt){
   prgname = argv[0];
+	printf("====== argv[0] ====== %s\n", argv[0]);
 	char * tmp = new char[256];
 	std::string cpPathTemp ;
 	//=========== Reading commnad line arguments with flags ===============//
@@ -89,33 +90,35 @@ int main(int argc, char* argv[])
   read_params(argc, argv, myCpOpt); 
 
 	int n = 2;
-	double a 	= 0.;
+	double a 	= 0;
 	double * b 	= new double[n];
 	for(int i = 0; i < n; ++i){
 			b[i] = 0.0;
 	}
 	
 	int naIter = myCpOpt->getnIter();
-	int nbIter = 10;
-	int aIter=0, bIter=0;
+	int aIter=0;
 	
+//	Checkpoint  cpL1;
 	Checkpoint  cpL1(myCpOpt->getCpPath(), FT_Comm);
-	Checkpoint  cpL2(myCpOpt->getCpPath(), FT_Comm);
 	cpL1.add("a", &a);
 	cpL1.add("aIter", &aIter);
 	cpL1.commit(); 
-	cpL2.add("b", b);
-	cpL2.add("bIter", &bIter);
-	cpL2.commit(); 
-	
+
 	if( myCpOpt->getRestartStatus() ) {
 		printf("RESTART L1 ------> failed == true \n");
 		cpL1.read();
 		aIter++;
-		printf("aIter = %d \n", aIter);
+		printf("aIter to RESTART = %d \n", aIter);
 	}
   for(; aIter < naIter; aIter++)
   {
+			int nbIter = 10, bIter = 0;
+			static Checkpoint  cpL2(myCpOpt->getCpPath(), FT_Comm);
+			cpL2.add("b", b);
+			cpL2.add("bIter", &bIter);
+			cpL2.commit(); 
+	
 			bIter = 0;
 			if( myCpOpt->getRestartStatus() ) {
 				bool restart = false;
@@ -123,25 +126,25 @@ int main(int argc, char* argv[])
 				printf("RESTART L2------> failed == true \n");
 				cpL2.read();
 				bIter++;
-				printf("bIter = %d \n", bIter);
+				printf("bIter to RESTART = %d \n", bIter);
 			}
-  		for(; bIter < nbIter ; bIter++)
+  		for(double x=0.0; bIter < nbIter ; bIter++,x++)
   		{
 				for(size_t i = 0; i < n ; ++i){
-					b[i] += 0.1;
+					b[i] += 0.001;
 				}
 				usleep(100000);
-				printf("=== bIter: %d, \tb[0]: %f \n", bIter, b[0] );
-				if(bIter % 5 == 0){
+				printf("=== aIter: %d ,bIter: %d, \tb[0]: %f \n", aIter, bIter, b[0] );
+//				if(bIter % 5 == 0){
+				if(bIter % 5 == 0 ){						// if inner checkpoint is not saved on the last iteration and new data depends on the previous data. data after reading will be corrupted.
 					cpL2.update();
 					cpL2.write();
 				}
 			}
-//			for(size_t i = 0; i < n ; ++i){
-				a = b[0];
-//			}
+			a += b[0];
+
 			usleep(100000);
-			printf("============ aIter: %d, \ta: %f \n", aIter, a);
+			printf("================================================ aIter: %d, \ta[0]: %f \n", aIter, a );
 			if(nbIter % 1 == 0){
 					cpL1.update();
 					cpL1.write();
