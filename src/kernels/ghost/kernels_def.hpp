@@ -640,30 +640,36 @@ extern "C" void SUBR(mvec_to_mvec)(TYPE(const_mvec_ptr) v_in, TYPE(mvec_ptr) v_o
   }
 
 // macro to perform a ghost call on a vector with a different context
-#define GHOST_FUNC_CTX(_vec,_ctx,_lperm,_gperm,_fnc,...) \
+#define GHOST_FUNC_CTX(_vec,_ctx,_permflag,_permmethod,_lperm,_gperm,_fnc,...) \
 {\
   ghost_error _gerr=GHOST_SUCCESS; \
   ghost_context *_orig_ctx=(_vec)->context; \
+  ghost_densemat_flags _orig_flags = (_vec)->traits.flags; \
+  ghost_densemat_permuted _orig_permuted = (_vec)->traits.permutemethod; \
   ghost_densemat_permutation *_orig_lperm=(_vec)->perm_local; \
   ghost_densemat_permutation *_orig_gperm=(_vec)->perm_global; \
   (_vec)->context=(_ctx);\
+  (_vec)->traits.flags = (ghost_densemat_flags)( (_permflag&GHOST_DENSEMAT_PERMUTED) ? GHOST_DENSEMAT_PERMUTED|(_vec)->traits.flags : (~GHOST_DENSEMAT_PERMUTED)&(_vec)->traits.flags ); \
+  (_vec)->traits.permutemethod = _permmethod; \
   (_vec)->perm_local=(_lperm);\
   (_vec)->perm_global=(_gperm);\
   _gerr=(_vec)->_fnc(__VA_ARGS__);\
   (_vec)->context=_orig_ctx;\
+  (_vec)->traits.flags = _orig_flags; \
+  (_vec)->traits.permutemethod = _orig_permuted; \
   (_vec)->perm_local=_orig_lperm;\
   (_vec)->perm_global=_orig_gperm;\
   PHIST_CHK_GERR(_gerr,*iflag); \
 }
 
-  GHOST_FUNC_CTX(V_out,ctx_in,lperm_in,gperm_in,fromVec,V_out,V_in,0,0);
+  GHOST_FUNC_CTX(V_out,ctx_in,V_in->traits.flags,V_in->traits.permutemethod,lperm_in,gperm_in,fromVec,V_out,V_in,0,0);
 
   if (no_perm_needed) return;
   
   if (inputPermuted)
   {
-    PHIST_SOUT(PHIST_DEBUG,"mvec_to_mvec: unpermute input vector\n");
-    GHOST_FUNC_CTX(V_out,ctx_in,lperm_in,gperm_in,permute,V_out,ctx_in,GHOST_PERMUTATION_PERM2ORIG);
+      PHIST_SOUT(PHIST_DEBUG,"mvec_to_mvec: unpermute input vector\n");
+      GHOST_FUNC_CTX(V_out,ctx_in,V_in->traits.flags,V_in->traits.permutemethod,lperm_in,gperm_in,permute,V_out,ctx_in,GHOST_PERMUTATION_PERM2ORIG);
   }
   
   if (outputPermuted)
