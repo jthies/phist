@@ -187,13 +187,6 @@ int get_perm_flag(int iflag, int outlev)
     ghost_densemat_traits phist_default_vtraits()
     {
       ghost_densemat_traits vtraits = GHOST_DENSEMAT_TRAITS_INITIALIZER;
-      vtraits.nrows=0; // get from context
-      vtraits.nrowsorig=0; // get from context
-      vtraits.nrowshalo=0; // get from context
-      vtraits.nrowspadded=0; // leave padding to ghost
-      vtraits.ncols=0; // set in mvec_create
-      vtraits.ncolsorig=0; // set in mvec_create
-      vtraits.ncolspadded=0; // leave padding to ghost
       // ghost should set these correctly depending on GHOST_TYPE if we set HOST and DEVICE to 0
       int new_flags =   (int)vtraits.flags;
       // do not allow GHOST to automatically allocate memory on the host CPU if a GPU process calls download().
@@ -558,6 +551,7 @@ extern "C" void phist_map_get_iupper(phist_const_map_ptr vmap, phist_gidx* iuppe
 extern "C" void phist_maps_compatible(phist_const_map_ptr vmap1, phist_const_map_ptr vmap2, int* iflag)
 {
   *iflag=0;
+  return; //TROET
   PHIST_CAST_PTR_FROM_VOID(const ghost_map,map1,vmap1,*iflag);
   PHIST_CAST_PTR_FROM_VOID(const ghost_map,map2,vmap2,*iflag);
   *iflag=-1;

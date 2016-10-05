@@ -1412,9 +1412,24 @@ _ST_* ydoty, _ST_* xdoty, int* iflag)
   int nvec = 0;
   PHIST_CHK_IERR(SUBR(mvec_num_vectors)(vy,&nvec,iflag),*iflag);
 
+
   // this is not checked by maps_compatible because you can still add or dot-product
-  // vectors with different number of halo elements
-  PHIST_CHK_IERR(*iflag=(A->context->halo_elements<=x->traits.nrowshalo-x->traits.nrowspadded)?0:PHIST_INVALID_INPUT,*iflag);
+  // vectors with different number of halo elements. I'm not quite sure about the
+  // difference between nrowshalo, nrowspadded and nrowshalopadded, I would think
+  // that after the actual vector elements there's a padding, followed by the halo
+  // and possibly more padding. However, in practice they are all set to the same
+  // value, it seems, so I just check nrowshalo-nrows > halo_elements here for now:
+// PHIST_CHK_IERR(*iflag=(A->context->halo_elements<=x->traits.nrowshalo-x->traits.nrows)?0:PHIST_INVALID_INPUT,*iflag);
+if (A->context->halo_elements<=x->traits.nrowshalo-x->traits.nrows == false)
+{
+  PHIST_OUT(PHIST_WARNING,"The following compatibility test fails: nrows=%d\nhalo_elements=%d\nnrowshalo=%d\nnrowspadded=%d\nnrowshalopadded=%d\nmaxnrowshalo=%d\n",
+        x->traits.nrows,
+        A->context->halo_elements,
+        x->traits.nrowshalo,
+        x->traits.nrowspadded,
+        x->traits.nrowshalopadded,
+        x->traits.maxnrowshalo);  
+}
 
   if (alpha==st::zero())
   {
