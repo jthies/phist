@@ -86,7 +86,7 @@ class WrapLambdaForGhostTask
       // check that the task is not already allocated/in use
       PHIST_CHK_IERR(*iflag = (*task != NULL) ? -1 : 0, *iflag);
       ghost_task* curTask = NULL;
-      ghost_task_cur(&curTask);
+      PHIST_CHK_GERR(ghost_task_cur(&curTask), *iflag);
       if( !async )
       {
         // don't create a thread at all if the current task is also not an async task

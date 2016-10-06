@@ -25,10 +25,10 @@
 
 #include <ghost.h>
 #include <ghost/machine.h>
-#include <ghost/thpool.h>
 #include <ghost/pumap.h>
 #include <ghost/locality.h>
 #include <ghost/timing.h>
+#include <ghost/taskq.h>
 #include <limits>
 #include <map>
 
@@ -355,11 +355,8 @@ extern "C" void phist_kernels_init(int* argc, char*** argv, int* iflag)
   PHIST_SOUT(PHIST_INFO,"%s\n",str);
   free(str); str = NULL;
 
-  ghost_thpool *thpool;
   int nnuma = 0;
   int npu = 0;
-
-  ghost_thpool_get(&thpool);
   ghost_machine_nnuma(&nnuma);
   ghost_machine_npu(&npu,GHOST_NUMANODE_ANY);
 
@@ -372,6 +369,11 @@ extern "C" void phist_kernels_init(int* argc, char*** argv, int* iflag)
 #else
    PHIST_SOUT(PHIST_INFO,"TSQR not available\n");
 #endif
+
+  // initialize ghost's task-queue (required for tasks!)
+  // (ghost does this also automatically when enqueuing the first task, but we might use
+  //  som utility functions before!)
+  PHIST_CHK_GERR(ghost_taskq_create(), *iflag);
 
   PHIST_CHK_IERR(phist_kernels_common_init(argc,argv,iflag),*iflag);
 }
