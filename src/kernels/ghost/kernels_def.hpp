@@ -1419,8 +1419,7 @@ _ST_* ydoty, _ST_* xdoty, int* iflag)
   // that after the actual vector elements there's a padding, followed by the halo
   // and possibly more padding. However, in practice they are all set to the same
   // value, it seems, so I just check nrowshalo-nrows > halo_elements here for now:
-// PHIST_CHK_IERR(*iflag=(A->context->halo_elements<=x->traits.nrowshalo-x->traits.nrows)?0:PHIST_INVALID_INPUT,*iflag);
-if (A->context->halo_elements<=x->traits.nrowshalo-x->traits.nrows == false)
+if (A->context->halo_elements<=x->traits.nrowshalo-x->traits.nrowspadded == false)
 {
   PHIST_OUT(PHIST_WARNING,"The following compatibility test fails: nrows=%d\nhalo_elements=%d\nnrowshalo=%d\nnrowspadded=%d\nnrowshalopadded=%d\nmaxnrowshalo=%d\n",
         x->traits.nrows,
@@ -1430,6 +1429,7 @@ if (A->context->halo_elements<=x->traits.nrowshalo-x->traits.nrows == false)
         x->traits.nrowshalopadded,
         x->traits.maxnrowshalo);  
 }
+ PHIST_CHK_IERR(*iflag=(A->context->halo_elements<=x->traits.nrowshalo-x->traits.nrowspadded)?0:PHIST_INVALID_INPUT,*iflag);
 
   if (alpha==st::zero())
   {
