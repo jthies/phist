@@ -15,7 +15,7 @@
 #include "Teuchos_StandardCatchMacros.hpp"
 #endif
 
-#include "ghost.h"
+#include <ghost.h>
 
 #include "phist_typedefs.h"
 #include "phist_ScalarTraits.hpp"

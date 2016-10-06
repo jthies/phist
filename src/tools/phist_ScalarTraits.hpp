@@ -18,7 +18,7 @@
 #include "phist_lapack.h"
 
 #ifdef PHIST_HAVE_GHOST
-#include "ghost.h"
+#include <ghost/types.h>
 #endif
 
 #ifdef PHIST_KERNEL_LIB_BUILTIN

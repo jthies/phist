@@ -92,7 +92,7 @@ PHIST_SOUT(PHIST_INFO,"\n\nInstead of a matrix file you can also specify a strin
 
 // ghost/physics
 #ifdef PHIST_KERNEL_LIB_GHOST
-#include "ghost.h"
+#include <ghost.h>
 #endif
 #ifdef PHIST_HAVE_ESSEX_PHYSICS
 #include "essex-physics/matfuncs.h"

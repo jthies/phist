@@ -9,7 +9,7 @@
 
 #if defined(PHIST_HAVE_ANASAZI)&&defined(PHIST_HAVE_BELOS)
 
-#include "ghost.h"
+#include <ghost.h>
 #include "phist_typedefs.h"
 #include "phist_ScalarTraits.hpp"
 #include "./typedefs.hpp"

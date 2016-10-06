@@ -9,7 +9,7 @@
 
 #ifdef PHIST_HAVE_BELOS
 
-#include "ghost.h"
+#include <ghost.h>
 #include "phist_typedefs.h"
 #include "phist_ScalarTraits.hpp"
 #include "./typedefs.hpp"
@@ -25,9 +25,9 @@
 #include "phist_GhostMV.hpp"
 #include "phist_rcp_helpers.hpp"
 
-#include "ghost/densemat.h"
-#include "ghost/densemat_rm.h"
-#include "ghost/densemat_cm.h"
+#include <ghost/densemat.h>
+#include <ghost/densemat_rm.h>
+#include <ghost/densemat_cm.h>
 
 #ifdef HAVE_BELOS_TSQR
 #  include <Ghost_TsqrAdaptor.hpp>

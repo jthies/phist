@@ -12,7 +12,7 @@
 #include "Teuchos_RCP.hpp"
 
 #ifdef PHIST_KERNEL_LIB_GHOST
-#include "ghost.h"
+#include <ghost.h>
 #include "ghost/phist_GhostMV.hpp"
 #elif !defined(PHIST_KERNEL_LIB_EPETRA) && !defined(PHIST_KERNEL_LIB_TPETRA)
 #include "trilinos_interface/phist_MultiVector.hpp"

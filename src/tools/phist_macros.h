@@ -122,8 +122,8 @@ PHIST_OUT(PHIST_ERROR,"Error code %d (%s) returned from call %s\n(file %s, line 
 #endif
 
 #ifdef PHIST_HAVE_GHOST
-#include "ghost/config.h"
-#include "ghost/types.h"
+#include <ghost/config.h>
+#include <ghost/types.h>
 // check return value from GHOST
 #define PHIST_CHK_GERR(func,FLAG) { PHIST_TIMEMONITOR_PERLINE_MACRO \
 ghost_error gerr=func; FLAG=PHIST_SUCCESS; if (gerr!=GHOST_SUCCESS) { FLAG=PHIST_FUNCTIONAL_ERROR;\
@@ -203,7 +203,7 @@ PHIST_OUT(PHIST_WARNING,"Warning, function %s is DEPRECATED.\n(file %s, line %d)
 #   include "phist_timemonitor.hpp"
 # endif
 # if defined(PHIST_KERNEL_LIB_GHOST) && PHIST_USE_GHOST_TASKS
-#   include "ghost/task.h"
+#   include <ghost/task.h>
 #   define PHIST_GHOST_CHK_IN_TASK(s, iflag) { \
       ghost_task_t *curtask = NULL; \
       PHIST_CHK_GERR(ghost_task_cur(&curtask), iflag); \

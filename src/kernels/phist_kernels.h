@@ -19,8 +19,8 @@ typedef int MPI_Comm;
 #include "phist_tasks.h"
 
 #ifdef PHIST_HAVE_GHOST
-#include "ghost/types.h"
-#include "ghost/sparsemat.h"
+#include <ghost/types.h>
+#include <ghost/sparsemat.h>
 #else
 typedef phist_lidx ghost_lidx;
 typedef phist_gidx ghost_gidx;

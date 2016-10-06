@@ -7,7 +7,7 @@
 
 #include "phist_config.h"
 #ifdef PHIST_HAVE_GHOST
-#include "ghost/config.h"
+#include <ghost/config.h>
 #endif
 
 #include "phist_kernel_flags.h"

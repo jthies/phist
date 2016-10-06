@@ -15,7 +15,7 @@
 #include <likwid.h>
 #endif
 
-#include "ghost/bench.h"
+#include <ghost/bench.h>
 
 /* with GHOST we use the builtin stream benchmarks because they will run on any supported hardware, 
    in particular CUDA-capable GPUs. We should keep in mind that the GHOST benchmark is a bit different

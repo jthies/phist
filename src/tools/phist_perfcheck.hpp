@@ -8,7 +8,7 @@
 #endif
 
 #ifdef PHIST_KERNEL_LIB_GHOST
-#include "ghost.h"
+#include <ghost.h>
 #endif
 
 #ifndef PHIST_PERFCHECK

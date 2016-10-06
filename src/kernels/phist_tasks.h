@@ -69,8 +69,7 @@
 
 
 #if defined(__cplusplus) && defined(PHIST_HAVE_GHOST) && defined(PHIST_HAVE_CXX11_LAMBDAS) && (PHIST_USE_GHOST_TASKS)
-#include <ghost.h>
-#include <ghost/machine.h>
+#include <ghost/task.h>
 
 
 // glue between C++11 Lambda-functions and plain old C function pointers

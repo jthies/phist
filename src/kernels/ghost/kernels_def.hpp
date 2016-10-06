@@ -1,6 +1,6 @@
 #include "phist_config.h"
-#include "ghost/config.h"
-#include "ghost/util.h"
+#include <ghost/config.h>
+#include <ghost/util.h>
 
 #ifdef TEST_MVEC_MAPS_SAME
 #undef TEST_MVEC_MAPS_SAME

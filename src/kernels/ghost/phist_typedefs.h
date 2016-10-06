@@ -25,8 +25,8 @@ typedef  complex float phist_s_complex;
 typedef  complex double phist_d_complex;
 #endif
 
-#include "ghost/config.h"
-#include "ghost/types.h"
+#include <ghost/config.h>
+#include <ghost/types.h>
 
 //! type of node-local indices. 
 typedef ghost_lidx phist_lidx;

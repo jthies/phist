@@ -13,10 +13,10 @@
 #include "phist_typedefs.h"
 // in this local include file we currently hard-code the Kokkos node type (node_type) (TODO)
 #include "typedefs.hpp"
-#include "ghost.h"
-#include "ghost/omp.h"
-#include "ghost/machine.h"
-#include "ghost/thpool.h"
+#include <ghost.h>
+#include <ghost/omp.h>
+#include <ghost/machine.h>
+#include <ghost/thpool.h>
 #include "phist_GhostMV.hpp"
 
 // @HEADER

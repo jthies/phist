@@ -5,10 +5,10 @@
 #endif
 
 #ifdef PHIST_KERNEL_LIB_GHOST
-//#include "ghost/config.h"
-#include "ghost.h"
+//#include <ghost/config.h>
+#include <ghost.h>
 # ifdef GHOST_HAVE_CUDA
-# include "ghost/cu_util.h"
+# include <ghost/cu_util.h>
 # endif
 #endif
 #include "phist_timemonitor.hpp"

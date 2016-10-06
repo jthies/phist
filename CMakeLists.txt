@@ -749,8 +749,14 @@ set (PHIST_JADA_SOURCE   ${PROJECT_SOURCE_DIR}/src/jada/phist_jadaOp.cpp
                          ${PROJECT_SOURCE_DIR}/src/jada/phist_jadaOpts.cpp
                          ${PROJECT_SOURCE_DIR}/src/jada/phist_jdqr.cpp
                          ${PROJECT_SOURCE_DIR}/src/jada/phist_schur_decomp.cpp
-                         ${PROJECT_SOURCE_DIR}/src/jada/phist_subspacejada.cpp
-                         ${PROJECT_SOURCE_DIR}/src/jada/phist_harmonicjada.cpp
+                         ${PROJECT_SOURCE_DIR}/src/jada/phist_subspacejadaS.cpp
+                         ${PROJECT_SOURCE_DIR}/src/jada/phist_subspacejadaC.cpp
+                         ${PROJECT_SOURCE_DIR}/src/jada/phist_subspacejadaD.cpp
+                         ${PROJECT_SOURCE_DIR}/src/jada/phist_subspacejadaZ.cpp
+                         ${PROJECT_SOURCE_DIR}/src/jada/phist_harmonicjadaS.cpp
+                         ${PROJECT_SOURCE_DIR}/src/jada/phist_harmonicjadaC.cpp
+                         ${PROJECT_SOURCE_DIR}/src/jada/phist_harmonicjadaD.cpp
+                         ${PROJECT_SOURCE_DIR}/src/jada/phist_harmonicjadaZ.cpp
                          ${PROJECT_SOURCE_DIR}/src/jada/phist_transform_searchspace.cpp
                          ${PROJECT_SOURCE_DIR}/src/jada/phist_jadaCorrectionSolver.cpp
                          )

@@ -163,10 +163,6 @@ symmetric=symmetric||(opts.symmetry==phist_COMPLEX_SYMMETRIC);
   }
 */
 
-  // set output format for floating point numbers
-  std::cout << std::scientific << std::setprecision(4) << std::setw(15);
-
-
   //------------------------------- create vectors and matrices --------------------
   // get communicator for sdMats
   phist_const_comm_ptr domain_comm;

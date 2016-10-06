@@ -7,7 +7,7 @@
 #include <mpi.h>
 #endif
 #include "phist_macros.h"
-#include "ghost.h"
+#include <ghost.h>
 
 #if PHIST_OUTLEV>=PHIST_TRACE
 #define TRACE_GHOSTMV_MEM
