@@ -68,6 +68,7 @@ kernel libs) ?
 #cmakedefine PHIST_KERNEL_LIB_GHOST
 #cmakedefine PHIST_KERNEL_LIB_BUILTIN
 #cmakedefine PHIST_KERNEL_LIB_MAGMA
+#cmakedefine PHIST_KERNEL_LIB_PETSC
 
 #cmakedefine PHIST_MVECS_ROW_MAJOR
 

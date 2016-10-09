@@ -223,9 +223,12 @@ public:
       }
       ASSERT_EQ(0,delete_mat(I_));
 
-      delete [] x_A_->sigma_r_;
-      delete [] x_A_->sigma_i_;
-      delete x_A_;
+      if (x_A_ != NULL)
+      {
+        delete [] x_A_->sigma_r_;
+        delete [] x_A_->sigma_i_;
+        delete x_A_;
+      }
       
       if (x_vec1_!=NULL) delete x_vec1_;
       if (x_vec2_!=NULL) delete x_vec2_;
@@ -478,8 +481,8 @@ protected:
   // data structures for testing the "x_*" kernels used to implement CARP-CG.
   // these use x_mvecs with separate real and imaginary part so that CARP-CG can
   // be used in real arithmetic but with complex-shifted matrix
-  TYPE(x_sparseMat) *x_A_;
-  TYPE(x_mvec) *x_vec1_, *x_vec2_,*x_vec3_;
+  TYPE(x_sparseMat) *x_A_ = NULL;
+  TYPE(x_mvec) *x_vec1_ = NULL, *x_vec2_ = NULL,*x_vec3_ = NULL;
   
   phist_ZsparseMat_ptr z_A_, z_A_shift0_, z_A_shift1_;
   phist_Zmvec_ptr z_vec1_, z_vec2_,z_vec3_;

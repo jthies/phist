@@ -458,11 +458,14 @@ protected:
 
   TEST_F(CLASSNAME,A1_fromRowFunc)
   {
+    if( !typeImplemented_ || problemTooSmall_ )
+      return;
+
     TYPE(sparseMat_ptr) A=NULL;
     iflag_=PHIST_SPARSEMAT_QUIET;
     SUBR(sparseMat_create_fromRowFunc)(&A,comm_,_N_,_N_,1,&PHIST_TG_PREFIX(idfunc),NULL,&iflag_);
     // use EXPECT from now on so that the matrix gets deleted even if something fails
-    EXPECT_EQ(0,iflag_);
+    ASSERT_EQ(0,iflag_);
 
     // the domain map of this matrix should be the defaultMap_, check this and construct vectors for the spMVM
     phist_const_map_ptr domainA=NULL;
@@ -504,6 +507,9 @@ protected:
 
   TEST_F(CLASSNAME,A1_fromRowFuncAndMap)
   {
+    if( !typeImplemented_ || problemTooSmall_ )
+      return;
+
     TYPE(sparseMat_ptr) A=NULL;
     iflag_=PHIST_SPARSEMAT_QUIET;
     SUBR(sparseMat_create_fromRowFuncAndMap)(&A,map_,1,&PHIST_TG_PREFIX(idfunc),NULL,&iflag_);
@@ -526,6 +532,9 @@ protected:
 #if MATNAME == MATNAME_sprandn
   TEST_F(CLASSNAME, A2_times_mvec)
     {
+    if( !typeImplemented_ || problemTooSmall_ )
+      return;
+
     // we allow a tolerance here because the matrices may have errors in the
     // last digit and we can't get the test to pass otherwise.
     ASSERT_NEAR(mt::one(),const_row_sum_test(A_),100*VTest::releps());
@@ -535,6 +544,9 @@ protected:
 #if MATNAME == MATNAME_sprandn_nodiag
   TEST_F(CLASSNAME, A3_times_mvec)
     {
+    if( !typeImplemented_ || problemTooSmall_ )
+      return;
+
     // we allow a tolerance here because the matrices may have errors in the
     // last digit and we can't get the test to pass otherwise.
     ASSERT_NEAR(mt::one(),const_row_sum_test(A_),100*VTest::releps());
@@ -1275,6 +1287,9 @@ TEST_F(CLASSNAME,compare_with_rowFunc)
 
 TEST_F(CLASSNAME,fromRowFuncAndMap)
 {
+  if( !typeImplemented_ || problemTooSmall_ )
+    return;
+
   TYPE(sparseMat_ptr) A1=NULL, A2=NULL;
   iflag_=PHIST_SPARSEMAT_QUIET;
   SUBR(sparseMat_create_fromRowFuncAndMap)(&A1,defaultMap_,7,&MATPDE3D_rowFunc,NULL,&iflag_);

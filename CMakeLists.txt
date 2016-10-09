@@ -472,7 +472,7 @@ endif()
 # setup which kernel library is being used.
 ##############################################################################
 
-set(PHIST_KERNEL_LIB "builtin" CACHE STRING "Select underlying kernel libraries for phist (builtin|ghost|epetra|tpetra|magma)")
+set(PHIST_KERNEL_LIB "builtin" CACHE STRING "Select underlying kernel libraries for phist (builtin|ghost|epetra|tpetra|magma|petsc)")
 message(STATUS "kernel lib " ${PHIST_KERNEL_LIB} " ...")
 
 set(REQUIRE_TRILI_PKG,"")
@@ -559,6 +559,9 @@ elseif (PHIST_KERNEL_LIB STREQUAL "builtin")
 elseif (PHIST_KERNEL_LIB STREQUAL "magma")
   set(PHIST_KERNEL_LIB_MAGMA 1)
   set(PHIST_MVECS_ROW_MAJOR 0)
+elseif (PHIST_KERNEL_LIB STREQUAL "petsc")
+  set(PHIST_KERNEL_LIB_PETSC 1)
+  set(PHIST_MVECS_ROW_MAJOR 0)
 else ()
   message( FATAL_ERROR "PHIST_KERNEL_LIB not set or not recognized" )
 endif ()
@@ -583,7 +586,7 @@ endif()
 # because e.g. Isorropia/Zoltan and our own HYMLS require it. For larger    #
 # runs with Epetra it has to be switched off before compiling PHIST.        #
 #############################################################################
-if( "${PHIST_KERNEL_LIB}" MATCHES "epetra" )
+if( "${PHIST_KERNEL_LIB}" MATCHES "epetra|petsc" )
   set(PHIST_FORCE_INT_GIDX_DEFAULT ON)
 else()
   set(PHIST_FORCE_INT_GIDX_DEFAULT OFF)
@@ -591,11 +594,14 @@ endif()
 
 option(PHIST_FORCE_INT_GIDX "Use 32-bit global indices for compatiblity with other libs" 
 ${PHIST_FORCE_INT_GIDX_DEFAULT})
+if( "${PHIST_KERNEL_LIB}" MATCHES "petsc" )
+  set(PHIST_FORCE_INT_GIDX ON)
+endif()
 
 ##############################################################################
 # enable single precision and complex valued calculation if supported
 ##############################################################################
-if( "${PHIST_KERNEL_LIB}" MATCHES "tpetra|ghost|magma" )
+if( "${PHIST_KERNEL_LIB}" MATCHES "tpetra|ghost|magma|petsc" )
   set(PHIST_SUPPORT_SP ON)
   set(PHIST_SUPPORT_COMPLEX ON)
 else()
@@ -783,6 +789,22 @@ include_directories(${PROJECT_SOURCE_DIR}/src/precon)
 include_directories(${PROJECT_SOURCE_DIR}/src/support)
 include_directories(${PROJECT_SOURCE_DIR}/drivers)
 
+if(PHIST_KERNEL_LIB STREQUAL "magma")
+  find_package(MAGMA REQUIRED)
+  include_directories(${MAGMA_INCLUDE_DIRS})
+  link_directories(${MAGMA_LIBRARY_DIRS})
+  list(APPEND external_libs ${MAGMA_LIBRARIES})
+  list(APPEND PHIST_PKG_CONFIG_REQUIRE magma)
+endif()
+
+if(PHIST_KERNEL_LIB STREQUAL "petsc")
+  find_package(PETSC REQUIRED)
+  include_directories(${PETSC_INCLUDE_DIRS})
+  link_directories(${PETSC_LIBRARY_DIRS})
+  list(APPEND external_libs ${PETSC_LIBRARIES})
+  list(APPEND PHIST_PKG_CONFIG_REQUIRE petsc)
+endif()
+
 if (PHIST_USE_CRAFT)
 	find_package(CRAFT REQUIRED)
 	if(CRAFT_FOUND)
@@ -859,14 +881,6 @@ if (PHIST_USE_MPACK)
        supported implementation right now")
     endif()
   endif()
-endif()
-
-if(PHIST_KERNEL_LIB STREQUAL "magma")
-  find_package(MAGMA REQUIRED)
-  include_directories(${MAGMA_INCLUDE_DIRS})
-  link_directories(${MAGMA_LIBRARY_DIRS})
-  list(APPEND external_libs ${MAGMA_LIBRARIES})
-  list(APPEND PHIST_PKG_CONFIG_REQUIRE magma)
 endif()
 
 # load parmetis for reordering builtin

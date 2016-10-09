@@ -60,6 +60,9 @@ protected:
 // set the vdotw argument to NULL
 TEST_F(CLASSNAME,fused_spmv_mvdot)
 {
+    if( !typeImplemented_ || problemTooSmall_ )
+      return;
+
     int stride = 1;
     SUBR(mvec_random)(vec1_,&iflag_);
     ASSERT_EQ(0,iflag_);
@@ -119,6 +122,9 @@ TEST_F(CLASSNAME,fused_spmv_mvdot)
 
 TEST_F(CLASSNAME,fused_spmv_mvTmv)
 {
+    if( !typeImplemented_ || problemTooSmall_ )
+      return;
+
     int stride = 1;
     SUBR(mvec_random)(vec1_,&iflag_);
     ASSERT_EQ(0,iflag_);
@@ -157,6 +163,9 @@ TEST_F(CLASSNAME,fused_spmv_mvTmv)
 // check that we can set W, WtW or VtW to NULL. WtV and WtW should be independent of alpha and beta.
 TEST_F(CLASSNAME,fused_spmv_mvTmv_with_null_args)
 {
+    if( !typeImplemented_ || problemTooSmall_ )
+      return;
+
     int stride = 1;
     SUBR(mvec_random)(vec1_,&iflag_);
     ASSERT_EQ(0,iflag_);
@@ -191,6 +200,9 @@ return;
 
 TEST_F(CLASSNAME,fused_spmv_mvdot_mvadd)
 {
+    if( !typeImplemented_ || problemTooSmall_ )
+      return;
+
     int stride = 1;
     SUBR(mvec_random)(vec1_,&iflag_);
     ASSERT_EQ(0,iflag_);

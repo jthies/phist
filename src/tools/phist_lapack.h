@@ -163,7 +163,20 @@ phist_Sblas_cmplx* sn, phist_Sblas_cmplx* r);
 void ZLARTG(const phist_Dblas_cmplx *f, const phist_Dblas_cmplx *g, double* cs, 
 phist_Dblas_cmplx* sn, phist_Dblas_cmplx* r);
 
+///////////////////////////////////////////////////////////////////////////////////////////
+//      XGEMM - matrix multiplication
+///////////////////////////////////////////////////////////////////////////////////////////
+void SGEMM(const char* transA, const char* transB, const phist_blas_idx* m, const phist_blas_idx* n, const phist_blas_idx* k,
+const float* alpha, const float* a,  const phist_blas_idx* lda, float* b, const phist_blas_idx* ldb, const float* beta, float* c, const phist_blas_idx* ldc);
 
+void DGEMM(const char* transA, const char* transB, const phist_blas_idx* m, const phist_blas_idx* n, const phist_blas_idx* k,
+const double* alpha, const double* a,  const phist_blas_idx* lda, double* b, const phist_blas_idx* ldb, const double* beta, double* c, const phist_blas_idx* ldc);
+
+void CGEMM(const char* transA, const char* transB, const phist_blas_idx* m, const phist_blas_idx* n, const phist_blas_idx* k,
+const phist_Sblas_cmplx* alpha, const phist_Sblas_cmplx* a,  const phist_blas_idx* lda, phist_Sblas_cmplx* b, const phist_blas_idx* ldb, const phist_Sblas_cmplx* beta, phist_Sblas_cmplx* c, const phist_blas_idx* ldc);
+
+void ZGEMM(const char* transA, const char* transB, const phist_blas_idx* m, const phist_blas_idx* n, const phist_blas_idx* k,
+const phist_Dblas_cmplx* alpha, const phist_Dblas_cmplx* a,  const phist_blas_idx* lda, phist_Dblas_cmplx* b, const phist_blas_idx* ldb, const phist_Dblas_cmplx* beta, phist_Dblas_cmplx* c, const phist_blas_idx* ldc);
 
 #ifdef __cplusplus
 } // extern "C" 

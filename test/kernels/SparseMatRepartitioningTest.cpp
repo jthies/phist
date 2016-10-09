@@ -67,14 +67,14 @@ class DSparseMatRepartTest: public virtual TestWithType<double>,
 #endif
     iflag_=0;
     phist_Dcreate_matrix(&linearA_,comm_,spin_label,&iflag_);
-    EXPECT_EQ(0,iflag_);
+    ASSERT_EQ(0,iflag_);
     phist_DsparseMat_get_domain_map(linearA_,&linearMap_,&iflag_);
     EXPECT_EQ(0,iflag_);
     // construct same matrix but possibly with repartitioning (depends on what the kernel
     // library supports and which TPLs are available)
     iflag_=PHIST_SPARSEMAT_PERM_GLOBAL|getSparseMatCreateFlag(_N_,1);
     phist_Dcreate_matrix(&repartA_,comm_,spin_label,&iflag_);
-    EXPECT_EQ(0,iflag_);
+    ASSERT_EQ(0,iflag_);
     phist_DsparseMat_get_domain_map(repartA_,&repartMap_,&iflag_);
     EXPECT_EQ(0,iflag_);
     
@@ -188,16 +188,16 @@ protected:
 
   // two different maps: the regular one and the one obtained as row distribution
   // when asking for PHIST_SPARSEMAT_PERM_GLOBAL
-  phist_const_map_ptr linearMap_, repartMap_;
+  phist_const_map_ptr linearMap_ = NULL, repartMap_ = NULL;
   
   // input, result and exact result of spMVM in linear map
-  phist_Dmvec_ptr linearV_in_, linearV_out_, linearV_out_exact_;
+  phist_Dmvec_ptr linearV_in_ = NULL, linearV_out_ = NULL, linearV_out_exact_ = NULL;
 
   // input, result and exact result of spMVM in repartitioned map
-  phist_Dmvec_ptr repartV_in_, repartV_out_, repartV_out_exact_;
+  phist_Dmvec_ptr repartV_in_ = NULL, repartV_out_ = NULL, repartV_out_exact_ = NULL;
   
   // spinSZ[L] matrix with and without repartitioning
-  phist_DsparseMat_ptr linearA_, repartA_;
+  phist_DsparseMat_ptr linearA_ = NULL, repartA_ = NULL;
   
 };
 
