@@ -14,6 +14,9 @@
 #include <petscsys.h>
 #include <petsc/private/petscimpl.h>
 
+#include <fstream>
+#include <string>
+
 #include "phist_macros.h"
 #include "phist_kernel_perfmodels.hpp"
 #include "../phist_kernels.h"

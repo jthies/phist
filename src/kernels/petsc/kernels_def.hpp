@@ -14,7 +14,26 @@ extern "C" void SUBR(sparseMat_read_mm)(TYPE(sparseMat_ptr)* A, phist_const_comm
         const char* filename,int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
-  *iflag=PHIST_NOT_IMPLEMENTED;
+
+  std::string line;
+  std::ifstream infile(filename);
+  getline(infile, line);
+  if( line != "%%MatrixMarket matrix coordinate real general" &&  line != "%%MatrixMarket matrix coordinate real symmetric" )
+  {
+    *iflag = PHIST_NOT_IMPLEMENTED;
+    return;
+  }
+
+  while(infile.peek() == '%')
+    getline(infile, line);
+
+  phist_gidx globalRows, globalCols, globalLines;
+  infile >> globalRows >> globalCols >> globalLines;
+  phist_map_ptr map;
+  PHIST_CHK_IERR(phist_map_create(&map,vcomm,globalRows,iflag),*iflag);
+  PHIST_CHK_IERR(SUBR(sparseMat_read_mm_with_map)(A, map, filename, iflag), *iflag);
+
+  *iflag=PHIST_SUCCESS;
 }
 
 extern "C" void SUBR(sparseMat_read_bin)(TYPE(sparseMat_ptr)* A, phist_const_comm_ptr vcomm,
@@ -31,11 +50,91 @@ const char* filename,int* iflag)
   *iflag=PHIST_NOT_IMPLEMENTED;
 }
 
-extern "C" void SUBR(sparseMat_read_mm_with_map)(TYPE(sparseMat_ptr)* A, phist_const_map_ptr map,
+extern "C" void SUBR(sparseMat_read_mm_with_map)(TYPE(sparseMat_ptr)* vA, phist_const_map_ptr map,
         const char* filename,int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
-  *iflag=PHIST_NOT_IMPLEMENTED;
+  PHIST_CAST_PTR_FROM_VOID(Traits<_ST_>::sparseMat_t*,A,vA,*iflag);
+
+  std::string line;
+  std::ifstream infile(filename);
+  getline(infile, line);
+  bool symm;
+  if( line == "%%MatrixMarket matrix coordinate real general" )
+    symm = false;
+  else if( line == "%%MatrixMarket matrix coordinate real symmetric" )
+    symm = true;
+  else
+  {
+    *iflag = PHIST_NOT_IMPLEMENTED;
+    return;
+  }
+
+  while(infile.peek() == '%')
+    getline(infile, line);
+
+  phist_gidx globalRows, globalCols, globalLines;
+  infile >> globalRows >> globalCols >> globalLines;
+  phist_gidx globalEntries = globalLines;
+  if( symm )
+    globalEntries += globalLines - globalRows;
+  phist_lidx avg_nne = globalEntries/globalRows;
+
+  phist_lidx nlocal;
+  phist_gidx ilower, iupper, nglob;
+  phist_const_comm_ptr comm;
+  PHIST_CHK_IERR(phist_map_get_local_length(map, &nlocal, iflag), *iflag);
+  PHIST_CHK_IERR(phist_map_get_ilower(map, &ilower, iflag), *iflag);
+  PHIST_CHK_IERR(phist_map_get_iupper(map, &iupper, iflag), *iflag);
+  PHIST_CHK_IERR(phist_map_get_global_length(map, &nglob, iflag), *iflag);
+  PHIST_CHK_IERR(phist_map_get_comm(map, &comm, iflag), *iflag);
+
+  PHIST_CHK_IERR( *iflag = PetscNew(A), *iflag);
+  (*A)->map = map;
+  PHIST_SOUT(PHIST_INFO, "reading mm mat: %d x %d\n", nglob, nglob);
+  //PHIST_CHK_IERR( *iflag = MatCreateAIJ(*(MPI_Comm*)comm, nlocal, nlocal, nglob, nglob, avg_nne, NULL, avg_nne, NULL, &((*A)->m)), *iflag);
+  PHIST_CHK_IERR( *iflag = MatCreate(*(MPI_Comm*)comm, &((*A)->m)), *iflag);
+  PHIST_CHK_IERR( *iflag = MatSetType((*A)->m, MATAIJ), *iflag);
+  PHIST_CHK_IERR( *iflag = MatSetSizes((*A)->m, nlocal, nlocal, nglob, nglob), *iflag);
+  MatType matType;
+  PHIST_CHK_IERR( *iflag = MatGetType((*A)->m, &matType), *iflag);
+  if( std::string(matType) == std::string(MATMPIAIJ) )
+  {
+    PHIST_CHK_IERR( *iflag = MatMPIAIJSetPreallocation((*A)->m, avg_nne, NULL, avg_nne, NULL), *iflag);
+  }
+  else if( std::string(matType) == std::string(MATSEQAIJ) )
+  {
+    PHIST_CHK_IERR( *iflag = MatSeqAIJSetPreallocation((*A)->m, avg_nne, NULL), *iflag);
+  }
+  else
+  {
+    PHIST_SOUT(PHIST_ERROR, "strange PETSc matrix type %s\n", matType);
+    *iflag = PHIST_NOT_IMPLEMENTED;
+    return;
+  }
+  PHIST_CHK_IERR( *iflag = MatSetOption((*A)->m, MAT_NEW_NONZERO_ALLOCATION_ERR, PETSC_FALSE), *iflag);
+
+
+  for (phist_gidx i = 0; i < globalLines; i++)
+  {
+    _ST_ val;
+    phist_gidx row, col;
+    infile >> row >> col >> val;
+    // count from zero...
+    row--, col--;
+    if( ilower <= row && row <= iupper )
+    {
+      PHIST_CHK_IERR( *iflag = MatSetValue((*A)->m,row,col,val,INSERT_VALUES), *iflag);
+    }
+    if( symm && col != row && ilower <= col && col <= iupper )
+    {
+      PHIST_CHK_IERR( *iflag = MatSetValue((*A)->m,col,row,val,INSERT_VALUES), *iflag);
+    }
+  }
+  PHIST_CHK_IERR( *iflag = MatAssemblyBegin((*A)->m,MAT_FINAL_ASSEMBLY), *iflag);
+  PHIST_CHK_IERR( *iflag = MatAssemblyEnd((*A)->m,MAT_FINAL_ASSEMBLY), *iflag);
+
+  *iflag = PHIST_SUCCESS;
 }
 
 extern "C" void SUBR(sparseMat_read_bin_with_map)(TYPE(sparseMat_ptr)* A, phist_const_map_ptr map,
@@ -51,28 +150,40 @@ extern "C" void SUBR(sparseMat_read_hb_with_map)(TYPE(sparseMat_ptr)* A, phist_c
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   *iflag=PHIST_NOT_IMPLEMENTED;
 }
-extern "C" void SUBR(sparseMat_get_row_map)(TYPE(const_sparseMat_ptr) A, phist_const_map_ptr* map, int* iflag)
+extern "C" void SUBR(sparseMat_get_row_map)(TYPE(const_sparseMat_ptr) vA, phist_const_map_ptr* map, int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
-  *iflag=PHIST_NOT_IMPLEMENTED;
+  PHIST_CAST_PTR_FROM_VOID(const Traits<_ST_>::sparseMat_t,A,vA,*iflag);
+
+  *map = A->map;
+  *iflag = PHIST_SUCCESS;
 }
 
-extern "C" void SUBR(sparseMat_get_col_map)(TYPE(const_sparseMat_ptr) A, phist_const_map_ptr* map, int* iflag)
+extern "C" void SUBR(sparseMat_get_col_map)(TYPE(const_sparseMat_ptr) vA, phist_const_map_ptr* map, int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
-  *iflag=PHIST_NOT_IMPLEMENTED;
+  PHIST_CAST_PTR_FROM_VOID(const Traits<_ST_>::sparseMat_t,A,vA,*iflag);
+
+  *map = A->map;
+  *iflag = PHIST_SUCCESS;
 }
 
-extern "C" void SUBR(sparseMat_get_domain_map)(TYPE(const_sparseMat_ptr) A, phist_const_map_ptr* map, int* iflag)
+extern "C" void SUBR(sparseMat_get_domain_map)(TYPE(const_sparseMat_ptr) vA, phist_const_map_ptr* map, int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
-  *iflag=PHIST_NOT_IMPLEMENTED;
+  PHIST_CAST_PTR_FROM_VOID(const Traits<_ST_>::sparseMat_t,A,vA,*iflag);
+
+  *map = A->map;
+  *iflag = PHIST_SUCCESS;
 }
 
-extern "C" void SUBR(sparseMat_get_range_map)(TYPE(const_sparseMat_ptr) A, phist_const_map_ptr* map, int* iflag)
+extern "C" void SUBR(sparseMat_get_range_map)(TYPE(const_sparseMat_ptr) vA, phist_const_map_ptr* map, int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
-  *iflag=PHIST_NOT_IMPLEMENTED;
+  PHIST_CAST_PTR_FROM_VOID(const Traits<_ST_>::sparseMat_t,A,vA,*iflag);
+
+  *map = A->map;
+  *iflag = PHIST_SUCCESS;
 }
 
 extern "C" void SUBR(mvec_create)(TYPE(mvec_ptr)* vV, 
@@ -91,10 +202,24 @@ extern "C" void SUBR(mvec_create)(TYPE(mvec_ptr)* vV,
   (*V)->map = map;
   PHIST_CHK_IERR( *iflag = PetscCalloc1(nlocal*nvec, &((*V)->rawData)), *iflag);
   PHIST_CHK_IERR( *iflag = MatCreate(*(MPI_Comm*)comm, &((*V)->v)), *iflag);
-  PHIST_CHK_IERR( *iflag = MatSetType((*V)->v, MATMPIDENSE), *iflag);
+  PHIST_CHK_IERR( *iflag = MatSetType((*V)->v, MATDENSE), *iflag);
   PHIST_CHK_IERR( *iflag = MatSetSizes((*V)->v, nlocal, nvec, nglob, nvec), *iflag);
-  //PHIST_CHK_IERR( *iflag = MatMPIDenseSetLDA((*V)->v, nlocal), *iflag);
-  PHIST_CHK_IERR( *iflag = MatMPIDenseSetPreallocation((*V)->v, (PetscScalar*)(*V)->rawData), *iflag);
+  MatType matType;
+  PHIST_CHK_IERR( *iflag = MatGetType((*V)->v, &matType), *iflag);
+  if( std::string(matType) == std::string(MATMPIDENSE) )
+  {
+    PHIST_CHK_IERR( *iflag = MatMPIDenseSetPreallocation((*V)->v, (PetscScalar*)(*V)->rawData), *iflag);
+  }
+  else if( std::string(matType) == std::string(MATSEQDENSE) )
+  {
+    PHIST_CHK_IERR( *iflag = MatSeqDenseSetPreallocation((*V)->v, (PetscScalar*)(*V)->rawData), *iflag);
+  }
+  else
+  {
+    PHIST_SOUT(PHIST_ERROR, "strange PETSc matrix type %s\n", matType);
+    *iflag = PHIST_NOT_IMPLEMENTED;
+    return;
+  }
   PHIST_CHK_IERR( *iflag = MatAssemblyBegin((*V)->v, MAT_FINAL_ASSEMBLY), *iflag);
   PHIST_CHK_IERR( *iflag = MatAssemblyEnd((*V)->v, MAT_FINAL_ASSEMBLY), *iflag);
   (*V)->is_view = false;
@@ -119,10 +244,25 @@ extern "C" void SUBR(mvec_create_view)(TYPE(mvec_ptr)* vV, phist_const_map_ptr m
   (*V)->map = map;
   (*V)->rawData = values;
   PHIST_CHK_IERR( *iflag = MatCreate(*(MPI_Comm*)comm, &((*V)->v)), *iflag);
-  PHIST_CHK_IERR( *iflag = MatSetType((*V)->v, MATMPIDENSE), *iflag);
+  PHIST_CHK_IERR( *iflag = MatSetType((*V)->v, MATDENSE), *iflag);
   PHIST_CHK_IERR( *iflag = MatSetSizes((*V)->v, nlocal, nvec, nglob, nvec), *iflag);
-  //PHIST_CHK_IERR( *iflag = MatMPIDenseSetLDA((*V)->v, nlocal), *iflag);
-  PHIST_CHK_IERR( *iflag = MatMPIDenseSetPreallocation((*V)->v, (PetscScalar*)(*V)->rawData), *iflag);
+  MatType matType;
+  PHIST_CHK_IERR( *iflag = MatGetType((*V)->v, &matType), *iflag);
+  if( std::string(matType) == std::string(MATMPIDENSE) )
+  {
+    PHIST_CHK_IERR( *iflag = MatMPIDenseSetPreallocation((*V)->v, (PetscScalar*)(*V)->rawData), *iflag);
+  }
+  else if( std::string(matType) == std::string(MATSEQDENSE) )
+  {
+    PHIST_CHK_IERR( *iflag = MatSeqDenseSetPreallocation((*V)->v, (PetscScalar*)(*V)->rawData), *iflag);
+  }
+  else
+  {
+    PHIST_SOUT(PHIST_ERROR, "strange PETSc matrix type %s\n", matType);
+    *iflag = PHIST_NOT_IMPLEMENTED;
+    return;
+  }
+
   PHIST_CHK_IERR( *iflag = MatAssemblyBegin((*V)->v, MAT_FINAL_ASSEMBLY), *iflag);
   PHIST_CHK_IERR( *iflag = MatAssemblyEnd((*V)->v, MAT_FINAL_ASSEMBLY), *iflag);
   (*V)->is_view = true;
@@ -265,10 +405,25 @@ extern "C" void SUBR(mvec_view_block)(TYPE(mvec_ptr) vV,
   (*Vblock)->map = V->map;
   (*Vblock)->rawData = V->rawData + jmin*nlocal;
   PHIST_CHK_IERR( *iflag = MatCreate(*(MPI_Comm*)comm, &((*Vblock)->v)), *iflag);
-  PHIST_CHK_IERR( *iflag = MatSetType((*Vblock)->v, MATMPIDENSE), *iflag);
+  PHIST_CHK_IERR( *iflag = MatSetType((*Vblock)->v, MATDENSE), *iflag);
   PHIST_CHK_IERR( *iflag = MatSetSizes((*Vblock)->v, nlocal, nvec, nglob, nvec), *iflag);
-  //PHIST_CHK_IERR( *iflag = MatMPIDenseSetLDA((*Vblock)->v, nlocal), *iflag);
-  PHIST_CHK_IERR( *iflag = MatMPIDenseSetPreallocation((*Vblock)->v, (PetscScalar*)(*Vblock)->rawData), *iflag);
+  MatType matType;
+  PHIST_CHK_IERR( *iflag = MatGetType((*Vblock)->v, &matType), *iflag);
+  if( std::string(matType) == std::string(MATMPIDENSE) )
+  {
+    PHIST_CHK_IERR( *iflag = MatMPIDenseSetPreallocation((*Vblock)->v, (PetscScalar*)(*Vblock)->rawData), *iflag);
+  }
+  else if( std::string(matType) == std::string(MATSEQDENSE) )
+  {
+    PHIST_CHK_IERR( *iflag = MatSeqDenseSetPreallocation((*Vblock)->v, (PetscScalar*)(*Vblock)->rawData), *iflag);
+  }
+  else
+  {
+    PHIST_SOUT(PHIST_ERROR, "strange PETSc matrix type %s\n", matType);
+    *iflag = PHIST_NOT_IMPLEMENTED;
+    return;
+  }
+
   PHIST_CHK_IERR( *iflag = MatAssemblyBegin((*Vblock)->v, MAT_FINAL_ASSEMBLY), *iflag);
   PHIST_CHK_IERR( *iflag = MatAssemblyEnd((*Vblock)->v, MAT_FINAL_ASSEMBLY), *iflag);
   (*Vblock)->is_view = true;
@@ -646,18 +801,44 @@ extern "C" void SUBR(sparseMat_times_mvec_communicate)(TYPE(const_sparseMat_ptr)
   *iflag = 0;
 }
 
-extern "C" void SUBR(sparseMat_times_mvec)(_ST_ alpha, TYPE(const_sparseMat_ptr) A, 
-    TYPE(const_mvec_ptr) x, _ST_ beta, TYPE(mvec_ptr) y, int* iflag)
+extern "C" void SUBR(sparseMat_times_mvec)(_ST_ alpha, TYPE(const_sparseMat_ptr) vA, 
+    TYPE(const_mvec_ptr) vV, _ST_ beta, TYPE(mvec_ptr) vW, int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
-  *iflag=PHIST_NOT_IMPLEMENTED;
+  PHIST_CAST_PTR_FROM_VOID(const Traits<_ST_>::sparseMat_t,A,vA,*iflag);
+  PHIST_CAST_PTR_FROM_VOID(const Traits<_ST_>::mvec_t,V,vV,*iflag);
+  PHIST_CAST_PTR_FROM_VOID(const Traits<_ST_>::mvec_t,W,vW,*iflag);
+
+  Mat tmpW;
+  PHIST_CHK_IERR( *iflag = MatMatMult(A->m, V->v, MAT_INITIAL_MATRIX, PETSC_DEFAULT, &tmpW), *iflag);
+  PHIST_CHK_IERR( *iflag = MatScale(W->v, beta), *iflag);
+  PHIST_CHK_IERR( *iflag = MatAXPY(W->v, alpha, tmpW, SAME_NONZERO_PATTERN), *iflag);
+  PHIST_CHK_IERR( *iflag = MatDestroy(&tmpW), *iflag);
+
+  *iflag = PHIST_SUCCESS;
 }
 
-extern "C" void SUBR(sparseMatT_times_mvec)(_ST_ alpha, TYPE(const_sparseMat_ptr) A, 
-    TYPE(const_mvec_ptr) x, _ST_ beta, TYPE(mvec_ptr) y, int* iflag)
+extern "C" void SUBR(sparseMatT_times_mvec)(_ST_ alpha, TYPE(const_sparseMat_ptr) vA, 
+    TYPE(const_mvec_ptr) vV, _ST_ beta, TYPE(mvec_ptr) vW, int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
-  *iflag=PHIST_NOT_IMPLEMENTED;
+  PHIST_CAST_PTR_FROM_VOID(const Traits<_ST_>::sparseMat_t,A,vA,*iflag);
+  PHIST_CAST_PTR_FROM_VOID(const Traits<_ST_>::mvec_t,V,vV,*iflag);
+  PHIST_CAST_PTR_FROM_VOID(const Traits<_ST_>::mvec_t,W,vW,*iflag);
+
+  Mat tmpW;
+#ifdef IS_COMPLEX
+  PHIST_CHK_IERR( *iflag = MatConjugate(V->v), *iflag);
+#endif
+  PHIST_CHK_IERR( *iflag = MatTransposeMatMult(A->m, V->v, MAT_INITIAL_MATRIX, PETSC_DEFAULT, &tmpW), *iflag);
+#ifdef IS_COMPLEX
+  PHIST_CHK_IERR( *iflag = MatConjugate(V->v), *iflag);
+#endif
+  PHIST_CHK_IERR( *iflag = MatScale(W->v, beta), *iflag);
+  PHIST_CHK_IERR( *iflag = MatAXPY(W->v, alpha, tmpW, SAME_NONZERO_PATTERN), *iflag);
+  PHIST_CHK_IERR( *iflag = MatDestroy(&tmpW), *iflag);
+
+  *iflag = PHIST_SUCCESS;
 }
 
 //! y[i]=alpha*(A*x[i]+shifts[i]*x[i]) + beta*y[i]
@@ -665,7 +846,19 @@ extern "C" void SUBR(sparseMat_times_mvec_vadd_mvec)(_ST_ alpha, TYPE(const_spar
         const _ST_ shifts[], TYPE(const_mvec_ptr) x, _ST_ beta, TYPE(mvec_ptr) y, int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
-  *iflag=PHIST_NOT_IMPLEMENTED;
+#include "phist_std_typedefs.hpp"
+
+  PHIST_CHK_IERR(SUBR(sparseMat_times_mvec)(alpha,A,x,beta,y,iflag),*iflag);
+  phist_lidx nvec;
+  PHIST_CHK_IERR(SUBR(mvec_num_vectors)(x,&nvec,iflag),*iflag);
+  {
+    _ST_ alphashifts[nvec];
+    for(phist_lidx i = 0; i < nvec; i++)
+      alphashifts[i] = alpha*shifts[i];
+    PHIST_CHK_IERR(SUBR(mvec_vadd_mvec)(alphashifts,x,st::one(),y,iflag),*iflag);
+  }
+
+  *iflag = PHIST_SUCCESS;
 }
 
 extern "C" void SUBR(mvec_dot_mvec)(TYPE(const_mvec_ptr) vV, 
@@ -850,7 +1043,57 @@ extern "C" void SUBR(sparseMat_create_fromRowFuncAndMap)(TYPE(sparseMat_ptr) *vA
         int *iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
-  *iflag=PHIST_NOT_IMPLEMENTED;
+  PHIST_CAST_PTR_FROM_VOID(Traits<_ST_>::sparseMat_t*,A,vA,*iflag);
+
+  phist_lidx nlocal;
+  phist_gidx ilower, nglob;
+  phist_const_comm_ptr comm;
+  PHIST_CHK_IERR(phist_map_get_local_length(map, &nlocal, iflag), *iflag);
+  PHIST_CHK_IERR(phist_map_get_ilower(map, &ilower, iflag), *iflag);
+  PHIST_CHK_IERR(phist_map_get_global_length(map, &nglob, iflag), *iflag);
+  PHIST_CHK_IERR(phist_map_get_comm(map, &comm, iflag), *iflag);
+
+  PHIST_CHK_IERR( *iflag = PetscNew(A), *iflag);
+  (*A)->map = map;
+  //PHIST_CHK_IERR( *iflag = MatCreateAIJ(*(MPI_Comm*)comm, nlocal, nlocal, nglob, nglob, maxnne, NULL, maxnne, NULL, &((*A)->m)), *iflag);
+  PHIST_CHK_IERR( *iflag = MatCreate(*(MPI_Comm*)comm, &((*A)->m)), *iflag);
+  PHIST_CHK_IERR( *iflag = MatSetType((*A)->m, MATAIJ), *iflag);
+  PHIST_CHK_IERR( *iflag = MatSetSizes((*A)->m, nlocal, nlocal, nglob, nglob), *iflag);
+  MatType matType;
+  PHIST_CHK_IERR( *iflag = MatGetType((*A)->m, &matType), *iflag);
+  if( std::string(matType) == std::string(MATMPIAIJ) )
+  {
+    PHIST_CHK_IERR( *iflag = MatMPIAIJSetPreallocation((*A)->m, maxnne, NULL, maxnne, NULL), *iflag);
+  }
+  else if( std::string(matType) == std::string(MATSEQAIJ) )
+  {
+    PHIST_CHK_IERR( *iflag = MatSeqAIJSetPreallocation((*A)->m, maxnne, NULL), *iflag);
+  }
+  else
+  {
+    PHIST_SOUT(PHIST_ERROR, "strange PETSc matrix type %s\n", matType);
+    *iflag = PHIST_NOT_IMPLEMENTED;
+    return;
+  }
+
+  _ST_ *vals = NULL;
+  phist_gidx *cols = NULL;
+  PHIST_CHK_IERR( *iflag = PetscMalloc1(maxnne, &vals), *iflag);
+  PHIST_CHK_IERR( *iflag = PetscMalloc1(maxnne, &cols), *iflag);
+
+  for (phist_lidx i = 0; i < nlocal; i++)
+  {
+    phist_gidx row = ilower+i;
+    phist_lidx row_nnz = 0;
+    PHIST_CHK_IERR( *iflag = rowFunPtr(row,&row_nnz,cols,vals,last_arg), *iflag);
+    PHIST_CHK_IERR( *iflag = MatSetValues((*A)->m,1,&row,row_nnz,cols,vals,INSERT_VALUES), *iflag);
+  }
+  PHIST_CHK_IERR( *iflag = PetscFree(vals), *iflag);
+  PHIST_CHK_IERR( *iflag = PetscFree(cols), *iflag);
+  PHIST_CHK_IERR( *iflag = MatAssemblyBegin((*A)->m,MAT_FINAL_ASSEMBLY), *iflag);
+  PHIST_CHK_IERR( *iflag = MatAssemblyEnd((*A)->m,MAT_FINAL_ASSEMBLY), *iflag);
+
+  *iflag = PHIST_SUCCESS;
 }
 
 
@@ -861,6 +1104,12 @@ extern "C" void SUBR(sparseMat_create_fromRowFunc)(TYPE(sparseMat_ptr) *A, phist
                 int *iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
-  *iflag=PHIST_NOT_IMPLEMENTED;
+  PHIST_CHK_IERR( *iflag = (nrows == ncols) ? PHIST_SUCCESS : PHIST_NOT_IMPLEMENTED, *iflag);
+
+  phist_map_ptr map = NULL;
+  PHIST_CHK_IERR(phist_map_create(&map, vcomm, nrows, iflag), *iflag);
+  PHIST_CHK_IERR(SUBR(sparseMat_create_fromRowFuncAndMap)(A, map, maxnne, rowFunPtr, last_arg, iflag), *iflag);
+
+  *iflag = PHIST_SUCCESS;
 }
 
