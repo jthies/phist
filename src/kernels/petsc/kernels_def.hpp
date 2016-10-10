@@ -955,7 +955,7 @@ extern "C" void SUBR(sdMatT_times_sdMat)(_ST_ alpha, TYPE(const_sdMat_ptr) vA,
   phist_lidx m, n, k;
   PHIST_CHK_IERR(SUBR(sdMat_get_nrows)(vC, &m, iflag), *iflag);
   PHIST_CHK_IERR(SUBR(sdMat_get_ncols)(vC, &n, iflag), *iflag);
-  PHIST_CHK_IERR(SUBR(sdMat_get_ncols)(vA, &k, iflag), *iflag);
+  PHIST_CHK_IERR(SUBR(sdMat_get_nrows)(vA, &k, iflag), *iflag);
 #ifdef IS_COMPLEX
   PHIST_TG_PREFIX(GEMM)("H", "N", &m, &n, &k, &alpha, A->rawData, &A->lda, B->rawData, &B->lda, &beta, C->rawData, &C->lda);
 #else

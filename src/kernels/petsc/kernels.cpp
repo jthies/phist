@@ -38,8 +38,8 @@ void phist_kernels_init(int* argc, char*** argv, int* iflag)
 // finalize kernels
 void phist_kernels_finalize(int* iflag)
 {
-  PHIST_CHK_IERR( *iflag = PetscFinalize(), *iflag);
   PHIST_CHK_IERR(phist_kernels_common_finalize(iflag),*iflag);
+  PHIST_CHK_IERR( *iflag = PetscFinalize(), *iflag);
 }
 
 void phist_comm_create(phist_comm_ptr* vcomm, int* iflag)
