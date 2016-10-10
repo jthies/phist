@@ -368,15 +368,15 @@ symmetric=symmetric||(opts.symmetry==phist_COMPLEX_SYMMETRIC);
     equalEps = mt::max(equalEps, normVtmp[i]); \
   PHIST_OUT(PHIST_INFO, "Line %d: BV - B*V: %e\n", __LINE__, equalEps); \
   } \
-  /* check H = V'*B*A*V */ \
+  /* check H = V'*A*V */ \
   PHIST_CHK_IERR(SUBR( sdMat_view_block ) (Htmp_,&Htmp,0,    nV-1,      0,     nV-1,      iflag), *iflag); \
-  PHIST_CHK_IERR(SUBR( mvecT_times_mvec ) (st::one(), BVful, AVful, st::zero(), Htmp, iflag), *iflag); \
+  PHIST_CHK_IERR(SUBR( mvecT_times_mvec ) (st::one(), Vful, AVful, st::zero(), Htmp, iflag), *iflag); \
   PHIST_CHK_IERR(SUBR( sdMat_add_sdMat ) (-st::one(), Hful, st::one(), Htmp, iflag), *iflag); \
   equalEps = st::abs(Htmp_raw[0]); \
   for(int i = 0; i < nV; i++) \
     for(int j = 0; j < nV; j++) \
       equalEps = mt::max(equalEps, st::abs(Htmp_raw[i*ldaHtmp+j])); \
-  PHIST_OUT(PHIST_INFO, "Line %d: H - (BV)'*AV: %e\n", __LINE__, equalEps); \
+  PHIST_OUT(PHIST_INFO, "Line %d: H - V'*AV: %e\n", __LINE__, equalEps); \
   /* PHIST_SOUT(PHIST_INFO, "H:\n"); */ \
   /* PHIST_CHK_IERR(SUBR( sdMat_print )(H, iflag), *iflag); */ \
   /* PHIST_SOUT(PHIST_INFO, "H - V'*AV:\n"); */ \
@@ -849,7 +849,7 @@ PHIST_SOUT(PHIST_INFO,"\n");
       PHIST_CHK_IERR(SUBR( sdMat_view_block ) (R_H_,&Rr_H,nV,    nV+k-1,    nV,    nV+k-1,    iflag), *iflag);
       int rankV;
       *iflag=PHIST_ORTHOG_RANDOMIZE_NULLSPACE;
-      PHIST_CHK_NEG_IERR(SUBR( orthog ) (Vful, Vv, NULL, Rr_H, R_H, 5, &rankV, iflag), *iflag);
+      PHIST_CHK_NEG_IERR(SUBR( orthog ) (Vful, Vv, B_op, Rr_H, R_H, 5, &rankV, iflag), *iflag);
       // TODO: only take non-random vector if *iflag > 0
       // calculate AVv, BVv
       PHIST_CHK_IERR( AB_op->apply(st::one(), AB_op->A, Vv, st::zero(), AVv, iflag), *iflag);

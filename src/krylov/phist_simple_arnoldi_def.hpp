@@ -18,6 +18,12 @@ void SUBR(simple_arnoldi)(TYPE(const_linearOp_ptr) A_op, TYPE(const_linearOp_ptr
 #include "phist_std_typedefs.hpp"
   *iflag = 0;
 
+  if( B_op != NULL && AV == NULL )
+  {
+    *iflag = PHIST_NOT_IMPLEMENTED;
+    return;
+  }
+
   // check dimensions
   {
     int nrH,ncH,ncV;
@@ -55,7 +61,7 @@ void SUBR(simple_arnoldi)(TYPE(const_linearOp_ptr) A_op, TYPE(const_linearOp_ptr
 
   // views in H and V
   TYPE(sdMat_ptr) R1 = NULL, R2 = NULL;
-  TYPE(mvec_ptr) Vprev = NULL;
+  TYPE(mvec_ptr) Vprev = NULL, AVprev = NULL;
 
   // subdiagonal element (always a 1x1 matrix for block size 1)
   PHIST_CHK_IERR(SUBR(sdMat_create)(&R1,1,1,comm,iflag),*iflag);
@@ -114,8 +120,6 @@ PHIST_TASK_BEGIN(ComputeTask)
     PHIST_CHK_IERR(SUBR(sdMat_print)(R2,iflag),*iflag);
     PHIST_CHK_IERR(SUBR(sdMat_print)(R1,iflag),*iflag);
 #endif    
-    PHIST_CHK_IERR(SUBR(sdMat_delete)(R2, iflag), *iflag);
-    R2=NULL;
     
     // store result in V
     PHIST_CHK_IERR(SUBR(mvec_set_block)(V, av, i+1, i+1, iflag), *iflag);
@@ -130,14 +134,22 @@ PHIST_TASK_BEGIN(ComputeTask)
       if (B_op==NULL)
       {
         PHIST_CHK_IERR(SUBR(mvecT_times_mvec)(st::one(), av, v, st::zero(), R1, iflag), *iflag);
+        PHIST_CHK_IERR(SUBR(sdMat_set_block)(H,R1,i+1,i+1,i,i,iflag),*iflag);
       }
       else
       {
-        PHIST_CHK_IERR(B_op->apply(st::one(),B_op->A,v,st::zero(),bv,iflag),*iflag);
-        PHIST_CHK_IERR(SUBR(mvecT_times_mvec)(st::one(), av, bv, st::zero(), R1, iflag), *iflag);
+        TYPE(sdMat_ptr) R1_ = NULL;
+        PHIST_CHK_IERR(SUBR(sdMat_create)(&R1_,1,i+1,comm,iflag),*iflag);
+        PHIST_CHK_IERR(SUBR(mvec_view_block)(AV,&AVprev,0,i,iflag),*iflag);
+        PHIST_CHK_IERR(SUBR(mvecT_times_mvec)(st::one(), av, AVprev, st::zero(), R1_, iflag), *iflag);
+        PHIST_CHK_IERR(SUBR(mvecT_times_mvec)(st::one(), Vprev, v, st::zero(), R2, iflag), *iflag);
+        PHIST_CHK_IERR(SUBR(sdMat_set_block)(H,R1_,i+1,i+1,0,i,iflag),*iflag);
+        PHIST_CHK_IERR(SUBR(sdMat_set_block)(H,R2,0,i,i,i,iflag),*iflag);
+        PHIST_CHK_IERR(SUBR(sdMat_delete)(R1_, iflag), *iflag);
       }
-      PHIST_CHK_IERR(SUBR(sdMat_set_block)(H,R1,i+1,i+1,i,i,iflag),*iflag);
     }
+    PHIST_CHK_IERR(SUBR(sdMat_delete)(R2, iflag), *iflag);
+    R2=NULL;
 
     // swap vectors
     std::swap(v, av);
@@ -164,6 +176,7 @@ PHIST_TASK_END(iflag)
   // delete views
   PHIST_CHK_IERR(SUBR(sdMat_delete)(R1, iflag), *iflag);
   PHIST_CHK_IERR(SUBR(mvec_delete)(Vprev, iflag), *iflag);
+  PHIST_CHK_IERR(SUBR(mvec_delete)(AVprev, iflag), *iflag);
 
   // delete temp. arrays
   PHIST_CHK_IERR(SUBR(mvec_delete)(v,  iflag), *iflag);
