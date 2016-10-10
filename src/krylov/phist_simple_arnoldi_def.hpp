@@ -6,7 +6,7 @@
 //!
 //! If B_op!=NULL, B is assumed to be symmetric and positive definite 
 //! and the B-inner product is used and the Arnoldi-relation is
-//! A*V(:,1:m) = B*V(:,1:m+1)*H(1:m+1,1:m).
+//! A*V(:,1:m) - B*V(:,1:m+1)*H(1:m+1,1:m) \perp V(:,1:m+1)
 //!
 //! We do not check for converged Ritz values in these first few steps.
 //! If a breakdown is encountered, the basis is extended with a random 
@@ -128,25 +128,22 @@ PHIST_TASK_BEGIN(ComputeTask)
     {
       PHIST_SOUT(PHIST_INFO,"found invariant subspace in arnoldi, expanding basis with a randomly generated orthogonal vector\n");
     }
-    else
+    else if (B_op==NULL)
     {
       // the result for R1 from av'*(A*v) may not be precise enough, so improve it!
-      if (B_op==NULL)
-      {
-        PHIST_CHK_IERR(SUBR(mvecT_times_mvec)(st::one(), av, v, st::zero(), R1, iflag), *iflag);
-        PHIST_CHK_IERR(SUBR(sdMat_set_block)(H,R1,i+1,i+1,i,i,iflag),*iflag);
-      }
-      else
-      {
-        TYPE(sdMat_ptr) R1_ = NULL;
-        PHIST_CHK_IERR(SUBR(sdMat_create)(&R1_,1,i+1,comm,iflag),*iflag);
-        PHIST_CHK_IERR(SUBR(mvec_view_block)(AV,&AVprev,0,i,iflag),*iflag);
-        PHIST_CHK_IERR(SUBR(mvecT_times_mvec)(st::one(), av, AVprev, st::zero(), R1_, iflag), *iflag);
-        PHIST_CHK_IERR(SUBR(mvecT_times_mvec)(st::one(), Vprev, v, st::zero(), R2, iflag), *iflag);
-        PHIST_CHK_IERR(SUBR(sdMat_set_block)(H,R1_,i+1,i+1,0,i,iflag),*iflag);
-        PHIST_CHK_IERR(SUBR(sdMat_set_block)(H,R2,0,i,i,i,iflag),*iflag);
-        PHIST_CHK_IERR(SUBR(sdMat_delete)(R1_, iflag), *iflag);
-      }
+      PHIST_CHK_IERR(SUBR(mvecT_times_mvec)(st::one(), av, v, st::zero(), R1, iflag), *iflag);
+      PHIST_CHK_IERR(SUBR(sdMat_set_block)(H,R1,i+1,i+1,i,i,iflag),*iflag);
+    }
+    if (B_op!=NULL)
+    {
+      TYPE(sdMat_ptr) R1_ = NULL;
+      PHIST_CHK_IERR(SUBR(sdMat_create)(&R1_,1,i+1,comm,iflag),*iflag);
+      PHIST_CHK_IERR(SUBR(mvec_view_block)(AV,&AVprev,0,i,iflag),*iflag);
+      PHIST_CHK_IERR(SUBR(mvecT_times_mvec)(st::one(), av, AVprev, st::zero(), R1_, iflag), *iflag);
+      PHIST_CHK_IERR(SUBR(mvecT_times_mvec)(st::one(), Vprev, v, st::zero(), R2, iflag), *iflag);
+      PHIST_CHK_IERR(SUBR(sdMat_set_block)(H,R1_,i+1,i+1,0,i,iflag),*iflag);
+      PHIST_CHK_IERR(SUBR(sdMat_set_block)(H,R2,0,i,i,i,iflag),*iflag);
+      PHIST_CHK_IERR(SUBR(sdMat_delete)(R1_, iflag), *iflag);
     }
     PHIST_CHK_IERR(SUBR(sdMat_delete)(R2, iflag), *iflag);
     R2=NULL;

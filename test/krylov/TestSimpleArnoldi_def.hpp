@@ -255,22 +255,11 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,MATNAME>,
         // calculate A*V(:,1:m)
         opA->apply(st::one(),opA->A,Vm_,st::zero(),AV_,&iflag_);
         ASSERT_EQ(0,iflag_);
-        // calculate V(:,1:m+BLOCK_SIZE1)*H(1:m+BLOCK_SIZE1,1:m)
-        SUBR(mvec_times_sdMat)(st::one(),V_,H_,st::zero(),VH_,&iflag_);
-        ASSERT_EQ(0,iflag_);
 
-        // calculate AV_' := AV_ - VH_
-        SUBR(mvec_add_mvec)(-st::one(),VH_,st::one(),AV_,&iflag_);
+        // calculate H_' = H_ - V(:,1:m+BLOCK_SIZE1)^T AV(:,1:m)
+        SUBR(mvecT_times_mvec)(-st::one(),V_,AV_,st::one(),H_,&iflag_);
         ASSERT_EQ(0,iflag_);
-        _MT_ vnorm[_M_];
-        SUBR(mvec_norm2)(AV_,vnorm,&iflag_);
-        ASSERT_EQ(0,iflag_);
-
-        // check AV_' = AV_ - VH_ == 0
-        for(int i = 0; i < _M_; i++)
-        {
-          ASSERT_NEAR(mt::zero(),vnorm[i],(MT)200.*releps(V_));
-        }
+        ASSERT_NEAR(mt::one(),ArrayEqual(mat2_vp_,m_,m_-1,m_lda_,stride_,st::zero()), (MT)200.*releps(V_));
       }
     }
 
