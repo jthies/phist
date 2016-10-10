@@ -22,8 +22,11 @@ public:
     VTest::SetUpTestCase();
     MTest::SetUpTestCase();
 
-    SUBR(linearOp_wrap_sparseMat)(&A_op,A_,&iflag_);
-    ASSERT_EQ(0,iflag_);
+    if (typeImplemented_ && !problemTooSmall_)
+    {
+      SUBR(linearOp_wrap_sparseMat)(&A_op,A_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+    }
   }
 
   /*! Set up routine.
@@ -191,6 +194,9 @@ public:
 
   TEST_F(CLASSNAME,linearOp_wrap_sparseMat_apply)
   {
+    if (!typeImplemented_ || problemTooSmall_)
+      return;
+
     _ST_ alpha = st::prand();
     _ST_ beta = st::prand();
   
@@ -206,6 +212,9 @@ public:
 
   TEST_F(CLASSNAME,linearOp_wrap_sparseMat_apply_fused_mvTmv)
   {
+    if (!typeImplemented_ || problemTooSmall_)
+      return;
+
     _ST_ alpha = st::prand();
     _ST_ beta = st::prand();
   
@@ -222,6 +231,9 @@ public:
 
   TEST_F(CLASSNAME,linearOp_wrap_sparseMat_pair_apply)
   {
+    if (!typeImplemented_ || problemTooSmall_)
+      return;
+
     TYPE(linearOp) AA_op;
     SUBR(linearOp_wrap_sparseMat_pair)(&AA_op,A_,A_,&iflag_);
     ASSERT_EQ(0,iflag_);
@@ -245,6 +257,9 @@ public:
 
   TEST_F(CLASSNAME,linearOp_wrap_sparseMat_pair_apply_shifted)
   {
+    if (!typeImplemented_ || problemTooSmall_)
+      return;
+
     TYPE(linearOp) AA_op;
     SUBR(linearOp_wrap_sparseMat_pair)(&AA_op,A_,A_,&iflag_);
     ASSERT_EQ(0,iflag_);

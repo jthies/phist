@@ -83,7 +83,7 @@ public:
       // functionality has not been tested (strictly speaking).
       // In SdMat_test we use the provided functions instead, hopefully
       // the diversity here will lead to a well-covered code in total.
-            
+
       for (int j=0;j<nvec_;j++)
       {
         for (int i=0;i<nloc_*stride_;i+=stride_)
