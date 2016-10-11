@@ -12,6 +12,10 @@ if(@PHIST_HAVE_GHOST@)
   list(APPEND PHIST_INCLUDE_DIRS ${GHOST_INCLUDE_DIRS})
 endif()
 
+if(@PHIST_KERNEL_LIB_PETSC@)
+  link_directories(@PETSC_LIBRARY_DIRS@)
+endif()
+
 #did we compile the single precision and/or complex variant?
 set(PHIST_ENABLE_SP "@PHIST_ENABLE_SP@")
 set(PHIST_ENABLE_COMPLEX "@PHIST_ENABLE_COMPLEX@")

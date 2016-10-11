@@ -802,7 +802,7 @@ if(PHIST_KERNEL_LIB STREQUAL "petsc")
   include_directories(${PETSC_INCLUDE_DIRS})
   link_directories(${PETSC_LIBRARY_DIRS})
   list(APPEND external_libs ${PETSC_LIBRARIES})
-#  list(APPEND PHIST_PKG_CONFIG_REQUIRE PETSC)
+  list(APPEND PHIST_PKG_CONFIG_REQUIRE PETSc)
 endif()
 
 if (PHIST_USE_CRAFT)

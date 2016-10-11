@@ -287,7 +287,6 @@ symmetric=symmetric||(opts.symmetry==phist_COMPLEX_SYMMETRIC);
   //------------------------------- initialize subspace etc ------------------------
   // run arnoldi
   nV = minBase;
-  //TODO B_op in arnoldi
   // calculates A*V(:,1:m) = V(:,1:m+1)*H(1:m+1,1:m)
   // also outputs A*V (DON'T recalculate it from V*H, because this may not be accurate enough!)
 /* // seems numerically less useful than unblocked arnoldi!
@@ -309,7 +308,7 @@ symmetric=symmetric||(opts.symmetry==phist_COMPLEX_SYMMETRIC);
     PHIST_CHK_IERR(SUBR( mvec_view_block  ) (BV_,     &BV,                      0,     nV,        iflag), *iflag);
     PHIST_CHK_IERR(SUBR( sdMat_view_block ) (H_,      &H,     0,      minBase,  0,     nV-1,      iflag), *iflag);
 
-    PHIST_CHK_IERR(SUBR( simple_arnoldi ) (AB_op, B_op, v0, V, AV, BV, H, nV, iflag), *iflag);
+    PHIST_CHK_IERR(SUBR( simple_arnoldi ) (AB_op, B_op, v0, V, AV, B_op ? BV : NULL, H, nV, iflag), *iflag);
   }
 
   // set views

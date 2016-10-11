@@ -800,6 +800,7 @@ extern "C" void SUBR(sdMatT_add_sdMat)(_ST_ alpha, TYPE(const_sdMat_ptr) vA,
   PHIST_CHK_IERR( *iflag = MatTranspose(A->m, MAT_INITIAL_MATRIX, &AT), *iflag);
 #endif
   PHIST_CHK_IERR( *iflag = MatAXPY(B->m, alpha, AT, SAME_NONZERO_PATTERN), *iflag);
+  PHIST_CHK_IERR( *iflag = MatDestroy(&AT), *iflag);
   *iflag = PHIST_SUCCESS;
 }
 
