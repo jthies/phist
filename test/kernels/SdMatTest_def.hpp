@@ -617,6 +617,145 @@ public:
     }
   }
 
+  TEST_F(CLASSNAME, products_involving_nonsquare_sdMats)
+  {
+    if (typeImplemented_ )
+    {
+      phist_lidx ncols2=std::max(3,ncols_-1);
+      TYPE(sdMat_ptr) matA=mat1_, matB=NULL, matC=NULL;
+      SUBR(sdMat_create)(&matB,ncols_,ncols2,comm_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(sdMat_create)(&matC,nrows_,ncols2,comm_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      
+      phist_lidx ldA=m_lda_,ldB,ldC;
+      _ST_ *matA_vp=mat1_vp_,*matB_vp=NULL,*matC_vp=NULL;
+      
+      SUBR(sdMat_extract_view)(matB,&matB_vp,&ldB,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(sdMat_extract_view)(matC,&matC_vp,&ldC,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      
+      // A is (nrows  x ncols)
+      // B is (ncols  x ncols2)
+      // C is (nrows  x ncols2)
+
+      //////////////////////////////////////////
+      // 1) C = C + A*B                       //
+      //////////////////////////////////////////
+
+      SUBR(sdMat_random)(matA,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(sdMat_random)(matB,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      _ST_ valC=st::one()*(_ST_)42.0 - st::cmplx_I()*((_ST_)3.14);
+      SUBR(sdMat_put_value)(matC,valC,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      
+      SUBR(sdMat_times_sdMat)(st::one(),matA,matB,st::one(),matC,&iflag_);
+      ASSERT_EQ(0,iflag_);
+
+      SUBR(sdMat_from_device)(matA,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(sdMat_from_device)(matB,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(sdMat_from_device)(matC,&iflag_);
+      ASSERT_EQ(0,iflag_);
+
+      // subtract matrix product by hand
+      for(int i = 0; i < nrows_; i++)
+        for(int j = 0; j < ncols2; j++)
+        {
+          for(int k = 0; k < ncols_; k++)
+          {
+            matC_vp[MIDX(i,j,ldC)] -= matA_vp[MIDX(i,k,ldA)]*matB_vp[MIDX(k,j,ldB)];
+          }
+        }
+      SUBR(sdMat_to_device)(matC,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      // check result
+      ASSERT_NEAR(mt::one(),SdMatEqual(matC,valC),10*mt::eps());
+
+      //////////////////////////////////////////
+      // 2) B = B + A^H*C                     //
+      //////////////////////////////////////////
+
+      SUBR(sdMat_random)(matA,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(sdMat_random)(matC,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      _ST_ valB=st::one()*(_ST_)1.234 - st::cmplx_I()*((_ST_)2.99);
+      SUBR(sdMat_put_value)(matB,valB,&iflag_);
+      ASSERT_EQ(0,iflag_);
+
+      SUBR(sdMatT_times_sdMat)(st::one(),matA,matC,st::one(),matB,&iflag_);
+      ASSERT_EQ(0,iflag_);
+
+      SUBR(sdMat_from_device)(matA,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(sdMat_from_device)(matB,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(sdMat_from_device)(matC,&iflag_);
+      ASSERT_EQ(0,iflag_);
+
+      // subtract matrix product by hand
+      for(int i = 0; i < ncols_; i++)
+        for(int j = 0; j < ncols2; j++)
+        {
+          for(int k = 0; k < nrows_; k++)
+          {
+            matB_vp[MIDX(i,j,ldB)] -= st::conj(matA_vp[MIDX(k,i,ldA)])*matC_vp[MIDX(k,j,ldC)];
+          }
+        }
+      SUBR(sdMat_to_device)(matB,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      // check result
+      ASSERT_NEAR(mt::one(),SdMatEqual(matB,valB),10*mt::eps());
+
+      //////////////////////////////////////////
+      // 2) A = A + C*B^H                     //
+      //////////////////////////////////////////
+
+      SUBR(sdMat_random)(matC,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(sdMat_random)(matB,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      _ST_ valA=st::one()*(_ST_)1.5 - st::cmplx_I()*((_ST_)5.1);
+      SUBR(sdMat_put_value)(matA,valA,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      
+      SUBR(sdMat_times_sdMatT)(st::one(),matC,matB,st::one(),matA,&iflag_);
+      ASSERT_EQ(0,iflag_);
+
+      SUBR(sdMat_from_device)(matA,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(sdMat_from_device)(matB,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(sdMat_from_device)(matC,&iflag_);
+      ASSERT_EQ(0,iflag_);
+
+      // subtract matrix product by hand
+      for(int i = 0; i < nrows_; i++)
+        for(int j = 0; j < ncols_; j++)
+        {
+          for(int k = 0; k < ncols2; k++)
+          {
+            matA_vp[MIDX(i,j,ldA)] -= matC_vp[MIDX(i,k,ldC)]*st::conj(matB_vp[MIDX(j,k,ldB)]);
+          }
+        }
+      SUBR(sdMat_to_device)(matA,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      // check result
+      ASSERT_NEAR(mt::one(),SdMatEqual(matA,valA),10*mt::eps());
+
+      // clean up
+      SUBR(sdMat_delete)(matB,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(sdMat_delete)(matC,&iflag_);
+      ASSERT_EQ(0,iflag_);
+
+    }
+  }
 
   // check if we can construct an identity matrix
   TEST_F(CLASSNAME, identity)
