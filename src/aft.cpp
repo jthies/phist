@@ -1,4 +1,4 @@
-#include "aft.h"
+#include "include/aft.h"
 
 static char estr[MPI_MAX_ERROR_STRING]=""; static int strl; /* error messages */
 

@@ -1,7 +1,0 @@
-CR Features:
-1)	Each process should write process-local data.
-
-
-
-AFT Features:
-1) 	No communication via MPI_COMM_WORLD is allowed. Rather a copy of MPI_COMM_WORLD should be created.

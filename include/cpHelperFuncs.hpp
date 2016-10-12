@@ -1,5 +1,5 @@
-#ifndef __HELPERFUNCS_HPP__
-#define __HELPERFUNCS_HPP__
+#ifndef __CPHELPERFUNCS_HPP__
+#define __CPHELPERFUNCS_HPP__
 
 #include <string>
 #include <iostream>

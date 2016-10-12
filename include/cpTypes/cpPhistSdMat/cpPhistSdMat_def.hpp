@@ -1,5 +1,5 @@
 
-class TYPE(CpPhistSdMat) : public CpBase
+class TYPE(cpPhistSdMat) : public cpBase
 {
 typedef phist::ScalarTraits<_ST_> st;
 private:
@@ -9,10 +9,10 @@ private:
 	int iflag;
 
 public:
-	TYPE(CpPhistSdMat)(){}
-	~TYPE(CpPhistSdMat)(){}	
+	TYPE(cpPhistSdMat)(){}
+	~TYPE(cpPhistSdMat)(){}	
 
-	TYPE(CpPhistSdMat)( TYPE(sdMat_ptr) dataPtr_){
+	TYPE(cpPhistSdMat)( TYPE(sdMat_ptr) dataPtr_){
 		dataPtr = dataPtr_;
 		iflag = 0;
 		phist_comm_ptr comm= NULL;				// TODO: comm needs to be different in the case of FT.
@@ -26,19 +26,19 @@ public:
 
 	
 	int update(){
-		printf("CpPhistSdMat Before update: \n");
+		printf("cpPhistSdMat Before update: \n");
 		PHIST_CHK_IERR(SUBR(sdMat_add_sdMat)(st::one(),dataPtr,st::zero(),asynData,&iflag),iflag);
 		return 0;
 	}
 
 	int write( const std::string * filename){
-		printf("CpPhistSdMat: i will write now %s\n", (*filename).c_str());
+		printf("cpPhistSdMat: i will write now %s\n", (*filename).c_str());
 		PHIST_CHK_IERR(SUBR(mvec_write_bin)(asynData, (*filename).c_str() ,&iflag),iflag);
 		return 0;
 	}
 	
 	int read(const std::string * filename){
-		printf("CpPhistSdMat: i will read now\n");
+		printf("cpPhistSdMat: i will read now\n");
 		PHIST_CHK_IERR(SUBR(mvec_read_bin)(dataPtr, (*filename).c_str() ,&iflag),iflag);
 		return 0;
 	}

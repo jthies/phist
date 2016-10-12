@@ -8,19 +8,16 @@
 #include "phist_config.h"
 #include "phist_ScalarTraits.hpp"
 
-#include "../../CpBase.hpp"
-
+#include "cpBase.hpp"
 
 #ifdef PHIST_HAVE_SP
 #include "phist_gen_s.h"
-#include "CpPhistSdMat_def.hpp"
-
+#include "cpPhistMvec_def.hpp"
 #include "phist_gen_c.h"
-#include "CpPhistSdMat_def.hpp"
+#include "cpPhistMvec_def.hpp"
 #endif
 
 #include "phist_gen_d.h"
-#include "CpPhistSdMat_def.hpp"
-
+#include "cpPhistMvec_def.hpp"
 #include "phist_gen_z.h"
-#include "CpPhistSdMat_def.hpp"
+#include "cpPhistMvec_def.hpp"

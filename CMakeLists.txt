@@ -1,7 +1,8 @@
 cmake_minimum_required (VERSION 2.6)
 project (CRAFTLIB)
-set (SRC_DIR ${CMAKE_SOURCE_DIR})
-
+set (PROJECT_DIR ${CMAKE_SOURCE_DIR})
+set (PROJECT_SRC_DIR ${PROJECT_DIR}/src/)
+set (PROJECT_INC_DIR ${PROJECT_DIR}/include/)
 
 ###### OPTIONS ######
 option(PHIST_CP
@@ -16,7 +17,30 @@ option(SCR
 option(AFT
 		"Automatic Fault Tolerance: This feature can only be anabled in case of ULFM-MPI"
 		OFF)
+option(MPIIO
+		"If SCR is not defined, use MPI-IO for simple POD, POD-array checkpoints"
+		ON)
 
+
+set (SOURCE 	
+		src/checkpoint.cpp
+		src/cpOptions.cpp
+		src/cpArray.cpp
+		src/cpPOD.cpp
+		)
+
+set (HEADERS
+		include/checkpoint.hpp
+		include/cpArray.hpp
+		include/cpBase.hpp
+		include/cpPOD.hpp
+		include/cpHelperFuncs.hpp
+		include/cpEnum.h
+		include/cpOptions.h
+		include/dataType.h
+		)
+
+include_directories(${HEADERS} ${PROJECT_DIR})
 
 ###### FIND LIBRARIES ######
 
@@ -29,42 +53,17 @@ else()
 	message (STATUS "MPI package is NOT found")
 endif()
 
-
-if(GHOST_CP)
-	find_package(GHOST REQUIRED)
-	add_definitions(-DGHOST_CP)
-	if(GHOST_FOUND)
-		message (STATUS "GHOST pacage is found ${GHOST_INCLUDE_DIRS} ")
-		include_directories(${GHOST_INCLUDE_DIRS})
-		set(LIBS ${LIBS} ${GHOST_LIBRARIES})
-		message (STATUS "GHOST LIBS ${GHOST_LIBRARIES} ")
-	else()
-		message (STATUS "GHOST package is NOT found")
+if(AFT)
+	find_file(MPI_EXT_PATH "mpi-ext.h" HINTS ${MPI_INCLUDE_PATH})
+	message (STATUS "MPI_EXT_PATH: ${MPI_EXT_PATH}")
+	if("${MPI_EXT_PATH}" STREQUAL "MPI_EXT_PATH-NOTFOUND")
+		message (FATAL_ERROR "mpi-ext.h is not found. Compile with ULFM-MPI for using AFT feature.")
 	endif()
-endif()
-
-
-if(PHIST_CP)
-	find_path(PHIST REQUIRED)
-	add_definitions(-DPHIST_CP)
-	include_directories ("${PHIST}/include/")
-	link_directories ("${PHIST}/lib/")
-
-
-	set (CPPHISTMVEC_DIR 	${SRC_DIR}/cpTypes/cpPhistMvec/)
-	include_directories ("${CPPHISTMVEC_DIR}")
-	set (CPPHISTMVEC_SRC 	${CPPHISTMVEC_DIR}/CpPhistMvec.h
-							${CPPHISTMVEC_DIR}/CpPhistMvec_decl.h
-							${CPPHISTMVEC_DIR}/CpPhistMvec.cpp
-							${CPPHISTMVEC_DIR}/CpPhistMvec_def.hpp)
-
-	set (CPPHISTSDMAT_DIR 	${SRC_DIR}/cpTypes/cpPhistSdMat/)
-	include_directories ("${CPPHISTSDMAT_DIR}")
-	set (CPPHISTSDMAT_SRC 	${CPPHISTSDMAT_DIR}/CpPhistSdMat.h
-							${CPPHISTSDMAT_DIR}/CpPhistSdMat_decl.h
-							${CPPHISTSDMAT_DIR}/CpPhistSdMat.cpp
-							${CPPHISTSDMAT_DIR}/CpPhistSdMat_def.hpp)
-endif()
+		set ( SOURCE 	${SOURCE}
+							src/aft.cpp)
+		set ( HEADERS 	${HEADERS}
+							include/aft_macros.h)
+endif()	
 
 
 if(SCR)
@@ -85,41 +84,84 @@ if(SCR)
 	endif()
 endif()
 
-set (CRAFT_SOURCE 	${SRC_DIR}/Checkpoint.cpp
-		${SRC_DIR}/cp_options.cpp
-		)
+if(MPIIO)
+				message (STATUS " MPIIO is defined")
+				add_definitions(-DMPIIO)
+endif()
 
-if(AFT)
-	find_file(MPI_EXT_PATH "mpi-ext.h" HINTS ${MPI_INCLUDE_PATH})
-	message (STATUS "MPI_EXT_PATH: ${MPI_EXT_PATH}")
-	if("${MPI_EXT_PATH}" STREQUAL "MPI_EXT_PATH-NOTFOUND")
-		message (FATAL_ERROR "mpi-ext.h is not found. Compile with ULFM-MPI for using AFT feature.")
+##### Optional CP datatypes #####
+if(GHOST_CP)
+	find_package(GHOST REQUIRED)
+	add_definitions(-DGHOST_CP)
+	if(GHOST_FOUND)
+		message (STATUS "GHOST pacage is found ${GHOST_INCLUDE_DIRS} ")
+		include_directories(${GHOST_INCLUDE_DIRS})
+		set(LIBS ${LIBS} ${GHOST_LIBRARIES})
+		message (STATUS "GHOST LIBS ${GHOST_LIBRARIES} ")
+	else()
+		message (STATUS "GHOST package is NOT found")
 	endif()
-		set ( CRAFT_SOURCE 	${CRAFT_SOURCE}
-							${SRC_DIR}/aft.cpp
-							${SRC_DIR}/aft_macros.h)
-endif()	
+	
+	##### CPGHOST #####
+	set (CPGHOST_INC_DIR 	${PROJECT_INC_DIR}/cpTypes/cpGhost/)
+  set (CPGHOST_SRC_DIR     ${PROJECT_SRC_DIR}/cpTypes/cpGhost/)
+	set (CPGHOST_INC 	${CPGHOST_INC_DIR}/cpGhost.hpp)
+	set (HEADERS 	${HEADERS} ${CPGHOST_INC})
+	include_directories (${CPGHOST_INC_DIR})
+  set (CPGHOST_SRC         ${CPGHOST_SRC_DIR}/cpGhost.cpp)
+  set (SOURCE ${SOURCE} ${CPGHOST_SRC})
+  
+endif()
 
-add_library(craft SHARED ${CRAFT_SOURCE} ${CPPHISTMVEC_SRC} ${CPPHISTSDMAT_SRC})
+
+if(PHIST_CP)
+	find_path(PHIST REQUIRED)
+	add_definitions(-DPHIST_CP)
+	include_directories ("${PHIST}/include/")
+	link_directories ("${PHIST}/lib/")
+
+	##### MVEC #####
+	set (CPPHISTMVEC_SRC_DIR 	${PROJECT_SRC_DIR}/cpTypes/cpPhistMvec/)
+	set (CPPHISTMVEC_INC_DIR 	${PROJECT_INC_DIR}/cpTypes/cpPhistMvec/)
+	include_directories ("${CPPHISTMVEC_INC_DIR}")
+	set (CPPHISTMVEC_INC 	${CPPHISTMVEC_INC_DIR}/cpPhistMvec.h
+												${CPPHISTMVEC_INC_DIR}/cpPhistMvec_decl.h
+												${CPPHISTMVEC_INC_DIR}/cpPhistMvec_def.hpp)
+	set (CPPHISTMVEC_SRC 	${CPPHISTMVEC_SRC_DIR}/cpPhistMvec.cpp)
+
+	set ( SOURCE 	${SOURCE} ${CPPHISTMVEC_SRC})
+	set ( HEADERS 	${HEADERS} ${CPPHISTMVEC_INC})
+
+	##### SDMAT #####
+	set (CPPHISTSDMAT_SRC_DIR 	${PROJECT_SRC_DIR}/cpTypes/cpPhistSdMat/)
+	set (CPPHISTSDMAT_INC_DIR 	${PROJECT_INC_DIR}/cpTypes/cpPhistSdMat/)
+	include_directories ("${CPPHISTSDMAT_INC_DIR}")
+	set (CPPHISTSDMAT_INC 	${CPPHISTSDMAT_INC_DIR}/cpPhistSdMat.h
+													${CPPHISTSDMAT_INC_DIR}/cpPhistSdMat_decl.h
+													${CPPHISTSDMAT_INC_DIR}/cpPhistSdMat_def.hpp)
+	set (CPPHISTSDMAT_SRC 	${CPPHISTSDMAT_SRC_DIR}/cpPhistSdMat.cpp)
+
+	set ( SOURCE 	${SOURCE} ${CPPHISTSDMAT_SRC})
+	set ( HEADERS 	${HEADERS} ${CPPHISTSDMAT_INC})
+
+
+endif()
+
+
+
+add_library(craft SHARED ${SOURCE})
 set(LIBRARY_INSTALL_DIR lib)
 
-configure_file("${SRC_DIR}/craft-config.cmake.in" "${SRC_DIR}/craft-config.cmake" @ONLY)
+configure_file("${PROJECT_DIR}/craft-config.cmake.in" "${PROJECT_DIR}/craft-config.cmake" @ONLY)
 
 
 ##### INSTALL TARGET #####
 install ( TARGETS craft EXPORT craftLibrary LIBRARY DESTINATION ${LIBRARY_INSTALL_DIR} )
-install ( FILES ${SRC_DIR}/craft-config.cmake DESTINATION ${LIBRARY_INSTALL_DIR} )
-
-file(GLOB CRAFT_HEADERS ${CMAKE_SOURCE_DIR}/*.h
-												${CMAKE_SOURCE_DIR}/*.hpp	
-												)
-
-file(GLOB CRAFT_TYPE_SRC 
-					${CMAKE_SOURCE_DIR}/cpTypes	
-		)	
+install ( FILES ${PROJECT_DIR}/craft-config.cmake DESTINATION ${LIBRARY_INSTALL_DIR} )
+	
 set(INCLUDE_INSTALL_DIR include)
-install ( FILES ${CRAFT_HEADERS} DESTINATION ${INCLUDE_INSTALL_DIR} )
-install ( DIRECTORY ${CRAFT_TYPE_SRC} DESTINATION ${INCLUDE_INSTALL_DIR} )
+#install ( FILES ${HEADERS} DESTINATION ${INCLUDE_INSTALL_DIR} )
+install ( DIRECTORY ${PROJECT_INC_DIR} DESTINATION ${INCLUDE_INSTALL_DIR} )
 
 ##### UNINSTALL TARGET #####
 configure_file(
@@ -129,5 +171,4 @@ configure_file(
 
 add_custom_target(uninstall
 		COMMAND ${CMAKE_COMMAND} -P ${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake)
-
 

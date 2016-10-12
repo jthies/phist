@@ -1,5 +1,6 @@
-#ifndef __CPPHISTSDMAT_H__
-#define __CPPHISTSDMAT_H__
+#ifndef __CPPHISTMVEC_H__
+#define __CPPHISTMVEC_H__
+
 
 #include "phist_config.h"
 #include "phist_operator.h"
@@ -11,17 +12,16 @@ extern "C" {
 #endif
 #ifdef PHIST_HAVE_SP
 #include "phist_gen_s.h"
-#include "CpPhistSdMat_decl.h"
-
+#include "cpPhistMvec_decl.h"
 #include "phist_gen_c.h"
-#include "CpPhistSdMat_decl.h"
-
+#include "cpPhistMvec_decl.h"
 #endif
+
 #include "phist_gen_d.h"
-#include "CpPhistSdMat_decl.h"
+#include "cpPhistMvec_decl.h"
 
 #include "phist_gen_z.h"
-#include "CpPhistSdMat_decl.h"
+#include "cpPhistMvec_decl.h"
 
 #include "phist_gen_clean.h"
 
@@ -29,7 +29,5 @@ extern "C" {
 }
 #endif
 
-
-#endif
 
 #endif
