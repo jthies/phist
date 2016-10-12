@@ -58,6 +58,15 @@ extern "C" const char* eigSort2str(phist_EeigSort s)
                    "INVALID";
 }
 
+extern "C" const char* matSym2str(phist_EmatSym s)
+{
+  return s==phist_GENERAL?"GENERAL":
+         s==phist_HERMITIAN?"HERMITIAN":
+         s==phist_COMPLEX_SYMMETRIC?"COMPLEX_SYMMETRIC":
+         s==phist_PATTERN_SYMMETRIC?"PATTERN_SYMMETRIC":
+                   "INVALID";
+}
+
 extern "C" const char* eigExtr2str(phist_EeigExtr s)
 {
   return s==phist_STANDARD?"STANDARD":
@@ -106,6 +115,19 @@ extern "C" phist_EeigSort str2eigSort(const char* c_str)
   else if (str=="SR") s=phist_SR;
   else if (str=="NONE") s=phist_NO_EIGSORT;
   else if (str=="TARGET") s=phist_TARGET;
+  return s;
+}
+
+extern "C" phist_EmatSym str2matSym(const char* c_str)
+{
+  std::string str(c_str);
+  str=phist_str2upper(str);
+  phist_EmatSym s=phist_INVALID_MATSYM;
+  if (str=="GENERAL") s=phist_GENERAL;
+  else if (str=="HERMITIAN") s=phist_HERMITIAN;
+  else if (str=="COMPLEX_SYMMETRIC") s=phist_COMPLEX_SYMMETRIC;
+  else if (str=="PATTERN_SYMMETRIC") s=phist_PATTERN_SYMMETRIC;
+  else if (str=="NONE") s=phist_GENERAL;
   return s;
 }
 
@@ -181,6 +203,15 @@ std::istream& operator>>(std::istream& is, phist_ElinSolv& s)
   is>>tmp;
   PHIST_SOUT(PHIST_DEBUG,"try to parse phist_ElinSolv '%s'\n",tmp.c_str());
   s=str2linSolv(tmp.c_str());
+  return is;
+}
+
+std::istream& operator>>(std::istream& is, phist_EmatSym& s)
+{
+  std::string tmp;
+  is>>tmp;
+  PHIST_SOUT(PHIST_DEBUG,"try to parse phist_EmatSym '%s'\n",tmp.c_str());
+  s=str2matSym(tmp.c_str());
   return is;
 }
 

@@ -204,6 +204,7 @@ else
   if (strcmp(problemB, "I") && strcasecmp(problemB, "none"))
   {
     iflag=0;
+    PHIST_SOUT(PHIST_VERBOSE,"genralized eigenproblem...\n");
     PHIST_ICHK_IERR(SUBR(create_matrix_with_map)(&B,map,problemB,&iflag), iflag);
     opB=new TYPE(linearOp);
     PHIST_ICHK_IERR(SUBR(linearOp_wrap_sparseMat)(opB,B,&iflag),iflag);
@@ -211,6 +212,7 @@ else
   }
   else
   {
+    PHIST_SOUT(PHIST_VERBOSE,"standard eigenproblem...\n");
     PHIST_ICHK_IERR(SUBR(linearOp_wrap_sparseMat)(opA,A,&iflag),iflag);
   }
 
@@ -269,13 +271,13 @@ else
   if (opts.how==phist_HARMONIC)
   {
     PHIST_SOUT(PHIST_INFO,"Jacobi-Davidson for interior eigenvalues\n");
-    PHIST_ICHK_IERR(SUBR(harmonicjada)(opA, opB, opts,
+    PHIST_ICHK_NEG_IERR(SUBR(harmonicjada)(opA, opB, opts,
           Q, R, ev, resNorm, &nEig, &nIter, &iflag), iflag);
   }
   else
   {
     PHIST_SOUT(PHIST_INFO,"Jacobi-Davidson for exterior eigenvalues\n");
-    PHIST_ICHK_IERR(SUBR(subspacejada)(opA, opB, opts,
+    PHIST_ICHK_NEG_IERR(SUBR(subspacejada)(opA, opB, opts,
           Q, R, ev, resNorm, &nEig, &nIter, &iflag), iflag);
   }
 

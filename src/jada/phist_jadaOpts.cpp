@@ -13,6 +13,7 @@
 
 extern "C" void phist_jadaOpts_setDefaults(phist_jadaOpts *opts)
 {
+  opts->symmetry=phist_GENERAL;
   opts->numEigs=6; 
   opts->which=phist_LM; 
   opts->how=phist_STANDARD;
@@ -84,6 +85,7 @@ extern "C" void phist_jadaOpts_fromFile(phist_jadaOpts* opts, const char* filena
   std::string file((std::istreambuf_iterator<char>(ifs)),
                  std::istreambuf_iterator<char>());
 
+  set_value("symmetry",opts->symmetry,file);
   set_value("numEigs",opts->numEigs,file);
   set_value("which",opts->which,file); 
   set_value("how",opts->how,file);
@@ -115,6 +117,7 @@ extern "C" void phist_jadaOpts_fromFile(phist_jadaOpts* opts, const char* filena
 extern "C" void phist_jadaOpts_toFile(phist_jadaOpts const *opts, FILE* stream)
 {
   if (stream==NULL) return;
+  fprintf(stream,"symmetry\t%s\n",matSym2str(opts->symmetry));
   fprintf(stream,"numEigs\t%d\n",opts->numEigs);
   fprintf(stream,"which\t%s\n",eigSort2str(opts->which)); 
   fprintf(stream,"how\t%s\n",eigExtr2str(opts->how));

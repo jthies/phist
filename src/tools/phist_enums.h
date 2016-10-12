@@ -67,11 +67,13 @@ const char* eigSort2str(phist_EeigSort s);
 const char* linSolv2str(phist_ElinSolv s);
 const char* eigExtr2str(phist_EeigExtr s);
 const char* precon2str(phist_Eprecon s);
+const char* matSym2str(phist_EmatSym s);
 
 phist_EeigSort str2eigSort(const char* str);
 phist_ElinSolv str2linSolv(const char* str);
 phist_EeigExtr str2eigExtr(const char* str);
 phist_Eprecon str2precon(const char* str);
+phist_EmatSym str2matSym(const char* str);
 #ifdef __cplusplus
 }
 
@@ -86,6 +88,9 @@ std::istream& operator>>(std::istream& is, phist_EeigExtr& s);
 
 //! read enum type from file stream
 std::istream& operator>>(std::istream& is, phist_Eprecon& s);
+
+//! read enum type from file stream
+std::istream& operator>>(std::istream& is, phist_EmatSym& s);
 
 #endif
 #endif
