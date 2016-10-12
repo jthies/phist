@@ -57,6 +57,11 @@ int innerSolvRobust; /*! extra effort to get good jada updates
                       * (in practice this may mean a more accurate orthogonalization etc.)
                       */
   int innerSolvStopAfterFirstConverged;
+  
+  int innerSolvMaxProjectionSpace; /* allow at most <k> vectors to be projected out in the
+                                    * inner solver, even if more eigenvectors have been locked already.
+                                    A value <0 indicates that all locked vectors are projected out.
+                                    */
 
   //! pointer to a inearOp whose apply_shifted function serves as a preconditioner for the inner solver. May be NULL (no preconditioning) or created by phist_Xprecon_create.
   //! This pointer can be used to pass an already computed preconditioner to the Jacobi-Davidson solver. The preconditioner will not be updated explicitly during the run, but

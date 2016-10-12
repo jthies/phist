@@ -36,6 +36,7 @@ extern "C" void phist_jadaOpts_setDefaults(phist_jadaOpts *opts)
   opts->innerSolvBlockSize=1;
   opts->innerSolvStopAfterFirstConverged=0;
   opts->innerSolvRobust=1;
+  opts->innerSolvMaxProjectionSpace=-1;
   
   opts->preconOp=NULL;
   opts->preconType=phist_NO_PRECON;
@@ -111,6 +112,7 @@ extern "C" void phist_jadaOpts_fromFile(phist_jadaOpts* opts, const char* filena
 
   set_value("innerSolvStopAfterFirstConverged",opts->innerSolvStopAfterFirstConverged,file);
   set_value("innerSolvRobust",opts->innerSolvRobust,file);
+  set_value("innerSolvMaxProjectionSpace",opts->innerSolvMaxProjectionSpace,file);
 }
 
 // print jadaOpts to a file or stream. The result can be used as input for subsequent runs
@@ -141,5 +143,6 @@ extern "C" void phist_jadaOpts_toFile(phist_jadaOpts const *opts, FILE* stream)
   fprintf(stream,"preconOpts\t%s\n",opts->preconOpts==NULL?"<NULL>":opts->preconOpts);
   fprintf(stream,"innerSolvStopAfterFirstConverged\t%d\n",opts->innerSolvStopAfterFirstConverged);
   fprintf(stream,"innerSolvRobust\t%d\n",opts->innerSolvRobust);
+  fprintf(stream,"innerSolvMaxProjectionSpace\t%d\n",opts->innerSolvMaxProjectionSpace);
 }
 

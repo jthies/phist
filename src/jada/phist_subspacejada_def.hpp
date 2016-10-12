@@ -770,10 +770,12 @@ PHIST_TESTING_CHECK_SUBSPACE_INVARIANTS;
         k++;
       }
     }
+
     // deflate with more vectors if there are multiple, partly converged eigenvalues
     while( k_+1 < nEig_ && (ct::abs(ev_H[k_+1]-ev_H[k_]) < 10*ct::abs(ev_H[k_+1])*mt::sqrt(tol) || ct::abs(ct::conj(ev_H[k_+1])-ev_H[k_]) < mt::sqrt(tol)) )
+    {
       k_++;
-
+    }
 
     // shrink search space if necessary
     if( nV + k > maxBase )
@@ -809,9 +811,16 @@ PHIST_TESTING_CHECK_SUBSPACE_INVARIANTS;
       // setup jadaOp
       // set correction views and temporary jadaOp-storage
       PHIST_CHK_IERR(SUBR( mvec_view_block  ) (t_,  &t,     0, k-1,  iflag), *iflag);
-      // we only need to view first part of Q
-      PHIST_CHK_IERR(SUBR( mvec_view_block  ) (Q_,   &Qtil,  0, k_, iflag), *iflag);
-      PHIST_CHK_IERR(SUBR( mvec_view_block  ) (BQ_,  &BQtil, 0, k_, iflag), *iflag);
+
+      // allow the user to specify a maximum of deflated eigenvectors in the inner solver
+      int k0=0;
+     if (opts.innerSolvMaxProjectionSpace>=0) k0=std::max(0,k_-opts.innerSolvMaxProjectionSpace);
+
+     PHIST_SOUT(PHIST_VERBOSE,"using %d projection vectors\n",k_-k0+1); 
+
+      // we only need to view the part of Q which is to be projected out
+      PHIST_CHK_IERR(SUBR( mvec_view_block  ) (Q_,   &Qtil,  k0, k_, iflag), *iflag);
+      PHIST_CHK_IERR(SUBR( mvec_view_block  ) (BQ_,  &BQtil, k0, k_, iflag), *iflag);
       // set tolerances
       for(int i = 0; i < k; i++)
       {
