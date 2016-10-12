@@ -3,6 +3,8 @@
 // In case a failure happens before 40 iterations, the restart flag needs to be provided 
 // ./minimal.bin -cppath <CHECKPOINT-PATH> -cpfreq 10 -niter 40 -restart 
 //
+#include <cstring>
+#include <unistd.h>
 
 #ifdef AFT
 	#include <aft.h>
@@ -10,10 +12,7 @@
 #endif
 
 #include "multilevelCP.h"
-#include <Checkpoint.hpp>
-#include <cstring>
-#include <unistd.h>
-
+#include <checkpoint.hpp>
 
 static char *prgname = "a.out";
 
@@ -36,7 +35,7 @@ void printusage(){
 	}
 }
 
-int read_params(int argc, char* argv[] , Cp_Options * myCpOpt){
+int read_params(int argc, char* argv[] , CpOptions * myCpOpt){
   prgname = argv[0];
 	char * tmp = new char[256];
 	std::string cpPathTemp ;
@@ -83,7 +82,7 @@ int main(int argc, char* argv[])
    	AFT_BEGIN(FT_Comm, &myrank, argv);	
 #endif 
 
-	Cp_Options * myCpOpt = new Cp_Options[1];
+	CpOptions * myCpOpt = new CpOptions[1];
 	MPI_Comm_rank(FT_Comm, &myrank);
 	MPI_Comm_size(FT_Comm, &numprocs);
   read_params(argc, argv, myCpOpt); 

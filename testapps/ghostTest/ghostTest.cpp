@@ -20,7 +20,7 @@ extern "C"{
 }
 #include <math.h>
 
-#include "CpGhost.hpp"
+#include "cpTypes/cpGhost/CpGhost.hpp"
 #include "CpPOD.hpp"
 
 #define DP

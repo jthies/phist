@@ -10,8 +10,8 @@
 #endif
 
 #include "minimal.h"
-#include <Checkpoint.hpp>
-#include <cp_options.h>
+#include <checkpoint.hpp>
+#include <cpOptions.h>
 #include <cstring>
 #include <unistd.h>
 
@@ -29,7 +29,7 @@ void printusage(){
 	}
 }
 
-int read_params(int argc, char* argv[] , Cp_Options * myCpOpt){
+int read_params(int argc, char* argv[] , CpOptions * myCpOpt){
   prgname = argv[0];
 	char * tmp = new char[256];
 	std::string cpPathTemp ;
@@ -76,7 +76,7 @@ int main(int argc, char* argv[])
    	AFT_BEGIN(FT_Comm, &myrank, argv);	
 #endif 
 
-	Cp_Options * myCpOpt = new Cp_Options[1];
+	CpOptions * myCpOpt = new CpOptions[1];
 	MPI_Comm_rank(FT_Comm, &myrank);
 	MPI_Comm_size(FT_Comm, &numprocs);
   read_params(argc, argv, myCpOpt); 
@@ -131,7 +131,7 @@ int main(int argc, char* argv[])
 #endif
 
 	MPI_Finalize();
-	return 0;
+	return EXIT_SUCCESS;
 }
 
 

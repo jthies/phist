@@ -1,20 +1,18 @@
-#ifdef AFT
-	#include <aft.h>
-	#include <aft_macros.h>
-#endif
-
-
-#include "arrayTest.h"
-#include <malloc.h>
-
-#include <Checkpoint.hpp>
-#include <cp_options.h>
-
 #include <vector>
 #include <string>
 #include <cstring>
 #include <stdio.h>
 #include <unistd.h>
+#include <malloc.h>
+
+#ifdef AFT
+	#include <aft.h>
+	#include <aft_macros.h>
+#endif
+#include <checkpoint.hpp>
+#include <cpOptions.h>
+
+#include "arrayTest.h"
 
 static char *prgname = "a.out";
 
@@ -46,7 +44,7 @@ void printusage(){
 	}
 }
 
-int read_params(int argc, char* argv[] , Cp_Options * myCpOpt){
+int read_params(int argc, char* argv[] , CpOptions * myCpOpt){
   prgname = argv[0];
 	char * tmp = new char[256];
 	std::string cpPathTemp ;
@@ -98,7 +96,7 @@ int main(int argc, char* argv[])
 	MPI_Comm_size(FT_Comm, &numprocs);
 	printf("%d/%d\n", myrank, numprocs);
 
-	Cp_Options * myCpOpt = new Cp_Options[1];
+	CpOptions * myCpOpt = new CpOptions[1];
   read_params(argc, argv, myCpOpt); 
 
 	int n = 5, nRows=5, nCols=5;
@@ -120,12 +118,14 @@ int main(int argc, char* argv[])
 			a[i] = 0;
 			d[i] = 0.55;
 	}
-	
+	int rankCP = myrank;
 	Checkpoint  myCP( myCpOpt->getCpPath(), FT_Comm);
+  
 	myCP.add("a", a, n);
-	myCP.add("aa", aa, nRows, nCols, CYCLIC);
+	myCP.add("aa", aa, nRows, nCols, ALL);
 	myCP.add("d", d, n);
 	myCP.add("iteration", &iteration);
+	myCP.add("rankCP", &rankCP);
 	myCP.commit(); 
 
 	if( myCpOpt->getRestartStatus() ) {
@@ -134,6 +134,7 @@ int main(int argc, char* argv[])
 		myCP.read();
 		iteration++;
 	}
+
 	for(; iteration <= myCpOpt->getnIter() ; iteration++)
   {
 		printf("=== iter: %d\t a[0]: %d\t aa[0][0]:%f\n", iteration, a[0], aa[0][0]);
@@ -162,6 +163,7 @@ int main(int argc, char* argv[])
 			printf("%d/%d: iterations finishied \n", myrank, numprocs);
 	  }
   }
+//	printf("rankCP: %d\n", rankCP);
 	printArray(a, n);
 	printArray(d, n);
 	printDoubleArray(aa , nRows, nCols);

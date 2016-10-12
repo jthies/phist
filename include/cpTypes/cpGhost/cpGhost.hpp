@@ -1,7 +1,7 @@
 #ifndef __CPGHOST_HPP__
 #define __CPGHOST_HPP__
 
-#include "../../CpBase.hpp"
+#include "../../cpBase.hpp"
 #include "ghost.h"
 
 
