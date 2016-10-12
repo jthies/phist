@@ -21,7 +21,7 @@
 #include <sys/stat.h>
 
 #ifdef GHOST_CP 
-#include "cpGhost.hpp"
+#include "cpTypes/cpGhost/cpGhost.hpp"
 #endif
 
 #ifdef PHIST_CP 
@@ -129,7 +129,7 @@ public:
 
   #ifdef GHOST_CP
   int add(std::string label, ghost_densemat * const GDM);
-  int add(std::string label, ghost_densemat ** const GDMArray, const size_t nDenseMat_, const int toCpDenseMat_=ALL)
+  int add(std::string label, ghost_densemat ** const GDMArray, const size_t nDenseMat_, const int toCpDenseMat_=ALL);
   //int add(std::string label, ghost_sparsemat * const GSM)
   #endif
 

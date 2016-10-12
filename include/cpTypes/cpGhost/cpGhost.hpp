@@ -1,9 +1,9 @@
 #ifndef __CPGHOST_HPP__
 #define __CPGHOST_HPP__
 
+#include "../../cpEnum.h"
 #include "../../cpBase.hpp"
 #include "ghost.h"
-
 
 
 class CpGhostDenseMat: public CpBase  
@@ -45,7 +45,7 @@ private:
 class CpGhostSparseMat: public CpBase  	// TODO: not fully implemented
 {
 public:
-	CpGhostSparseMat(ghost_sparsemat *  dataPtr_){
+	CpGhostSparseMat(ghost_sparsemat *  dataPtr_);
 	~CpGhostSparseMat(){}	
 	int update();
 	int write( const std::string * filename);
@@ -53,7 +53,7 @@ public:
 
 private:;
 	ghost_sparsemat * dataPtr;
-	ghost_sparsemat * asynData;;
+	ghost_sparsemat * asynData;
 };
 
 

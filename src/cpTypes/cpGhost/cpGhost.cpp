@@ -1,8 +1,9 @@
 #include <cstdlib>
+#include <fstream>
 #include <iostream>
 
 
-#include "include/cpGhost.hpp"
+#include "include/cpTypes/cpGhost/cpGhost.hpp"
 
 
 CpGhostDenseMat::CpGhostDenseMat(ghost_densemat *  dataPtr_){

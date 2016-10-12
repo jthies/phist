@@ -5,7 +5,7 @@
 
 #include "ghostTest.h"
 #include <malloc.h>
-#include <Checkpoint.hpp>
+#include <checkpoint.hpp>
 #include <cp_options.h>
 
 #include <vector>
@@ -20,8 +20,8 @@ extern "C"{
 }
 #include <math.h>
 
-#include "cpTypes/cpGhost/CpGhost.hpp"
-#include "CpPOD.hpp"
+#include <cpGhost.hpp>
+#include <cpPOD.hpp>
 
 #define DP
 #ifdef DP
