@@ -185,7 +185,7 @@ public:
 #endif
       ASSERT_EQ(0,iflag_);
 
-      ASSERT_NEAR(mt::one(),SdMatEqual(mat2_,beta*((ST)42.0)),100*mt::eps());
+      ASSERT_NEAR(mt::one(),SdMatEqual(mat2_,beta*((ST)42.0)),mt::sqrt(mt::eps()));
     }
   }
 
@@ -235,7 +235,7 @@ public:
       }
       SUBR(sdMat_to_device)(mat3_,&iflag_);
       ASSERT_EQ(0,iflag_);
-      ASSERT_NEAR(mt::one(),SdMatsEqual(mat3_,mat2_),100*mt::eps());
+      ASSERT_NEAR(mt::one(),SdMatsEqual(mat3_,mat2_),mt::sqrt(mt::eps()));
     }
   }
 
@@ -524,7 +524,7 @@ public:
         }
       ASSERT_EQ(0,iflag_);
       // check result
-      ASSERT_NEAR(mt::one(),ArrayEqual(mat2_vp_,nrows_,ncols_,m_lda_,1,(ST)42.0,mflag_),10*mt::eps());
+      ASSERT_NEAR(mt::one(),ArrayEqual(mat2_vp_,nrows_,ncols_,m_lda_,1,(ST)42.0,mflag_),mt::sqrt(mt::eps()));
     }
   }
 
@@ -567,7 +567,7 @@ public:
         }
       }
       // check result
-      ASSERT_NEAR(mt::one(),ArrayEqual(mat2_vp_,nrows_,ncols_,m_lda_,1,(ST)42.0,mflag_),10*mt::eps());
+      ASSERT_NEAR(mt::one(),ArrayEqual(mat2_vp_,nrows_,ncols_,m_lda_,1,(ST)42.0,mflag_),mt::sqrt(mt::eps()));
 
     }
   }
@@ -612,7 +612,7 @@ public:
         }
       }
       // check result
-      ASSERT_NEAR(mt::one(),ArrayEqual(mat2_vp_,nrows_,ncols_,m_lda_,1,(ST)42.0,mflag_),10*mt::eps());
+      ASSERT_NEAR(mt::one(),ArrayEqual(mat2_vp_,nrows_,ncols_,m_lda_,1,(ST)42.0,mflag_),mt::sqrt(mt::eps()));
 
     }
   }
@@ -674,7 +674,7 @@ public:
       SUBR(sdMat_to_device)(matC,&iflag_);
       ASSERT_EQ(0,iflag_);
       // check result
-      ASSERT_NEAR(mt::one(),SdMatEqual(matC,valC),10*mt::eps());
+      ASSERT_NEAR(mt::one(),SdMatEqual(matC,valC),mt::sqrt(mt::eps()));
 
       //////////////////////////////////////////
       // 2) B = B + A^H*C                     //
@@ -710,7 +710,7 @@ public:
       SUBR(sdMat_to_device)(matB,&iflag_);
       ASSERT_EQ(0,iflag_);
       // check result
-      ASSERT_NEAR(mt::one(),SdMatEqual(matB,valB),10*mt::eps());
+      ASSERT_NEAR(mt::one(),SdMatEqual(matB,valB),mt::sqrt(mt::eps()));
 
       //////////////////////////////////////////
       // 2) A = A + C*B^H                     //
@@ -746,7 +746,7 @@ public:
       SUBR(sdMat_to_device)(matA,&iflag_);
       ASSERT_EQ(0,iflag_);
       // check result
-      ASSERT_NEAR(mt::one(),SdMatEqual(matA,valA),10*mt::eps());
+      ASSERT_NEAR(mt::one(),SdMatEqual(matA,valA),mt::sqrt(mt::eps()));
 
       // clean up
       SUBR(sdMat_delete)(matB,&iflag_);
@@ -904,7 +904,7 @@ public:
       // download and check 
       SUBR(sdMat_from_device)(mat1_,&iflag_);
       SUBR(sdMat_from_device)(mat2_,&iflag_);
-      ASSERT_NEAR   (mt::one(),ArraysEqual(mat1_vp_,mat2_vp_,nrows_,ncols_,m_lda_,stride),100*mt::eps());
+      ASSERT_NEAR   (mt::one(),ArraysEqual(mat1_vp_,mat2_vp_,nrows_,ncols_,m_lda_,stride),mt::sqrt(mt::eps()));
 
       // sdMat_add_sdMat left/right
       SUBR(sdMat_add_sdMat)(alpha, vr, beta, ref_vl, &iflag_);
@@ -915,7 +915,7 @@ public:
       // download and check 
       SUBR(sdMat_from_device)(mat1_,&iflag_);
       SUBR(sdMat_from_device)(mat2_,&iflag_);
-      ASSERT_NEAR   (mt::one(),ArraysEqual(mat1_vp_,mat2_vp_,nrows_,ncols_,m_lda_,stride),100*mt::eps());
+      ASSERT_NEAR   (mt::one(),ArraysEqual(mat1_vp_,mat2_vp_,nrows_,ncols_,m_lda_,stride),mt::sqrt(mt::eps()));
 
       // sdMat_times_sdMat 21,22->11
       SUBR(sdMat_times_sdMat)(alpha, v21, v22, beta, ref_v11, &iflag_);
@@ -926,7 +926,7 @@ public:
       // download and check 
       SUBR(sdMat_from_device)(mat1_,&iflag_);
       SUBR(sdMat_from_device)(mat2_,&iflag_);
-      ASSERT_NEAR   (mt::one(),ArraysEqual(mat1_vp_,mat2_vp_,nrows_,ncols_,m_lda_,stride),100*mt::eps());
+      ASSERT_NEAR   (mt::one(),ArraysEqual(mat1_vp_,mat2_vp_,nrows_,ncols_,m_lda_,stride),mt::sqrt(mt::eps()));
 
       // sdMat_times_sdMat 22,21->12
       SUBR(sdMat_times_sdMat)(alpha, v22, v21, beta, ref_v12, &iflag_);
@@ -937,7 +937,7 @@ public:
       // download and check 
       SUBR(sdMat_from_device)(mat1_,&iflag_);
       SUBR(sdMat_from_device)(mat2_,&iflag_);
-      ASSERT_NEAR   (mt::one(),ArraysEqual(mat1_vp_,mat2_vp_,nrows_,ncols_,m_lda_,stride),100*mt::eps());
+      ASSERT_NEAR   (mt::one(),ArraysEqual(mat1_vp_,mat2_vp_,nrows_,ncols_,m_lda_,stride),mt::sqrt(mt::eps()));
 
 
       // sdMatT_times_sdMat 22,22->11
@@ -949,7 +949,7 @@ public:
       // download and check 
       SUBR(sdMat_from_device)(mat1_,&iflag_);
       SUBR(sdMat_from_device)(mat2_,&iflag_);
-      ASSERT_NEAR   (mt::one(),ArraysEqual(mat1_vp_,mat2_vp_,nrows_,ncols_,m_lda_,stride),100*mt::eps());
+      ASSERT_NEAR   (mt::one(),ArraysEqual(mat1_vp_,mat2_vp_,nrows_,ncols_,m_lda_,stride),mt::sqrt(mt::eps()));
 
       // sdMatT_times_sdMat 21,21->12
       SUBR(sdMatT_times_sdMat)(alpha, v21, v21, beta, ref_v12, &iflag_);
@@ -960,7 +960,7 @@ public:
       // download and check 
       SUBR(sdMat_from_device)(mat1_,&iflag_);
       SUBR(sdMat_from_device)(mat2_,&iflag_);
-      ASSERT_NEAR   (mt::one(),ArraysEqual(mat1_vp_,mat2_vp_,nrows_,ncols_,m_lda_,stride),100*mt::eps());
+      ASSERT_NEAR   (mt::one(),ArraysEqual(mat1_vp_,mat2_vp_,nrows_,ncols_,m_lda_,stride),mt::sqrt(mt::eps()));
 
       // delete ref views
       SUBR(sdMat_delete)(ref_vr, &iflag_);
