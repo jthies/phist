@@ -1,27 +1,26 @@
-#ifdef AFT
-	#include <aft.h>
-	#include <aft_macros.h>
-#endif
-
-#include "ghostTest.h"
-#include <malloc.h>
-#include <checkpoint.hpp>
-#include <cp_options.h>
-
 #include <vector>
 #include <string>
 #include <cstring>
 #include <typeinfo>
+#include <malloc.h>
+#include <stdio.h>
+#include <math.h>
+
+#include <checkpoint.hpp>
+#include <cpOptions.h>
 #include <ghost.h>
 #include <ghost/types.h>
-#include <stdio.h>
 extern "C"{
 #include "essexamples.h"
 }
-#include <math.h>
-
+#ifdef AFT
+	#include <aft.h>
+	#include <aft_macros.h>
+#endif
 #include <cpGhost.hpp>
 #include <cpPOD.hpp>
+
+#include "ghostTest.h"
 
 #define DP
 #ifdef DP
