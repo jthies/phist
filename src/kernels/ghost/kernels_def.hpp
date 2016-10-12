@@ -182,7 +182,19 @@ const char* filename,int* iflag)
 extern "C" void SUBR(sparseMat_read_mm_with_map)(TYPE(sparseMat_ptr)* A, phist_const_map_ptr map,
         const char* filename,int* iflag)
 {
-  *iflag=PHIST_NOT_IMPLEMENTED;
+  // we don't have a function for this, what we can do is create the matrix without the map
+  // and check afterwards if they happen to be compatible.
+  phist_const_comm_ptr comm=NULL;
+  PHIST_CHK_IERR(phist_map_get_comm(map,&comm,iflag),*iflag);
+  PHIST_CHK_IERR(SUBR(sparseMat_read_mm)(A,comm,filename,iflag),*iflag);
+  phist_const_map_ptr new_row_map=NULL;
+  PHIST_CHK_IERR(SUBR(sparseMat_get_row_map)(*A,&new_row_map,iflag),*iflag);
+  phist_maps_compatible(map,new_row_map,iflag);
+  if (*iflag!=0)
+  {
+    PHIST_CHK_IERR(*iflag=PHIST_NOT_IMPLEMENTED,*iflag);
+  }
+  return;
 }
 
 extern "C" void SUBR(sparseMat_read_bin_with_map)(TYPE(sparseMat_ptr)* A, phist_const_map_ptr map,
