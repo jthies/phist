@@ -104,15 +104,13 @@ if(GHOST_CP)
 	
 	##### CPGHOST #####
 	set (CPGHOST_INC_DIR 	${PROJECT_INC_DIR}/cpTypes/cpGhost/)
-  set (CPGHOST_SRC_DIR     ${PROJECT_SRC_DIR}/cpTypes/cpGhost/)
 	set (CPGHOST_INC 	${CPGHOST_INC_DIR}/cpGhost.hpp)
 	set (HEADERS 	${HEADERS} ${CPGHOST_INC})
 	include_directories (${CPGHOST_INC_DIR})
-  set (CPGHOST_SRC         ${CPGHOST_SRC_DIR}/cpGhost.cpp)
+  set (CPGHOST_SRC         ${CPGHOST_INC_DIR}/cpGhost.cpp)
   set (SOURCE ${SOURCE} ${CPGHOST_SRC})
   
 endif()
-
 
 if(PHIST_CP)
 	find_path(PHIST REQUIRED)
@@ -121,25 +119,23 @@ if(PHIST_CP)
 	link_directories ("${PHIST}/lib/")
 
 	##### MVEC #####
-	set (CPPHISTMVEC_SRC_DIR 	${PROJECT_SRC_DIR}/cpTypes/cpPhistMvec/)
 	set (CPPHISTMVEC_INC_DIR 	${PROJECT_INC_DIR}/cpTypes/cpPhistMvec/)
 	include_directories ("${CPPHISTMVEC_INC_DIR}")
 	set (CPPHISTMVEC_INC 	${CPPHISTMVEC_INC_DIR}/cpPhistMvec.h
 												${CPPHISTMVEC_INC_DIR}/cpPhistMvec_decl.h
 												${CPPHISTMVEC_INC_DIR}/cpPhistMvec_def.hpp)
-	set (CPPHISTMVEC_SRC 	${CPPHISTMVEC_SRC_DIR}/cpPhistMvec.cpp)
+	set (CPPHISTMVEC_SRC 	${CPPHISTMVEC_INC_DIR}/cpPhistMvec.cpp)
 
 	set ( SOURCE 	${SOURCE} ${CPPHISTMVEC_SRC})
 	set ( HEADERS 	${HEADERS} ${CPPHISTMVEC_INC})
 
 	##### SDMAT #####
-	set (CPPHISTSDMAT_SRC_DIR 	${PROJECT_SRC_DIR}/cpTypes/cpPhistSdMat/)
 	set (CPPHISTSDMAT_INC_DIR 	${PROJECT_INC_DIR}/cpTypes/cpPhistSdMat/)
 	include_directories ("${CPPHISTSDMAT_INC_DIR}")
 	set (CPPHISTSDMAT_INC 	${CPPHISTSDMAT_INC_DIR}/cpPhistSdMat.h
 													${CPPHISTSDMAT_INC_DIR}/cpPhistSdMat_decl.h
 													${CPPHISTSDMAT_INC_DIR}/cpPhistSdMat_def.hpp)
-	set (CPPHISTSDMAT_SRC 	${CPPHISTSDMAT_SRC_DIR}/cpPhistSdMat.cpp)
+	set (CPPHISTSDMAT_SRC 	${CPPHISTSDMAT_INC_DIR}/cpPhistSdMat.cpp)
 
 	set ( SOURCE 	${SOURCE} ${CPPHISTSDMAT_SRC})
 	set ( HEADERS 	${HEADERS} ${CPPHISTSDMAT_INC})
