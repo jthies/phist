@@ -1,5 +1,5 @@
 
-class TYPE(cpPhistMvec) : public cpBase
+class TYPE(CpPhistMvec) : public CpBase
 {
 typedef phist::ScalarTraits<_ST_> st;
 private:
@@ -9,11 +9,11 @@ private:
 	int iflag;
 
 public:
-	TYPE(cpPhistMvec)(){}
-	~TYPE(cpPhistMvec)(){}	
+	TYPE(CpPhistMvec)(){}
+	~TYPE(CpPhistMvec)(){}	
 
-	TYPE(cpPhistMvec)( TYPE(mvec_ptr) dataPtr_){
-		printf("cpPhistMvec constructor is called here: \n");
+	TYPE(CpPhistMvec)( TYPE(mvec_ptr) dataPtr_){
+		printf("CpPhistMvec constructor is called here: \n");
 		dataPtr = dataPtr_;
 		int nVec;
 		iflag = 0;
@@ -27,19 +27,19 @@ public:
 	}
 
 	int update(){
-		printf("cpPhistMvec Before update: \n");
+		printf("CpPhistMvec Before update: \n");
 		PHIST_CHK_IERR(SUBR(mvec_add_mvec)(st::one(),dataPtr,st::zero(),asynData,&iflag),iflag);
 		return 0;
 	}
 
 	int write( const std::string * filename){
-		printf("cpPhistMvec: i will write now %s\n", (*filename).c_str());
+		printf("CpPhistMvec: i will write now %s\n", (*filename).c_str());
 		PHIST_CHK_IERR(SUBR(mvec_write_bin)(asynData, (*filename).c_str() ,&iflag),iflag);
 		return 0;
 	}
 	
 	int read(const std::string * filename){
-		printf("cpPhistMvec: i will read now\n");
+		printf("CpPhistMvec: i will read now\n");
 		PHIST_CHK_IERR(SUBR(mvec_read_bin)(dataPtr, (*filename).c_str() ,&iflag),iflag);
 		return 0;
 	}

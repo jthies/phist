@@ -25,8 +25,8 @@
 #endif
 
 #ifdef PHIST_CP 
-#include "cpTypes/cpPhistMvec/cpPhistMvec.cpp"
-#include "cpTypes/cpPhistSdMat/cpPhistSdMat.cpp"
+#include "src/cpTypes/cpPhistMvec/cpPhistMvec.cpp"
+#include "src/cpTypes/cpPhistSdMat/cpPhistSdMat.cpp"
 #endif
 
 #ifdef SCR

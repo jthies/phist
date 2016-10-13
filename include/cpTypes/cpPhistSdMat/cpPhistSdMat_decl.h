@@ -1,2 +1,2 @@
-class TYPE(cpPhistSdMat);
+class TYPE(CpPhistSdMat);
 

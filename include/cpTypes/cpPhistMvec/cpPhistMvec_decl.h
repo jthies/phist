@@ -1,1 +1,1 @@
-class TYPE(cpPhistMvec);
+class TYPE(CpPhistMvec);
