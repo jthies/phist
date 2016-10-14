@@ -2105,6 +2105,9 @@ extern "C" void SUBR(sparseMat_create_fromRowFuncAndMap)(TYPE(sparseMat_ptr) *vA
   src.func = rowFunPtr;
   src.maxrowlen = maxnne;
   src.arg=last_arg;
+  // TODO set global dimensions
+  // src.gnrows = xxx;
+  // src.gncols = xxx;
 
 
   ghost_context *ctx = map->ctx;
