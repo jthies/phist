@@ -9,6 +9,7 @@
 #include "phist_enums.h"
 #include "phist_ScalarTraits.hpp"
 #include "phist_jadaOp.h"
+#include "phist_memOwner.hpp"
 
 #include <cstdlib>
 #include <vector>
