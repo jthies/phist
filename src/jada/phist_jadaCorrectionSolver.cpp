@@ -8,7 +8,7 @@
 #include "phist_macros.h"
 #include "phist_enums.h"
 #include "phist_ScalarTraits.hpp"
-#include "phist_jadaOp.hpp"
+#include "phist_jadaOp.h"
 
 #include <cstdlib>
 #include <vector>

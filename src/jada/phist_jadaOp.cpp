@@ -4,7 +4,7 @@
 #include <mpi.h>
 #endif
 
-#include "phist_jadaOp.hpp"
+#include "phist_jadaOp.h"
 #include "phist_kernels.h"
 #include "phist_macros.h"
 #include "phist_ScalarTraits.hpp"

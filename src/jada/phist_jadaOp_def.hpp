@@ -189,7 +189,7 @@ PHIST_ENTER_FCN("phist_jadaOp_mvec_times_sdMat");
 
 
 // allocate and initialize the jadaOp struct
-void SUBR(jadaOp_create)(TYPE(const_linearOp_ptr)    AB_op,
+extern "C" void SUBR(jadaOp_create)(TYPE(const_linearOp_ptr)    AB_op,
                          TYPE(const_linearOp_ptr)     B_op,
                          TYPE(const_mvec_ptr)  V,       TYPE(const_mvec_ptr)  BV,
                          const _ST_            sigma[], int                   nvec,
@@ -257,7 +257,7 @@ void SUBR(jadaOp_create)(TYPE(const_linearOp_ptr)    AB_op,
 
 
 // deallocate jadaOp struct
-void SUBR(jadaOp_delete)(TYPE(linearOp_ptr) jdOp, int *iflag)
+extern "C" void SUBR(jadaOp_delete)(TYPE(linearOp_ptr) jdOp, int *iflag)
 {
   PHIST_ENTER_FCN(__FUNCTION__);
   *iflag = 0;
@@ -314,7 +314,7 @@ void SUBR(jadaOp_apply_project_none)(_ST_ alpha, const void* op, TYPE(const_mvec
 // Y <- (I - P_op\V (V' P_op\ V)^{-1} V' ) P_op\X      or (if BV!=V and BV!=NULL):
 // Y <- (I -BP_op\V (V'BP_op\BV)^{-1} V'B) P_op\X
 //
-void SUBR(jadaPrec_create)(TYPE(const_linearOp_ptr) P_op, 
+extern "C" void SUBR(jadaPrec_create)(TYPE(const_linearOp_ptr) P_op, 
         TYPE(const_mvec_ptr) V, TYPE(const_mvec_ptr) BV,
         const _ST_ sigma[], int nvec,
         TYPE(linearOp_ptr) jdPrec, int* iflag)
