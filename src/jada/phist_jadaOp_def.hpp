@@ -1,44 +1,58 @@
+// this file implements various forms of (skew-)projected       
+// linear operators that can be used in Jacobi-Davidson type    
+// algorithms. The general form is:                             
+//                                                              
+// post-project:   y <- (I - W V')*Op          * x  (1)         
+// pre-/post:      y <- (I - W V')*Op*(I-V W') * x  (2)         
+//                                                              
+// In Jacobi-Davidson, we want to perform an iterative solve    
+// (e.g. GMRES) for the correction equation. The                
+// corresponding operator we put in the GMRES solver is         
+//                                                              
+// (I-QQ')(A-sigma_j I)               for standard EVP, and     
+// (I-(BQ)Q')(A-sigma_j B)(I-Q(BQ)')  for generalized EVP with  
+//                              hpd B. Here Q'BQ=I.             
+//                                                              
+// Q = [Q_locked v] is the basis of locked eigenvectors,        
+//  extended by the current search direction(s) v (also called  
+// Qtil in the JaDa implementations).                           
+//                                                              
+// We want the GMRES method to run for several shifts           
+// sigma_j simultaneously, which we achieve by using the        
+// operator's apply_shifted function.                           
+//                                                              
+// skew-projected preconditioning                               
+// ==============================                               
+//                                                              
+/// If the jada option "preconSkewProject" is not 0, the correc-
+// tion equation is preconditioned using (here K is a precondi- 
+// tioner for (A-sigma*B):                                      
+//                                                              
+// x <- (I - (K\V)*((BV)'K\V)^{-1} (BV)') K\y   (3)             
+//                                                              
+// To save memory and projection operations we use V=v instead  
+// of V=Q (which would project all converged eigenvectors out). 
+// This can be implemented by (1) using W = (K\v)((Bv)'K\v)^{-1}
+// and V=Bv. If K is symmetric and we want to preserve this     
+// property, pre-/post (2) could be used, too.                  
+//                                                              
+// derivation:                                                  
+//                                                              
+// correction equation with B=B' hpd:                           
+//                                                              
+// (A - sigma*B)t = Q*S -r      with S s.t.    Q'Bt=0           
+//                                                              
+// approximate LHS by a preconditioner K:                       
+//                                                              
+// t_      = K \ (Q*S - r_)            s.t. t_'Bv=0             
+//                                                              
+// Q'Bt_   = (Q'BK\Q)*S - Q'BK\r_      = 0                      
+// =>    S = (Q'B*K\Q)^{-1} (Q'BK\r_)                           
+//                                                              
+// Let y:=-r_ and x:=t_ here.                                   
+// this results in the preconditioning operator (3)             
+//                                                              
 
-// these are some thoughts I wrote down some time ago, I keep
-// them here for the moment to look at later
-
-//! in Jacobi-Davidson, we want ot perform an iterative solve
-//! (GMRES to start with) for the correction equation. The   
-//! corresponding operator we put in the GMRES solver is     
-//!                                                          
-//! (I-BVV') M\(A-sigma_j B),                                 
-//!                                                          
-//! where V = [Q v] is the basis                             
-//! of converged eigenvectors combined with the current      
-//! search space, and M is some preconditioner for a nearby  
-//! matrix A-tau*B). We want the GMRES method to run in para-
-//! lel for several shifts sigma_j, which we achieve by using
-//! the task-buffer programming model (cf. examples/sched/...
-//! main_task_model.c for a simple example). For now we let  
-//! the jadaOp handle the orthogonalization wrt. V, but in   
-//! the end we can hopefully use some bordered preconditio-  
-//! ning (like in HYMLS) for the matrix                      
-//!                                                          
-//! A-tau*B  BV                                               
-//!     V'   0                                               
-//!                                                          
-//! There are in principle two options, use (A-sigma_jI) as  
-//! operator and "(I-BVV')M\" as left preconditioner, or use  
-//! (I-BVV')(A-sigma_jB) as operator and M\ as right precond. 
-//! The first is more suitable for the case where the pre-   
-//! conditioner can handle the border, the second if flexible
-//! ible GMRES has to be used, e.g. in case of nested ite-   
-//! rations on the separators in DSC. Combining the right    
-//! preconditioner with the projection should also be fine,  
-//! the operator is then (A-sigma_j B) M\(I-VV'B), I think    
-//! that should give the same results more or less.
-//!
-//! Remark: for the generalized eigenvalue problem with hpd. B
-//!         we need always both projections, e.g. Y = (I-BVV')(A*X_-B*X_*sigma)
-//!         with X_ = (I-VV'B)X
-//!         (melven)
-//! Remark: if we directly store -sigma, we can avoid an additional vector operation
-//!         (as the mvec_vadd_mvec doesn't provei an additional scaling argument)
 
 
 // private struct to keep all the pointers we need in order to apply the operator.
@@ -287,19 +301,19 @@ void SUBR(jadaOp_apply_project_none)(_ST_ alpha, const void* op, TYPE(const_mvec
   }
 }
 
-//! create a preconditioner for the inner solve in Jacobi-Davidson.
-//!
-//! Given a linear operator that is a preconditioner for A, this function will simply
-//! wrap it up to use apply_shifted when apply() is called. We need this because our implementations
-//! of blockedGMRES and MINRES are not aware of the shifts so they can only call apply in the precon-
-//! ditioning operator. Obviously not all preconditioners are able to handle varying shifts without
-//! recomputing, this is not taken into account by this function:in that case the input P_op must be
-//! updated beforehand.
-//!
-//! If V is given, the preconditioner application will include a skew-projection
-//! Y <- (I - P_op\V (V' P_op\ V)^{-1} V' ) P_op\X      or (if BV!=V and BV!=NULL):
-//! Y <- (I -BP_op\V (V'BP_op\BV)^{-1} V'B) P_op\X
-//!
+// create a preconditioner for the inner solve in Jacobi-Davidson.
+//
+// Given a linear operator that is a preconditioner for A, this function will simply
+// wrap it up to use apply_shifted when apply() is called. We need this because our implementations
+// of blockedGMRES and MINRES are not aware of the shifts so they can only call apply in the precon-
+// ditioning operator. Obviously not all preconditioners are able to handle varying shifts without
+// recomputing, this is not taken into account by this function:in that case the input P_op must be
+// updated beforehand.
+//
+// If V is given, the preconditioner application will include a skew-projection
+// Y <- (I - P_op\V (V' P_op\ V)^{-1} V' ) P_op\X      or (if BV!=V and BV!=NULL):
+// Y <- (I -BP_op\V (V'BP_op\BV)^{-1} V'B) P_op\X
+//
 void SUBR(jadaPrec_create)(TYPE(const_linearOp_ptr) P_op, 
         TYPE(const_mvec_ptr) V, TYPE(const_mvec_ptr) BV,
         const _ST_ sigma[], int nvec,
