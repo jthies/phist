@@ -56,15 +56,20 @@
 
 
 // private struct to keep all the pointers we need in order to apply the operator.
-typedef struct TYPE(jadaOp_data)
+class TYPE(jadaOp_data)
 {
+  public:
+  
+  TYPE(jadaOp_data)(){}
+
   TYPE(const_linearOp_ptr)    AB_op;   // operator of the general matrix A
   TYPE(const_linearOp_ptr)    B_op;   // operator of the hpd. matrix B, assumed I when NULL
   TYPE(const_mvec_ptr)  V;      // B-orthonormal basis
   TYPE(const_mvec_ptr)  BV;     // B*V
   const _ST_*           sigma;  // array of NEGATIVE shifts, assumed to have correct size; TODO: what about 'complex' shifts for real JDQR?
   TYPE(mvec_ptr)        X_proj; // temporary storage for (I-VV'B)X, only used for B!= NULL
-} TYPE(jadaOp_data);
+  MvecOwner<_ST_> _X_proj, _V_prec; // these objects make sure that some temporary storage is freed when the object is deleted
+};
 
 
 // applies the jada-operator with only post-projection:
@@ -153,7 +158,7 @@ void SUBR(jadaOp_apply_project_pre_post)(_ST_ alpha, const void* op, TYPE(const_
     if (nvec!=nvec_tmp || X_proj==NULL)
     {
       // can not use the temporary vector in the jadaOp
-      PHIST_CHK_IERR(SUBR(mvec_create)(&X_proj,map,nvec,iflag),*iflag);      
+      PHIST_CHK_IERR(SUBR(mvec_create)(&X_proj,map,nvec,iflag),*iflag);
     }
     
     TYPE(sdMat_ptr) tmp;
@@ -225,14 +230,21 @@ extern "C" void SUBR(jadaOp_create)(TYPE(const_linearOp_ptr)    AB_op,
   {
     PHIST_CHK_IERR(SUBR(mvec_num_vectors)(V, &nvecp, iflag), *iflag);
   }
-  // this vector is created if needed in apply() (only if pre-projection is desired)
+  // this vector is created for a fixed number of vectors nvec to which the operator
+  // is applied. if another blocksize occurs, temporary storage is used in the apply
+  // function, which may mean some overhead!
   myOp->X_proj = NULL;
 
   // setup op_ptr function pointers. For standard EVP, just post-project. For generalized EVP,
-  // pre- and postproject.
+  // pre- and postproject. X_proj is only needed if B!=NULL, otherwise we don't do any pre-
+  // projection.
   jdOp->A     = (const void*)myOp;
+
   if (B_op!=NULL)
   {
+    PHIST_CHK_IERR(SUBR(mvec_create)(&myOp->X_proj,AB_op->domain_map,nvec,iflag),*iflag);
+    // make sure X_proj gets deleted automatically when myOp is deleted
+    myOp->_X_proj.set(myOp->X_proj);
     // if the user passes in a B opeartor and projection vectors V, he also has to provide BV
     PHIST_CHK_IERR(*iflag= (V!=NULL && BV==V)? PHIST_INVALID_INPUT: 0, *iflag);
     jdOp->apply = (&SUBR(jadaOp_apply_project_pre_post));
@@ -265,16 +277,10 @@ extern "C" void SUBR(jadaOp_delete)(TYPE(linearOp_ptr) jdOp, int *iflag)
   if( jdOp == NULL )
     return;
 
-  // get jadaOp
-  TYPE(jadaOp_data) *jadaOp = (TYPE(jadaOp_data)*) jdOp->A;
-  if( jdOp->A == NULL )
-    return;
+  if (jdOp->A == NULL) return;
 
-  // delete temporary arrays
-  if (jadaOp->X_proj!=NULL)
-  {
-    PHIST_CHK_IERR(SUBR(mvec_delete)(jadaOp->X_proj, iflag), *iflag);
-  }
+  // get jadaOp_data
+  TYPE(jadaOp_data) *jadaOp = (TYPE(jadaOp_data)*) jdOp->A;
 
   // delete jadaOp
   delete jadaOp;
@@ -301,23 +307,26 @@ void SUBR(jadaOp_apply_project_none)(_ST_ alpha, const void* op, TYPE(const_mvec
   }
 }
 
+
 // create a preconditioner for the inner solve in Jacobi-Davidson.
 //
-// Given a linear operator that is a preconditioner for A, this function will simply
-// wrap it up to use apply_shifted when apply() is called. We need this because our implementations
-// of blockedGMRES and MINRES are not aware of the shifts so they can only call apply in the precon-
-// ditioning operator. Obviously not all preconditioners are able to handle varying shifts without
-// recomputing, this is not taken into account by this function:in that case the input P_op must be
-// updated beforehand.
+// Given a linear operator that is a preconditioner for A-sigma_j*B, this function will simply          
+// wrap it up to use apply_shifted when apply() is called. We need this because our implementations     
+// of blockedGMRES and MINRES are not aware of the shifts so they can only call apply in the precon-    
+// ditioning operator. Obviously not all preconditioners are able to handle varying shifts without      
+// recomputing, this is not taken into account by this function:in that case the input P_op must be     
+// updated beforehand, or the existing preconditioner for e.g. A or A-tau*B is applied.
 //
 // If V is given, the preconditioner application will include a skew-projection
-// Y <- (I - P_op\V (V' P_op\ V)^{-1} V' ) P_op\X      or (if BV!=V and BV!=NULL):
-// Y <- (I -BP_op\V (V'BP_op\BV)^{-1} V'B) P_op\X
 //
-extern "C" void SUBR(jadaPrec_create)(TYPE(const_linearOp_ptr) P_op, 
+// Y <- (I - P_op\V (BV'P_op\V)^{-1} (BV)') P_op\X
+//
+// If BV==NULL, BV=V is assumed.
+extern "C" void SUBR(jadaPrec_create)(TYPE(const_linearOp_ptr) P_op,
         TYPE(const_mvec_ptr) V, TYPE(const_mvec_ptr) BV,
         const _ST_ sigma[], int nvec,
         TYPE(linearOp_ptr) jdPrec, int* iflag)
+
 {
 #include "phist_std_typedefs.hpp"
   if (V==NULL)
@@ -329,41 +338,39 @@ extern "C" void SUBR(jadaPrec_create)(TYPE(const_linearOp_ptr) P_op,
   }
   else
   {
-    // construct a skew-projected operator, first we need to construct P\V*(V'P\V)^{-1}
-    if (BV!=V && BV!=NULL)
-    {
-      PHIST_CHK_IERR(*iflag=PHIST_NOT_IMPLEMENTED,*iflag);
-    }
-    else
-    {
-      int nproj;
-      PHIST_CHK_IERR(SUBR(mvec_num_vectors)(V,&nproj,iflag),*iflag);
-      if (nproj==0) PHIST_CHK_IERR(*iflag=PHIST_INVALID_INPUT,*iflag);
+    // construct a skew-projected operator, first we need to construct P\V*(BV'P\V)^{-1}
+    int nproj;
+    PHIST_CHK_IERR(SUBR(mvec_num_vectors)(V,&nproj,iflag),*iflag);
+    if (nproj==0) PHIST_CHK_IERR(*iflag=PHIST_INVALID_INPUT,*iflag);
+    
+    TYPE(mvec_ptr) PV=NULL;
+    PHIST_CHK_IERR(SUBR(mvec_create)(&PV,P_op->domain_map,nproj,iflag),*iflag);
+    PHIST_CHK_IERR(P_op->apply(st::one(),P_op->A,V,st::zero(),PV,iflag),*iflag);
+    TYPE(sdMat_ptr) BVtPV=NULL;
+    phist_const_comm_ptr comm=NULL;
+    PHIST_CHK_IERR(phist_map_get_comm(P_op->domain_map,&comm,iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(sdMat_create)(&BVtPV, nproj,nproj,comm,iflag),*iflag);
+    
+    PHIST_CHK_IERR(SUBR(mvecT_times_mvec)(st::one(),BV,PV,st::zero(),BVtPV,iflag),*iflag);
       
-      TYPE(mvec_ptr) PV=NULL;
-      PHIST_CHK_IERR(SUBR(mvec_create)(&PV,P_op->domain_map,nproj,iflag),*iflag);
-      PHIST_CHK_IERR(P_op->apply(st::one(),P_op->A,V,st::zero(),PV,iflag),*iflag);
-      TYPE(sdMat_ptr) VtPV=NULL;
-      phist_const_comm_ptr comm=NULL;
-      PHIST_CHK_IERR(phist_map_get_comm(P_op->domain_map,&comm,iflag),*iflag);
-      PHIST_CHK_IERR(SUBR(sdMat_create)(&VtPV, nproj,nproj,comm,iflag),*iflag);
+    // compute the pseudo-inverse of V'K\V in place
+    int rank;
+    PHIST_CHK_IERR(SUBR(sdMat_pseudo_inverse)(BVtPV,&rank,iflag),*iflag);
       
-      // compute the pseudo-inverse of V'K\V in place
-      int rank;
-      PHIST_CHK_IERR(SUBR(sdMat_pseudo_inverse)(VtPV,&rank,iflag),*iflag);
+    // in-place PV*(V'P\V)^+
+    PHIST_CHK_IERR(SUBR(mvec_times_sdMat_inplace)(PV,BVtPV,iflag),*iflag);
       
-      // in-place PV*(V'P\V)^+
-      PHIST_CHK_IERR(SUBR(mvec_times_sdMat_inplace)(PV,VtPV,iflag),*iflag);
+    // delete temporary sdMat
+    PHIST_CHK_IERR(SUBR(sdMat_delete)(BVtPV,iflag),*iflag);
       
-      // delete temporary sdMat
-      PHIST_CHK_IERR(SUBR(sdMat_delete)(VtPV,iflag),*iflag);
-      
-      //TODO: when deleting this operator, PV must be deleted!
-      //      We should introduce std::shared_ptr objects (available in C++11, it seems!)
+    //TODO: when deleting this operator, PV must be deleted!
+    //      We should introduce std::shared_ptr objects (available in C++11, it seems!)
 
-      // use the version with only post-projection:
-      PHIST_CHK_IERR(SUBR(jadaOp_create)(P_op,NULL,V,PV,sigma, nvec, jdPrec,iflag),*iflag);
-      jdPrec->apply=SUBR(jadaOp_apply_project_post);
-    }
+    // use the version with only post-projection by giving B_op==NULL:
+    PHIST_CHK_IERR(SUBR(jadaOp_create)(P_op,NULL,BV,PV,sigma, nvec, jdPrec,iflag),*iflag);
+    jdPrec->apply=SUBR(jadaOp_apply_project_post);
+    // add the PV block vector to be deleted automatically when the operator is deleted.
+    TYPE(jadaOp_data)* jdDat=(TYPE(jadaOp_data)*)jdPrec->A;
+    jdDat->_V_prec.set(PV);
   }
 }

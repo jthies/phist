@@ -82,7 +82,7 @@ int innerSolvRobust; /*! extra effort to get good jada updates
   
   //! if 0, just apply the preconditioner K "as is"
   //! if 1, apply skew-projection with the currend approximation(s) q, giving the operator
-  //!       (I-(K\q) ((Bq)'(K\q))^{-1}(BQ)')K^{-1}.
+  //!       (I-(K\q) ((Bq)'(K\q))^{-1}(Bq)')K^{-1}.
   //! if 2, a symmetric variant with pre- and postprojection). This is currently not imple-
   //!       mented, though, because we currently only have MINRES to exploit symmetry in the
   //!       inner iterations. Unless all locked eigenvectors are projected out, the resulting
