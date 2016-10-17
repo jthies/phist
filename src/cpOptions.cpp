@@ -1,5 +1,6 @@
-#include "include/cpOptions.h"
 #include <stdio.h>
+#include "include/cpOptions.h"
+
 
 
 CpOptions::CpOptions(){
@@ -8,7 +9,6 @@ CpOptions::CpOptions(){
   cpPath = new char[256];
   isRestarted = false;  
 }
-
 
 CpOptions::~CpOptions(){
   

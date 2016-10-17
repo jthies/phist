@@ -67,6 +67,7 @@ int CpPOD<T>::update()
 
 template <class T>
 int CpPOD<T>::readParallel(const std::string * filename){
+	printf("CpPOD::readParallel()\n");
 	MPI_File fh; 
 	MPI_Status status;
 	int myrank;
@@ -77,13 +78,12 @@ int CpPOD<T>::readParallel(const std::string * filename){
 	MPI_File_seek(fh, os, MPI_SEEK_SET);
   MPI_File_read(fh, dataPtr, 1, getMpiDataType(T), &status);
 	MPI_File_close(&fh);
-	printf("use--MPIIO at restart\n");
 	return EXIT_SUCCESS;
 }
 
 template <class T>
 int CpPOD<T>::readSerial(const std::string * filename){
-	printf("DONT use--MPIIO at restart\n");
+	printf("CpPOD::readSerial()\n");
 	std::ifstream fstr;
 	fstr.open ((*filename).c_str(), std::ios::in | std::ios::binary);	
 	if(fstr.is_open()){

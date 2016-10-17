@@ -6,7 +6,7 @@
 #include "include/cpTypes/cpGhost/cpGhost.hpp"
 
 
-CpGhostDenseMat::CpGhostDenseMat(ghost_densemat *  dataPtr_){
+CpGhostDenseMat::CpGhostDenseMat(ghost_densemat *  dataPtr_, const MPI_Comm cpMpiComm_){
 		asynData = new ghost_densemat[1];
 		dataPtr  = new ghost_densemat[1];
 	
@@ -34,7 +34,7 @@ int CpGhostDenseMat::read(const std::string * filename){
 
 
 
-CpGhostDenseMatArray::CpGhostDenseMatArray(ghost_densemat **  dataPtr_, const size_t nDenseMat_, const int toCpDenseMat_){
+CpGhostDenseMatArray::CpGhostDenseMatArray(ghost_densemat **  dataPtr_, const size_t nDenseMat_, const int toCpDenseMat_, const MPI_Comm cpMpiComm_){
   dataPtr = dataPtr_;
   nDenseMat = nDenseMat_;
   toCpDenseMat = toCpDenseMat_;

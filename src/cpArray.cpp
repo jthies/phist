@@ -128,9 +128,6 @@ int CpArray<T>::writeParallel(const std::string * filename){
 	MPI_File fh;
 	MPI_Status status;
 	int myrank=-1; 
-	if(cpMpiComm == MPI_COMM_WORLD) 
-		std::cout << "In CpArray MPI_COMM_WORLD it is \n" << std::endl;
-
 	MPI_Comm_rank(cpMpiComm, &myrank);
 	MPI_File_open( cpMpiComm, (*filename).c_str(), MPI_MODE_CREATE | MPI_MODE_WRONLY, MPI_INFO_NULL, &fh);
 	MPI_Offset os;

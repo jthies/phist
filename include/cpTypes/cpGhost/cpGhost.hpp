@@ -9,7 +9,7 @@
 class CpGhostDenseMat: public CpBase  
 {
 public:
-	CpGhostDenseMat(ghost_densemat *  dataPtr_);
+	CpGhostDenseMat(ghost_densemat *  dataPtr_, const MPI_Comm cpMpiComm_=MPI_COMM_WORLD);
 	~CpGhostDenseMat(){}	
 	int update();
 	int write( const std::string * filename);
@@ -25,7 +25,7 @@ private:
 class CpGhostDenseMatArray: public CpBase  
 {
 public:
-	CpGhostDenseMatArray(ghost_densemat **  dataPtr_, const size_t nDenseMat_, const int toCpDenseMat_=ALL);
+	CpGhostDenseMatArray(ghost_densemat **  dataPtr_, const size_t nDenseMat_, const int toCpDenseMat_=ALL, const MPI_Comm cpMpiComm_=MPI_COMM_WORLD);
 	~CpGhostDenseMatArray(){}	
 
 	int update();

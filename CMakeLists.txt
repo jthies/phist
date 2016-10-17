@@ -40,7 +40,7 @@ set (HEADERS
 		include/dataType.h
 		)
 
-include_directories(${HEADERS} ${PROJECT_DIR})
+include_directories(${HEADERS} ${PROJECT_DIR} ${PROJECT_INC_DIR})
 
 ###### FIND LIBRARIES ######
 
@@ -51,6 +51,12 @@ if(MPI_FOUND)
 	set(LIBS ${LIBS} ${MPI_LIBRARIES})
 else()
 	message (STATUS "MPI package is NOT found")
+endif()
+
+find_package(OpenMP)
+if (OPENMP_FOUND)
+    set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
+    set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
 endif()
 
 if(AFT)
@@ -113,10 +119,12 @@ if(GHOST_CP)
 endif()
 
 if(PHIST_CP)
-	find_path(PHIST REQUIRED)
+  find_path(PHIST REQUIRED)
 	add_definitions(-DPHIST_CP)
 	include_directories ("${PHIST}/include/")
 	link_directories ("${PHIST}/lib/")
+  set (CMAKE_CXX_STANDARD 11)
+  set (CMAKE_CXX_STANDARD_REQUIRED ON)
 
 	##### MVEC #####
 	set (CPPHISTMVEC_INC_DIR 	${PROJECT_INC_DIR}/cpTypes/cpPhistMvec/)

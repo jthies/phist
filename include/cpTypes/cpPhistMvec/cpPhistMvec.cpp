@@ -8,7 +8,7 @@
 #include "phist_config.h"
 #include "phist_ScalarTraits.hpp"
 
-#include "include/cpBase.hpp"
+#include "cpBase.hpp"
 
 
 #ifdef PHIST_HAVE_SP

@@ -24,8 +24,9 @@ Checkpoint::Checkpoint(const std::string cpBasePath_=exec("pwd"), const MPI_Comm
 	cpVersion 	= 0;
 	numBufferCps=2;
 //	std::cout << "constructor is being called here idx = " << name << std::endl;
-	if(cpMpiComm == MPI_COMM_WORLD) 
-		std::cout << "MPI_COMM_WORLD it is \n" << std::endl;
+	if(cpMpiComm == MPI_COMM_WORLD) {
+		std::cout << "cpMpiComm = MPI_COMM_WORLD \n" << std::endl;
+  }
 	mkCpDir(cpPath);	
 #ifdef SCR																		// check if CPAFTLIB was compiled with SCR
 	useSCR 		= true;

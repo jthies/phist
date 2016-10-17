@@ -86,7 +86,7 @@ protected:
 	int SCRread();
 
 public:
-	Checkpoint(const std::string cpBasePath_, const MPI_Comm cpMpiComm_);
+	Checkpoint(const std::string cpBasePath_, const MPI_Comm cpMpiComm);
 	~Checkpoint();  
 	void disableSCR();
 	void commit();
@@ -135,7 +135,7 @@ public:
 
   #ifdef PHIST_CP 
   // ===== PHIST MVEC ===== // 
-  int add(std::string label, TYPE(mvec_ptr) const Mvec);
+  int add(std::string label, TYPE(mvec_ptr) const mvec);
   // ===== PHIST SDMAT ===== //	TODO: as MVEC, and SDMAT are both void*, they should be differenciated in some better way.  
   int add(std::string label, TYPE(sdMat_ptr) const sdMat, TYPE(sdMat_ptr) const temp);
   #endif
@@ -194,12 +194,12 @@ int Checkpoint::add(std::string label, T** const arrayPtr_, const size_t nRows_,
 // ===== GHOST DENSE MATRIX ===== //
 int Checkpoint::add(std::string label, ghost_densemat * const GDM)
 {
-  this->add(label, new CpGhostDenseMat(GDM));
+  this->add(label, new CpGhostDenseMat(GDM, cpMpiComm));
 }
 int Checkpoint::add(std::string label, ghost_densemat ** const GDMArray, const size_t nDenseMat_, const int toCpDenseMat_)
 {
 		assert (cpCommitted == false ); 
-		this->add(label, new CpGhostDenseMatArray(GDMArray, nDenseMat_, toCpDenseMat_) );
+		this->add(label, new CpGhostDenseMatArray(GDMArray, nDenseMat_, toCpDenseMat_, cpMpiComm) );
 }
 // ===== GHOST SPARSE MATRIX ===== // TODO: add this functionality if needed by users
 //int Checkpoint::add(std::string label, ghost_sparsemat * const GSM)
@@ -210,14 +210,14 @@ int Checkpoint::add(std::string label, ghost_densemat ** const GDMArray, const s
 
 #ifdef PHIST_CP 
 // ===== PHIST MVEC ===== // 
-int Checkpoint::add(std::string label, TYPE(mvec_ptr) const Mvec)
+int Checkpoint::add(std::string label, TYPE(mvec_ptr) const mvec)
 {	
-  this->add(label, new TYPE(CpPhistMvec)(Mvec) );
+  this->add(label, new TYPE(CpPhistMvec)(mvec) );
 }
 // ===== PHIST SDMAT ===== //	TODO: as MVEC, and SDMAT are both void*, they should be differenciated in some better way.  
 int Checkpoint::add(std::string label, TYPE(sdMat_ptr) const sdMat, TYPE(sdMat_ptr) const temp)
 {	
-  this->add(label, new TYPE(CpPhistSdMat)(sdMat) );
+  this->add(label, new TYPE(CpPhistSdMat)(sdMat, cpMpiComm) );
 }
 #endif
 
