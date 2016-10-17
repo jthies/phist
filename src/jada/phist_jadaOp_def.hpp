@@ -338,6 +338,14 @@ extern "C" void SUBR(jadaPrec_create)(TYPE(const_linearOp_ptr) P_op,
   }
   else
   {
+    // we always require BV!=NULL, but it may point to the same memory or object in memory
+    if (BV==NULL)
+    {
+      PHIST_SOUT(PHIST_ERROR,"jadaPrec_create requires BV if V is given, but it may be the same object or a view \n"
+                             " of the same memory as V\n");
+      *iflag=PHIST_INVALID_INPUT;
+      return;
+    }
     // construct a skew-projected operator, first we need to construct P\V*(BV'P\V)^{-1}
     int nproj;
     PHIST_CHK_IERR(SUBR(mvec_num_vectors)(V,&nproj,iflag),*iflag);

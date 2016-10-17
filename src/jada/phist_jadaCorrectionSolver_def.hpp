@@ -119,9 +119,13 @@ void SUBR(jadaCorrectionSolver_run)(TYPE(jadaCorrectionSolver_ptr) me,
       PHIST_CHK_IERR(SUBR(mvec_create)(&Bq,map,nqp,iflag),*iflag);
       PHIST_CHK_IERR(SUBR(mvec_get_block)(BQtil,Bq,nq0,nq-1,iflag),*iflag);      
     }
+    else
+    {
+      Bq=q;
+    }
   }
   // make sure these vectors get deleted at the end of the scope
-  MvecOwner<_ST_> _q(q),_Bq(Bq);
+  MvecOwner<_ST_> _q(q),_Bq(Bq!=q?Bq:NULL);
   
   if (me->method_==phist_NO_LINSOLV)
   {
