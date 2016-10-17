@@ -19,11 +19,17 @@
 //!
 template<> class MvecOwner<_ST_>
 {
+
+  public:
+
     //!
-    MvecOwner(TYPE(mvec_ptr) v){v_=v;}
+    MvecOwner(TYPE(mvec_ptr) v=NULL){v_=v;}
 
     //!
     ~MvecOwner(){int iflag=0; if (v_!=NULL) SUBR(mvec_delete)(v_,&iflag);}
+    
+    //!
+    void set(TYPE(mvec_ptr) v) {v_=v;}
 
   private:
   
@@ -36,11 +42,17 @@ template<> class MvecOwner<_ST_>
 //!
 template<> class SdMatOwner<_ST_>
 {
+
+  public:
+  
     //!
-    SdMatOwner(TYPE(sdMat_ptr) v){v_=v;}
+    SdMatOwner(TYPE(sdMat_ptr) v=NULL){v_=v;}
 
     //!
     ~SdMatOwner(){int iflag=0; if (v_!=NULL) SUBR(sdMat_delete)(v_,&iflag);}
+
+    //!
+    void set(TYPE(sdMat_ptr) v) {v_=v;}
 
   private:
   
@@ -52,11 +64,17 @@ template<> class SdMatOwner<_ST_>
 //!
 template<> class SparseMatOwner<_ST_>
 {
+
+  public:
+
     //!
-    SparseMatOwner(TYPE(sparseMat_ptr) v){v_=v;}
+    SparseMatOwner(TYPE(sparseMat_ptr) v=NULL){v_=v;}
 
     //!
     ~SparseMatOwner(){int iflag=0; if (v_!=NULL) SUBR(sparseMat_delete)(v_,&iflag);}
+
+    //!
+    void set(TYPE(sparseMat_ptr) v) {v_=v;}
 
   private:
   
