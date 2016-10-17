@@ -31,6 +31,11 @@ void SUBR(jadaCorrectionSolver_create)(TYPE(jadaCorrectionSolver_ptr) *me, phist
     (*me)->customSolver_run=opts.customSolver_run;
     (*me)->customSolver_run1=opts.customSolver_run1;
   }
+  else if ((*me)->method_==phist_NO_LINSOLV)
+  {
+    (*me)->rightPrecon=(TYPE(const_linearOp_ptr))opts.preconOp;
+    (*me)->preconSkewProject=opts.preconSkewProject;
+  }
   else
   {
     PHIST_SOUT(PHIST_ERROR, "method %d (%s) not implemented\n",(int)(*me)->method_, linSolv2str((*me)->method_));
@@ -89,6 +94,79 @@ void SUBR(jadaCorrectionSolver_run)(TYPE(jadaCorrectionSolver_ptr) me,
   PHIST_ENTER_FCN(__FUNCTION__);
   *iflag = 0;
 
+  // total number of systems to solve
+  int totalNumSys;
+  PHIST_CHK_IERR(SUBR(mvec_num_vectors)(t, &totalNumSys, iflag), *iflag);
+
+  // if there is a preconditioner and the options indicate that we want to apply it
+  // as a projected operator, create a copy of the last block of Q/BQ and compute  
+  // P\Q to be used for the projection. In theory it may be better to project out  
+  // all of the vectors in Q also from the preconditioner, but in practice this means
+  // we have to store P\Q.
+  TYPE(mvec_ptr) q=NULL, Bq=NULL;
+  if (me->rightPrecon && me->preconSkewProject)
+  {
+    phist_const_map_ptr map;
+    int nq;
+    PHIST_CHK_IERR(SUBR(mvec_num_vectors)(Qtil,&nq,iflag),*iflag);
+    int nqp=totalNumSys;
+    int nq0=std::max(0,nq-nqp);
+    PHIST_CHK_IERR(SUBR(mvec_get_map)(Qtil,&map,iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(mvec_create)(&q,map,nqp,iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(mvec_get_block)(Qtil,q,nq0,nq-1,iflag),*iflag);
+    if (B_op!=NULL)
+    {
+      PHIST_CHK_IERR(SUBR(mvec_create)(&Bq,map,nqp,iflag),*iflag);
+      PHIST_CHK_IERR(SUBR(mvec_get_block)(BQtil,Bq,nq0,nq-1,iflag),*iflag);      
+    }
+  }
+  // make sure these vectors get deleted at the end of the scope
+  MvecOwner<_ST_> _q(q),_Bq(Bq);
+  
+  if (me->method_==phist_NO_LINSOLV)
+  {
+    // wrap the preconditioner so that apply_shifted is called
+    if (me->rightPrecon!=NULL)
+    {
+      std::vector<_ST_> shifts(totalNumSys, st::zero());
+      for (int i=0; i<totalNumSys; i++) shifts[i]=-sigma[i];
+      if (me->preconSkewProject==0)
+      {
+        PHIST_CHK_IERR(me->rightPrecon->apply_shifted(st::one(),me->rightPrecon->A, 
+                &shifts[0],res,st::one(),t,iflag),*iflag);
+      }
+      else
+      {
+        static int first_time=1;
+        if (first_time)
+        {
+          PHIST_SOUT(PHIST_WARNING,"NO_LINSOLV/Olsens method (apply projected preconditioner only)\n"
+                                   "requires two preconditioner applications per correction vector\n"
+                                   "and may therefore be quite expensive...\n");
+          first_time=0;
+        }
+        TYPE(linearOp) jadaPrec;
+        PHIST_CHK_IERR(SUBR(jadaPrec_create)(me->rightPrecon,q,Bq,&shifts[0],totalNumSys,&jadaPrec,iflag),*iflag);
+        // apply this preconditioner
+        PHIST_CHK_IERR(jadaPrec.apply(st::one(),jadaPrec.A, res, st::zero(), t,iflag),*iflag);
+        // delete the preconditioner (wrapper) again
+        PHIST_CHK_IERR(jadaPrec.destroy(&jadaPrec,iflag),*iflag);
+      }
+    }
+    else
+    {
+      static int first_time=1;
+      if (first_time)
+      {
+        PHIST_SOUT(PHIST_WARNING,"NO_LINSOLV/Olsens method (apply projected preconditioner only)\n"
+                                 "was chosen in the jadaOpts, but no preconditioner is given. This\n"
+                                 "means that the correction equation is not solved!\n");
+        first_time=0;
+      }
+    }
+    *iflag=0;
+    return;
+  }
   if (me->method_==phist_USER_DEFINED)
   {
     int numSys;
@@ -119,6 +197,8 @@ void SUBR(jadaCorrectionSolver_run)(TYPE(jadaCorrectionSolver_ptr) me,
     return;
   }
 
+  // all other cases implemented below: MINRES, GMRES, CARP-CG
+
   PHIST_CHK_IERR(*iflag = (maxIter <= 0) ? -1 : 0, *iflag);
 
   // set solution vectors to zero to add them up later
@@ -133,10 +213,6 @@ void SUBR(jadaCorrectionSolver_run)(TYPE(jadaCorrectionSolver_ptr) me,
   // current and maximal block dimension
   int max_k = me->gmresBlockDim_;
   int k = max_k;
-
-  // total number of systems to solve
-  int totalNumSys;
-  PHIST_CHK_IERR(SUBR(mvec_num_vectors)(t, &totalNumSys, iflag), *iflag);
 
   // index of currently iterated systems in all systems to solve
   std::vector<int> index(max_k);
@@ -159,7 +235,7 @@ void SUBR(jadaCorrectionSolver_run)(TYPE(jadaCorrectionSolver_ptr) me,
     }
     else
     {
-      PHIST_CHK_IERR(SUBR(jadaPrec_create)(me->rightPrecon,Qtil,BQtil,&currShifts[0],k,&jadaPrec,iflag),*iflag);
+      PHIST_CHK_IERR(SUBR(jadaPrec_create)(me->rightPrecon,q,Bq,&currShifts[0],k,&jadaPrec,iflag),*iflag);
     }
     jadaPrecPtr=&jadaPrec;
   }
@@ -326,7 +402,7 @@ PHIST_TASK_END(iflag)
   PHIST_CHK_IERR(SUBR(jadaOp_delete)(&jadaOp, iflag), *iflag);
   if (jadaPrecPtr!=NULL)
   {
-    PHIST_CHK_IERR(SUBR(jadaOp_delete)(&jadaPrec, iflag), *iflag);
+    PHIST_CHK_IERR(jadaPrec.destroy(&jadaPrec, iflag), *iflag);
   }
   *iflag = nUnconvergedSystems;
 }
