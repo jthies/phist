@@ -6,7 +6,7 @@
 #include "gtest/phist_gtest.h"
 
 
-#include "phist_jadaOp.hpp"
+#include "phist_jadaOp.h"
 #include "phist_orthog.h"
 
 #include "../kernels/KernelTestWithSparseMat.h"

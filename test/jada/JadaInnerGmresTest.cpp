@@ -10,7 +10,7 @@
 #include "phist_kernels.h"
 #include "phist_enums.h"
 #include "phist_blockedgmres.h"
-#include "phist_jadaOp.hpp"
+#include "phist_jadaOp.h"
 #include "phist_ScalarTraits.hpp"
 #include "phist_orthog.h"
 #include "../kernels/KernelTestWithSparseMat.h"
