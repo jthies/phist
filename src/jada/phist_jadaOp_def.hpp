@@ -354,26 +354,23 @@ extern "C" void SUBR(jadaPrec_create)(TYPE(const_linearOp_ptr) P_op,
     TYPE(mvec_ptr) PV=NULL;
     PHIST_CHK_IERR(SUBR(mvec_create)(&PV,P_op->domain_map,nproj,iflag),*iflag);
     PHIST_CHK_IERR(P_op->apply(st::one(),P_op->A,V,st::zero(),PV,iflag),*iflag);
-    TYPE(sdMat_ptr) BVtPV=NULL;
+    TYPE(sdMat_ptr) BVtPV=NULL, M=NULL;
     phist_const_comm_ptr comm=NULL;
     PHIST_CHK_IERR(phist_map_get_comm(P_op->domain_map,&comm,iflag),*iflag);
     PHIST_CHK_IERR(SUBR(sdMat_create)(&BVtPV, nproj,nproj,comm,iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(sdMat_create)(&M, nproj,nproj,comm,iflag),*iflag);
+    SdMatOwner<_ST_> _BVtPV(BVtPV), _M(M);
     
     PHIST_CHK_IERR(SUBR(mvecT_times_mvec)(st::one(),BV,PV,st::zero(),BVtPV,iflag),*iflag);
       
-    // compute the pseudo-inverse of V'K\V in place
+    // compute the *transposed* pseudo-inverse of V'K\V in place
     int rank;
     PHIST_CHK_IERR(SUBR(sdMat_pseudo_inverse)(BVtPV,&rank,iflag),*iflag);
-      
+    // explicitly transpose the result
+    PHIST_CHK_IERR(SUBR(sdMatT_add_sdMat)(st::one(),BVtPV,st::zero(),M,iflag),*iflag);
     // in-place PV*(V'P\V)^+
-    PHIST_CHK_IERR(SUBR(mvec_times_sdMat_inplace)(PV,BVtPV,iflag),*iflag);
-      
-    // delete temporary sdMat
-    PHIST_CHK_IERR(SUBR(sdMat_delete)(BVtPV,iflag),*iflag);
-      
-    //TODO: when deleting this operator, PV must be deleted!
-    //      We should introduce std::shared_ptr objects (available in C++11, it seems!)
-
+    PHIST_CHK_IERR(SUBR(mvec_times_sdMat_inplace)(PV,M,iflag),*iflag);
+            
     // use the version with only post-projection by giving B_op==NULL:
     PHIST_CHK_IERR(SUBR(jadaOp_create)(P_op,NULL,BV,PV,sigma, nvec, jdPrec,iflag),*iflag);
     jdPrec->apply=SUBR(jadaOp_apply_project_post);
