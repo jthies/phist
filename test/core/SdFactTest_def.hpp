@@ -462,7 +462,8 @@ PrintSdMat(PHIST_DEBUG,"reconstructed X",mat2_vp_,m_lda_,1,mpi_comm_);
 
     SdMatOwner<_ST_> _U(U),_Vt(Vt),_UtU(UtU),_VtV(VtV);
 
-    // initialize U, Sigma and V with random entries, this should not hurt...
+    // initialize Sigma, U and V with random entries, this should not hurt...
+    //SUBR(sdMat_put_value)(Sigma,st::zero(),&iflag_);
     SUBR(sdMat_random)(Sigma,&iflag_);
     ASSERT_EQ(0,iflag_);
     SUBR(sdMat_random)(U,&iflag_);
@@ -486,11 +487,29 @@ PrintSdMat(PHIST_DEBUG,"reconstructed X",mat2_vp_,m_lda_,1,mpi_comm_);
     // compute the singular value decomposition, destroying A
     SUBR(sdMat_svd)(A,U,Sigma,Vt,&iflag_);
     ASSERT_EQ(0,iflag_);
+
+    SUBR(sdMat_to_device)(Sigma,&iflag_);
+    ASSERT_EQ(0,iflag_);
+    SUBR(sdMat_to_device)(U,&iflag_);
+    ASSERT_EQ(0,iflag_);
+    SUBR(sdMat_to_device)(Vt,&iflag_);
+    ASSERT_EQ(0,iflag_);
+    SUBR(sdMat_to_device)(A,&iflag_);
+    ASSERT_EQ(0,iflag_);
+
     // see if we can reconstruct A:
     triple_product(U,false,Sigma,false,Vt,false,A,&iflag_);
     ASSERT_EQ(0,iflag_);
-    ASSERT_NEAR(mt::one(),SdMatsEqual(A,A_bak),10*mt::eps());
-    
+    ASSERT_NEAR(mt::one(),SdMatsEqual(A,A_bak),100*std::max(nrows_,ncols_)*mt::eps());
+  std::cout<<"A=[...\n";
+  SUBR(sdMat_print)(A_bak,&iflag_);
+  std::cout<<"];\nSigma=[...\n";
+  SUBR(sdMat_print)(Sigma,&iflag_);  
+  std::cout<<"];\nU=[...\n";
+  SUBR(sdMat_print)(U,&iflag_);  
+  std::cout<<"];\nVt=[...\n";
+  SUBR(sdMat_print)(Vt,&iflag_);  
+  std::cout<<"];\n\n";
     _ST_* Sigma_vp=NULL;
     phist_lidx ldSigma;
     SUBR(sdMat_extract_view)(Sigma,&Sigma_vp,&ldSigma,&iflag_);
@@ -510,20 +529,20 @@ PrintSdMat(PHIST_DEBUG,"reconstructed X",mat2_vp_,m_lda_,1,mpi_comm_);
     {
       for (int j=0; j<ncols_; j++)
       {
-        max_offdiag=std::max(max_offdiag,st::abs(Sigma_vp[MIDX(i,j,ldSigma)]));
+        if (i!=j) max_offdiag=std::max(max_offdiag,st::abs(Sigma_vp[MIDX(i,j,ldSigma)]));
       }
     }
     ASSERT_NEAR(mt::zero(),max_offdiag,mt::eps());
     // compute U'U and V'V and check they are identity matrices
     SUBR(sdMat_identity)(UtU,&iflag_);
     ASSERT_EQ(0,iflag_);
-    SUBR(sdMatT_times_sdMat)(-st::one(),U,U,st::zero(),UtU,&iflag_);
+    SUBR(sdMatT_times_sdMat)(-st::one(),U,U,st::one(),UtU,&iflag_);
     ASSERT_EQ(0,iflag_);
     ASSERT_NEAR(mt::one(),SdMatEqual(UtU,mt::zero()),10*mt::eps());
 
     SUBR(sdMat_identity)(VtV,&iflag_);
     ASSERT_EQ(0,iflag_);
-    SUBR(sdMat_times_sdMatT)(-st::one(),Vt,Vt,st::zero(),VtV,&iflag_);
+    SUBR(sdMat_times_sdMatT)(-st::one(),Vt,Vt,st::one(),VtV,&iflag_);
     ASSERT_EQ(0,iflag_);
     ASSERT_NEAR(mt::one(),SdMatEqual(VtV,mt::zero()),10*mt::eps());
   }

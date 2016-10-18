@@ -215,10 +215,13 @@ void SUBR(sdMat_pseudo_inverse)(TYPE(sdMat_ptr) A_gen, int* rank, int* iflag)
   
   phist_const_comm_ptr comm=NULL;
   
+  *rank=-1;
+  
   TYPE(sdMat_ptr) U=NULL, Sigma=NULL, Vt=NULL;
   PHIST_CHK_IERR(SUBR(sdMat_create)(&U,m,m,comm,iflag),*iflag);
   PHIST_CHK_IERR(SUBR(sdMat_create)(&Sigma,m,n,comm,iflag),*iflag);
   PHIST_CHK_IERR(SUBR(sdMat_create)(&Vt,n,n,comm,iflag),*iflag);
+  SdMatOwner<_ST_> _Sigma(Sigma),_U(U),_Vt(Vt);
   
   // eigenvalue decomposition, A = V*Sigma*W'
   *iflag=iflag_in;
@@ -229,6 +232,7 @@ void SUBR(sdMat_pseudo_inverse)(TYPE(sdMat_ptr) A_gen, int* rank, int* iflag)
   phist_lidx ldS;
   PHIST_CHK_IERR(SUBR(sdMat_extract_view)(Sigma,&Sigma_raw,&ldS,iflag),*iflag);
   _MT_ sval_max = st::abs(Sigma_raw[0]), sval_max_err=mt::zero();
+  *rank=std::min(m,n);
   if (high_prec)
   {
 #ifdef PHIST_HIGH_PRECISION_KERNELS
@@ -249,6 +253,7 @@ void SUBR(sdMat_pseudo_inverse)(TYPE(sdMat_ptr) A_gen, int* rank, int* iflag)
       {
         Sigma_raw[i*ldS+i]=st::zero();
         Sigma_err[i*ldS+i]=st::zero();
+        (*rank)--;
       }
       else
       {
@@ -265,6 +270,7 @@ void SUBR(sdMat_pseudo_inverse)(TYPE(sdMat_ptr) A_gen, int* rank, int* iflag)
       if (st::abs(sval)<sval_max*mt::rankTol())
       {
         Sigma_raw[i*ldS+i]=st::zero();
+        (*rank)--;
       }
       else
       {
@@ -272,11 +278,7 @@ void SUBR(sdMat_pseudo_inverse)(TYPE(sdMat_ptr) A_gen, int* rank, int* iflag)
       }
     }
   }
-  
-  
-  PHIST_CHK_IERR(SUBR(sdMat_delete)(U,iflag),*iflag);
-  PHIST_CHK_IERR(SUBR(sdMat_delete)(Sigma,iflag),*iflag);
-  PHIST_CHK_IERR(SUBR(sdMat_delete)(Vt,iflag),*iflag);
+  return;  
 }
 
 //! singular value decomposition, A = U*Sigma*Vt  

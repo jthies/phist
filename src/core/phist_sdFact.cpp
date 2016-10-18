@@ -24,6 +24,7 @@
 
 #include "phist_typedefs.h"
 #include "phist_ScalarTraits.hpp"
+#include "phist_memOwner.hpp"
 #include "phist_sdFact.h"
 
 #ifdef PHIST_HAVE_SP
