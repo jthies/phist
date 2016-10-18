@@ -7,7 +7,7 @@
 
 /*! Test fixure. */
 class CLASSNAME: public KernelTestWithSdMats<_ST_,_NROWS_,_NCOLS_,_USE_VIEWS_> 
-  {
+{
 
 public:
 
@@ -442,6 +442,90 @@ PrintSdMat(PHIST_DEBUG,"reconstructed X",mat2_vp_,m_lda_,1,mpi_comm_);
 #else
     ASSERT_NEAR(mt::one(),SdMatEqual(mat2_,st::zero()),100*mt::eps());
 #endif
+  }
+
+  TEST_F(CLASSNAME, svd)
+  {
+    // for random A, compute A=U*Sigma*V' and verify the product gives A,
+    // Sigma is diagonal and it's entries are decreasing and positive, and
+    // U and V are orthonormal.
+    TYPE(sdMat_ptr) A=mat1_, A_bak=mat2_, Sigma=mat3_, U=NULL, Vt=NULL,UtU=NULL,VtV=NULL;
+
+    SUBR(sdMat_create)(&U,nrows_,nrows_,comm_,&iflag_);
+    ASSERT_EQ(0,iflag_);
+    SUBR(sdMat_create)(&Vt,ncols_,ncols_,comm_,&iflag_);
+    ASSERT_EQ(0,iflag_);
+    SUBR(sdMat_create)(&UtU,nrows_,nrows_,comm_,&iflag_);
+    ASSERT_EQ(0,iflag_);
+    SUBR(sdMat_create)(&VtV,ncols_,ncols_,comm_,&iflag_);
+    ASSERT_EQ(0,iflag_);
+
+    SdMatOwner<_ST_> _U(U),_Vt(Vt),_UtU(UtU),_VtV(VtV);
+
+    // initialize U, Sigma and V with random entries, this should not hurt...
+    SUBR(sdMat_random)(Sigma,&iflag_);
+    ASSERT_EQ(0,iflag_);
+    SUBR(sdMat_random)(U,&iflag_);
+    ASSERT_EQ(0,iflag_);
+    SUBR(sdMat_random)(Vt,&iflag_);
+    ASSERT_EQ(0,iflag_);
+    
+    SUBR(sdMat_from_device)(Sigma,&iflag_);
+    ASSERT_EQ(0,iflag_);
+    SUBR(sdMat_from_device)(U,&iflag_);
+    ASSERT_EQ(0,iflag_);
+    SUBR(sdMat_from_device)(Vt,&iflag_);
+    ASSERT_EQ(0,iflag_);
+    SUBR(sdMat_from_device)(A,&iflag_);
+    ASSERT_EQ(0,iflag_);
+        
+    //save A
+    SUBR(sdMat_add_sdMat)(st::one(),A,st::zero(),A_bak,&iflag_);
+    ASSERT_EQ(0,iflag_);
+    
+    // compute the singular value decomposition, destroying A
+    SUBR(sdMat_svd)(A,U,Sigma,Vt,&iflag_);
+    ASSERT_EQ(0,iflag_);
+    // see if we can reconstruct A:
+    triple_product(U,false,Sigma,false,Vt,false,A,&iflag_);
+    ASSERT_EQ(0,iflag_);
+    ASSERT_NEAR(mt::one(),SdMatsEqual(A,A_bak),10*mt::eps());
+    
+    _ST_* Sigma_vp=NULL;
+    phist_lidx ldSigma;
+    SUBR(sdMat_extract_view)(Sigma,&Sigma_vp,&ldSigma,&iflag_);
+    ASSERT_EQ(0,iflag_);
+
+    // check singular values are positive and decreasing on the diagonal
+    _ST_ last_sigma=st::zero();
+    for (int i=std::min(nrows_,ncols_)-1; i>=0; i--)
+    {
+      _ST_ sigma_i=Sigma_vp[MIDX(i,i,ldSigma)];
+      ASSERT_TRUE(st::real(sigma_i)>=st::real(last_sigma));
+      ASSERT_TRUE(mt::abs(st::imag(sigma_i))<=mt::eps());
+      last_sigma=sigma_i;
+    }
+    _MT_ max_offdiag=mt::zero();
+    for (int i=0; i<nrows_; i++)
+    {
+      for (int j=0; j<ncols_; j++)
+      {
+        max_offdiag=std::max(max_offdiag,st::abs(Sigma_vp[MIDX(i,j,ldSigma)]));
+      }
+    }
+    ASSERT_NEAR(mt::zero(),max_offdiag,mt::eps());
+    // compute U'U and V'V and check they are identity matrices
+    SUBR(sdMat_identity)(UtU,&iflag_);
+    ASSERT_EQ(0,iflag_);
+    SUBR(sdMatT_times_sdMat)(-st::one(),U,U,st::zero(),UtU,&iflag_);
+    ASSERT_EQ(0,iflag_);
+    ASSERT_NEAR(mt::one(),SdMatEqual(UtU,mt::zero()),10*mt::eps());
+
+    SUBR(sdMat_identity)(VtV,&iflag_);
+    ASSERT_EQ(0,iflag_);
+    SUBR(sdMat_times_sdMatT)(-st::one(),Vt,Vt,st::zero(),VtV,&iflag_);
+    ASSERT_EQ(0,iflag_);
+    ASSERT_NEAR(mt::one(),SdMatEqual(VtV,mt::zero()),10*mt::eps());
   }
 
   TEST_F(CLASSNAME, pseudo_inverse)
