@@ -444,8 +444,7 @@ PrintSdMat(PHIST_DEBUG,"reconstructed X",mat2_vp_,m_lda_,1,mpi_comm_);
 #endif
   }
 
-  // under construction... (TODO)
-  TEST_F(CLASSNAME, DISABLED_pseudo_inverse)
+  TEST_F(CLASSNAME, pseudo_inverse)
   {
     if( typeImplemented_ )
     {
@@ -470,17 +469,17 @@ PrintSdMat(PHIST_DEBUG,"reconstructed X",mat2_vp_,m_lda_,1,mpi_comm_);
       ASSERT_EQ(std::min(nrows_,ncols_),rank);
       
       // check the four defining properties of A+:
-#if 0      
+
       // 1. A A+ A = A
-      TripleProduct(A,false,AplusT,true,A,false,mat3_);
+      MTest::triple_product(A,false,AplusT,true,A,false,mat3_,&iflag_);
       ASSERT_EQ(0,iflag_);
       ASSERT_NEAR(st::one(),SdMatsEqual(A,mat3_),st::eps());
       
       // 2. A+ A A+ = A+ => A+^T A^T A+^T = A+^T
-      TripleProduct(AplusT,false,A,false,AplusT,false,mat3_);
+      MTest::triple_product(AplusT,false,A,false,AplusT,false,mat3_,&iflag_);
       ASSERT_EQ(0,iflag_);
       ASSERT_NEAR(st::one(),SdMatsEqual(AplusT,mat3_),st::eps());
-#endif
+
       // 3. (AA+)^* = AA+
       TYPE(sdMat_ptr) mat_tmp=NULL;
       SUBR(sdMat_create)(&mat_tmp, nrows_,nrows_,comm_,&iflag_);
