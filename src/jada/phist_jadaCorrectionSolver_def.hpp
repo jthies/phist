@@ -7,6 +7,7 @@ void SUBR(jadaCorrectionSolver_create)(TYPE(jadaCorrectionSolver_ptr) *me, phist
   *iflag = 0;
   *me = new TYPE(jadaCorrectionSolver);
   (*me)->method_ = opts.innerSolvType;
+  (*me)->leftPrecon=NULL; // not used yet
   if ((*me)->method_==phist_GMRES||(*me)->method_==phist_MINRES)
   {
     PHIST_CHK_IERR( *iflag = (opts.innerSolvBlockSize <= 0) ? -1 : 0, *iflag);
@@ -95,8 +96,40 @@ void SUBR(jadaCorrectionSolver_run)(TYPE(jadaCorrectionSolver_ptr) me,
   *iflag = 0;
 
   // total number of systems to solve
-  int totalNumSys;
+  int totalNumSys, totalNumRHS;
   PHIST_CHK_IERR(SUBR(mvec_num_vectors)(t, &totalNumSys, iflag), *iflag);
+  PHIST_CHK_IERR(SUBR(mvec_num_vectors)(res, &totalNumRHS, iflag), *iflag);
+
+  // this check may fail: subspacejada expects us to grab the RHS's needed from res(:,resIndex[0:totalNumSys-1])
+  //PHIST_CHK_IERR(*iflag=totalNumSys==totalNumRHS?0:PHIST_INVALID_INPUT,*iflag);
+
+  if (me->method_==phist_USER_DEFINED)
+  {
+    if (totalNumSys==1 && me->customSolver_run1!=NULL)
+    {
+      PHIST_CHK_IERR(me->customSolver_run1(me->customSolver_,AB_op,B_op,Qtil,BQtil,(double)st::real(sigma[0]),
+        (double)st::imag(sigma[0]), res,
+        (double)tol[0],maxIter,t,useIMGS,iflag),*iflag);
+    }
+    else if (me->customSolver_run!=NULL)
+    {
+      double sr[totalNumSys], si[totalNumSys],dtol[totalNumSys];
+      for (int i=0;i<totalNumSys;i++)
+      {
+        sr[i]=st::real(sigma[i]);
+        si[i]=st::imag(sigma[i]);
+        dtol[i]=(double)tol[i];
+      }
+      PHIST_CHK_IERR(me->customSolver_run(me->customSolver_,AB_op,B_op,Qtil,BQtil,sr,si,res,resIndex,
+        dtol,maxIter,t,useIMGS,abortAfterFirstConvergedInBlock,iflag),*iflag);
+    }
+    else
+    {
+      PHIST_SOUT(PHIST_ERROR,"custom solver requested but function not set in jadaOpts struct\n");
+      *iflag=PHIST_BAD_CAST;
+    }
+    return;
+  }
 
   // if there is a preconditioner and the options indicate that we want to apply it
   // as a projected operator, create a copy of the last block of Q/BQ and compute  
@@ -104,6 +137,8 @@ void SUBR(jadaCorrectionSolver_run)(TYPE(jadaCorrectionSolver_ptr) me,
   // all of the vectors in Q also from the preconditioner, but in practice this means
   // we have to store P\Q.
   TYPE(mvec_ptr) q=NULL, Bq=NULL;
+  q=(TYPE(mvec_ptr))Qtil; Bq=(TYPE(mvec_ptr))BQtil;
+/*
   if (me->rightPrecon && me->preconSkewProject)
   {
     phist_const_map_ptr map;
@@ -124,11 +159,28 @@ void SUBR(jadaCorrectionSolver_run)(TYPE(jadaCorrectionSolver_ptr) me,
       Bq=q;
     }
   }
+*/
   // make sure these vectors get deleted at the end of the scope
-  MvecOwner<_ST_> _q(q),_Bq(Bq!=q?Bq:NULL);
-  
+  MvecOwner<_ST_> _q(q!=Qtil?q:NULL),_Bq(( (Bq!=q)&&(Bq!=BQtil) )?Bq:NULL);
+ 
+  // if no Krylov method is used, only apply the preconditioner. This is also known as Olsen's method.
   if (me->method_==phist_NO_LINSOLV)
   {
+    TYPE(mvec_ptr) _t=t,_res=(TYPE(mvec_ptr))res;
+    int jlower=0,jupper=totalNumSys-1;
+    if (resIndex!=NULL)
+    {
+      // only implemented up to now for contiguous and increasing resIndex
+      bool valid_resIndex=true;
+      for (int i=1; i<totalNumSys; i++) valid_resIndex|=(resIndex[i]==resIndex[i-1]+1);
+      PHIST_CHK_IERR(*iflag=valid_resIndex?0:PHIST_NOT_IMPLEMENTED,*iflag);
+      jlower=resIndex[jlower];
+      jupper=resIndex[jupper];
+      _res=NULL;
+      PHIST_CHK_IERR(SUBR(mvec_view_block)((TYPE(mvec_ptr))res,&_res,jlower,jupper,iflag),*iflag);
+    }
+    // make sure the view gets deleted at the end of the scope
+    MvecOwner<_ST_> __res(_res!=res?_res:NULL);
     // wrap the preconditioner so that apply_shifted is called
     if (me->rightPrecon!=NULL)
     {
@@ -137,7 +189,7 @@ void SUBR(jadaCorrectionSolver_run)(TYPE(jadaCorrectionSolver_ptr) me,
       if (me->preconSkewProject==0)
       {
         PHIST_CHK_IERR(me->rightPrecon->apply_shifted(st::one(),me->rightPrecon->A, 
-                &shifts[0],res,st::one(),t,iflag),*iflag);
+                &shifts[0],_res,st::one(),_t,iflag),*iflag);
       }
       else
       {
@@ -152,7 +204,7 @@ void SUBR(jadaCorrectionSolver_run)(TYPE(jadaCorrectionSolver_ptr) me,
         TYPE(linearOp) jadaPrec;
         PHIST_CHK_IERR(SUBR(jadaPrec_create)(me->rightPrecon,q,Bq,&shifts[0],totalNumSys,&jadaPrec,iflag),*iflag);
         // apply this preconditioner
-        PHIST_CHK_IERR(jadaPrec.apply(st::one(),jadaPrec.A, res, st::zero(), t,iflag),*iflag);
+        PHIST_CHK_IERR(jadaPrec.apply(st::one(),jadaPrec.A, _res, st::zero(), _t,iflag),*iflag);
         // delete the preconditioner (wrapper) again
         PHIST_CHK_IERR(jadaPrec.destroy(&jadaPrec,iflag),*iflag);
       }
@@ -167,40 +219,13 @@ void SUBR(jadaCorrectionSolver_run)(TYPE(jadaCorrectionSolver_ptr) me,
                                  "means that the correction equation is not solved!\n");
         first_time=0;
       }
+      PHIST_CHK_IERR(SUBR(mvec_add_mvec)(st::one(),res,st::zero(),t,iflag),*iflag);
     }
     *iflag=0;
     return;
   }
-  if (me->method_==phist_USER_DEFINED)
-  {
-    int numSys;
-    PHIST_CHK_IERR(SUBR(mvec_num_vectors)(t,&numSys,iflag),*iflag);
-    if (numSys==1 && me->customSolver_run1!=NULL)
-    {
-      PHIST_CHK_IERR(me->customSolver_run1(me->customSolver_,AB_op,B_op,Qtil,BQtil,(double)st::real(sigma[0]),
-        (double)st::imag(sigma[0]), res,
-        (double)tol[0],maxIter,t,useIMGS,iflag),*iflag);
-    }
-    else if (me->customSolver_run!=NULL)
-    {
-      double sr[numSys], si[numSys],dtol[numSys];
-      for (int i=0;i<numSys;i++)
-      {
-        sr[i]=st::real(sigma[i]);
-        si[i]=st::imag(sigma[i]);
-        dtol[i]=(double)tol[i];
-      }
-      PHIST_CHK_IERR(me->customSolver_run(me->customSolver_,AB_op,B_op,Qtil,BQtil,sr,si,res,resIndex,
-        dtol,maxIter,t,useIMGS,abortAfterFirstConvergedInBlock,iflag),*iflag);
-    }
-    else
-    {
-      PHIST_SOUT(PHIST_ERROR,"custom solver requested but function not set in jadaOpts struct\n");
-      *iflag=-88;
-    }
-    return;
-  }
 
+  
   // all other cases implemented below: MINRES, GMRES, CARP-CG
 
   PHIST_CHK_IERR(*iflag = (maxIter <= 0) ? -1 : 0, *iflag);

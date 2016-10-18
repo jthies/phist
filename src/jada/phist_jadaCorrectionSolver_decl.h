@@ -15,7 +15,7 @@ typedef struct TYPE(jadaCorrectionSolver)
   
   int preconSkewProject;
 
-  TYPE(const_linearOp_ptr) rightPrecon;
+  TYPE(const_linearOp_ptr) leftPrecon, rightPrecon;
 
   //! pointer to solver object if innerSolvType==USER_DEFINED
   void* customSolver_;
