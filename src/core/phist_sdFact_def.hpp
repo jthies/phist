@@ -370,10 +370,10 @@ void SUBR(sdMat_svd)(TYPE(sdMat_ptr) A, TYPE(sdMat_ptr) U, TYPE(sdMat_ptr) Sigma
         (mt::blas_scalar_t*)RS_val,
         (st::blas_scalar_t*)U_val,&ldU,
         (st::blas_scalar_t*)Vt_val,&ldVt,
-        (st::blas_scalar_t*)&tmp_work,&lwork,
+        (st::blas_scalar_t*)&work,&lwork,
         (mt::blas_scalar_t*)rwork,iflag);
 #else
-    PHIST_TG_PREFIX(GESVD)((phist_blas_char*)(&jobu),(phist_blas_char*)(&jobvt),&m,&n,A_val,&ldA,RS_val,U_val,&ldU,Vt_val,&ldVt,&tmp_work,&lwork,iflag);
+    PHIST_TG_PREFIX(GESVD)((phist_blas_char*)(&jobu),(phist_blas_char*)(&jobvt),&m,&n,A_val,&ldA,RS_val,U_val,&ldU,Vt_val,&ldVt,work,&lwork,iflag);
 #endif
     delete [] work;
     int ldS=svals_only?0: ldSigma;
