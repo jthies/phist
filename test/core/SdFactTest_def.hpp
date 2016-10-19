@@ -501,15 +501,6 @@ PrintSdMat(PHIST_DEBUG,"reconstructed X",mat2_vp_,m_lda_,1,mpi_comm_);
     triple_product(U,false,Sigma,false,Vt,false,A,&iflag_);
     ASSERT_EQ(0,iflag_);
     ASSERT_NEAR(mt::one(),SdMatsEqual(A,A_bak),100*std::max(nrows_,ncols_)*mt::eps());
-  std::cout<<"A=[...\n";
-  SUBR(sdMat_print)(A_bak,&iflag_);
-  std::cout<<"];\nSigma=[...\n";
-  SUBR(sdMat_print)(Sigma,&iflag_);  
-  std::cout<<"];\nU=[...\n";
-  SUBR(sdMat_print)(U,&iflag_);  
-  std::cout<<"];\nVt=[...\n";
-  SUBR(sdMat_print)(Vt,&iflag_);  
-  std::cout<<"];\n\n";
     _ST_* Sigma_vp=NULL;
     phist_lidx ldSigma;
     SUBR(sdMat_extract_view)(Sigma,&Sigma_vp,&ldSigma,&iflag_);
@@ -558,47 +549,52 @@ PrintSdMat(PHIST_DEBUG,"reconstructed X",mat2_vp_,m_lda_,1,mpi_comm_);
       // copy mat2=mat1
       SUBR(sdMat_add_sdMat)(st::one(),mat1_,st::zero(),mat2_,&iflag_);
       ASSERT_EQ(0,iflag_);
-      // these kernels only work on the host, so we need to manually perform up/downloads
-      SUBR(sdMat_from_device)(mat1_,&iflag_);
-      ASSERT_EQ(0,iflag_);
       
       // aliases for clarity: AplusT is A^{+,T}, the transpose of the Moore-Penrose Pseudo-Inverse
-      TYPE(sdMat_ptr) A = mat2_, AplusT=mat1_;
+      TYPE(sdMat_ptr) A = mat2_, AplusT=mat1_, A_chk=mat3_;
+
+      // these kernels only work on the host, so we need to manually perform up/downloads
+      SUBR(sdMat_from_device)(AplusT,&iflag_);
+      ASSERT_EQ(0,iflag_);
       
       int rank;
       SUBR(sdMat_pseudo_inverse)(AplusT,&rank,&iflag_);
       ASSERT_EQ(0,iflag_);
       // for a random n x m matrix, we expect min(n,m) to be the rank
       ASSERT_EQ(std::min(nrows_,ncols_),rank);
+
+      SUBR(sdMat_to_device)(AplusT,&iflag_);
+      ASSERT_EQ(0,iflag_);
       
       // check the four defining properties of A+:
 
       // 1. A A+ A = A
-      MTest::triple_product(A,false,AplusT,true,A,false,mat3_,&iflag_);
+      MTest::triple_product(A,false,AplusT,true,A,false,A_chk,&iflag_);
       ASSERT_EQ(0,iflag_);
-      ASSERT_NEAR(st::one(),SdMatsEqual(A,mat3_),st::eps());
+      ASSERT_NEAR(st::one(),SdMatsEqual(A,A_chk),25*nrows_*ncols_*mt::eps());
       
       // 2. A+ A A+ = A+ => A+^T A^T A+^T = A+^T
-      MTest::triple_product(AplusT,false,A,false,AplusT,false,mat3_,&iflag_);
+      MTest::triple_product(AplusT,false,A,true,AplusT,false,A_chk,&iflag_);
       ASSERT_EQ(0,iflag_);
-      ASSERT_NEAR(st::one(),SdMatsEqual(AplusT,mat3_),st::eps());
+      ASSERT_NEAR(st::one(),SdMatsEqual(AplusT,A_chk),25*nrows_*ncols_*mt::eps());
 
       // 3. (AA+)^* = AA+
       TYPE(sdMat_ptr) mat_tmp=NULL;
       SUBR(sdMat_create)(&mat_tmp, nrows_,nrows_,comm_,&iflag_);
       SUBR(sdMat_times_sdMatT)(st::one(),A,AplusT,st::zero(),mat_tmp,&iflag_);
       ASSERT_EQ(0,iflag_);
-      
-      ASSERT_NEAR(mt::one(),mt::one()+MTest::symmetry_check(mat_tmp,&iflag_),mt::eps());
+
+      ASSERT_NEAR(mt::one(),mt::one()+MTest::symmetry_check(mat_tmp,&iflag_),25*mt::eps());
       SUBR(sdMat_delete)(mat_tmp,&iflag_);
       ASSERT_EQ(0,iflag_);
       
-      // 4. (A+ A)^* = A+ A
+      // 4. (A+ A)^H = A+ A
+      mat_tmp=NULL;
       SUBR(sdMat_create)(&mat_tmp, ncols_,ncols_,comm_,&iflag_);
       SUBR(sdMatT_times_sdMat)(st::one(),AplusT,A,st::zero(),mat_tmp,&iflag_);
       ASSERT_EQ(0,iflag_);
       
-      ASSERT_NEAR(mt::one(),mt::one()+MTest::symmetry_check(mat_tmp,&iflag_),mt::eps());
+      ASSERT_NEAR(mt::one(),mt::one()+MTest::symmetry_check(mat_tmp,&iflag_),25*mt::eps());
       SUBR(sdMat_delete)(mat_tmp,&iflag_);
       ASSERT_EQ(0,iflag_);
     }
