@@ -372,7 +372,7 @@ static void PrintSdMat(int outlev, std::string label,
     // copy data to buffer
     for(int j = 0; j < n; j++)
     {
-      for(int i = 0; i <= m; i++)
+      for(int i = 0; i <= j; i++)
       {
         max_err = std::max(max_err, std::abs(mat_raw[j*lda+i]-st::conj(mat_raw[i*lda+j])));
       }
