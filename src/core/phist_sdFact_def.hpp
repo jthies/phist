@@ -285,7 +285,7 @@ void SUBR(sdMat_pseudo_inverse)(TYPE(sdMat_ptr) A_gen, int* rank, int* iflag)
   TYPE(sdMat_ptr) USig=NULL;
   PHIST_CHK_IERR(SUBR(sdMat_create)(&USig,m,n,comm,iflag),*iflag);
   SdMatOwner<_ST_> _USig(USig);
-  PHIST_CHK_IERR(SUBR(sdMat_times_sdMatT)(st::one(),U,Sigma,st::zero(),USig,iflag),*iflag);
+  PHIST_CHK_IERR(SUBR(sdMat_times_sdMat)(st::one(),U,Sigma,st::zero(),USig,iflag),*iflag);
   
   // A <- U*inv(Sigma)*V'
   PHIST_CHK_IERR(SUBR(sdMat_times_sdMat)(st::one(),USig,Vt,st::zero(),A_gen,iflag),*iflag);
