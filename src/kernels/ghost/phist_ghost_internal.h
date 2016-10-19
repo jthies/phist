@@ -244,7 +244,7 @@ class phist_ghost_map
       
         //! create a new map and associate it with the object pointed to by p. If there are already maps
         //! associated with pointer p, return the first one found *if reuse_if_exists==true*.
-        phist_ghost_map* new_map(const void* p, ghost_context* ctx=NULL, ghost_maptype pt=GHOST_MAP_DEFAULT, 
+        phist_ghost_map* new_map(const void* p, ghost_context* ctx=NULL, ghost_maptype pt=GHOST_MAP_NONE, 
                 bool own_ctx=false, bool own_perm=true, bool reuse_if_exists=false);
         //! associate an existing map with the object pointed to by p
         void add_map(const void* p, phist_ghost_map* m);

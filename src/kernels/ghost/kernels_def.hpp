@@ -101,7 +101,7 @@ PHIST_TASK_BEGIN(ComputeTask)
   *vA = (TYPE(sparseMat_ptr))mat;
   // create an initial map object that owns the context. This way, the context is deleted
   // when the sparseMat is.
-  mapGarbageCollector.new_map(mat,mat->context,GHOST_MAP_DEFAULT,true,true);
+  mapGarbageCollector.new_map(mat,mat->context,GHOST_MAP_NONE,true,true);
 PHIST_TASK_END(iflag);
 }
 
@@ -161,7 +161,7 @@ PHIST_TASK_BEGIN(ComputeTask)
 //#endif
   // create an initial map object that owns the context. This way, the context is deleted
   // when the sparseMat is.
-  mapGarbageCollector.new_map(mat,mat->context,GHOST_MAP_DEFAULT,true,true);
+  mapGarbageCollector.new_map(mat,mat->context,GHOST_MAP_NONE,true,true);
   *vA = (TYPE(sparseMat_ptr))mat;
 PHIST_TASK_END(iflag);
 }
@@ -303,7 +303,7 @@ PHIST_TASK_BEGIN(ComputeTask)
   }
 
 
-  PHIST_CHK_GERR(ghost_densemat_create(&result,map->ctx,vtraits),*iflag);
+  PHIST_CHK_GERR(ghost_densemat_create(&result,map->map,vtraits),*iflag);
   ST zero = st::zero();
   // this allocates the vector and fills it with zeros
   PHIST_CHK_GERR(ghost_densemat_init_val(result,&zero),*iflag);
@@ -331,10 +331,10 @@ extern "C" void SUBR(mvec_create_view)(TYPE(mvec_ptr)* vV, phist_const_map_ptr v
         vtraits.ncols=nvec;
         vtraits.datatype = st::ghost_dt;
 
-  PHIST_CHK_GERR(ghost_densemat_create(&result,map->ctx,vtraits),*iflag);
+  PHIST_CHK_GERR(ghost_densemat_create(&result,map->map,vtraits),*iflag);
 
 #ifdef PHIST_MVECS_ROW_MAJOR
-  if (result->context->halo_elements)
+  if (result->map->nhalo)
   {
     PHIST_OUT(PHIST_ERROR,"viewing plain data as row-major ghost_densemat only works \n"
                           "for vectors without communciation buffers (for spMVM)\n");
@@ -342,7 +342,7 @@ extern "C" void SUBR(mvec_create_view)(TYPE(mvec_ptr)* vV, phist_const_map_ptr v
     return;
   }
 #else
-  if ((result->context->halo_elements>lda))
+  if ((result->map->nhalo>lda))
   {
     PHIST_OUT(PHIST_ERROR,"viewing plain data as ghost_densemat only works \n"
                           "if the given lda can accomodate the required comm buffer of the vector!\n"
@@ -392,7 +392,8 @@ PHIST_TASK_BEGIN_SMALLDETERMINISTIC(ComputeTask)
   }
 
   // I think the sdMat should not have a context
-  ghost_densemat_noctx_create(&result,nrows,dmtraits);
+  PHIST_CAST_PTR_FROM_VOID(ghost_mpi_comm,comm,vcomm,*iflag);
+  ghost_densemat_create(&result,ghost_map_create_light(nrows,*comm),dmtraits);
   ST zero = st::zero();
   PHIST_CHK_GERR(ghost_densemat_init_val(result,&zero),*iflag);
   *vM=(TYPE(sdMat_ptr))result;
@@ -416,8 +417,8 @@ extern "C" void SUBR(mvec_get_map)(TYPE(const_mvec_ptr) vV, phist_const_map_ptr*
   PHIST_CAST_PTR_FROM_VOID(const ghost_densemat,V,vV,*iflag);
   // this map does *not* own the context of the vector or its permutations (first two bools)
   // but if the vector has a map associated with it already, use that object (third bool)
-  ghost_maptype pt = ghost_densemat_maptype(V);
-  phist_ghost_map* map = mapGarbageCollector.new_map(vV,V->context,pt,false,false,true);
+  ghost_maptype pt = V->map->type;
+  phist_ghost_map* map = mapGarbageCollector.new_map(vV,NULL,pt,false,false,true);
   map->vtraits_template=V->traits;
   // do not allow a sparseMat that is created from this map to be permuted
   map->mtraits_template.sortScope=1;
@@ -590,8 +591,8 @@ extern "C" void SUBR(mvec_to_mvec)(TYPE(const_mvec_ptr) v_in, TYPE(mvec_ptr) v_o
 #endif
 
   // set some convenient pointers
-  ghost_context *ctx_in=V_in->context;
-  ghost_context *ctx_out=V_out->context;
+  ghost_map *map_in=V_in->map;
+  ghost_map *map_out=V_out->map;
   
   ghost_densemat_flags flags_in=V_in->traits.flags;
   ghost_densemat_flags flags_out=V_out->traits.flags;
@@ -618,27 +619,27 @@ extern "C" void SUBR(mvec_to_mvec)(TYPE(const_mvec_ptr) v_in, TYPE(mvec_ptr) v_o
                          same_lperm && same_gperm);
   
   int me,nrank;
-  ghost_rank(&me, ctx_in->mpicomm);
-  ghost_nrank(&nrank,ctx_in->mpicomm);
+  ghost_rank(&me, V_in->map->mpicomm);
+  ghost_nrank(&nrank,V_in->map->mpicomm);
   
-  // check if the two contexts have the same number of local elements on each process
-  bool compatible_contexts=(ctx_in==ctx_out);
-  if (!compatible_contexts)
+  // check if the two maps have the same number of local elements on each process
+  bool compatible_maps=(map_in==map_out);
+  if (!compatible_maps)
   {
-    compatible_contexts=(ctx_in->mpicomm==ctx_out->mpicomm);
+    compatible_maps=(map_in->mpicomm==map_out->mpicomm);
     for (int i=0; i<nrank;i++)
     {
-      PHIST_SOUT(PHIST_DEBUG,"lnrows PE%d, v_in=%d, v_out=%d\n",i,ctx_in->row_map->ldim[i],ctx_out->row_map->ldim[i]); 
-      compatible_contexts &= (ctx_in->row_map->ldim[i]==ctx_out->row_map->ldim[i]);
+      PHIST_SOUT(PHIST_DEBUG,"lnrows PE%d, v_in=%d, v_out=%d\n",i,map_in->ldim[i],map_out->ldim[i]); 
+      compatible_maps &= (map_in->ldim[i]==map_out->ldim[i]);
     }
   }
   
-  if (compatible_contexts==false)
+  if (compatible_maps==false)
   {
-    // I think ghost_densemat_init_densemat only works if both have the same context and does not call any
-    // permute function. So what we'll do is temporarily replace the context of the output vec-
+    // I think ghost_densemat_init_densemat only works if both have the same map and does not call any
+    // permute function. So what we'll do is temporarily replace the map of the output vec-
     // tor, copy the data by ghost_densemat_init_densemat, and then perform the permutations. This only   
-    // works if the number of local elements is the same in both contexts. We could also work  
+    // works if the number of local elements is the same in both maps. We could also work  
     // with a temporary vector, but I think GHOST currently does not allow Zoltan/Scotch to    
     // change the number of local elements.
     PHIST_SOUT(PHIST_ERROR,"phist/ghost: mvec_to_mvec only implemented if both vectors have\n"
@@ -647,39 +648,37 @@ extern "C" void SUBR(mvec_to_mvec)(TYPE(const_mvec_ptr) v_in, TYPE(mvec_ptr) v_o
     return;
   }
 
-// macro to perform a ghost call on a vector with a different context
-#define GHOST_FUNC_CTX(_vec,_ctx,_permflag,_permmethod,_lperm,_gperm,_fnc,...) \
+// macro to perform a ghost call on a vector with a different map
+#define GHOST_FUNC_MAP(_vec,_map,_permflag,_permmethod,_lperm,_gperm,_fnc,...) \
 {\
   ghost_error _gerr=GHOST_SUCCESS; \
-  ghost_context *_orig_ctx=(_vec)->context; \
+  ghost_map *_orig_map=(_vec)->map; \
   ghost_densemat_flags _orig_flags = (_vec)->traits.flags; \
-  ghost_maptype _orig_permuted = ghost_densemat_maptype(_vec); \
+  ghost_maptype _orig_permuted = _vec->map->type; \
   ghost_lidx *_orig_lperm=(_vec)->map->loc_perm; \
   ghost_gidx *_orig_gperm=(_vec)->map->glb_perm; \
-  (_vec)->context=(_ctx);\
+  (_vec)->map=(_map);\
   (_vec)->traits.flags = (ghost_densemat_flags)( (_permflag&GHOST_DENSEMAT_PERMUTED) ? GHOST_DENSEMAT_PERMUTED|(_vec)->traits.flags : (~GHOST_DENSEMAT_PERMUTED)&(_vec)->traits.flags ); \
-  ghost_densemat_set_map(_vec, _permmethod); \
   _gerr=_fnc(__VA_ARGS__);\
-  (_vec)->context=_orig_ctx;\
+  (_vec)->map=_orig_map;\
   (_vec)->traits.flags = _orig_flags; \
-  ghost_densemat_set_map(_vec, _orig_permuted); \
   PHIST_CHK_GERR(_gerr,*iflag); \
 }
 
-  GHOST_FUNC_CTX(V_out,ctx_in,V_in->traits.flags,ghost_densemat_maptype(V_in),lperm_in,gperm_in,ghost_densemat_init_densemat,V_out,V_in,0,0);
+  GHOST_FUNC_MAP(V_out,map_in,V_in->traits.flags,V_in->map->type,lperm_in,gperm_in,ghost_densemat_init_densemat,V_out,V_in,0,0);
 
   if (no_perm_needed) return;
   
   if (inputPermuted)
   {
       PHIST_SOUT(PHIST_DEBUG,"mvec_to_mvec: unpermute input vector\n");
-      GHOST_FUNC_CTX(V_out,ctx_in,V_in->traits.flags,ghost_densemat_maptype(V_in),lperm_in,gperm_in,ghost_densemat_permute,V_out,ctx_in,GHOST_PERMUTATION_PERM2ORIG);
+      GHOST_FUNC_MAP(V_out,map_in,V_in->traits.flags,V_in->map->type,lperm_in,gperm_in,ghost_densemat_permute,V_out,GHOST_PERMUTATION_PERM2ORIG);
   }
   
   if (outputPermuted)
   {
     PHIST_SOUT(PHIST_DEBUG,"mvec_to_mvec: permute output vector\n");
-    PHIST_CHK_GERR(ghost_densemat_permute(V_out,ctx_out,GHOST_PERMUTATION_ORIG2PERM),*iflag);
+    PHIST_CHK_GERR(ghost_densemat_permute(V_out,GHOST_PERMUTATION_ORIG2PERM),*iflag);
   }
   return;
 }
@@ -965,12 +964,7 @@ extern "C" void SUBR(sdMat_delete)(TYPE(sdMat_ptr) vM, int* iflag)
   *iflag=0;
   if (vM==NULL) return;
   PHIST_CAST_PTR_FROM_VOID(ghost_densemat,M,vM,*iflag);
-  ghost_context *ctx = NULL;
-  if( !(M->traits.flags & GHOST_DENSEMAT_VIEW) )
-    ctx = M->context;
   ghost_densemat_destroy(M);
-  if( ctx != NULL )
-    ghost_context_destroy(ctx);
 }
 
 //@}
@@ -1064,7 +1058,7 @@ extern "C" void SUBR(mvec_print)(TYPE(const_mvec_ptr) vV, int* iflag)
   *iflag = 0;
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   PHIST_CAST_PTR_FROM_VOID(ghost_densemat,V,vV,*iflag);
-  std::cout << "# local rows: "<<V->context->row_map->dim<<std::endl;
+  std::cout << "# local rows: "<<V->map->dim<<std::endl;
   std::cout << "# vectors:    "<<V->traits.ncols<<std::endl;
   std::cout << "# row major:  "<<(V->traits.storage & GHOST_DENSEMAT_ROWMAJOR)<<std::endl;
   std::cout << "# stride:     "<<V->stride<<std::endl;
@@ -1621,13 +1615,11 @@ PHIST_TASK_END(iflag);
 PHIST_TASK_POST_STEP(iflag);
 
 #ifdef GHOST_HAVE_MPI
-  if (V->context) {
-    ghost_mpi_op sumOp;
-    ghost_mpi_datatype mpiDt;
-    ghost_mpi_op_sum(&sumOp,V->traits.datatype);
-    ghost_mpi_datatype_get(&mpiDt,V->traits.datatype);
-    PHIST_CHK_IERR(*iflag = MPI_Allreduce(MPI_IN_PLACE, s, V->traits.ncols, mpiDt, sumOp, V->context->mpicomm), *iflag);
-  }
+  ghost_mpi_op sumOp;
+  ghost_mpi_datatype mpiDt;
+  ghost_mpi_op_sum(&sumOp,V->traits.datatype);
+  ghost_mpi_datatype_get(&mpiDt,V->traits.datatype);
+  PHIST_CHK_IERR(*iflag = MPI_Allreduce(MPI_IN_PLACE, s, V->traits.ncols, mpiDt, sumOp, V->map->mpicomm), *iflag);
 #endif
 }
 
@@ -1676,7 +1668,7 @@ extern "C" void SUBR(mvecT_times_mvec)(_ST_ alpha, TYPE(const_mvec_ptr) vV, TYPE
   */
 PHIST_TASK_DECLARE(ComputeTask)
 PHIST_TASK_BEGIN(ComputeTask)
-  ghost_error gemm_err = ghost_gemm(C,V,trans,W,(char*)"N",(void*)&alpha,(void*)&mybeta,GHOST_GEMM_NO_REDUCE,V->context,GHOST_GEMM_DEFAULT);
+  ghost_error gemm_err = ghost_gemm(C,V,trans,W,(char*)"N",(void*)&alpha,(void*)&mybeta,GHOST_GEMM_NO_REDUCE,GHOST_GEMM_DEFAULT);
   if( gemm_err == GHOST_ERR_NOT_IMPLEMENTED )
   {
     // copy result
@@ -1685,12 +1677,12 @@ PHIST_TASK_BEGIN(ComputeTask)
     vtraits.storage=GHOST_DENSEMAT_ROWMAJOR;  
     vtraits.flags = (ghost_densemat_flags)((int)vtraits.flags & ~(int)GHOST_DENSEMAT_VIEW);
     vtraits.ncolsorig=vtraits.ncols;
-    ghost_densemat_create(&Ccopy,C->context,vtraits);
+    ghost_densemat_create(&Ccopy,C->map,vtraits);
 
     // this allocates the memory for the vector, copies and memTransposes the data
     PHIST_CHK_GERR(ghost_densemat_init_densemat(Ccopy,C,0,0),*iflag);
 
-    PHIST_CHK_GERR(gemm_err = ghost_gemm(Ccopy,V,trans,W,(char*)"N",(void*)&alpha,(void*)&mybeta,GHOST_GEMM_NO_REDUCE,V->context,GHOST_GEMM_DEFAULT),*iflag);
+    PHIST_CHK_GERR(gemm_err = ghost_gemm(Ccopy,V,trans,W,(char*)"N",(void*)&alpha,(void*)&mybeta,GHOST_GEMM_NO_REDUCE,GHOST_GEMM_DEFAULT),*iflag);
 
     // memtranspose data
     PHIST_CHK_GERR(ghost_densemat_init_densemat(C,Ccopy,0,0),*iflag);
@@ -1701,7 +1693,7 @@ PHIST_TASK_END(iflag);
 
 PHIST_TASK_POST_STEP(iflag);
 
-  PHIST_CHK_GERR(ghost_densemat_reduce(C,*comm,GHOST_ALLREDUCE),*iflag);
+  PHIST_CHK_GERR(ghost_densemat_reduce(C,GHOST_ALLREDUCE),*iflag);
 }
 
 
@@ -1736,7 +1728,7 @@ PHIST_TASK_BEGIN(ComputeTask)
     //PHIST_DEB("V'C with V %" PRlidx "x%d, C %dx%d and result %" PRlidx "x%d\n", nrV,ncV,nrC,ncC,nrW,ncW);
 #endif
     // note: C is replicated, so this operation is a purely local one.
-    PHIST_CHK_GERR(ghost_gemm(W,V,(char*)"N",C,(char*)"N",(void*)&alpha,(void*)&beta,GHOST_GEMM_NO_REDUCE,V->context,GHOST_GEMM_DEFAULT),*iflag);
+    PHIST_CHK_GERR(ghost_gemm(W,V,(char*)"N",C,(char*)"N",(void*)&alpha,(void*)&beta,GHOST_GEMM_NO_REDUCE,GHOST_GEMM_DEFAULT),*iflag);
 PHIST_TASK_END(iflag);
   }
 #ifndef PHIST_MVECS_ROW_MAJOR
@@ -1770,7 +1762,7 @@ PHIST_TASK_BEGIN(ComputeTask)
     ST alpha=st::one();
     ST beta=st::zero();
     // ghost internally picks the in-place variant of possible
-    PHIST_CHK_GERR(ghost_gemm(V,V,(char*)"N",C,(char*)"N",(void*)&alpha,(void*)&beta,GHOST_GEMM_NO_REDUCE,V->context,GHOST_GEMM_DEFAULT),*iflag);
+    PHIST_CHK_GERR(ghost_gemm(V,V,(char*)"N",C,(char*)"N",(void*)&alpha,(void*)&beta,GHOST_GEMM_NO_REDUCE,GHOST_GEMM_DEFAULT),*iflag);
 PHIST_TASK_END(iflag);
   }
 #endif
@@ -1793,7 +1785,7 @@ PHIST_TASK_BEGIN_SMALLDETERMINISTIC(ComputeTask)
   PHIST_CAST_PTR_FROM_VOID(ghost_densemat,W,vW,*iflag);
   PHIST_CAST_PTR_FROM_VOID(ghost_densemat,C,vC,*iflag);
   char trans[]="N";  
-  PHIST_CHK_GERR(ghost_gemm(C,V,trans,W,trans,(void*)&alpha,(void*)&beta,GHOST_GEMM_NO_REDUCE,V->context,GHOST_GEMM_DEFAULT),*iflag);
+  PHIST_CHK_GERR(ghost_gemm(C,V,trans,W,trans,(void*)&alpha,(void*)&beta,GHOST_GEMM_NO_REDUCE,GHOST_GEMM_DEFAULT),*iflag);
 PHIST_TASK_END(iflag);
   V->traits.location=locV;
   W->traits.location=locW;
@@ -1823,7 +1815,7 @@ PHIST_TASK_BEGIN_SMALLDETERMINISTIC(ComputeTask)
 #else
   char trans[]="T";
 #endif  
-  PHIST_CHK_GERR(ghost_gemm(C, V, trans,W, (char*)"N", (void*)&alpha, (void*)&beta, GHOST_GEMM_NO_REDUCE,V->context,GHOST_GEMM_DEFAULT),*iflag);
+  PHIST_CHK_GERR(ghost_gemm(C, V, trans,W, (char*)"N", (void*)&alpha, (void*)&beta, GHOST_GEMM_NO_REDUCE,GHOST_GEMM_DEFAULT),*iflag);
 PHIST_TASK_END(iflag);
   V->traits.location=locV;
   W->traits.location=locW;
@@ -1853,7 +1845,7 @@ PHIST_TASK_BEGIN_SMALLDETERMINISTIC(ComputeTask)
 #else
   char trans[]="T";
 #endif  
-  PHIST_CHK_GERR(ghost_gemm(C, V, (char*)"N", W, trans, (void*)&alpha, (void*)&beta, GHOST_GEMM_NO_REDUCE,V->context,GHOST_GEMM_DEFAULT),*iflag);
+  PHIST_CHK_GERR(ghost_gemm(C, V, (char*)"N", W, trans, (void*)&alpha, (void*)&beta, GHOST_GEMM_NO_REDUCE,GHOST_GEMM_DEFAULT),*iflag);
 PHIST_TASK_END(iflag);
   V->traits.location=locV;
   W->traits.location=locW;
@@ -1943,8 +1935,8 @@ extern "C" void SUBR(mvec_QR)(TYPE(mvec_ptr) vV, TYPE(sdMat_ptr) vR, int* iflag)
     //vtraits.flags = (ghost_densemat_flags)((int)vtraits.flags & ~(int)GHOST_DENSEMAT_PERMUTED); // melven: do we need this?
     vtraits.ncolsorig=vtraits.ncols;
     //vtraits.nrowsorig=vtraits.nrows;
-  ghost_densemat_create(&Vcopy,V->context,vtraits);
-  ghost_densemat_create(&Qcopy,V->context,vtraits);
+  ghost_densemat_create(&Vcopy,V->map,vtraits);
+  ghost_densemat_create(&Qcopy,V->map,vtraits);
       
   {
     PHIST_ENTER_FCN("TSQR_memtranspose");
@@ -2156,7 +2148,7 @@ extern "C" void SUBR(sparseMat_create_fromRowFuncAndMap)(TYPE(sparseMat_ptr) *vA
   else if (ctx!=map->ctx)
   {
     // register a new map that owns the context ctx, but *not* the permutations
-    mapGarbageCollector.new_map(mat,ctx,GHOST_MAP_DEFAULT,true,false);
+    mapGarbageCollector.new_map(mat,ctx,GHOST_MAP_NONE,true,false);
   }
   PHIST_CHK_GERR(ghost_sparsemat_init_rowfunc(mat,&src,map->ctx->mpicomm,map->ctx->weight),*iflag);
 //#if PHIST_OUTLEV >= PHIST_VERBOSE
@@ -2224,7 +2216,7 @@ extern "C" void SUBR(mvec_write_bin)(TYPE(const_mvec_ptr) vV, const char* filena
 #include "phist_std_typedefs.hpp"
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   PHIST_CAST_PTR_FROM_VOID(ghost_densemat,V,vV,*iflag);
-  PHIST_CHK_GERR(ghost_densemat_to_file(V,(char*)filename,V->context->mpicomm),*iflag);
+  PHIST_CHK_GERR(ghost_densemat_to_file(V,(char*)filename,V->map->mpicomm),*iflag);
 }
 
 extern "C" void SUBR(mvec_read_bin)(TYPE(mvec_ptr) vV, const char* filename, int* iflag)
@@ -2232,7 +2224,7 @@ extern "C" void SUBR(mvec_read_bin)(TYPE(mvec_ptr) vV, const char* filename, int
 #include "phist_std_typedefs.hpp"
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   PHIST_CAST_PTR_FROM_VOID(ghost_densemat,V,vV,*iflag);
-  PHIST_CHK_GERR(ghost_densemat_init_file(V,(char*)filename,V->context->mpicomm),*iflag);
+  PHIST_CHK_GERR(ghost_densemat_init_file(V,(char*)filename,V->map->mpicomm),*iflag);
 }
 
 extern "C" void SUBR(sdMat_write_bin)(TYPE(const_sdMat_ptr) vM, const char* filename, int* iflag)

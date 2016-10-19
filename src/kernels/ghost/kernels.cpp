@@ -198,8 +198,6 @@ int get_perm_flag(int iflag, int outlev)
  //     new_flags&=   ~(int)GHOST_DENSEMAT_DEVICE;
       vtraits.flags = (ghost_densemat_flags)new_flags;
       
-      vtraits.initial_map = GHOST_MAP_DEFAULT;
-
       vtraits.ncols=1;
 #ifdef PHIST_MVECS_ROW_MAJOR
       vtraits.storage=GHOST_DENSEMAT_ROWMAJOR;
@@ -274,8 +272,7 @@ int get_perm_flag(int iflag, int outlev)
         ghost_rank(&rank,comm);
         ghost_nrank(&nproc,comm);
         PHIST_ORDERED_OUT(PHIST_VERBOSE,comm,"PE%6d partition weight %4.2g\n",rank,proc_weight);
-        PHIST_CHK_GERR(ghost_context_create(ctx,gnrows, gncols, flags, matrixSource,
-            srcType, comm,proc_weight),*iflag);
+        PHIST_CHK_GERR(ghost_context_create(ctx,gnrows, gncols, flags, comm,proc_weight),*iflag);
         ghost_map_create_distribution((*ctx)->row_map,(ghost_sparsemat_src_rowfunc *)matrixSource,(*ctx)->mpicomm,(*ctx)->weight,GHOST_MAP_DIST_NROWS);
         nglob_count=0;
         any_empty=false;
@@ -453,7 +450,7 @@ extern "C" void phist_map_create(phist_map_ptr* vmap, phist_const_comm_ptr vcomm
             GHOST_SPARSEMAT_SRC_NONE, *comm,proc_weight,iflag),*iflag);
 
   // create map with default context, no permutation and owning the context object.
-  phist_ghost_map* map = new phist_ghost_map(ctx,ghost_context_map(ctx,GHOST_MAP_DEFAULT),true);
+  phist_ghost_map* map = new phist_ghost_map(ctx,ghost_context_map(ctx,GHOST_MAP_NONE),true);
 std::cout << "Created context with " << map->ctx->row_map->gdim << " global rows!\n";  
   // in ghost terminology, we look at LHS=A*RHS, the LHS is based on the
   // row distribution of A, the RHS has halo elements to allow importing from
