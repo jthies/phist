@@ -45,6 +45,7 @@ public:
   void doForwardBackwardTestsWithPreparedMat3(int rank, int* perm);
 };
 
+#if (_N_==_M_)
   // check rank revealing cholesky decomposition
   TEST_F(CLASSNAME, cholesky)
   {
@@ -443,6 +444,8 @@ PrintSdMat(PHIST_DEBUG,"reconstructed X",mat2_vp_,m_lda_,1,mpi_comm_);
     ASSERT_NEAR(mt::one(),SdMatEqual(mat2_,st::zero()),100*mt::eps());
 #endif
   }
+
+#endif /* _N_==_M_ */
 
   TEST_F(CLASSNAME, svd)
   {
