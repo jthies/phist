@@ -1,8 +1,6 @@
 #ifndef __CHECKPOINT_HPP__
 #define __CHECKPOINT_HPP__
 
-#include "cpOptions.h"
-#include "dataType.h"
 #include <string>
 #include <sstream>
 #include <fstream>
@@ -12,13 +10,16 @@
 #include <stdlib.h>
 #include <mpi.h>
 #include <complex>
+#include <sys/stat.h>
 
+#include "cpOptions.h"
+#include "dataType.h"
 // ====== CP TYPES HEADERS ===== //  
 #include "cpEnum.h"
 #include "cpBase.hpp"
 #include "cpPOD.hpp"
 #include "cpArray.hpp"
-#include <sys/stat.h>
+
 
 #ifdef GHOST_CP 
 #include "cpTypes/cpGhost/cpGhost.hpp"
@@ -76,6 +77,7 @@ protected:
 	bool cpCommitted;
 	size_t cpVersion; 	
 	size_t numBufferCps;
+
 	int writeCpMetaData();
 	int mkCpDir(std::string path);
 	int readCpMetaData();

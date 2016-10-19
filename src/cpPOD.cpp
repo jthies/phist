@@ -32,7 +32,7 @@ CpPOD<T>::CpPOD( T * const dataPtr_, const MPI_Comm cpMpiComm_){
 	dataPtr   = dataPtr_;
 	*asynData = *dataPtr;
 	cpMpiComm = cpMpiComm_;
-//		std::cout << "ADDED POD val is: " << *dataPtr << "  " << *asynData << std::endl;
+//	std::cout << "ADDED POD val is: " << *dataPtr << "  " << *asynData << std::endl;
 }
 
 template <class T>
@@ -60,14 +60,14 @@ int CpPOD<T>::write(const std::string * filename)				// filename is same if MPII
 template <class T>
 int CpPOD<T>::update()
 {
+	craftDbg(2, "CpPOD::update()");
   *asynData = *dataPtr;
-//		std::cout << "AsynData is:  " << *asynData << std::endl;
   return EXIT_SUCCESS;
 }
 
 template <class T>
 int CpPOD<T>::readParallel(const std::string * filename){
-	printf("CpPOD::readParallel()\n");
+	craftDbg(2, "CpPOD::readParallel()");
 	MPI_File fh; 
 	MPI_Status status;
 	int myrank;
@@ -83,7 +83,7 @@ int CpPOD<T>::readParallel(const std::string * filename){
 
 template <class T>
 int CpPOD<T>::readSerial(const std::string * filename){
-	printf("CpPOD::readSerial()\n");
+	craftDbg(2, "CpPOD::readSerial()");
 	std::ifstream fstr;
 	fstr.open ((*filename).c_str(), std::ios::in | std::ios::binary);	
 	if(fstr.is_open()){
@@ -99,7 +99,7 @@ int CpPOD<T>::readSerial(const std::string * filename){
 
 template <class T>
 int CpPOD<T>::writeParallel(const std::string * filename){
-	printf("CpPOD::writeParallel()\n");
+	craftDbg(2, "CpPOD::writeParallel()");
 	MPI_File fh; 
 	MPI_Status status;
 	int myrank;
@@ -116,7 +116,7 @@ int CpPOD<T>::writeParallel(const std::string * filename){
 
 template <class T>
 int CpPOD<T>::writeSerial(const std::string * filename){
-	printf("CpPOD::writeSerial()\n");
+	craftDbg(2, "CpPOD::writeSerial()");
 	std::ofstream fstr;
 	fstr.open ((*filename).c_str(), std::ios::out | std::ios::binary );	
 	if(fstr.is_open()){

@@ -4,29 +4,28 @@
 #include <string>
 #include <iostream>
 #include <sstream>
+#include <stdarg.h> 
+
+#include <mpi.h>
+
+#include "gloVar.hpp"
+
+
 
 template <typename T>
-std::string NumberToString ( T Number )
-{
-	std::ostringstream ss;
-	ss << Number;
-	return ss.str();
-}
+std::string numberToString ( T number );
 
 template <typename T>
-T StringToNumber ( const std::string &Text )
-{
-	std::istringstream ss(Text);
-	T result;
-	return ss >> result ? result : 0;
-}
+T stringToNumber ( const std::string &text );
 
-static bool is_number(const std::string& s)
-{
-    std::string::const_iterator it = s.begin();
-    while (it != s.end() && std::isdigit(*it)) ++it;
-    return !s.empty() && it == s.end();
-}
+inline int mpiCommWorldRank();
+
+inline int mpiCommWorldNumProcs();
+
+void craftErr(const char *fmt, ...);
+void craftDbg(int level, const char *fmt, ...);
+void craftAbort(int rc, const char *fmt, ...);
+void getEnvVal(int &var, const char * str);
 
 #endif
 

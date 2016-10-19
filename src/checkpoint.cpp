@@ -4,6 +4,7 @@
 #include <stdexcept>
 #include <string>
 #include <openssl/md5.h>
+#include <cstdlib>
 
 #include "include/checkpoint.hpp"
 
@@ -17,15 +18,15 @@ Checkpoint::Checkpoint(const std::string cpBasePath_=exec("pwd"), const MPI_Comm
 	cpMpiComm 	= cpMpiComm_;	
 	cpBasePath 	= cpBasePath_;
 	cpPath 			= cpBasePath_ + "/" + "Checkpoint-" + name;
-//	std::cout << "cpPath:" << cpPath << std::endl;
+	craftDbg(3, "cpPath: %s", cpPath.c_str());
 	cpIdx				= idx;
 	cpVersionPrefix = "v-";
 	cpCommitted = false;
 	cpVersion 	= 0;
 	numBufferCps=2;
-//	std::cout << "constructor is being called here idx = " << name << std::endl;
+  
 	if(cpMpiComm == MPI_COMM_WORLD) {
-		std::cout << "cpMpiComm = MPI_COMM_WORLD \n" << std::endl;
+		craftDbg(3, "cpMpiComm = MPI_COMM_WORLD");
   }
 	mkCpDir(cpPath);	
 #ifdef SCR																		// check if CPAFTLIB was compiled with SCR
@@ -39,7 +40,7 @@ Checkpoint::Checkpoint(const std::string cpBasePath_=exec("pwd"), const MPI_Comm
 Checkpoint::~Checkpoint(){
 #ifdef SCR
 	if(useSCR == true){
-		printf("====== SCR_Finalize is done ====== \n");
+		craftDbg(3, "====== SCR_Finalize is done ====== \n");
 		SCR_Finalize();
 	}
 #endif
@@ -47,7 +48,7 @@ Checkpoint::~Checkpoint(){
 
 void Checkpoint::disableSCR(){
 #ifdef SCR
-	printf("SCR is disabled. Use SCR to reduce the impact of Checkpoint/restart\n");
+	craftDbg(1, "SCR is disabled. Use SCR to reduce the impact of Checkpoint/restart");
 	useSCR = false;
 #endif
 }
@@ -92,7 +93,7 @@ int Checkpoint::readCpMetaData(){
 			cpVersion = atoi(line.c_str());
 		}
 		fstr.close();
-		std::cout << "cpVersion: " << cpVersion << std::endl;
+		craftDbg(1, "cpVersion to read: %d", cpVersion);
 	}
 	return EXIT_SUCCESS;
 }
@@ -115,7 +116,7 @@ int Checkpoint::deleteBackupCp(){
 int Checkpoint::update(){
 	for(cp_const_map:: iterator it = objects.begin(); it != objects.end(); ++it)
 	{
-		std::cout << "updating: " << it->first << std::endl;
+		craftDbg(1, "updating: %s", (it->first).c_str() );
 		it->second->update();
 	}	
 	return EXIT_SUCCESS;
@@ -138,7 +139,7 @@ int Checkpoint::SCRwrite(){
 	}
 	int myrank_ = -1;
 	MPI_Comm_rank(cpMpiComm, &myrank_);
-	std::string myrank = NumberToString(myrank_);
+	std::string myrank = numberToString(myrank_);
 	std::string filename;
 	cpPathVersion = cpPath + "/" + cpVersionPrefix + SSTR(cpVersion);
 
@@ -150,11 +151,15 @@ int Checkpoint::SCRwrite(){
 			char * tmpFilename = new char[256];
 			strcpy(tmpFilename, filename.c_str()); 
 			SCR_Route_file(tmpFilename, fNameScrPath);
-			printf("new filename %s\n", fNameScrPath);
 			filename = fNameScrPath;
 		}
-//    	std::cout << it->first << " Checkpoint:write is called here " << filename <<std::endl;
-    it->second->write(&filename);
+		craftDbg(2, "SCRwrite: writing file: %s", filename.c_str());
+    if(EXIT_SUCCESS != it->second->write(&filename)){
+      craftErr("SCRwrite not successful @ %s:%d",
+              __FILE__, __LINE__
+      );
+      return EXIT_FAILURE;
+    }
 	}
 	if(useSCR == true){
 		int valid = 1;
@@ -168,7 +173,7 @@ int Checkpoint::SCRwrite(){
 int Checkpoint::PFSwrite(){
 	int myrank_ = -1;
 	MPI_Comm_rank(cpMpiComm, &myrank_);
-	std::string myrank = NumberToString(myrank_);
+	std::string myrank = numberToString(myrank_);
 	std::string filename;
 	cpPathVersion = cpPath + "/" + cpVersionPrefix + SSTR(cpVersion);
 	mkCpDir(cpPathVersion);	
@@ -179,8 +184,13 @@ int Checkpoint::PFSwrite(){
 #else																														// Serial PFS IO
 		filename = cpPathVersion + "/" + (it->first) + myrank + ".ckpt"; 
 #endif
-		if(EXIT_SUCCESS != it->second->write(&filename))	
+    craftDbg(2, "PFSwrite(): writing file: %s", filename.c_str());
+		if(EXIT_SUCCESS != it->second->write(&filename)){
+        craftErr("PFSwrite not successful @ %s:%d",
+                __FILE__, __LINE__
+        );
 				return EXIT_FAILURE;
+    }
 	}
 	MPI_Barrier(cpMpiComm);			// TODO: do MPI_Gather here 
 	writeCpMetaData();
@@ -204,7 +214,7 @@ int Checkpoint::PFSread(){
 	readCpMetaData();									// cpVersion is updated here
 	int myrank_ = -1;
 	MPI_Comm_rank(cpMpiComm, &myrank_);
-	std::string myrank = NumberToString(myrank_);
+	std::string myrank = numberToString(myrank_);
 	std::string filename;
 	cpPathVersion = cpPath + "/" + cpVersionPrefix + SSTR(cpVersion); 
   for (cp_const_map::iterator it=objects.begin(); it!=objects.end(); it++)
@@ -214,9 +224,13 @@ int Checkpoint::PFSread(){
 #else																														// Serial PFS IO 
 		filename = cpPathVersion + "/" + (it->first) + myrank + ".ckpt"; 
 #endif
-//    	std::cout << it->first << " Checkpoint::read is called here "<<std::endl;
-		if(EXIT_SUCCESS != it->second->read(&filename))	
+    craftDbg(2, "PFSread(): reading file: %s", filename.c_str());
+		if(EXIT_SUCCESS != it->second->read(&filename))	{
+      craftErr("PFSread not successful @ %s:%d",
+              __FILE__, __LINE__
+      );
 			return EXIT_FAILURE;
+    }
   }
 	MPI_Barrier(cpMpiComm);
 	++cpVersion;
@@ -228,7 +242,7 @@ int Checkpoint::SCRread(){
 	readCpMetaData();						// cpVersion is updated here
 	int myrank_ = -1;
 	MPI_Comm_rank(cpMpiComm, &myrank_);
-	std::string myrank = NumberToString(myrank_);
+	std::string myrank = numberToString(myrank_);
 	std::string filename;
 	cpPathVersion = cpPath + "/" + cpVersionPrefix + SSTR(cpVersion); 
   for (cp_const_map::iterator it=objects.begin(); it!=objects.end(); it++)
@@ -238,11 +252,14 @@ int Checkpoint::SCRread(){
 		char * tmpFilename = new char[256];
 		strcpy(tmpFilename, filename.c_str()); 
 		SCR_Route_file(tmpFilename, fNameScrPath);
-		printf("new filename %s\n", fNameScrPath);
 		filename = fNameScrPath;
-//    	std::cout << it->first << " Checkpoint::read is called here "<<std::endl;
-		if(EXIT_SUCCESS != it->second->read(&filename))	
+		craftDbg(2, "SCRread: reading file %s", filename.c_str());
+		if(EXIT_SUCCESS != it->second->read(&filename))	{
+      craftErr("SCRread not successful @ %s:%d",
+              __FILE__, __LINE__
+      );
 			return EXIT_FAILURE;
+    }
   }
 	MPI_Barrier(cpMpiComm);
 	++cpVersion;

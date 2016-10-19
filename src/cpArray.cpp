@@ -93,7 +93,7 @@ int CpArray<T>::readSerial(const std::string * filename){
 
 template <class T>
 int CpArray<T>::readParallel(const std::string * filename){
-	printf("CpArray<T>::readParallel\n");
+	craftDbg(2, "CpArray<T>::readParallel");
 	MPI_File fh;
 	MPI_Status status;
 	int myrank=-1; 
@@ -124,7 +124,7 @@ int CpArray<T>::writeSerial(const std::string * filename){
 
 template <class T>
 int CpArray<T>::writeParallel(const std::string * filename){
-	printf("CpArray<T>::writeParallel\n");
+	craftDbg(2, "CpArray<T>::writeParallel");
 	MPI_File fh;
 	MPI_Status status;
 	int myrank=-1; 
@@ -213,7 +213,7 @@ int CpMultiArray<T>::update()
 template <class T>
 int CpMultiArray<T>::readParallel(const std::string * filename)
 {
-	printf("CpMultiArray<T>::readParallel\n");
+	craftDbg(2, "CpMultiArray<T>::readParallel\n");
 	MPI_File fh;
 	MPI_Status status;
 	int myrank=-1; 
@@ -223,7 +223,7 @@ int CpMultiArray<T>::readParallel(const std::string * filename)
 	MPI_Offset os;
 	{
 		if(toCpCol == ALL){
-			std::cout << "read toCpCol is ALL" << std::endl;
+			craftDbg(3, "read toCpCol is ALL");
 			os = myrank * sizeof (T) * nRows * nCols;
 			MPI_File_seek( fh , os, MPI_SEEK_SET);
 			for(int i = 0; i< nCols ; ++i){
@@ -240,9 +240,8 @@ int CpMultiArray<T>::readParallel(const std::string * filename)
 				fstrMD.read( (char *)&(cyclicCpCounter), sizeof (size_t) );
 				fstrMD.close();
 			}
-			std::cout << "Restarting with cyclicCpCounter = " << cyclicCpCounter << std::endl;
+			craftDbg(3, "Restarting with cyclicCpCounter = %d", cyclicCpCounter);
 
-			std::cout << "read toCpCol is CYCLIC" << cyclicCpCounter << std::endl;
 			os = myrank * sizeof (T) * nRows;
 			MPI_File_seek( fh , os, MPI_SEEK_SET);
 			MPI_File_read( fh, &(dataPtr[cyclicCpCounter][0]), nRows, getMpiDataType(T), &status); 
@@ -253,7 +252,7 @@ int CpMultiArray<T>::readParallel(const std::string * filename)
 			}
 		}
 		else if(toCpCol>=0){
-			std::cout << "read toCpCol is " << toCpCol << std::endl;
+			craftDbg(3, "read toCpCol is %d", toCpCol);
 			os = myrank * sizeof (T) * nRows;
 			MPI_File_seek( fh , os, MPI_SEEK_SET);
 			MPI_File_read( fh, &(dataPtr[toCpCol][0]), nRows, getMpiDataType(T), &status); 
@@ -288,7 +287,7 @@ int CpMultiArray<T>::readSerial(const std::string * filename){
 				fstrMD.read( (char *)&(cyclicCpCounter), sizeof (size_t) );
 				fstrMD.close();
 			}
-			std::cout << "Restarting with cyclicCpCounter = " << cyclicCpCounter << std::endl;
+			craftDbg(3, "Restarting with cyclicCpCounter = %d", cyclicCpCounter);
 			fstr.read( (char *)&dataPtr[cyclicCpCounter][0], sizeof (T) * nRows );
 			fstr.close();
 			++cyclicCpCounter;
@@ -315,7 +314,7 @@ int CpMultiArray<T>::readSerial(const std::string * filename){
 
 template <class T>
 int CpMultiArray<T>::writeParallel(const std::string * filename){
-	printf("CpMultiArray<T>::writeParallel\n");
+	craftDbg(2, "CpMultiArray<T>::writeParallel");
 	MPI_File fh;
 	MPI_Status status;
 	int myrank=-1; 
@@ -325,7 +324,7 @@ int CpMultiArray<T>::writeParallel(const std::string * filename){
 	MPI_Offset os;
 	{
 		if(toCpCol == ALL){
-			std::cout << "toCpCol is ALL" << std::endl;
+			craftDbg(3, "toCpCol is ALL");
 			os = myrank * sizeof (T) * nRows * nCols;
 			MPI_File_seek( fh , os, MPI_SEEK_SET);
 			for(int i = 0; i< nCols ; ++i){
@@ -334,7 +333,7 @@ int CpMultiArray<T>::writeParallel(const std::string * filename){
 			MPI_File_close(&fh);
 		}
 		else if(toCpCol == CYCLIC){
-			std::cout << "toCpCol is CYCLIC: " << cyclicCpCounter << std::endl;
+			craftDbg(3, "toCpCol is CYCLIC: %d", cyclicCpCounter);
 			os = myrank * sizeof (T) * nRows;
 			MPI_File_seek( fh , os, MPI_SEEK_SET);
 			MPI_File_write( fh, &(asynData[cyclicCpCounter][0]), nRows, getMpiDataType(T), &status); 
@@ -357,7 +356,7 @@ int CpMultiArray<T>::writeParallel(const std::string * filename){
 			}
 		}
 		else if(toCpCol>=0){
-			std::cout << "toCpCol is: " << toCpCol << std::endl;
+			craftDbg(3, "toCpCol is: %d", toCpCol);
 			os = myrank * sizeof (T) * nRows;
 			MPI_File_seek( fh , os, MPI_SEEK_SET);
 			MPI_File_write( fh, &(asynData[toCpCol][0]), nRows, getMpiDataType(T), &status); 
@@ -378,14 +377,14 @@ int CpMultiArray<T>::writeSerial(const std::string * filename){
 	fstr.open ((*filename).c_str(), std::ios::out | std::ios::binary);	
 	if(fstr.is_open()){
 		if(toCpCol == ALL){
-		std::cout << "toCpCol is ALL" << std::endl;
+		  craftDbg(3, "toCpCol is ALL");
 			for(int i=0; i<nCols; ++i){
 				fstr.write( (char *)&(asynData[i][0]), sizeof (T) * nRows );
 			}
 			fstr.close();
 		}
 		else if(toCpCol == CYCLIC){
-			std::cout << "toCpCol is CYCLIC: " << cyclicCpCounter << std::endl;
+			craftDbg(3, "toCpCol is CYCLIC: %d", cyclicCpCounter);
 			fstr.write( (char *)&(asynData[cyclicCpCounter][0]), sizeof (T) * nRows );
 			fstr.close();
 			// ===== write the metadata file for cycliccpcounter ===== // 
@@ -403,7 +402,7 @@ int CpMultiArray<T>::writeSerial(const std::string * filename){
 			}
 		}
 		else if(toCpCol>=0){
-			std::cout << "toCpCol is: " << toCpCol << std::endl;
+			craftDbg(3, "toCpCol is: %d", toCpCol);
 			fstr.write( (char *)&(asynData[toCpCol][0]), sizeof (T) * nRows );
 			fstr.close();
 		}

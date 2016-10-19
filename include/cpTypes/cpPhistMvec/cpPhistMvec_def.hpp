@@ -1,4 +1,5 @@
 #include <cpHelperFuncs.hpp>
+
 class TYPE(CpPhistMvec) : public CpBase
 {
 typedef phist::ScalarTraits<_ST_> st;

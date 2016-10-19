@@ -27,6 +27,7 @@ set (SOURCE
 		src/cpOptions.cpp
 		src/cpArray.cpp
 		src/cpPOD.cpp
+		src/cpHelperFuncs.cpp
 		)
 
 set (HEADERS
