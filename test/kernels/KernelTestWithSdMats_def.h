@@ -395,7 +395,21 @@ static void PrintSdMat(int outlev, std::string label,
     PHIST_CHK_IERR(SUBR(sdMat_get_ncols)(C,&ncC,iflag),*iflag);
     PHIST_CHK_IERR(SUBR(sdMat_get_nrows)(ABC,&nrABC,iflag),*iflag);
     PHIST_CHK_IERR(SUBR(sdMat_get_ncols)(ABC,&ncABC,iflag),*iflag);
-
+/*
+    std::cout << "A=[...\n";
+    SUBR(sdMat_print)(A,&iflag_);
+    std::cout << "];\n";
+    std::cout << "opA=A"<< (transA?"'":"") << ";\n";
+    std::cout << "B=[...\n";
+    SUBR(sdMat_print)(B,&iflag_);
+    std::cout << "];\n";
+    std::cout << "opB=B"<< (transB?"'":"")<<";\n";
+    std::cout << "C=[...\n";
+    SUBR(sdMat_print)(C,&iflag_);
+    std::cout << "];\n";
+    std::cout << "opC=C"<< (transC?"'":"")<<";\n";
+    std::cout << "opABC=opA*opB*opC;\n";
+*/    
     // take transpose into account when checking dimensions
     if (transA) std::swap(nrA,ncA);
     if (transB) std::swap(nrB,ncB);
@@ -439,6 +453,11 @@ static void PrintSdMat(int outlev, std::string label,
         PHIST_CHK_IERR(SUBR(sdMat_times_sdMat)(st::one(),A,B,st::zero(),AB,iflag),*iflag);
       }
     }
+/*
+    std::cout << "AB=[...\n";
+    SUBR(sdMat_print)(AB,&iflag_);
+    std::cout << "];\n";
+*/
     if (transC)
     {
       PHIST_CHK_IERR(SUBR(sdMat_times_sdMatT)(st::one(),AB,C,st::zero(),ABC,iflag),*iflag);
@@ -447,6 +466,11 @@ static void PrintSdMat(int outlev, std::string label,
     {
       PHIST_CHK_IERR(SUBR(sdMat_times_sdMat)(st::one(),AB,C,st::zero(),ABC,iflag),*iflag);
     }
+/*
+    std::cout << "ABC=[...\n";
+    SUBR(sdMat_print)(ABC,&iflag_);
+    std::cout << "];\n";
+*/
   }
   
   static TYPE(sdMat_ptr) mem1_, mem2_, mem3_, mem4_;
