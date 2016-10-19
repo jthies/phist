@@ -26,19 +26,19 @@ public:
 	}
 
 	int update(){
-		printf("CpPhistMvec Before update: \n");
+		craftDbg(3, "CpPhistMvec::update \n");
 		SUBR(mvec_add_mvec)(st::one(),dataPtr,st::zero(),asynData,&iflag);
 		return 0;
 	}
 
 	int write( const std::string * filename){
-		printf("CpPhistMvec: i will write now %s\n", (*filename).c_str());
+		craftDbg(3, "CpPhistMvec: i will write now %s\n", (*filename).c_str());
 		SUBR(mvec_write_bin)(asynData, (*filename).c_str() ,&iflag);  
 		return 0;
 	}
 	
 	int read(const std::string * filename){
-		printf("CpPhistMvec: i will read now %s\n", (*filename).c_str());
+		craftDbg(3, "CpPhistMvec: i will read now %s\n", (*filename).c_str());
 		SUBR(mvec_read_bin)(asynData, (*filename).c_str() ,&iflag);   //NOTE: has to be read by asynData and then copy to dataPtr. This is because read and write operations are dependent on MPI_Comm, and dataPtr and asynData have different MPI_Comm. Thus only that vector can be read, which has written it.
 		SUBR(mvec_add_mvec)(st::one(),asynData,st::zero(),dataPtr,&iflag);    
 		return 0;

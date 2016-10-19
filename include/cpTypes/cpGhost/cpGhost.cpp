@@ -4,7 +4,7 @@
 
 
 #include "include/cpTypes/cpGhost/cpGhost.hpp"
-
+#include "cpHelperFuncs.hpp"
 
 CpGhostDenseMat::CpGhostDenseMat(ghost_densemat *  dataPtr_, const MPI_Comm cpMpiComm_){
 		asynData = new ghost_densemat[1];
@@ -59,13 +59,14 @@ int CpGhostDenseMatArray::update(){
 
 int CpGhostDenseMatArray::write( const std::string * filename){
   if(toCpDenseMat == ALL){
+    craftDbg(3, "CpGhostDenseMatArray::write() toCpDenseMat is ALL");
     for(size_t i = 0; i < nDenseMat ; ++i)
     {
       asynData[i]->toFile(asynData[i], (char *) (*filename).c_str(), MPI_COMM_SELF);
     }
   }
   else if(toCpDenseMat == CYCLIC){		// TODO: testing to be done
-    std::cout << "toCpCol is cyclic" << cyclicCpCounter << std::endl;
+    craftDbg(3, "CpGhostDenseMatArray::write() cyclicCpCounter = %d", cyclicCpCounter);
     asynData[cyclicCpCounter]->toFile(asynData[cyclicCpCounter], (char *) (*filename).c_str(), MPI_COMM_SELF);
     // ===== write the metadata file for cyclicCpCounter ===== // 
     std::string filenameMD;
@@ -82,6 +83,7 @@ int CpGhostDenseMatArray::write( const std::string * filename){
     }
   }
   else if(toCpDenseMat	>= 0){
+    craftDbg(3, "CpGhostDenseMatArray::write() toCpDenseMat is: %d", toCpDenseMat);
     asynData[toCpDenseMat]->toFile(asynData[toCpDenseMat], (char *) (*filename).c_str(), MPI_COMM_SELF);
   }
   else{
@@ -93,6 +95,7 @@ int CpGhostDenseMatArray::write( const std::string * filename){
 
 int CpGhostDenseMatArray::read(const std::string * filename){
   if(toCpDenseMat == ALL){
+    craftDbg(3, "CpGhostDenseMatArray::read(): toCpDenseMat is ALL");
     for(size_t i = 0; i < nDenseMat ; ++i)
     {
       dataPtr[i]->fromFile(dataPtr[i], (char *) (*filename).c_str(), MPI_COMM_SELF); 
@@ -108,7 +111,7 @@ int CpGhostDenseMatArray::read(const std::string * filename){
         fstrMD.read( (char *)&(cyclicCpCounter), sizeof (size_t) );
         fstrMD.close();
       }
-      std::cout << "Restarting with cyclicCpCounter = " << cyclicCpCounter << std::endl;
+      craftDbg(3, "CpGhostDenseMatArray::read(): cyclicCpCounter is = %d", cyclicCpCounter);
       dataPtr[cyclicCpCounter]->fromFile(dataPtr[cyclicCpCounter], (char *) (*filename).c_str(), MPI_COMM_SELF);
       ++cyclicCpCounter;
       if( cyclicCpCounter == nDenseMat ){
@@ -116,6 +119,7 @@ int CpGhostDenseMatArray::read(const std::string * filename){
       }
   }
   else if( toCpDenseMat >= 0 ){
+    craftDbg(3, "CpGhostDenseMatArray::read(): toCpDenseMat is = %d", toCpDenseMat);
     dataPtr[toCpDenseMat]->fromFile(dataPtr[toCpDenseMat], (char *) (*filename).c_str(), MPI_COMM_SELF);
   }
   else{
