@@ -200,7 +200,7 @@ void SUBR(sdMat_inverse)(TYPE(sdMat_ptr) A_hpd, int* rank, int* iflag)
 }
 
 //! computes in-place the (transpose of the Moore-Penrose)
-//! pseudo-inverse of an arbitrary square matrix. The rank
+//! pseudo-inverse of an arbitrary m x n matrix. The rank
 //! of A on input is returned as *rank.
 void SUBR(sdMat_pseudo_inverse)(TYPE(sdMat_ptr) A_gen, int* rank, int* iflag)
 {
@@ -222,10 +222,24 @@ void SUBR(sdMat_pseudo_inverse)(TYPE(sdMat_ptr) A_gen, int* rank, int* iflag)
   PHIST_CHK_IERR(SUBR(sdMat_create)(&Sigma,m,n,comm,iflag),*iflag);
   PHIST_CHK_IERR(SUBR(sdMat_create)(&Vt,n,n,comm,iflag),*iflag);
   SdMatOwner<_ST_> _Sigma(Sigma),_U(U),_Vt(Vt);
+
+  std::cout << "%TROET\nA=[...\n";
+  SUBR(sdMat_print)(A_gen,iflag);
+  std::cout << "]; %TROET \n";
   
   // eigenvalue decomposition, A = V*Sigma*W'
   *iflag=iflag_in;
   PHIST_CHK_IERR(SUBR(sdMat_svd)(A_gen,U,Sigma,Vt,iflag),*iflag);
+
+  std::cout << "%TROET\nU=[...\n";
+  SUBR(sdMat_print)(U,iflag);
+  std::cout << "]; %TROET \n";
+  std::cout << "%TROET\nSigma=[...\n";
+  SUBR(sdMat_print)(Sigma,iflag);
+  std::cout << "]; %TROET \n";
+  std::cout << "%TROET\nVt=[...\n";
+  SUBR(sdMat_print)(Vt,iflag);
+  std::cout << "]; %TROET \n";
   
   // make tiny singular values exactly 0, invert the others
   _ST_ *Sigma_raw=NULL, *Sigma_err=NULL;
@@ -278,6 +292,21 @@ void SUBR(sdMat_pseudo_inverse)(TYPE(sdMat_ptr) A_gen, int* rank, int* iflag)
       }
     }
   }
+  // multiply the three matrices back together to get the Pseudo-Inverse,
+  // B=A^{+,T} <- U*inv(Sigma)*V'
+  
+  // USig <- U*inv(Sigma)
+  TYPE(sdMat_ptr) USig=NULL;
+  PHIST_CHK_IERR(SUBR(sdMat_create)(&USig,m,n,comm,iflag),*iflag);
+  SdMatOwner<_ST_> _USig(USig);
+  PHIST_CHK_IERR(SUBR(sdMat_times_sdMatT)(st::one(),U,Sigma,st::zero(),USig,iflag),*iflag);
+  
+  // A <- U*inv(Sigma)*V'
+  PHIST_CHK_IERR(SUBR(sdMat_times_sdMatT)(st::one(),USig,Vt,st::zero(),A_gen,iflag),*iflag);
+  
+  std::cout << "%TROET\nA^+=[...\n";
+  SUBR(sdMat_print)(A_gen,iflag);
+  std::cout << "]; %TROET \n";
   return;  
 }
 
