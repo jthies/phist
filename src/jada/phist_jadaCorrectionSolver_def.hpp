@@ -137,7 +137,10 @@ void SUBR(jadaCorrectionSolver_run)(TYPE(jadaCorrectionSolver_ptr) me,
   // all of the vectors in Q also from the preconditioner, but in practice this means
   // we have to store P\Q.
   TYPE(mvec_ptr) q=NULL, Bq=NULL;
-  q=(TYPE(mvec_ptr))Qtil; Bq=(TYPE(mvec_ptr))BQtil;
+  if (me->preconSkewProject!=0)
+  {
+    q=(TYPE(mvec_ptr))Qtil; Bq=(TYPE(mvec_ptr))BQtil;
+  }
 /*
   if (me->rightPrecon && me->preconSkewProject)
   {
@@ -254,20 +257,32 @@ void SUBR(jadaCorrectionSolver_run)(TYPE(jadaCorrectionSolver_ptr) me,
   PHIST_CHK_IERR(SUBR(jadaOp_create)(AB_op, B_op, Qtil, BQtil, &currShifts[0], k, &jadaOp, iflag), *iflag);
 
     TYPE(linearOp) jadaPrec, *jadaPrecPtr=NULL;
+    
+    // right now we allow only left preconditioning, right preconditioning is basically implemented
+    // but never worked within Jacobi-Davidson for me.
+    PHIST_CHK_IERR(*iflag = me->rightPrecon!=NULL? PHIST_NOT_IMPLEMENTED:0,*iflag);
+
+  // the RHS used, if there is no left preconditioning this is just a pointer to res, otherwise
+  // it is allocated and the preconditioner is applied
+  TYPE(mvec_ptr) res_ptr = (TYPE(mvec_ptr))res;
 
   // wrap the preconditioner so that apply_shifted is called
-  if (me->rightPrecon!=NULL)
+  if (me->leftPrecon!=NULL)
   {
-    if (me->preconSkewProject==0)
-    {
-      PHIST_CHK_IERR(SUBR(jadaPrec_create)(me->rightPrecon,NULL,NULL,&currShifts[0],k,&jadaPrec,iflag),*iflag);
-    }
-    else
-    {
-      PHIST_CHK_IERR(SUBR(jadaPrec_create)(me->rightPrecon,q,Bq,&currShifts[0],k,&jadaPrec,iflag),*iflag);
-    }
+    PHIST_CHK_IERR(SUBR(jadaPrec_create)(me->leftPrecon,q,Bq,&currShifts[0],k,&jadaPrec,iflag),*iflag);
+    res_ptr=NULL;
+    PHIST_CHK_IERR(SUBR(mvec_clone_shape)(&res_ptr,res,iflag),*iflag);
+    PHIST_CHK_IERR(jadaPrec.apply(st::one(),jadaPrec.A,res,st::zero(),res_ptr,iflag),*iflag);
     jadaPrecPtr=&jadaPrec;
   }
+  else if (me->rightPrecon!=NULL)
+  {
+    PHIST_CHK_IERR(SUBR(jadaPrec_create)(me->rightPrecon,q,Bq,&currShifts[0],k,&jadaPrec,iflag),*iflag);
+    jadaPrecPtr=&jadaPrec;
+  }
+  
+  // in case a preconditioned copy was made, delete it at the end of the scope
+  MvecOwner<_ST_> _res_ptr(res_ptr!=res?res_ptr:NULL);
 
   int nextSystem = 0;
 
@@ -300,10 +315,10 @@ PHIST_TASK_BEGIN(ComputeTask)
       {
         // setup the next system waiting to be solved
         int ind = nextSystem;
-        if( resIndex != NULL )
-          ind = resIndex[ind];
-        PHIST_CHK_IERR(SUBR(mvec_view_block)((TYPE(mvec_ptr))res, &res_i, ind, ind, iflag), *iflag);
+        if( resIndex != NULL ) ind = resIndex[ind];
+        PHIST_CHK_IERR(SUBR(mvec_view_block)(res_ptr, &res_i, ind, ind, iflag), *iflag);
         PHIST_CHK_IERR(SUBR(blockedGMRESstate_reset)(me->blockedGMRESstates_[i], res_i, NULL, iflag), *iflag);
+
         me->blockedGMRESstates_[i]->tol = tol[nextSystem];
         index[me->blockedGMRESstates_[i]->id] = nextSystem;
 
