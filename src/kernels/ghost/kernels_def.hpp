@@ -277,7 +277,6 @@ PHIST_TASK_BEGIN(ComputeTask)
   ghost_densemat* result;
   ghost_densemat_traits vtraits = map->vtraits_template;/*ghost_cloneVtraits(map->vtraits_template);*/
         vtraits.ncols=nvec;
-        vtraits.ncolsorig=nvec;
         vtraits.ncolspadded=0;
         vtraits.datatype = st::ghost_dt;
         vtraits.flags = (ghost_densemat_flags)(vtraits.flags & ~GHOST_DENSEMAT_VIEW);
@@ -392,7 +391,7 @@ PHIST_TASK_BEGIN_SMALLDETERMINISTIC(ComputeTask)
   }
 
   // I think the sdMat should not have a context
-  PHIST_CAST_PTR_FROM_VOID(ghost_mpi_comm,comm,vcomm,*iflag);
+  PHIST_CAST_PTR_FROM_VOID(const MPI_Comm,comm,vcomm,*iflag);
   ghost_densemat_create(&result,ghost_map_create_light(nrows,*comm),dmtraits);
   ST zero = st::zero();
   PHIST_CHK_GERR(ghost_densemat_init_val(result,&zero),*iflag);
@@ -1309,7 +1308,7 @@ extern "C" void SUBR(sdMatT_add_sdMat)(_ST_ alpha, TYPE(const_sdMat_ptr) vA,
   TYPE(sdMat_ptr) I = NULL;
   int m = 0;
   PHIST_CHK_IERR(SUBR(sdMat_get_ncols)(vA,&m,iflag),*iflag);
-  PHIST_CHK_IERR(SUBR(sdMat_create)(&I,m,m,NULL,iflag),*iflag);
+  PHIST_CHK_IERR(SUBR(sdMat_create)(&I,m,m,&A->map->mpicomm,iflag),*iflag);
   PHIST_CHK_IERR(SUBR(sdMat_identity)(I,iflag),*iflag);
   PHIST_CHK_IERR(SUBR(sdMatT_times_sdMat)(alpha,vA,I,beta,vB,iflag),*iflag);
   PHIST_CHK_IERR(SUBR(sdMat_delete)(I,iflag),*iflag);
@@ -1676,7 +1675,6 @@ PHIST_TASK_BEGIN(ComputeTask)
     ghost_densemat_traits vtraits = C->traits;
     vtraits.storage=GHOST_DENSEMAT_ROWMAJOR;  
     vtraits.flags = (ghost_densemat_flags)((int)vtraits.flags & ~(int)GHOST_DENSEMAT_VIEW);
-    vtraits.ncolsorig=vtraits.ncols;
     ghost_densemat_create(&Ccopy,C->map,vtraits);
 
     // this allocates the memory for the vector, copies and memTransposes the data
