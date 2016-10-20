@@ -64,6 +64,7 @@ class TYPE(jadaOp_data)
 
   TYPE(const_linearOp_ptr)    AB_op;   // operator of the general matrix A
   TYPE(const_linearOp_ptr)    B_op;   // operator of the hpd. matrix B, assumed I when NULL
+  TYPE(const_linearOp_ptr)    leftPrecon_op;   // left preconditioning operator
   TYPE(const_mvec_ptr)  V;      // B-orthonormal basis
   TYPE(const_mvec_ptr)  BV;     // B*V
   const _ST_*           sigma;  // array of NEGATIVE shifts, assumed to have correct size; TODO: what about 'complex' shifts for real JDQR?
@@ -71,6 +72,38 @@ class TYPE(jadaOp_data)
   MvecOwner<_ST_> _X_proj, _V_prec; // these objects make sure that some temporary storage is freed when the object is deleted
 };
 
+
+//! simply apply original operator shifted, no pre- or postprojection
+void SUBR(jadaOp_apply_project_none)(_ST_ alpha, const void* op, TYPE(const_mvec_ptr) X,
+    _ST_ beta, TYPE(mvec_ptr) Y, int* iflag)
+{
+#include "phist_std_typedefs.hpp"
+  PHIST_ENTER_FCN(__FUNCTION__);
+  PHIST_CAST_PTR_FROM_VOID(const TYPE(jadaOp_data), jadaOp, op, *iflag);
+
+  if( alpha == st::zero() )
+  {
+    PHIST_CHK_IERR( SUBR( mvec_scale       ) (Y, beta, iflag), *iflag);
+  }
+  else
+  {
+
+    // y_i <- alpha*(A+sigma_i I)*x_i + beta * y_i
+    if (jadaOp->leftPrecon_op==NULL)
+    {
+      PHIST_CHK_IERR(jadaOp->AB_op->apply_shifted(alpha, jadaOp->AB_op->A, jadaOp->sigma, X, beta, Y, iflag),*iflag);
+    }
+    else
+    {
+      PHIST_CHK_IERR(*iflag = (alpha==st::one() && beta==st::zero())?0: PHIST_NOT_IMPLEMENTED,*iflag);
+      TYPE(mvec_ptr) opX=NULL;
+      PHIST_CHK_IERR(SUBR(mvec_clone_shape)(&opX,X,iflag),*iflag);
+      MvecOwner<_ST_> _opX(opX);
+      PHIST_CHK_IERR(jadaOp->AB_op->apply_shifted(alpha, jadaOp->AB_op->A, jadaOp->sigma, X, beta, opX, iflag),*iflag);
+      PHIST_CHK_IERR(jadaOp->leftPrecon_op->apply(alpha, jadaOp->leftPrecon_op->A, opX, beta, Y, iflag),*iflag);
+    }
+  }
+}
 
 // applies the jada-operator with only post-projection:
 //
@@ -286,28 +319,6 @@ extern "C" void SUBR(jadaOp_delete)(TYPE(linearOp_ptr) jdOp, int *iflag)
   delete jadaOp;
 }
 
-
-
-void SUBR(jadaOp_apply_project_none)(_ST_ alpha, const void* op, TYPE(const_mvec_ptr) X,
-    _ST_ beta, TYPE(mvec_ptr) Y, int* iflag)
-{
-#include "phist_std_typedefs.hpp"
-  PHIST_ENTER_FCN(__FUNCTION__);
-  PHIST_CAST_PTR_FROM_VOID(const TYPE(jadaOp_data), jadaOp, op, *iflag);
-
-  if( alpha == st::zero() )
-  {
-    PHIST_CHK_IERR( SUBR( mvec_scale       ) (Y, beta, iflag), *iflag);
-  }
-  else
-  {
-
-    // y_i <- alpha*(A+sigma_i I)*x_i + beta * y_i
-    PHIST_CHK_IERR(jadaOp->AB_op->apply_shifted(alpha, jadaOp->AB_op->A, jadaOp->sigma, X, beta, Y, iflag),*iflag);
-  }
-}
-
-
 // create a preconditioner for the inner solve in Jacobi-Davidson.
 //
 // Given a linear operator that is a preconditioner for A-sigma_j*B, this function will simply          
@@ -377,5 +388,33 @@ extern "C" void SUBR(jadaPrec_create)(TYPE(const_linearOp_ptr) P_op,
     // add the PV block vector to be deleted automatically when the operator is deleted.
     TYPE(jadaOp_data)* jdDat=(TYPE(jadaOp_data)*)jdPrec->A;
     jdDat->_V_prec.set(PV);
+  }
+}
+
+//! add a left preconditioner created by jadaPrec_create to a jadaOp.
+
+//! The effect of the apply function will afterwards by Y <- alpha*(jadaPrec*jadaOp*X) + beta*Y,
+//! the projections used are determined by the AB_op and jadaPrec operators. If jadaPrec==NULL, 
+//! the operator is reset to it's original effect.
+extern "C" void SUBR(jadaOp_set_leftPrecond)(TYPE(linearOp_ptr) jdOp, TYPE(const_linearOp_ptr) jadaPrec, int* iflag)
+{
+  PHIST_CAST_PTR_FROM_VOID(TYPE(jadaOp_data), jdDat, jdOp->A, *iflag);
+  jdDat->leftPrecon_op = jadaPrec;
+  if (jadaPrec==NULL)
+  {
+    // recover original behavior: post-project for B=I, pre/post for B!=I
+    if (jdDat->B_op==NULL)
+    {
+      jdOp->apply=SUBR(jadaOp_apply_project_post);
+    }
+    else
+    {
+      jdOp->apply=SUBR(jadaOp_apply_project_pre_post);
+    }
+  }
+  else
+  { // not sure what to do with B!=NULL, do we need a symmetric operator?
+    if (jdDat->B_op!=NULL) PHIST_SOUT(PHIST_WARNING,"left preconditioning and B!=I is untested\n");
+    jdOp->apply=SUBR(jadaOp_apply_project_none);
   }
 }

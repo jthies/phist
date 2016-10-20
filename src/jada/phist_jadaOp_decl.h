@@ -36,3 +36,10 @@ void SUBR(jadaPrec_create)(TYPE(const_linearOp_ptr) P_op,
                            const _ST_ sigma[], int nvec, 
                            TYPE(linearOp_ptr) jdPrec,
                            int* iflag);
+
+//! add a left preconditioner created by jadaPrec_create to a jadaOp.
+
+//! The effect of the apply function will afterwards by Y <- alpha*(jadaPrec*jadaOp*X) + beta*Y,
+//! the projections used are determined by the AB_op and jadaPrec operators. If jadaPrec==NULL, 
+//! the operator is reset to it's original effect.
+void SUBR(jadaOp_set_leftPrecond)(TYPE(linearOp_ptr) jadaOp, TYPE(const_linearOp_ptr) jadaPrec, int* iflag);
