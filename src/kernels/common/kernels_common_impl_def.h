@@ -2,7 +2,7 @@
 // so we provide a central implementation for these non-performance critical
 // things.
 
-//! get global sparseMat size (number of rows) \ingroup crsmat
+// get global sparseMat size (number of rows) \ingroup crsmat
 extern "C" void SUBR(sparseMat_global_nrows)(TYPE(sparseMat_ptr) A, phist_gidx* s, int* iflag)
 {
   phist_const_map_ptr map=NULL;
@@ -10,7 +10,7 @@ extern "C" void SUBR(sparseMat_global_nrows)(TYPE(sparseMat_ptr) A, phist_gidx* 
   PHIST_CHK_IERR(phist_map_get_global_length(map,s,iflag),*iflag);
 }
 
-//! get global sparseMat size (number of columns) \ingroup crsmat
+// get global sparseMat size (number of columns) \ingroup crsmat
 extern "C" void SUBR(sparseMat_global_ncols)(TYPE(sparseMat_ptr) A, phist_gidx* s, int* iflag)
 {
   phist_const_map_ptr map=NULL;
@@ -18,7 +18,7 @@ extern "C" void SUBR(sparseMat_global_ncols)(TYPE(sparseMat_ptr) A, phist_gidx* 
   PHIST_CHK_IERR(phist_map_get_global_length(map,s,iflag),*iflag);
 }
 
-//! retrieve local length of the vectors in V \ingroup mvec
+// retrieve local length of the vectors in V \ingroup mvec
 extern "C" void SUBR(mvec_my_length)(TYPE(const_mvec_ptr) V, phist_lidx* len, int* iflag)
 {
   phist_const_map_ptr map=NULL;
@@ -26,7 +26,7 @@ extern "C" void SUBR(mvec_my_length)(TYPE(const_mvec_ptr) V, phist_lidx* len, in
   PHIST_CHK_IERR(phist_map_get_local_length(map,len,iflag),*iflag);
 }
 
-//! retrieve global length of the vectors in V \ingroup mvec
+// retrieve global length of the vectors in V \ingroup mvec
 extern "C" void SUBR(mvec_global_length)(TYPE(const_mvec_ptr) V, phist_gidx* len, int* iflag)
 {
   phist_const_map_ptr map=NULL;
@@ -34,7 +34,7 @@ extern "C" void SUBR(mvec_global_length)(TYPE(const_mvec_ptr) V, phist_gidx* len
   PHIST_CHK_IERR(phist_map_get_global_length(map,len,iflag),*iflag);
 }
 
-//! retrieve the comm used for MPI communication in V \ingroup mvec
+// retrieve the comm used for MPI communication in V \ingroup mvec
 extern "C" void SUBR(mvec_get_comm)(TYPE(const_mvec_ptr) V, phist_const_comm_ptr* comm, int* iflag)
 {
   phist_const_map_ptr map=NULL;
@@ -42,7 +42,7 @@ extern "C" void SUBR(mvec_get_comm)(TYPE(const_mvec_ptr) V, phist_const_comm_ptr
   PHIST_CHK_IERR(phist_map_get_comm(map,comm,iflag),*iflag);
 }
 
-//! y[i]=alpha*(A*x+shift*x) + beta*y
+// y[i]=alpha*(A*x+shift*x) + beta*y
 extern "C" void SUBR(sparseMat_times_mvec_add_mvec)(_ST_ alpha, TYPE(const_sparseMat_ptr) A,
         _ST_ shift, TYPE(const_mvec_ptr) x, _ST_ beta, TYPE(mvec_ptr) y, int* iflag)
 {
@@ -52,6 +52,21 @@ extern "C" void SUBR(sparseMat_times_mvec_add_mvec)(_ST_ alpha, TYPE(const_spars
   for (int i=0;i<nv;i++) shifts[i]=shift;
   SUBR(sparseMat_times_mvec_vadd_mvec)(alpha,A,shifts,x,beta,y,iflag);
   free(shifts);
+}
+
+// create a new mvec with the same dimensions (number of rows and columns) and
+// distribution (map)  as an existing one. The values of the new object are not
+// initialized explicitly, so if you want to clone the vector contents as well,
+// you will have to call mvec_set_block afterwards (or similar). *V must be NULL
+// on input.
+extern "C" void SUBR(mvec_clone_shape)(TYPE(mvec_ptr)* V, TYPE(const_mvec_ptr) V_in, int* iflag)
+{
+  *iflag=0;
+  phist_const_map_ptr map=NULL;
+PHIST_CHK_IERR(SUBR(mvec_get_map)(V_in,&map,iflag),*iflag);
+int nvecs;
+PHIST_CHK_IERR(SUBR(mvec_num_vectors)(V_in,&nvecs,iflag),*iflag);
+PHIST_CHK_IERR(SUBR(mvec_create)(V,map,nvecs,iflag),*iflag);
 }
 
 #ifdef PHIST_BUILTIN_RNG

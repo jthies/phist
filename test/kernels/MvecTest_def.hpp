@@ -154,6 +154,33 @@ public:
     }
   }
 
+  TEST_F(CLASSNAME, clone_shape)
+  {
+    if (!typeImplemented_ || problemTooSmall_) return;
+
+    TYPE(mvec_ptr) vec1_clone=NULL;
+    // clone the shape of vec1_
+    SUBR(mvec_clone_shape)(&vec1_clone,vec1_,&iflag_);
+    ASSERT_EQ(0,iflag_);
+    
+    phist_const_map_ptr map1=NULL,map2=NULL;
+    int nvec1,nvec2;
+    SUBR(mvec_get_map)(vec1_,&map1,&iflag_);
+    ASSERT_EQ(0,iflag_);
+    SUBR(mvec_get_map)(vec1_clone,&map2,&iflag_);
+    ASSERT_EQ(0,iflag_);
+    // this will set iflag=0 iff the maps describe the same permutation and distribution
+    phist_maps_compatible(map1,map2,&iflag_);
+    EXPECT_EQ(0,iflag_);
+    SUBR(mvec_num_vectors)(vec1_,&nvec1,&iflag_);
+    ASSERT_EQ(0,iflag_);
+    SUBR(mvec_num_vectors)(vec1_clone,&nvec2,&iflag_);
+    ASSERT_EQ(0,iflag_);
+    EXPECT_EQ(nvec1,nvec2);
+    EXPECT_EQ(nvec1,nvec_);
+    SUBR(mvec_delete)(vec1_clone,&iflag_);
+    ASSERT_EQ(0,iflag_);
+  }
 
   TEST_F(CLASSNAME, put_value) 
   {

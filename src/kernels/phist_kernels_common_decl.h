@@ -33,6 +33,13 @@ void SUBR(mvec_get_comm)(TYPE(const_mvec_ptr) V, phist_const_comm_ptr* comm, int
 
 //@}
 
+//! create a new mvec with the same dimensions (number of rows and columns) and
+//! distribution (map)  as an existing one. The values of the new object are not
+//! initialized explicitly, so if you want to clone the vector contents as well,
+//! you will have to call mvec_set_block afterwards (or similar). *V must be NULL
+//! on input.
+void SUBR(mvec_clone_shape)(TYPE(mvec_ptr)* V, TYPE(const_mvec_ptr) V_in, int* iflag);
+
 //! y[i]=alpha*(A*x+shift*x) + beta*y
 void SUBR(sparseMat_times_mvec_add_mvec)(_ST_ alpha, TYPE(const_sparseMat_ptr) A,
         _ST_ shift, TYPE(const_mvec_ptr) x, _ST_ beta, TYPE(mvec_ptr) y, int* iflag);
