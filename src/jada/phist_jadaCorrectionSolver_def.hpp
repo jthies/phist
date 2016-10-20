@@ -15,7 +15,8 @@ void SUBR(jadaCorrectionSolver_create)(TYPE(jadaCorrectionSolver_ptr) *me, phist
     (*me)->gmresBlockDim_ = opts.innerSolvBlockSize;
     (*me)->blockedGMRESstates_  = new TYPE(blockedGMRESstate_ptr)[(*me)->gmresBlockDim_];
     PHIST_CHK_IERR(SUBR(blockedGMRESstates_create)((*me)->blockedGMRESstates_, opts.innerSolvBlockSize, map, opts.innerSolvMaxBas, iflag), *iflag);
-    (*me)->rightPrecon=(TYPE(const_linearOp_ptr))opts.preconOp;
+    (*me)->leftPrecon=(TYPE(const_linearOp_ptr))opts.preconOp;
+    (*me)->rightPrecon=NULL; // not used right now
     (*me)->preconSkewProject=opts.preconSkewProject;
   }
   else if ((*me)->method_==phist_CARP_CG)

@@ -239,7 +239,7 @@ extern "C" void SUBR(jadaOp_create)(TYPE(const_linearOp_ptr)    AB_op,
 
   int i;
   // allocate jadaOp struct
-  TYPE(jadaOp_data) *myOp = new(TYPE(jadaOp_data));
+  TYPE(jadaOp_data) *myOp = new TYPE(jadaOp_data);
   
   if (AB_op->apply_shifted==NULL)
   {
@@ -252,6 +252,7 @@ extern "C" void SUBR(jadaOp_create)(TYPE(const_linearOp_ptr)    AB_op,
   // setup jadaOp members
   myOp->AB_op   = AB_op;
   myOp->B_op   = B_op;
+  myOp->leftPrecon_op = NULL;
   myOp->V      = V;
   myOp->BV     = (BV != NULL ? BV     : V);
   myOp->sigma  = sigma;
