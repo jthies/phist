@@ -383,8 +383,9 @@ PHIST_TASK_BEGIN_SMALLDETERMINISTIC(ComputeTask)
   }
 
   // I think the sdMat should not have a context
-  PHIST_CAST_PTR_FROM_VOID(const MPI_Comm,comm,vcomm,*iflag);
-  ghost_densemat_create(&result,ghost_map_create_light(nrows,*comm),dmtraits);
+  MPI_Comm comm = MPI_COMM_SELF;
+  if (vcomm!=NULL) comm=*((MPI_Comm*)vcomm);
+  ghost_densemat_create(&result,ghost_map_create_light(nrows,comm),dmtraits);
   ST zero = st::zero();
   PHIST_CHK_GERR(ghost_densemat_init_val(result,&zero),*iflag);
   *vM=(TYPE(sdMat_ptr))result;
