@@ -273,7 +273,7 @@ int get_perm_flag(int iflag, int outlev)
         ghost_nrank(&nproc,comm);
         PHIST_ORDERED_OUT(PHIST_VERBOSE,comm,"PE%6d partition weight %4.2g\n",rank,proc_weight);
         PHIST_CHK_GERR(ghost_context_create(ctx,gnrows, gncols, flags, comm,proc_weight),*iflag);
-        ghost_map_create_distribution((*ctx)->row_map,(ghost_sparsemat_src_rowfunc *)matrixSource,(*ctx)->mpicomm,(*ctx)->weight,GHOST_MAP_DIST_NROWS);
+        ghost_map_create_distribution((*ctx)->row_map,(ghost_sparsemat_src_rowfunc*)matrixSource,(*ctx)->weight,GHOST_MAP_DIST_NROWS);
         nglob_count=0;
         any_empty=false;
         for (int i=0;i<nproc;i++)
@@ -459,7 +459,6 @@ std::cout << "Created context with " << map->ctx->row_map->gdim << " global rows
   // domain map which is the same as the col map in ghost). A RHS vector can
   // be used as LHS, however.
   int new_flags=(int)map->vtraits_template.flags;
-  new_flags |= (int)GHOST_DENSEMAT_NO_HALO;
   map->vtraits_template.flags=(ghost_densemat_flags)new_flags;
   // ghost should set these correctly depending on GHOST_TYPE if we set HOST and DEVICE to 0
 
