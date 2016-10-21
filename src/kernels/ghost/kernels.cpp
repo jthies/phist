@@ -184,7 +184,7 @@ int get_perm_flag(int iflag, int outlev)
 
  
     //! private helper function to create a vtraits object
-    ghost_densemat_traits phist_default_vtraits()
+    ghost_densemat_traits default_vtraits()
     {
       ghost_densemat_traits vtraits = GHOST_DENSEMAT_TRAITS_INITIALIZER;
       // ghost should set these correctly depending on GHOST_TYPE if we set HOST and DEVICE to 0
@@ -206,7 +206,7 @@ int get_perm_flag(int iflag, int outlev)
 #endif
       return vtraits;
     }  
-    
+#if DELETE_ME    
     phist_ghost_map* MapGarbageCollector::new_map(const void* p,
         ghost_context* ctx, ghost_maptype pt, bool own_ctx, bool own_perm,
         bool reuse_if_exists)
@@ -257,7 +257,7 @@ int get_perm_flag(int iflag, int outlev)
         maps_.erase(it);
       }
     }
-
+#endif
     // this calls ghost_context_create with the given arguments and retries with a proc_weight of 1 if there are empty partitions
     void context_create(ghost_context **ctx, ghost_gidx gnrows, ghost_gidx gncols, 
         ghost_context_flags_t flags, void *matrixSource, ghost_sparsemat_src srcType, ghost_mpi_comm comm, double proc_weight, int* iflag)
@@ -436,7 +436,6 @@ extern "C" void phist_map_create(phist_map_ptr* vmap, phist_const_comm_ptr vcomm
 {
   *iflag=0;
   PHIST_CAST_PTR_FROM_VOID(MPI_Comm,comm,vcomm,*iflag);
-
   // try to create the context object. We check wether
   // the weighting for the partitioning gives a feasible context. If the STREAM benchmark
   // returns very different values on the different MPI processes and the map is tiny (as
@@ -450,18 +449,21 @@ extern "C" void phist_map_create(phist_map_ptr* vmap, phist_const_comm_ptr vcomm
             GHOST_SPARSEMAT_SRC_NONE, *comm,proc_weight,iflag),*iflag);
 
   // create map with default context, no permutation and owning the context object.
-  phist_ghost_map* map = new phist_ghost_map(ctx,ghost_context_map(ctx,GHOST_MAP_NONE),true);
-std::cout << "Created context with " << map->ctx->row_map->gdim << " global rows!\n";  
+  ghost_map* map=ghost_context_map(ctx,GHOST_MAP_NONE);
+  
+std::cout << "Created context with " << map->gdim << " global rows!\n";  
   // in ghost terminology, we look at LHS=A*RHS, the LHS is based on the
   // row distribution of A, the RHS has halo elements to allow importing from
   // neighbors. It is not possible to construct an RHS without a matrix, so if
-  // we want to create one we need to get the 'map' from the matrix (e.g. the
-  // domain map which is the same as the col map in ghost). A RHS vector can
+  // we want to create one we need to get the map from the matrix (e.g. the
+  // domain map which is the same as the col map in ghost). An RHS vector can
   // be used as LHS, however.
+
+#if DELETE_ME
   int new_flags=(int)map->vtraits_template.flags;
   map->vtraits_template.flags=(ghost_densemat_flags)new_flags;
   // ghost should set these correctly depending on GHOST_TYPE if we set HOST and DEVICE to 0
-
+#endif
   *vmap=(phist_map_ptr)(map);
 }
 
@@ -469,8 +471,8 @@ std::cout << "Created context with " << map->ctx->row_map->gdim << " global rows
 extern "C" void phist_map_delete(phist_map_ptr vmap, int *iflag)
 {
   *iflag=0;
-  PHIST_CAST_PTR_FROM_VOID(phist_ghost_map,map,vmap,*iflag);
-  delete map;
+  PHIST_CAST_PTR_FROM_VOID(ghost_map,map,vmap,*iflag);
+  ghost_map_destroy(map);
   vmap=NULL;
 }
   
@@ -478,75 +480,52 @@ extern "C" void phist_map_delete(phist_map_ptr vmap, int *iflag)
 extern "C" void phist_map_get_comm(phist_const_map_ptr vmap, phist_const_comm_ptr* vcomm, int* iflag)
 {
   *iflag=0;
-  PHIST_CAST_PTR_FROM_VOID(const phist_ghost_map,map,vmap,*iflag);
-  if (map->ctx==NULL)
-  {
-    // we may one day have maps without contexts, but right now we need them for functions like this one
-    *iflag=PHIST_INVALID_INPUT;
-    return;
-  }
-  *vcomm = (phist_const_comm_ptr)(&map->ctx->mpicomm);
+  PHIST_CAST_PTR_FROM_VOID(const ghost_map,map,vmap,*iflag);
+  *vcomm = (phist_const_comm_ptr)(&map->mpicomm);
 }
 
 //!
 extern "C" void phist_map_get_local_length(phist_const_map_ptr vmap, phist_lidx* nloc, int* iflag)
 {
   *iflag=0;
-  PHIST_CAST_PTR_FROM_VOID(const phist_ghost_map,map,vmap,*iflag);
-  int me;
-  if (map->ctx) {
-      ghost_rank(&me,map->ctx->mpicomm);
-      *nloc=map->ctx->row_map->dim;
-  } else {
-      *nloc=map->map->dim;
-  }
+  PHIST_CAST_PTR_FROM_VOID(const ghost_map,map,vmap,*iflag);
+   *nloc=map->dim;
 }
 
 //!
 extern "C" void phist_map_get_global_length(phist_const_map_ptr vmap, phist_gidx* nglob, int* iflag)
 {
   *iflag=0;
-  PHIST_CAST_PTR_FROM_VOID(const phist_ghost_map,map,vmap,*iflag);
-  if (map->ctx==NULL)
-  {
-    // we may one day have maps without contexts, but right now we need them for functions like this one
-    *iflag=PHIST_INVALID_INPUT;
-    return;
-  }
-  *nglob=map->ctx->row_map->gdim;
+  PHIST_CAST_PTR_FROM_VOID(const ghost_map,map,vmap,*iflag);
+  *nglob=map->gdim;
 }
 
 //! returns the smallest global index in the map appearing on my partition.
 extern "C" void phist_map_get_ilower(phist_const_map_ptr vmap, phist_gidx* ilower, int* iflag)
 {
   *iflag=0;
-  PHIST_CAST_PTR_FROM_VOID(const phist_ghost_map,map,vmap,*iflag);
-  if (map->ctx==NULL)
-  {
-    // we may one day have maps without contexts, but right now we need them for functions like this one
-    *iflag=PHIST_INVALID_INPUT;
-    return;
-  }
-  *ilower = map->ctx->row_map->offs;
+  PHIST_CAST_PTR_FROM_VOID(const ghost_map,map,vmap,*iflag);
+  *ilower = map->offs;
 }
 //! returns the largest global index in the map appearing on my partition.
 extern "C" void phist_map_get_iupper(phist_const_map_ptr vmap, phist_gidx* iupper, int* iflag)
 {
   *iflag=0;
-  PHIST_CAST_PTR_FROM_VOID(const phist_ghost_map,map,vmap,*iflag);
-  if (map->ctx==NULL)
-  {
-    // we may one day have maps without contexts, but right now we need them for functions like this one
-    *iflag=PHIST_INVALID_INPUT;
-    return;
-  }
-  *iupper = map->ctx->row_map->offs+map->ctx->row_map->dim-1;
+  PHIST_CAST_PTR_FROM_VOID(const ghost_map,map,vmap,*iflag);
+  *iupper = map->offs + map->dim - 1;
 }
 
 extern "C" void phist_maps_compatible(phist_const_map_ptr vmap1, phist_const_map_ptr vmap2, int* iflag)
 {
+static bool first_time=true;
+if (first_time)
+{
+  PHIST_SOUT(PHIST_WARNING,"phist_maps_compatible is *NOT IMPLEMENTED!* for GHOST 1.1, returning 0 anyway for development purposes.\n");
+  first_time=false;
+}
   *iflag=0;
-  return; //TROET
+  return;
+  #if FIX_ME
   PHIST_CAST_PTR_FROM_VOID(const phist_ghost_map,map1,vmap1,*iflag);
   PHIST_CAST_PTR_FROM_VOID(const phist_ghost_map,map2,vmap2,*iflag);
   *iflag=-1;
@@ -653,6 +632,7 @@ extern "C" void phist_maps_compatible(phist_const_map_ptr vmap1, phist_const_map
     *iflag=-2;
   }
   return;
+#endif
 }
 
 /* helper function that tells the matrix generation routines which 

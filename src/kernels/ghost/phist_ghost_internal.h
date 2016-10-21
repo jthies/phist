@@ -28,9 +28,9 @@ namespace phist
         ghost_context_flags_t flags, void *matrixSource, ghost_sparsemat_src srcType, ghost_mpi_comm comm, double proc_weight, int* iflag);
     
     //! private helper function to create a vtraits object
-    ghost_densemat_traits phist_default_vtraits();
+    ghost_densemat_traits default_vtraits();
     
-
+#if DELETE_ME
 //! map object for ghost kernel library
 //!                                                                                        
 //! in the petra object model that this abstract kernel interface follows, a map describes 
@@ -192,7 +192,7 @@ class phist_ghost_map
   bool ownPermutations_;
   
 };
-
+#endif
 
     //! small helper function to preclude integer overflows (ghost allows 64 bit local indices, 
     //! but we don't right now)
@@ -222,6 +222,7 @@ class phist_ghost_map
     //! to ghost_context_create (used in phist_map_create and sparseMat construction routines)
     double get_proc_weight(double force_value=-1.0);
 
+#if DELETE_ME
     //! A Garbage collection for maps as they need to be recreated dynamically with GHOST.
     
     //! Each time someone requests a map from an mvec or sparseMat, a new object is created
@@ -259,7 +260,7 @@ class phist_ghost_map
     };
   
     static MapGarbageCollector mapGarbageCollector;
-  
+#endif
   }
 }
 
