@@ -304,11 +304,11 @@ public:
     ASSERT_EQ(0,iflag_);
     ASSERT_NEAR(mt::one(),MvecEqual(vec2_,alpha*v1+beta*v2),VTest::releps());
     
-    _ST_ sigma[nvec_],asigma[nvec_];
+    _ST_ sigma[nvec_],asig_plusI[nvec_];
     for (int i=0; i<nvec_; i++) 
     {
       sigma[i]=-st::prand();
-      asigma[i]=alpha*sigma[i];
+      asig_plusI[i]=alpha*(st::one()+sigma[i]);
     }
     
     SUBR(mvec_random)(vec1_,&iflag_);
@@ -319,7 +319,7 @@ public:
     ASSERT_EQ(0,iflag_);
     
     // vec3 contains alpha*sigma[j]*vec1+beta*vec2
-    SUBR(mvec_vadd_mvec)(asigma,vec1_,beta,vec3_,&iflag_);
+    SUBR(mvec_vadd_mvec)(asig_plusI,vec1_,beta,vec3_,&iflag_);
     
     I_op.apply_shifted(alpha,I_op.A,sigma,vec1_,beta,vec2_,&iflag_);
     ASSERT_EQ(0,iflag_);

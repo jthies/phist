@@ -114,12 +114,13 @@ void SUBR(private_idOp_fused_apply_mvTmv)(_ST_ alpha, const void* A, TYPE(const_
 void SUBR(private_idOp_apply_shifted)(_ST_ alpha, const void* A, _ST_ const *sigma, 
         TYPE(const_mvec_ptr) X,  _ST_ beta, TYPE(mvec_ptr) Y, int* iflag)
 {
+#include "phist_std_typedefs.hpp"
   *iflag=0;
   PHIST_TOUCH(A)
   int nvec;
   PHIST_CHK_IERR(SUBR(mvec_num_vectors)(X,&nvec,iflag),*iflag);
   _ST_ shifts[nvec];
-  for (int i=0;i<nvec;i++) shifts[i]=sigma[i]*alpha;
+  for (int i=0;i<nvec;i++) shifts[i]=(st::one()+sigma[i])*alpha;
   SUBR(mvec_vadd_mvec)(shifts,X,beta,Y,iflag);
 }
 
