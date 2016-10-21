@@ -55,7 +55,9 @@ void SUBR(linearOp_wrap_sparseMat_pair)(TYPE(linearOp_ptr) op,
                                         int* iflag);
 
 //! create the identity operator that returns Y=alpha*X+beta*Y
-void SUBR(linearOp_identity)(TYPE(linearOp_ptr) op, int* iflag);
+void SUBR(linearOp_identity)(TYPE(linearOp_ptr) op, 
+                             phist_const_map_ptr  range_map,
+                             phist_const_map_ptr domain_map, int* iflag);
 
 //@}
 

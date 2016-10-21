@@ -124,7 +124,9 @@ void SUBR(private_idOp_apply_shifted)(_ST_ alpha, const void* A, _ST_ const *sig
 }
 
 // setup identity operator that returns Y=alpha*X + beta*Y
-void SUBR(linearOp_identity)(TYPE(linearOp_ptr) op, int* iflag)
+void SUBR(linearOp_identity)(TYPE(linearOp_ptr) op, 
+                             phist_const_map_ptr  range_map,
+                             phist_const_map_ptr domain_map, int* iflag)
 {
   *iflag=0;
   op->A=NULL;
@@ -133,6 +135,8 @@ void SUBR(linearOp_identity)(TYPE(linearOp_ptr) op, int* iflag)
   op->apply_shifted = &SUBR(private_idOp_apply_shifted);
   op->fused_apply_mvTmv = &SUBR(private_idOp_fused_apply_mvTmv);
   op->destroy=&SUBR(private_linearOp_destroy_nothing);
+  op->range_map=range_map;
+  op->domain_map=domain_map;
 }
 
 } // extern "C"
