@@ -122,7 +122,12 @@ extern "C" void SUBR(precon_create)(TYPE(linearOp_ptr) op, TYPE(const_sparseMat_
   }
   
   CALL_PT_MEMBER(precType,Create,&pt->P_,A,sigma,B,Vkern,BVkern,options,iflag);
-
+  
+  pt->A_=A;
+  pt->B_=B;
+  pt->Vkern_=Vkern;
+  pt->BVkern_=BVkern;
+  
   op->A=pt;
   op->apply = SUBR(precon_apply);
   op->applyT = SUBR(precon_applyT);
@@ -139,6 +144,25 @@ extern "C" void SUBR(precon_delete)(TYPE(linearOp_ptr) op, int* iflag)
   PHIST_CAST_PTR_FROM_VOID(phist_internal_precon, pt, op->A,*iflag);
   phist_Eprecon precType=pt->type_;
   CALL_PT_MEMBER(precType,Delete,pt->P_,iflag);
+}
+
+// given an existing preconditioner, recompute it for a new shift sigma and (near) kernel Vkern.     
+
+// The matrices A and B and preconditioning options remain unchanged from the cann SUBR(precon_create).
+// This means that the preconditioner needs to store pointers to A and B at create() time and can assume
+// those matrices are still there and unchanged. If they aren't (there or unchanged), a new preconditioner
+// must be created instead.
+extern "C" void SUBR(precon_update)(TYPE(linearOp_ptr) op, _ST_ sigma,
+                         TYPE(const_mvec_ptr) Vkern,
+                         TYPE(const_mvec_ptr) BVkern,
+                         int* iflag)
+{
+  PHIST_ENTER_FCN(__FUNCTION__);
+  PHIST_CAST_PTR_FROM_VOID(phist_internal_precon, pt, op->A,*iflag);
+  phist_Eprecon precType=pt->type_;
+  pt->Vkern_=Vkern;
+  pt->BVkern_=BVkern;
+  CALL_PT_MEMBER(precType,Update,pt->P_,pt->A_,sigma,pt->B_,Vkern,BVkern,iflag);
 }
 
 // apply preconditioner

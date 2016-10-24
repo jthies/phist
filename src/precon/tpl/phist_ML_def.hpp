@@ -67,6 +67,13 @@ class PreconTraits<double,phist_ML>
     return;
   }
 
+  static void Update(void* P, const void* A, _ST_ sigma, const void* B,
+                     TYPE(const_mvec_ptr) Vkern, TYPE(const_mvec_ptr) BVkern,
+                     int* iflag) 
+  {
+    PHIST_CHK_IERR(*iflag=PHIST_NOT_IMPLEMENTED,*iflag);
+  }                                                                             
+
   static void Delete(void* vP, int *iflag)
   {
     PHIST_ENTER_FCN(__FUNCTION__);
