@@ -6,8 +6,9 @@ void SUBR(blockedMINRESstates_iterate)(TYPE(const_linearOp_ptr) Aop,
                                        TYPE(blockedGMRESstate_ptr) S[], int numSys, int *nIter, int* iflag)
 {
 #include "phist_std_typedefs.hpp"
-  PHIST_ENTER_FCN(__FUNCTION__);
   *iflag = 0;
+  if (numSys==0) return; // do not appear in timing stats
+  PHIST_ENTER_FCN(__FUNCTION__);
 
   int maxIter=(*nIter)>0?*nIter:9999999;
   *nIter=0;
