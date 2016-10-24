@@ -449,6 +449,7 @@ PrintSdMat(PHIST_DEBUG,"reconstructed X",mat2_vp_,m_lda_,1,mpi_comm_);
 
   TEST_F(CLASSNAME, svd)
   {
+    if( !typeImplemented_ ) return;
     // for random A, compute A=U*Sigma*V' and verify the product gives A,
     // Sigma is diagonal and it's entries are decreasing and positive, and
     // U and V are orthonormal.
