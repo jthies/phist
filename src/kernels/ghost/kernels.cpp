@@ -436,22 +436,14 @@ extern "C" void phist_map_create(phist_map_ptr* vmap, phist_const_comm_ptr vcomm
 {
   *iflag=0;
   PHIST_CAST_PTR_FROM_VOID(MPI_Comm,comm,vcomm,*iflag);
-  // try to create the context object. We check wether
-  // the weighting for the partitioning gives a feasible context. If the STREAM benchmark
-  // returns very different values on the different MPI processes and the map is tiny (as
-  // happens in our tests) the function may otherwise give empty partitions. In case the 
-  // context looks strange we retry with equal process weights, accepting empty partitions.
-  // If it still fails we return with an error code/message.
-  double proc_weight=get_proc_weight();
 
-  ghost_context *ctx;
-  PHIST_CHK_IERR(phist::ghost_internal::context_create(&ctx,nglob, nglob, GHOST_CONTEXT_DEFAULT, NULL,
-            GHOST_SPARSEMAT_SRC_NONE, *comm,proc_weight,iflag),*iflag);
-
-  // create map with default context, no permutation and owning the context object.
-  ghost_map* map=ghost_context_map(ctx,GHOST_MAP_NONE);
+  // create map object which is not part of a context.
+  ghost_map* map=NULL;
+  PHIST_CHK_GERR(ghost_map_create(&map,nglob,*comm,GHOST_MAP_ROW,GHOST_MAP_DEFAULT),*iflag);
+  // allow distribution based on memory bandwidth benchmark:
+  double weight=::phist::ghost_internal::get_proc_weight();
+  PHIST_CHK_GERR(ghost_map_create_distribution(map,NULL,weight,GHOST_MAP_DIST_NROWS),*iflag);
   
-std::cout << "Created context with " << map->gdim << " global rows!\n";  
   // in ghost terminology, we look at LHS=A*RHS, the LHS is based on the
   // row distribution of A, the RHS has halo elements to allow importing from
   // neighbors. It is not possible to construct an RHS without a matrix, so if
@@ -459,11 +451,6 @@ std::cout << "Created context with " << map->gdim << " global rows!\n";
   // domain map which is the same as the col map in ghost). An RHS vector can
   // be used as LHS, however.
 
-#if DELETE_ME
-  int new_flags=(int)map->vtraits_template.flags;
-  map->vtraits_template.flags=(ghost_densemat_flags)new_flags;
-  // ghost should set these correctly depending on GHOST_TYPE if we set HOST and DEVICE to 0
-#endif
   *vmap=(phist_map_ptr)(map);
 }
 
