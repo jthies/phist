@@ -407,7 +407,8 @@ extern "C" void SUBR(mvec_get_map)(TYPE(const_mvec_ptr) vV, phist_const_map_ptr*
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   *iflag=0;
   PHIST_CAST_PTR_FROM_VOID(const ghost_densemat,V,vV,*iflag);
-  *vmap=(phist_const_map_ptr)V->map;
+  PHIST_CHK_IERR(*iflag= (V->map==NULL)? PHIST_BAD_CAST:0, *iflag);
+  *vmap=(phist_const_map_ptr)(V->map);
 }
 
 //! retrieve number of vectors/columns in V
