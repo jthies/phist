@@ -90,6 +90,7 @@ PHIST_MAIN_TASK_BEGIN
   PHIST_ICHK_IERR(SUBR(mvec_delete)(X,&ierr),ierr);
   PHIST_ICHK_IERR(SUBR(mvec_delete)(Y,&ierr),ierr);
   PHIST_ICHK_IERR(phist_map_delete(map,&ierr),ierr);
+  PHIST_ICHK_IERR(phist_comm_delete(comm,&ierr),ierr);
 
 PHIST_MAIN_TASK_END
 

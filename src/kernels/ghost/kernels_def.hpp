@@ -385,7 +385,12 @@ PHIST_TASK_BEGIN_SMALLDETERMINISTIC(ComputeTask)
   // I think the sdMat should not have a context
   MPI_Comm comm = MPI_COMM_SELF;
   if (vcomm!=NULL) comm=*((MPI_Comm*)vcomm);
-  ghost_densemat_create(&result,ghost_map_create_light(nrows,comm),dmtraits);
+  ghost_map *map=ghost_map_create_light(nrows,comm);
+  ghost_densemat_create(&result,map,dmtraits);
+  // the map is created in this context, so we need to
+  // release memory ownership here. The densemat has
+  // taken ownership of the new map.
+  map->ref_count--;
   ST zero = st::zero();
   PHIST_CHK_GERR(ghost_densemat_init_val(result,&zero),*iflag);
   *vM=(TYPE(sdMat_ptr))result;
