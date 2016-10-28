@@ -25,6 +25,7 @@
 
 #include <ghost.h>
 #include <ghost/machine.h>
+#include <ghost/util.h>
 #include <ghost/pumap.h>
 #include <ghost/locality.h>
 #include <ghost/timing.h>
@@ -46,12 +47,11 @@ namespace phist
   namespace ghost_internal
   {
 
-//! returns the local partition size based on a benchmark, the benchmark is run once when
-//! this function is called first, subsequently the same weight will be returned unless
-//! you set force_value>0. If force_vale<=0 is given, the benchmark is run anyway and the
-//! newly measured value is returned in this and subsequent calls.
-//! The resulting double can be passed as 'weight' parameter
-//! to ghost_context_create (used in phist_map_create and sparseMat construction routines)
+//! returns a value to guide partitioning based on a benchmark of the memory bandwidth.  
+//! The benchmark is run once when this function is called first, subsequently the same  
+//! weight will be returned unless you set force_value>0. If force_vale<=0 is given, the 
+//! benchmark is run anyway and the newly measured value is returned in this and         
+//! subsequent calls. The resulting double can be passed as 'weight' parameter to ghost.
 double get_proc_weight(double force_value)
 {
   static double proc_weight=-1.0;
@@ -257,7 +257,7 @@ int get_perm_flag(int iflag, int outlev)
         maps_.erase(it);
       }
     }
-#endif
+
     // this calls ghost_context_create with the given arguments and retries with a proc_weight of 1 if there are empty partitions
     void context_create(ghost_context **ctx, ghost_gidx gnrows, ghost_gidx gncols, 
         ghost_context_flags_t flags, void *matrixSource, ghost_sparsemat_src srcType, ghost_mpi_comm comm, double proc_weight, int* iflag)
@@ -273,7 +273,9 @@ int get_perm_flag(int iflag, int outlev)
         ghost_nrank(&nproc,comm);
         PHIST_ORDERED_OUT(PHIST_VERBOSE,comm,"PE%6d partition weight %4.2g\n",rank,proc_weight);
         PHIST_CHK_GERR(ghost_context_create(ctx,gnrows, gncols, flags, comm,proc_weight),*iflag);
-        ghost_map_create_distribution((*ctx)->row_map,(ghost_sparsemat_src_rowfunc*)matrixSource,(*ctx)->weight,GHOST_MAP_DIST_NROWS);
+        // TODO - select padding based on get_C_simga?
+        int pad=32; // works for typical chunk sizes 4,8,16,32 and SSE/AVX/AVX512
+        ghost_map_create_distribution((*ctx)->row_map,(ghost_sparsemat_src_rowfunc*)matrixSource,(*ctx)->weight,GHOST_MAP_DIST_NROWS,pad);
         nglob_count=0;
         any_empty=false;
         for (int i=0;i<nproc;i++)
@@ -303,6 +305,8 @@ int get_perm_flag(int iflag, int outlev)
         get_proc_weight(proc_weight);
       }
     }
+
+#endif
     
   }//namespace ghost_internal
 }//namespace phist
@@ -442,7 +446,9 @@ extern "C" void phist_map_create(phist_map_ptr* vmap, phist_const_comm_ptr vcomm
   PHIST_CHK_GERR(ghost_map_create(&map,nglob,*comm,GHOST_MAP_ROW,GHOST_MAP_DEFAULT),*iflag);
   // allow distribution based on memory bandwidth benchmark:
   double weight=::phist::ghost_internal::get_proc_weight();
+  int pad=std::max(32,PHIST_SELL_C);
   PHIST_CHK_GERR(ghost_map_create_distribution(map,NULL,weight,GHOST_MAP_DIST_NROWS),*iflag);
+  map->dimpad=PAD(map->dimpad,pad);
   
   // in ghost terminology, we look at LHS=A*RHS, the LHS is based on the
   // row distribution of A, the RHS has halo elements to allow importing from
