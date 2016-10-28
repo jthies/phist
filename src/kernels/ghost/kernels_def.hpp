@@ -1495,9 +1495,16 @@ PHIST_TASK_BEGIN(ComputeTask)
     spMVM_opts.eta=&delta;
     spMVM_opts.delta=&gamma;
     spMVM_opts.z=(ghost_densemat*)vz;
+    
+    // ghost messes with the maps of the output vector: if it finds that it is the col_map of the matrix,
+    // it simply swaps the pointer to the row_map. So we backup the pointers and reset them after the call
+    ghost_map *map_x=x->map, *map_y=y->map;
 
     // call ghosts spMV
     PHIST_CHK_GERR(ghost_spmv(y,A,x,spMVM_opts),*iflag);
+
+    x->map=map_x;
+    y->map=map_y;
     
     // copy the dot results if necessary
     if (ydoty!=NULL)
@@ -2155,6 +2162,8 @@ extern "C" void SUBR(sparseMat_create_fromRowFunc)(TYPE(sparseMat_ptr) *vA, phis
 
   PHIST_CAST_PTR_FROM_VOID(const MPI_Comm, comm, vcomm, *iflag);
 
+#if FIX_ME
+
   // if the user allows repartitioning, ask GHOST to do a distribution of the rows based on
   // the memory bandwidth measured per MPI rank. Otherwise, use the same number of rows on 
   // each MPI process.
@@ -2168,7 +2177,6 @@ extern "C" void SUBR(sparseMat_create_fromRowFunc)(TYPE(sparseMat_ptr) *vA, phis
   *iflag=0;
   
   // create the map object and call the create_fromRowFuncWithMap variant
-#if FIX_ME
   phist_ghost_map* map = new phist_ghost_map(ctx,ctx->row_map,true);
   {
     ghost_sparsemat_flags flags=map->mtraits_template.flags;
