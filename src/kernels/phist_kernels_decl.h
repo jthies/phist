@@ -86,16 +86,16 @@ void SUBR(sparseMat_read_hb)(TYPE(sparseMat_ptr)* A, phist_const_comm_ptr comm,
 void SUBR(sparseMat_read_bin)(TYPE(sparseMat_ptr)* A, phist_const_comm_ptr comm,
 const char* filename,int* iflag);
 
-//! read a matrix from a MatrixMarket (ASCII) file with predefined map \ingroup(crsmat)
-void SUBR(sparseMat_read_mm_with_map)(TYPE(sparseMat_ptr)* A, phist_const_map_ptr map,
+//! read a matrix from a MatrixMarket (ASCII) file with predefined context \ingroup(crsmat)
+void SUBR(sparseMat_read_mm_with_context)(TYPE(sparseMat_ptr)* A, phist_const_context_ptr ctx,
         const char* filename,int* iflag);
 
-//! read a matrix from a Harwell-Boeing file with predefined map \ingroup(crsmat)
-void SUBR(sparseMat_read_hb_with_map)(TYPE(sparseMat_ptr)* A, phist_const_map_ptr map,
+//! read a matrix from a Harwell-Boeing file with predefined context \ingroup(crsmat)
+void SUBR(sparseMat_read_hb_with_context)(TYPE(sparseMat_ptr)* A, phist_const_context_ptr ctx,
         const char* filename,int* iflag);
 
-//! read a matrix from a Ghost CRS (binary) file with predefined map \ingroup(crsmat)
-void SUBR(sparseMat_read_bin_with_map)(TYPE(sparseMat_ptr)* A, phist_const_map_ptr map,
+//! read a matrix from a Ghost CRS (binary) file with predefined context \ingroup(crsmat)
+void SUBR(sparseMat_read_bin_with_context)(TYPE(sparseMat_ptr)* A, phist_const_context_ptr ctx,
 const char* filename,int* iflag);
 
 ///@}
@@ -118,6 +118,10 @@ void SUBR(sparseMat_get_domain_map)(TYPE(const_sparseMat_ptr) A,
 //! get the map for vectors y in y=A*x
 void SUBR(sparseMat_get_range_map)(TYPE(const_sparseMat_ptr) A,
         phist_const_map_ptr* map, int* iflag);
+
+//! get the complete context for creating a similar matrix
+void SUBR(sparseMat_get_context)(TYPE(const_sparseMat_ptr) A,
+        phist_const_context_ptr* ctx, int* iflag);
 ///@}
 //@}
 
@@ -562,11 +566,11 @@ void SUBR(sparseMat_create_fromRowFunc)(TYPE(sparseMat_ptr) *A, phist_const_comm
         phist_gidx nrows, phist_gidx ncols, phist_lidx maxnne,
         phist_sparseMat_rowFunc rowFunPtr, void* last_arg, int *iflag);
 
-//! create a sparse matrix from a row func and use a distribution prescribed by a given map
+//! create a sparse matrix from a row func and use a distribution prescribed by a given context
+//! (that is, assume the same shape as another matrix)
 //!
-//! optional flags: as fromRowFunc, plus:
-//! * PHIST_SPARSEMAT_OWN_MAPS to pass ownership of the given map to the matrix
-void SUBR(sparseMat_create_fromRowFuncAndMap)(TYPE(sparseMat_ptr) *vA, phist_const_map_ptr map,
+//! optional flags: as fromRowFunc
+void SUBR(sparseMat_create_fromRowFuncAndContext)(TYPE(sparseMat_ptr) *vA, phist_const_context_ptr ctx,
         phist_lidx maxnne,phist_sparseMat_rowFunc rowFunPtr,void* last_arg,
         int *iflag);
                 

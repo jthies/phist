@@ -142,9 +142,7 @@ PHIST_TASK_BEGIN(ComputeTask)
         mtraits.datatype = st::ghost_dt;
         mtraits.flags = flags;
         char* cfname=const_cast<char*>(filename);
-// TODO - check ghost return codes everywhere like this
-//  PHIST_CHK_IERR(phist::ghost_internal::context_create(&ctx,0,0,
-//        GHOST_CONTEXT_DEFAULT,cfname,GHOST_SPARSEMAT_SRC_FILE,*comm,get_proc_weight(),iflag),*iflag);
+
   PHIST_CHK_GERR(ghost_sparsemat_create(&mat,NULL,&mtraits,1),*iflag);                               
   PHIST_CHK_GERR(ghost_sparsemat_init_bin(mat,cfname,*comm,get_proc_weight()),*iflag);
 //#if PHIST_OUTLEV >= PHIST_VERBOSE
@@ -171,31 +169,21 @@ const char* filename,int* iflag)
   *iflag = PHIST_NOT_IMPLEMENTED; // not implemented in ghost, use converter script to bin crs
 }
 
-extern "C" void SUBR(sparseMat_read_mm_with_map)(TYPE(sparseMat_ptr)* A, phist_const_map_ptr map,
+extern "C" void SUBR(sparseMat_read_mm_with_context)(TYPE(sparseMat_ptr)* A, phist_const_context_ptr ctx,
         const char* filename,int* iflag)
 {
-  // we don't have a function for this, what we can do is create the matrix without the map
-  // and check afterwards if they happen to be compatible.
-  phist_const_comm_ptr comm=NULL;
-  PHIST_CHK_IERR(phist_map_get_comm(map,&comm,iflag),*iflag);
-  PHIST_CHK_IERR(SUBR(sparseMat_read_mm)(A,comm,filename,iflag),*iflag);
-  phist_const_map_ptr new_row_map=NULL;
-  PHIST_CHK_IERR(SUBR(sparseMat_get_row_map)(*A,&new_row_map,iflag),*iflag);
-  phist_maps_compatible(map,new_row_map,iflag);
-  if (*iflag!=0)
-  {
-    PHIST_CHK_IERR(*iflag=PHIST_NOT_IMPLEMENTED,*iflag);
-  }
+  PHIST_ENTER_FCN(__FUNCTION__);
+  *iflag=PHIST_NOT_IMPLEMENTED;
   return;
 }
 
-extern "C" void SUBR(sparseMat_read_bin_with_map)(TYPE(sparseMat_ptr)* A, phist_const_map_ptr map,
+extern "C" void SUBR(sparseMat_read_bin_with_context)(TYPE(sparseMat_ptr)* A, phist_const_context_ptr ctx,
         const char* filename,int* iflag)
 {
   *iflag=PHIST_NOT_IMPLEMENTED;
 }
 
-extern "C" void SUBR(sparseMat_read_hb_with_map)(TYPE(sparseMat_ptr)* A, phist_const_map_ptr map,
+extern "C" void SUBR(sparseMat_read_hb_with_context)(TYPE(sparseMat_ptr)* A, phist_const_ctx_ptr ctx,
         const char* filename,int* iflag)
 {
   *iflag=PHIST_NOT_IMPLEMENTED;
@@ -206,6 +194,16 @@ extern "C" void SUBR(sparseMat_read_hb_with_map)(TYPE(sparseMat_ptr)* A, phist_c
 //! \name get information about the data distribution in a matrix (maps)
 
 //!@{
+
+//! get the complete context of the matrix
+extern "C" void SUBR(sparseMat_get_context)(TYPE(const_sparseMat_ptr) vA, phist_const_context_ptr* vctx, int* iflag)
+{
+  PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
+  *iflag=0;
+  PHIST_CAST_PTR_FROM_VOID(const ghost_sparsemat,A,vA,*iflag);
+  *vctx = (phist_const_context_ptr)(A->context);
+}
+
 //! get the row distribution of the matrix
 extern "C" void SUBR(sparseMat_get_row_map)(TYPE(const_sparseMat_ptr) vA, phist_const_map_ptr* vmap, int* iflag)
 {
@@ -2057,8 +2055,8 @@ PHIST_TASK_BEGIN(ComputeTask)
 #endif
 
 //! create a sparse matrix from a row func and use a distribution prescribed by a given map
-extern "C" void SUBR(sparseMat_create_fromRowFuncAndMap)(TYPE(sparseMat_ptr) *vA,
-        phist_const_map_ptr vmap,
+extern "C" void SUBR(sparseMat_create_fromRowFuncAndContext)(TYPE(sparseMat_ptr) *vA,
+        phist_const_context_ptr vctx,
         phist_lidx maxnne,phist_sparseMat_rowFunc rowFunPtr,void* last_arg,
         int *iflag)
 {
@@ -2069,16 +2067,21 @@ extern "C" void SUBR(sparseMat_create_fromRowFuncAndMap)(TYPE(sparseMat_ptr) *vA
   int outlev = *iflag&PHIST_SPARSEMAT_QUIET ? PHIST_DEBUG : PHIST_INFO;
   int own_map= *iflag&PHIST_SPARSEMAT_OWN_MAPS;
 
-  PHIST_CAST_PTR_FROM_VOID(const ghost_map,map,vmap,*iflag);
+  PHIST_CAST_PTR_FROM_VOID(const ghost_context,ctx,vctx,*iflag);
 
   *iflag=0;
   PHIST_TASK_DECLARE(ComputeTask)
   PHIST_TASK_BEGIN(ComputeTask)
-#if FIX_ME  
-  int sellC=map->mtraits_template.C;
-  int sellSigma=map->mtraits_template.sortScope;
+
+  // TODO: since we're getting a map, it may be that there is already another 
+  // sparseMat that has this map. We *actually* want to share the context and 
+  // traits (e.g. C and sigma) of that sparseMat, not it's row_map or col_map.
+  // So this is only a hotfix, in the long term we should have a function     
+  // sparseMat_clone_shape or something alike (note mvec_clone_shape, which I 
+  // recently added).
+  int sellC=PHIST_SELL_C,sellSigma=PHIST_SELL_SIGMA;
   int sellC_suggested, sellSigma_suggested;
-  phist::ghost_internal::get_C_sigma(&sellC_suggested,&sellSigma_suggested,iflag_in,map->ctx->mpicomm);
+  phist::ghost_internal::get_C_sigma(&sellC_suggested,&sellSigma_suggested,iflag_in,map->mpicomm);
   if (sellC<0) sellC=sellC_suggested;
   if (sellSigma<0) sellSigma=sellSigma_suggested;
   
@@ -2088,13 +2091,11 @@ extern "C" void SUBR(sparseMat_create_fromRowFuncAndMap)(TYPE(sparseMat_ptr) *vA
   src.func = rowFunPtr;
   src.maxrowlen = maxnne;
   src.arg=last_arg;
-  // TODO set global dimensions
-  // src.gnrows = xxx;
-  // src.gncols = xxx;
+  src.gnrows = map->gdim;
+  src.gncols = map->gdim;
 
 
-  ghost_context *ctx = map->ctx;
-
+/*
   // TODO: introduce ghost functions context_comm_initialized() and context_clone() etc.
   if (map->ctx->wishlist!=NULL)
   {
@@ -2109,13 +2110,15 @@ extern "C" void SUBR(sparseMat_create_fromRowFuncAndMap)(TYPE(sparseMat_ptr) *vA
     ctx->col_map->glb_perm=map->ctx->col_map->glb_perm;
     ctx->col_map->glb_perm_inv=map->ctx->col_map->glb_perm_inv;
   }
-
+*/
   ghost_sparsemat* mat = NULL;
 
-  ghost_sparsemat_traits mtraits=map->mtraits_template;
+  ghost_sparsemat_traits mtraits=(ghost_sparsemat_traits)GHOST_SPARSEMAT_TRAITS_INITIALIZER;
+
   mtraits.C=sellC;
   mtraits.sortScope=sellSigma;
 
+#ifdef FIX_ME
   if (!own_map && (mtraits.sortScope>1 || mtraits.flags&GHOST_SPARSEMAT_PERMUTE) )
   {
     // we have to disable sorting for now and reset the flags after the matrix has been created with the
@@ -2123,15 +2126,16 @@ extern "C" void SUBR(sparseMat_create_fromRowFuncAndMap)(TYPE(sparseMat_ptr) *vA
     mtraits.flags = (ghost_sparsemat_flags)(mtraits.flags & ~GHOST_SPARSEMAT_PERMUTE);
     mtraits.sortScope=1;
   }
-
+#endif
   PHIST_SOUT(outlev, "Creating sparseMat with SELL-%d-%d format.\n", mtraits.C, mtraits.sortScope);
 
   mtraits.datatype = st::ghost_dt;
   PHIST_CHK_GERR(ghost_sparsemat_create(&mat,ctx,&mtraits,1),*iflag);                               
-  mtraits.flags=map->mtraits_template.flags;
-  mtraits.sortScope=map->mtraits_template.sortScope;
-  
-  PHIST_CHK_GERR(ghost_sparsemat_init_rowfunc(mat,&src,map->ctx->mpicomm,map->ctx->weight),*iflag);
+  mtraits.flags=GHOST_SPARSEMAT_DEFAULT; // map->mtraits_template.flags;
+  double weight=phist::ghost_internal::get_proc_weight();
+  //TODO: I want to create the matrix with the given context, at the moment this will re-initialize
+  //      the context!!!
+  PHIST_CHK_GERR(ghost_sparsemat_init_rowfunc(mat,&src,map->mpicomm,weight),*iflag);
 //#if PHIST_OUTLEV >= PHIST_VERBOSE
   char *str;
   ghost_context_string(&str,ctx);
@@ -2143,9 +2147,6 @@ extern "C" void SUBR(sparseMat_create_fromRowFuncAndMap)(TYPE(sparseMat_ptr) *vA
 //#endif
   *vA = (TYPE(sparseMat_ptr))mat;
 
-#else
-  *iflag=PHIST_NOT_IMPLEMENTED;
-#endif
 PHIST_TASK_END(iflag);
   return;
 }
@@ -2156,47 +2157,18 @@ extern "C" void SUBR(sparseMat_create_fromRowFunc)(TYPE(sparseMat_ptr) *vA, phis
 {
 #include "phist_std_typedefs.hpp"
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
-
+#ifdef FIX_ME
   int iflag_in=*iflag;  
   int outlev = *iflag&PHIST_SPARSEMAT_QUIET ? PHIST_DEBUG : PHIST_INFO;
-
-  PHIST_CAST_PTR_FROM_VOID(const MPI_Comm, comm, vcomm, *iflag);
-
-#if FIX_ME
-
-  // if the user allows repartitioning, ask GHOST to do a distribution of the rows based on
-  // the memory bandwidth measured per MPI rank. Otherwise, use the same number of rows on 
-  // each MPI process.
-  ghost_context *ctx=NULL;
-  PHIST_CHK_IERR(context_create(&ctx,nrows,ncols,
-        GHOST_CONTEXT_DEFAULT,NULL,GHOST_SPARSEMAT_SRC_FUNC,*comm,get_proc_weight(),iflag),*iflag);
-
-  int sellC, sellSigma;
-  get_C_sigma(&sellC,&sellSigma,iflag_in, *((MPI_Comm*)vcomm));
-
   *iflag=0;
+  phist_map_ptr map=NULL;
+  PHIST_CHK_IERR(phist_map_create(&map,vcomm,nrows,iflag),*iflag);
   
-  // create the map object and call the create_fromRowFuncWithMap variant
-  phist_ghost_map* map = new phist_ghost_map(ctx,ctx->row_map,true);
-  {
-    ghost_sparsemat_flags flags=map->mtraits_template.flags;
-    map->mtraits_template.C = sellC;
-    map->mtraits_template.sortScope = sellSigma;
-        
-    if (map->mtraits_template.sortScope > 1) 
-    {
-      flags=(ghost_sparsemat_flags)(flags|GHOST_SPARSEMAT_PERMUTE);
-    }
 
-    map->mtraits_template.datatype = st::ghost_dt;
-
-    flags = (ghost_sparsemat_flags)(flags|get_perm_flag(iflag_in,outlev));
-    map->mtraits_template.flags = flags;
-  }
   *iflag=iflag_in | PHIST_SPARSEMAT_OWN_MAPS;
   PHIST_CHK_IERR(SUBR(sparseMat_create_fromRowFuncAndMap)(vA,map,maxnne,rowFunPtr,last_arg,iflag),*iflag);
 #else
-*iflag=PHIST_NOT_IMPLEMENTED;
+  *iflag=PHIST_NOT_IMPLEMENTED;
 #endif
 }
 

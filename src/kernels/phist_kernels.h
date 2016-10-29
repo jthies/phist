@@ -51,6 +51,10 @@ typedef phist_gidx ghost_gidx;
 //! - sdMat - a small dense matrix, replicated on all MPI processes. sdMats are always
 //!   stored in column-major order but may have a leading dimension larger than the number of rows.
 //! - sparseMat: sparse matrix in *any* storage format
+//! - context: encapsulates all information to construct a sparse matrix with the same shape and
+//!   distribution as another. The context is inherent to a sparseMat and must be obtained from such
+//!   an object after construction. For kernel libraries that do not have (or need) this concept,
+//!   we provide a default implementation (a struct containing the four maps of a sparseMat).
 //!
 //! The type-specific objects for mvecs, sdMats and sparseMats are called
 //! phist_Smvec, phist_Dmvec, phist_Cmvec etc. and their related functions defined in 
