@@ -441,7 +441,7 @@ PHIST_TASK_END(iflag)
 
 // implementation of gmres on several systems simultaneously
 void SUBR(blockedGMRESstates_iterate)(TYPE(const_linearOp_ptr) Aop, TYPE(const_linearOp_ptr) Pop,
-        TYPE(blockedGMRESstate_ptr) S[], int numSys, int* nIter, bool useIMGS, int* iflag)
+        TYPE(blockedGMRESstate_ptr) S[], int numSys, int* nIter, int useIMGS, int* iflag)
 {
 #include "phist_std_typedefs.hpp"
   *iflag = 0;

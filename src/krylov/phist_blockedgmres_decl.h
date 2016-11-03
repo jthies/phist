@@ -22,8 +22,7 @@
 //! because the iteration will otherwise not start up
 //! correctly. See test/krylov/TestBlockedGMRES for examples
 //! of using this object to build up a restarted GMRES.
-typedef struct TYPE(blockedGMRESstate)
-{
+typedef struct TYPE(blockedGMRESstate) {
   //! \name input and output args:
   //@{
   int id;               //! used to identify the system solved, set in blockedGMRESSates_create, don't modify!
@@ -104,7 +103,7 @@ typedef TYPE(blockedGMRESstate) const * TYPE(const_blockedGMRESstate_ptr);
 //!
 void SUBR( blockedGMRESstates_iterate ) (TYPE(const_linearOp_ptr) Op, 
                 TYPE(const_linearOp_ptr) rightPrecon,
-                TYPE(blockedGMRESstate_ptr) S_array[], int numSys, int *nIter, bool useIMGS, int* iflag);
+                TYPE(blockedGMRESstate_ptr) S_array[], int numSys, int *nIter, int useIMGS, int* iflag);
 
 //!
 //! create an array of gmresState objects. The method's input parameters

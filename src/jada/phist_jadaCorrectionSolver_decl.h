@@ -81,5 +81,5 @@ void SUBR(jadaCorrectionSolver_run)(TYPE(jadaCorrectionSolver_ptr) jdCorrSolver,
                                     const _ST_            sigma[],  TYPE(const_mvec_ptr)  res,      const int resIndex[], 
                                     const _MT_            tol[],    int                   maxIter,
                                     TYPE(mvec_ptr)        t,
-                                    bool useIMGS,                   bool abortAfterFirstConvergedInBlock,
+                                    int useIMGS,                   int abortAfterFirstConvergedInBlock,
                                     int *                 iflag);
