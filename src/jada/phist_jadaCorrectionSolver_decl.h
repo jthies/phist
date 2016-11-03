@@ -4,8 +4,7 @@
 //! The jadaCorrectionSolver uses the blockedGMRES to calculate approximate solutions to a set of Jacobi-Davidson correction equations.
 //! It provides a simple interface and takes care of restarting/pipelining issues
 //!
-typedef struct TYPE(jadaCorrectionSolver)
-{
+typedef struct TYPE(jadaCorrectionSolver) {
   //! \name internal data structures
   //@{
   int                   gmresBlockDim_;     //! number of blockedGMRES states iterated at once
@@ -14,8 +13,10 @@ typedef struct TYPE(jadaCorrectionSolver)
   phist_ElinSolv     method_;    //! supported values are GMRES, MINRES, CARP_CG and CUSTOM.
   
   int preconSkewProject;
+  int preconUpdate;
 
-  TYPE(const_linearOp_ptr) leftPrecon, rightPrecon;
+  TYPE(linearOp_ptr) leftPrecon;
+  TYPE(linearOp_ptr) rightPrecon;
 
   //! pointer to solver object if innerSolvType==USER_DEFINED
   void* customSolver_;
