@@ -135,13 +135,16 @@ public:
         // note: we make sure the complex matrices use the same map as the real ones, this sames some
         // trouble when comparing result vectors.
         iflag_=PHIST_SPARSEMAT_QUIET;
-        phist_ZsparseMat_create_fromRowFuncAndMap(&z_A_,map_,7,&ZMATFUNC,NULL,&iflag_);
+//        phist_ZsparseMat_create_fromRowFuncAndMap(&z_A_,map_,7,&ZMATFUNC,NULL,&iflag_);
+        iflag_=PHIST_NOT_IMPLEMENTED;
         ASSERT_EQ(0,iflag_);
         iflag_=PHIST_SPARSEMAT_QUIET;
-        phist_ZsparseMat_create_fromRowFuncAndMap(&z_A_shift0_,map_,7,&ZMATFUNC,&sigma_[0],&iflag_);
+//        phist_ZsparseMat_create_fromRowFuncAndMap(&z_A_shift0_,map_,7,&ZMATFUNC,&sigma_[0],&iflag_);
+        iflag_=PHIST_NOT_IMPLEMENTED;
         ASSERT_EQ(0,iflag_);
         iflag_=PHIST_SPARSEMAT_QUIET;
-        phist_ZsparseMat_create_fromRowFuncAndMap(&z_A_shift1_,map_,7,&ZMATFUNC,&sigma_[1],&iflag_);
+        //phist_ZsparseMat_create_fromRowFuncAndMap(&z_A_shift1_,map_,7,&ZMATFUNC,&sigma_[1],&iflag_);
+        iflag_=PHIST_NOT_IMPLEMENTED;
         ASSERT_EQ(0,iflag_);
 
       }

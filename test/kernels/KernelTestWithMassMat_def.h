@@ -26,7 +26,8 @@ class KernelTestWithMassMat<_ST_, _Nglob> : public virtual TestWithType< _ST_ >,
       // initialize rowFunc
       iflag_=phist::testing::PHIST_TG_PREFIX(hpd_tridiag)(-1,NULL,&gnrows,NULL,NULL);
       ASSERT_EQ(0,iflag_);
-      SUBR(sparseMat_create_fromRowFuncAndMap)(&B_,map,3,&phist::testing::PHIST_TG_PREFIX(hpd_tridiag),NULL,&iflag_);
+      //SUBR(sparseMat_create_fromRowFuncAndMap)(&B_,map,3,&phist::testing::PHIST_TG_PREFIX(hpd_tridiag),NULL,&iflag_);
+      iflag_=PHIST_NOT_IMPLEMENTED;
       ASSERT_EQ(0,iflag_);
 
         ASSERT_TRUE(B_ != NULL);
