@@ -86,9 +86,10 @@ PHIST_TASK_BEGIN(ComputeTask)
         mtraits.flags = flags;
         char* cfname=const_cast<char*>(filename);
 
-//  PHIST_CHK_IERR(phist::ghost_internal::context_create(&ctx,0,0,
-//        GHOST_CONTEXT_DEFAULT,cfname,GHOST_SPARSEMAT_SRC_MM,*comm,get_proc_weight(),iflag),*iflag);
+  // passing context==NULL results in a new context (and corresponding maps) being created,
+  // which is the behavior we want if no context/maps are given:
   PHIST_CHK_GERR(ghost_sparsemat_create(&mat,NULL,&mtraits,1),*iflag);                               
+  // this will setup the context and read the matrix from the file:
   PHIST_CHK_GERR(ghost_sparsemat_init_mm(mat,cfname,*comm,get_proc_weight()),*iflag);
   char *str;
   ghost_context_string(&str,mat->context);
@@ -97,7 +98,6 @@ PHIST_TASK_BEGIN(ComputeTask)
   ghost_sparsemat_info_string(&str,mat);
   PHIST_SOUT(outlev,"%s\n",str);
   free(str); str = NULL;
-//#endif
   *vA = (TYPE(sparseMat_ptr))mat;
 PHIST_TASK_END(iflag);
 }
@@ -145,7 +145,7 @@ PHIST_TASK_BEGIN(ComputeTask)
 
   PHIST_CHK_GERR(ghost_sparsemat_create(&mat,NULL,&mtraits,1),*iflag);                               
   PHIST_CHK_GERR(ghost_sparsemat_init_bin(mat,cfname,*comm,get_proc_weight()),*iflag);
-//#if PHIST_OUTLEV >= PHIST_VERBOSE
+
   char *str;
   ghost_context_string(&str,mat->context);
   PHIST_SOUT(outlev,"%s\n",str);
@@ -153,7 +153,7 @@ PHIST_TASK_BEGIN(ComputeTask)
   ghost_sparsemat_info_string(&str,mat);
   PHIST_SOUT(outlev,"%s\n",str);
   free(str); str = NULL;
-//#endif
+
   *vA = (TYPE(sparseMat_ptr))mat;
 PHIST_TASK_END(iflag);
 }
@@ -183,7 +183,7 @@ extern "C" void SUBR(sparseMat_read_bin_with_context)(TYPE(sparseMat_ptr)* A, ph
   *iflag=PHIST_NOT_IMPLEMENTED;
 }
 
-extern "C" void SUBR(sparseMat_read_hb_with_context)(TYPE(sparseMat_ptr)* A, phist_const_ctx_ptr ctx,
+extern "C" void SUBR(sparseMat_read_hb_with_context)(TYPE(sparseMat_ptr)* A, phist_const_context_ptr ctx,
         const char* filename,int* iflag)
 {
   *iflag=PHIST_NOT_IMPLEMENTED;
@@ -2062,6 +2062,9 @@ extern "C" void SUBR(sparseMat_create_fromRowFuncAndContext)(TYPE(sparseMat_ptr)
 {
 #include "phist_std_typedefs.hpp"
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
+#ifndef FIX_ME
+  *iflag=PHIST_NOT_IMPLEMENTED;
+#else
 
   int iflag_in=*iflag;
   int outlev = *iflag&PHIST_SPARSEMAT_QUIET ? PHIST_DEBUG : PHIST_INFO;
@@ -2148,6 +2151,7 @@ extern "C" void SUBR(sparseMat_create_fromRowFuncAndContext)(TYPE(sparseMat_ptr)
   *vA = (TYPE(sparseMat_ptr))mat;
 
 PHIST_TASK_END(iflag);
+#endif
   return;
 }
 
@@ -2157,19 +2161,56 @@ extern "C" void SUBR(sparseMat_create_fromRowFunc)(TYPE(sparseMat_ptr) *vA, phis
 {
 #include "phist_std_typedefs.hpp"
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
-#ifdef FIX_ME
-  int iflag_in=*iflag;  
-  int outlev = *iflag&PHIST_SPARSEMAT_QUIET ? PHIST_DEBUG : PHIST_INFO;
-  *iflag=0;
-  phist_map_ptr map=NULL;
-  PHIST_CHK_IERR(phist_map_create(&map,vcomm,nrows,iflag),*iflag);
-  
 
-  *iflag=iflag_in | PHIST_SPARSEMAT_OWN_MAPS;
-  PHIST_CHK_IERR(SUBR(sparseMat_create_fromRowFuncAndMap)(vA,map,maxnne,rowFunPtr,last_arg,iflag),*iflag);
-#else
-  *iflag=PHIST_NOT_IMPLEMENTED;
-#endif
+  int iflag_in=*iflag;
+  int outlev = *iflag&PHIST_SPARSEMAT_QUIET ? PHIST_DEBUG : PHIST_INFO;
+
+  *iflag=0;
+  
+  PHIST_CAST_PTR_FROM_VOID(MPI_Comm,mpicomm,vcomm,*iflag);
+  
+  PHIST_TASK_DECLARE(ComputeTask)
+  PHIST_TASK_BEGIN(ComputeTask)
+
+  int sellC, sellSigma;
+  phist::ghost_internal::get_C_sigma(&sellC,&sellSigma,iflag_in,*mpicomm);
+  
+  ghost_sparsemat_src_rowfunc src = GHOST_SPARSEMAT_SRC_ROWFUNC_INITIALIZER;
+  src.func = rowFunPtr;
+  src.maxrowlen = maxnne;
+  src.arg=last_arg;
+  src.gnrows = nrows;
+  src.gncols = ncols;
+
+
+  ghost_sparsemat* mat = NULL;
+
+  ghost_sparsemat_traits mtraits=(ghost_sparsemat_traits)GHOST_SPARSEMAT_TRAITS_INITIALIZER;
+
+  mtraits.C=sellC;
+  mtraits.sortScope=sellSigma;
+
+  PHIST_SOUT(outlev, "Creating sparseMat with SELL-%d-%d format.\n", mtraits.C, mtraits.sortScope);
+
+  mtraits.datatype = st::ghost_dt;
+  // passing in context==NULL means: create a new context and maps. This happens
+  // in _init_rowfunc below, where we also get a chance to pass in an mpicomm.
+  PHIST_CHK_GERR(ghost_sparsemat_create(&mat,NULL,&mtraits,1),*iflag);                               
+  mtraits.flags=GHOST_SPARSEMAT_DEFAULT;
+  double weight=phist::ghost_internal::get_proc_weight();
+  PHIST_CHK_GERR(ghost_sparsemat_init_rowfunc(mat,&src,*mpicomm,weight),*iflag);
+
+  char *str;
+  ghost_context_string(&str,mat->context);
+  PHIST_SOUT(outlev,"%s\n",str);
+  free(str); str = NULL;
+  ghost_sparsemat_info_string(&str,mat);
+  PHIST_SOUT(outlev,"%s\n",str);
+  free(str); str = NULL;
+
+  *vA = (TYPE(sparseMat_ptr))mat;
+
+PHIST_TASK_END(iflag);
 }
 
 extern "C" void SUBR(mvec_write_bin)(TYPE(const_mvec_ptr) vV, const char* filename, int* iflag)
