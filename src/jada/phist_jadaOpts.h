@@ -1,7 +1,9 @@
 #ifndef PHIST_JADAOPTS_H
 #define PHIST_JADAOPTS_H
 
+#ifndef DOXYGEN
 #include "phist_enums.h"
+#endif
 
 #ifdef __cplusplus
 extern "C" {

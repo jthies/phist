@@ -204,7 +204,7 @@ void SUBR(blockedGMRESstate_reset)(TYPE(blockedGMRESstate_ptr) S, TYPE(const_mve
 // states in a vectorized way, x+=Vs
 void SUBR(blockedGMRESstates_updateSol)(TYPE(blockedGMRESstate_ptr) S[], int numSys, 
         TYPE(const_linearOp_ptr) rightPrecon,
-        TYPE(mvec_ptr) x, _MT_* resNorm, bool scaleSolutionToOne, int* iflag)
+        TYPE(mvec_ptr) x, _MT_* resNorm, int scaleSolutionToOne, int* iflag)
 {
 #include "phist_std_typedefs.hpp"
   PHIST_ENTER_FCN(__FUNCTION__);

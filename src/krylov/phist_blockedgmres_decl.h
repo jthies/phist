@@ -148,7 +148,7 @@ void SUBR( blockedGMRESstate_reset ) (TYPE(blockedGMRESstate_ptr) S, TYPE(const_
 //!
 void SUBR( blockedGMRESstates_updateSol ) (TYPE(blockedGMRESstate_ptr) S_array[], int numSys,
                 TYPE(const_linearOp_ptr) rightPrecon,
-                TYPE(mvec_ptr) x, _MT_ *resNorm, bool scaleSolutionToOne, int* iflag);
+                TYPE(mvec_ptr) x, _MT_ *resNorm, int scaleSolutionToOne, int* iflag);
 
 //@}
 //@}
