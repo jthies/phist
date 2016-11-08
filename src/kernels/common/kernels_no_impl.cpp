@@ -426,3 +426,4 @@ extern "C" void SUBR(mvec_combine)(TYPE(mvec_ptr) V, phist_Sconst_mvec_ptr reV, 
 #include "kernels_no_gpu.cpp"
 #include "kernels_no_io.cpp"
 #include "kernels_no_fused.cpp"
+#include "default_context_def.hpp"

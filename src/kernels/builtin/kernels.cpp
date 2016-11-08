@@ -271,6 +271,7 @@ void phist_maps_compatible(phist_const_map_ptr map1, phist_const_map_ptr map2, i
 } //extern "C"
 
 #include "phist_gen_d.h"
+#include "../common/default_context_def.hpp"
 #include "kernels_def.hpp"
 #include "carp_def.hpp"
 #include "../common/kernels_no_io.cpp"

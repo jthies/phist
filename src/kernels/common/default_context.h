@@ -1,3 +1,6 @@
+#ifndef PHIST_INTERNAL_DEFAULT_CONTEXT_HPP
+#define PHIST_INTERNAL_DEFAULT_CONTEXT_HPP
+
 #include "phist_config.h"
 #include "phist_void_aliases.h"
 #include "phist_kernels.h"
@@ -30,3 +33,5 @@ namespace phist
   }
 }
 
+
+#endif
