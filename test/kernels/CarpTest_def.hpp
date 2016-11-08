@@ -70,6 +70,10 @@ public:
     b=vec3_;
 
     I_=NULL;
+    z_A_=NULL;
+    z_A_shift0_=NULL;
+    z_A_shift1_=NULL;
+    
     if (typeImplemented_ && !problemTooSmall_)
     {
       iflag_=PHIST_SPARSEMAT_OPT_CARP | getSparseMatCreateFlag(_N_,_NV_);
