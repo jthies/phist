@@ -67,6 +67,9 @@ class KernelTestWithSparseMat<_ST_, _Nglob, _MatName, _multipleDefinitionCounter
         // the matrix is square and symmetrically permuted.
         phist_maps_compatible(range_map,domain_map,&iflag_);
         ASSERT_EQ(0,iflag_);
+        
+        SUBR(sparseMat_get_context)(A_,&context_,&iflag_);
+        ASSERT_EQ(0,iflag_);
 
         // now setup the map
         KernelTestWithMap<_Nglob>::SetUpTestCaseWithMap(domain_map);
@@ -111,8 +114,11 @@ class KernelTestWithSparseMat<_ST_, _Nglob, _MatName, _multipleDefinitionCounter
     }
 
     static TYPE(sparseMat_ptr) A_;
+    static phist_const_context_ptr context_;
 };
 
 
-template<phist_gidx _Nglob, MATNAME_ENUM _MatName, int _multipleDefinitionCounter>
-TYPE(sparseMat_ptr) KernelTestWithSparseMat<_ST_, _Nglob, _MatName, _multipleDefinitionCounter> :: A_;
+template<phist_gidx _Nglob,MATNAME_ENUM _MatName,int _multipleDefinitionCounter>
+TYPE(sparseMat_ptr) KernelTestWithSparseMat<_ST_,_Nglob,_MatName,_multipleDefinitionCounter> :: A_;
+template<phist_gidx _Nglob,MATNAME_ENUM _MatName,int _multipleDefinitionCounter>
+phist_const_context_ptr KernelTestWithSparseMat<_ST_,_Nglob,_MatName,_multipleDefinitionCounter> :: context_;

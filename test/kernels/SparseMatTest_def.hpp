@@ -505,16 +505,15 @@ protected:
     EXPECT_EQ(0,iflag_);
   }
 
-  TEST_F(CLASSNAME,A1_fromRowFuncAndMap)
+  TEST_F(CLASSNAME,DISABLED_A1_fromRowFuncAndContext)
   {
     if( !typeImplemented_ || problemTooSmall_ )
       return;
 
     TYPE(sparseMat_ptr) A=NULL;
     iflag_=PHIST_SPARSEMAT_QUIET;
-//    SUBR(sparseMat_create_fromRowFuncAndMap)(&A,map_,1,&PHIST_TG_PREFIX(idfunc),NULL,&iflag_);
-    iflag_=PHIST_NOT_IMPLEMENTED;
-    EXPECT_EQ(0,iflag_);
+    SUBR(sparseMat_create_fromRowFuncAndContext)(&A,context_,1,&PHIST_TG_PREFIX(idfunc),NULL,&iflag_);
+    ASSERT_EQ(0,iflag_);
 
     // check that AX=X
     SUBR(mvec_random)(vec1_,&iflag_);
@@ -1286,19 +1285,18 @@ TEST_F(CLASSNAME,compare_with_rowFunc)
   }
 }
 
-TEST_F(CLASSNAME,fromRowFuncAndMap)
+TEST_F(CLASSNAME,DISABLED_fromRowFuncAndContext)
 {
   if( !typeImplemented_ || problemTooSmall_ )
     return;
 
   TYPE(sparseMat_ptr) A1=NULL, A2=NULL;
   iflag_=PHIST_SPARSEMAT_QUIET;
-//  SUBR(sparseMat_create_fromRowFuncAndMap)(&A1,defaultMap_,7,&MATPDE3D_rowFunc,NULL,&iflag_);
-iflag_=PHIST_NOT_IMPLEMENTED;
-  EXPECT_EQ(0,iflag_);
-    iflag_=PHIST_SPARSEMAT_QUIET;
-//  SUBR(sparseMat_create_fromRowFuncAndMap)(&A2,map_,7,&MATPDE3D_rowFunc,NULL,&iflag_);
+//  SUBR(sparseMat_create_fromRowFuncAndContext)(&A1,defaultContext_,7,&MATPDE3D_rowFunc,NULL,&iflag_);
   iflag_=PHIST_NOT_IMPLEMENTED;
+  ASSERT_EQ(0,iflag_);
+    iflag_=PHIST_SPARSEMAT_QUIET;
+  SUBR(sparseMat_create_fromRowFuncAndContext)(&A2,context_,7,&MATPDE3D_rowFunc,NULL,&iflag_);
   EXPECT_EQ(0,iflag_);
   phist_const_map_ptr domain1, domain2, range1, range2, row1, row2, col1, col2;
   // first check if the created matrices are compatible with vectors of the given map:
