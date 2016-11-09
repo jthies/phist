@@ -87,6 +87,7 @@ class phist_jadaOpts_t(_ct.Structure):
                              * (in practice this may mean a more accurate orthogonalization etc.)
                              */
        int innerSolvStopAfterFirstConverged;
+       int innerSolvMaxProjectionSpace;
        
        //! pointer to a inearOp whose apply_shifted function serves as a preconditioner for the inner solver. May be NULL (no preconditioning) or created by phist_Xprecon_create.
        //! This pointer can be used to pass an already computed preconditioner to the Jacobi-Davidson solver. The preconditioner will not be updated explicitly during the run, but
@@ -101,6 +102,9 @@ class phist_jadaOpts_t(_ct.Structure):
 
        //! option string passed to precon_create alongside preconType (if it is not NO_PRECON or INVALID_PRECON)
        char preconOpts[1024];
+       
+       int preconSkewProject;
+       int preconUpdate;
 
        
          //! pointer to solver object if innerSolvType==USER_DEFINED
@@ -154,9 +158,12 @@ class phist_jadaOpts_t(_ct.Structure):
                 ("innerSolvMaxIters",   c_int),
                 ("innerSolvRobust",     c_int),
                 ("innerSolvStopAfterFirstConverged", c_int),
+                ("innerSolvMaxProjectionSpace", c_int),
                 ("preconOp",            c_void_p),
                 ("preconType",          _phist_tools.Eprecon),
                 ("preconOpts",          c_char*1024),
+                ("preconSkewProject",   c_int),
+                ("preconUpdate",   c_int),
                 ("customSolver",        c_void_p),
                 ("customSolver_run",    c_void_p),
                 ("customSolver_run1",  c_void_p),
