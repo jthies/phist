@@ -2,12 +2,14 @@
 #define PHIST_TYPEDEFS_H
 
 #include "phist_config.h"
+
+#ifndef DOXYGEN
+
 /* needs to be included before system headers for some intel compilers+mpi */
 #ifdef PHIST_HAVE_MPI
 #include <mpi.h>
 #endif
 
-#ifndef DOXYGEN
 #ifdef __cplusplus
 //#include <cinttypes>
 #include <complex>
@@ -17,7 +19,7 @@
 #include <complex.h>
 #include <stddef.h>
 #endif
-#endif
+#endif /* DOXYGEN */
 
 #ifdef __cplusplus
 //! single precision complex type
