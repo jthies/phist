@@ -15,7 +15,7 @@
 
 #include <stdlib.h>
 
-#include "prec_helpers.h"
+#include "phist_prec_helpers.h"
 #include "phist_macros.h"
 #include "phist_typedefs.h"
 #include "mlapack_wrapper.h"

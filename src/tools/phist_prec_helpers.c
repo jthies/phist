@@ -13,7 +13,7 @@
 #include <omp.h>
 #endif
 #include "phist_defs.h"
-#include "prec_helpers.h"
+#include "phist_prec_helpers.h"
 
 // precise reduction of gathered MPI results of all processes for block size 1
 void prec_reduction_1(int n, const double *restrict s_, const double *restrict c_, double *restrict r, double *restrict rC)

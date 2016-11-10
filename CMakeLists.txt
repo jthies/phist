@@ -675,7 +675,7 @@ if (PHIST_KERNEL_LIB STREQUAL "builtin")
                           )
   if(PHIST_HIGH_PRECISION_KERNELS)
     set (PHIST_KERNEL_SOURCE ${PHIST_KERNEL_SOURCE}
-                          ${PROJECT_SOURCE_DIR}/src/kernels/builtin/prec_helpers.c
+                          ${PROJECT_SOURCE_DIR}/src/tools/phist_prec_helpers.c
                           ${PROJECT_SOURCE_DIR}/src/core/DsdFact_prec_kernels.c
                           ${PROJECT_SOURCE_DIR}/src/core/mlapack_wrapper.cpp
                           ${PROJECT_SOURCE_DIR}/src/kernels/builtin/sdmat_kernels_prec.c

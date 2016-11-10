@@ -15,7 +15,7 @@
 #include <stdlib.h>
 
 #ifdef PHIST_HIGH_PRECISION_KERNELS
-#include "prec_helpers.h"
+#include "phist_prec_helpers.h"
 #else
 static inline _Bool is_aligned(const void *restrict pointer, size_t byte_count)
 {

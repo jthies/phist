@@ -13,7 +13,7 @@
 #include <omp.h>
 #endif
 #include "phist_defs.h"
-#include "prec_helpers.h"
+#include "phist_prec_helpers.h"
 
 
 // more accurate gemm product x <- x*m AVX2 kernel for blocksize 4

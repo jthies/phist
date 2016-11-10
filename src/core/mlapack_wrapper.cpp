@@ -5,7 +5,7 @@
 */
 
 #include "phist_config.h"
-#include "prec_helpers.h"
+#include "phist_prec_helpers.h"
 #include "phist_defs.h"
 
 #ifdef PHIST_HAVE_MPACK_QD
