@@ -13,22 +13,19 @@ namespace phist
     class default_context 
     {
       public:
+      
+      default_context(phist_const_map_ptr row_map=NULL,
+                      phist_const_map_ptr range_map=NULL,
+                      phist_const_map_ptr domain_map=NULL);
 
+      phist_const_map_ptr row_map;
       phist_const_map_ptr range_map;
       phist_const_map_ptr domain_map;
-      phist_const_map_ptr row_map;
     };
 
     static std::map<const void*,default_context*> contextCollection;
     
-    void delete_default_context(const void* A)
-    {
-      if (contextCollection[A]!=NULL)
-      {
-        delete contextCollection[A];
-        contextCollection.erase(A);
-      }
-    }
+    void delete_default_context(const void* A);
   
   }
 }
