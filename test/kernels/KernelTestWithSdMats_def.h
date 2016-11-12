@@ -372,12 +372,105 @@ static void PrintSdMat(int outlev, std::string label,
     // copy data to buffer
     for(int j = 0; j < n; j++)
     {
-      for(int i = 0; i <= m; i++)
+      for(int i = 0; i <= j; i++)
       {
         max_err = std::max(max_err, std::abs(mat_raw[j*lda+i]-st::conj(mat_raw[i*lda+j])));
       }
     }
     return max_err;
+  }
+
+  // compute ABC = A*B*C, optionally using the transpose of either A,B and/or C
+  static void triple_product(TYPE(const_sdMat_ptr) A, bool transA, 
+                             TYPE(const_sdMat_ptr) B, bool transB,
+                             TYPE(const_sdMat_ptr) C, bool transC,
+                             TYPE(      sdMat_ptr) ABC, int *iflag)
+  {
+    int nrA,ncA,nrB,ncB,nrC,ncC,nrABC,ncABC;
+    PHIST_CHK_IERR(SUBR(sdMat_get_nrows)(A,&nrA,iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(sdMat_get_ncols)(A,&ncA,iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(sdMat_get_nrows)(B,&nrB,iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(sdMat_get_ncols)(B,&ncB,iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(sdMat_get_nrows)(C,&nrC,iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(sdMat_get_ncols)(C,&ncC,iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(sdMat_get_nrows)(ABC,&nrABC,iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(sdMat_get_ncols)(ABC,&ncABC,iflag),*iflag);
+/*
+    std::cout << "A=[...\n";
+    SUBR(sdMat_print)(A,&iflag_);
+    std::cout << "];\n";
+    std::cout << "opA=A"<< (transA?"'":"") << ";\n";
+    std::cout << "B=[...\n";
+    SUBR(sdMat_print)(B,&iflag_);
+    std::cout << "];\n";
+    std::cout << "opB=B"<< (transB?"'":"")<<";\n";
+    std::cout << "C=[...\n";
+    SUBR(sdMat_print)(C,&iflag_);
+    std::cout << "];\n";
+    std::cout << "opC=C"<< (transC?"'":"")<<";\n";
+    std::cout << "opABC=opA*opB*opC;\n";
+*/    
+    // take transpose into account when checking dimensions
+    if (transA) std::swap(nrA,ncA);
+    if (transB) std::swap(nrB,ncB);
+    if (transC) std::swap(nrC,ncC);
+
+    // check if the dimensions are compatible
+    PHIST_CHK_IERR( *iflag= nrABC==nrA?0:-1, *iflag );
+    PHIST_CHK_IERR( *iflag= ncABC==ncC?0:-2, *iflag );
+    PHIST_CHK_IERR( *iflag= ncA==nrB?0:-3, *iflag );
+    PHIST_CHK_IERR( *iflag= ncB==nrC?0:-4, *iflag );
+    
+    // create temporary object for A*B (or A^T*B etc.)
+    TYPE(sdMat_ptr) AB=NULL;
+    PHIST_CHK_IERR(SUBR(sdMat_create)(&AB,nrA,ncB,comm_,iflag),*iflag);
+    SdMatOwner<_ST_> _AB(AB);
+    
+    if (transA)
+    {
+      if (transB)
+      {
+        // (A'*B') = (B*A)' since we don't have a kernel function for this case
+        TYPE(sdMat_ptr) BA=NULL;
+        PHIST_CHK_IERR(SUBR(sdMat_create)(&BA,nrB,ncA,comm_,iflag),*iflag);
+        SdMatOwner<_ST_> _BA(BA);
+        PHIST_CHK_IERR(SUBR(sdMat_times_sdMat)(st::one(),B,A,st::zero(),BA,iflag),*iflag);
+        PHIST_CHK_IERR(SUBR(sdMatT_add_sdMat)(st::one(),BA,st::zero(),AB,iflag),*iflag);
+      }
+      else
+      {
+        PHIST_CHK_IERR(SUBR(sdMatT_times_sdMat)(st::one(),A,B,st::zero(),AB,iflag),*iflag);
+      }
+    }
+    else
+    {
+      if (transB)
+      {
+        PHIST_CHK_IERR(SUBR(sdMat_times_sdMatT)(st::one(),A,B,st::zero(),AB,iflag),*iflag);
+      }
+      else
+      {
+        PHIST_CHK_IERR(SUBR(sdMat_times_sdMat)(st::one(),A,B,st::zero(),AB,iflag),*iflag);
+      }
+    }
+/*
+    std::cout << "AB=[...\n";
+    SUBR(sdMat_print)(AB,&iflag_);
+    std::cout << "];\n";
+*/
+    if (transC)
+    {
+      PHIST_CHK_IERR(SUBR(sdMat_times_sdMatT)(st::one(),AB,C,st::zero(),ABC,iflag),*iflag);
+    }
+    else
+    {
+      PHIST_CHK_IERR(SUBR(sdMat_times_sdMat)(st::one(),AB,C,st::zero(),ABC,iflag),*iflag);
+    }
+/*
+    std::cout << "ABC=[...\n";
+    SUBR(sdMat_print)(ABC,&iflag_);
+    std::cout << "];\n";
+*/
   }
   
   static TYPE(sdMat_ptr) mem1_, mem2_, mem3_, mem4_;

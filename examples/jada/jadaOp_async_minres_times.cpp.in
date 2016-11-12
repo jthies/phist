@@ -15,7 +15,7 @@
 #include "phist_enums.h"
 #include "phist_kernels.h"
 #include "phist_operator.h"
-#include "phist_jadaOp.hpp"
+#include "phist_jadaOp.h"
 #include ${PHIST_TG_HFILE}
 #include "phist_ScalarTraits.hpp"
 #include "phist_driver_utils.h"

@@ -14,6 +14,8 @@
 #include "phist_mpi_kernels.h"
 #include "TestWithType.h"
 
+#include "phist_memOwner.hpp"
+
 using namespace testing;
 
 /*! Test fixure. 

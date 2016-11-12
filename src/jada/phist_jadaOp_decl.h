@@ -1,0 +1,45 @@
+//! create projected and shifted operator for Jacobi-Davidson,
+//! op*X = (I-BV*V')(A*X+B*X*sigma)(I-V*BV')
+//! by setting the appropriate pointers. No data is copied.
+//! For B_op==NULL, the pre-projection I-V*BV') is
+//! omitted to save reductions (and BV is ignored).
+//! 
+//! We make use of the apply_shifted function in the given A_op object. To implement
+//! the operation (A+sigma*B)X for B!=I, the A_op should implement this in apply_shifted.
+//! To construct such an operator from two sparseMats, SUBR(linearOp_wrap_sparseMat_pair)
+//! can be used.
+void SUBR(jadaOp_create)(TYPE(const_linearOp_ptr)    AB_op,
+                         TYPE(const_linearOp_ptr)     B_op,
+                         TYPE(const_mvec_ptr)  V,       TYPE(const_mvec_ptr)  BV,
+                         const _ST_            sigma[], int                   nvec,
+                         TYPE(linearOp_ptr)          jdOp,    int*                  iflag);
+
+void SUBR(jadaOp_delete)(TYPE(linearOp_ptr)  jdOp, int *iflag);
+
+//! create a preconditioner for the inner solve in Jacobi-Davidson.                                      
+//!                                                                                                      
+//! Given a linear operator that is a preconditioner for A-sigma_j*B, this function will simply          
+//! wrap it up to use apply_shifted when apply() is called. We need this because our implementations     
+//! of blockedGMRES and MINRES are not aware of the shifts so they can only call apply in the precon-    
+//! ditioning operator. Obviously not all preconditioners are able to handle varying shifts without      
+//! recomputing, this is not taken into account by this function:in that case the input P_op must be     
+//! updated beforehand, or the existing preconditioner for e.g. A or A-tau*B is applied.                 
+//!                                                                                                      
+//! If V is given, the preconditioner application will include a skew-projection                         
+//!                                                                                                      
+//! Y <- (I - P_op\V (BV'P_op\V)^{-1} (BV)') P_op\X                                                      
+//!                                                                                                      
+//! If BV==NULL, BV=V is assumed.                                                                        
+void SUBR(jadaPrec_create)(TYPE(const_linearOp_ptr) P_op, 
+                           TYPE(const_mvec_ptr)  V,
+                           TYPE(const_mvec_ptr)  BV,
+                           const _ST_ sigma[], int nvec, 
+                           TYPE(linearOp_ptr) jdPrec,
+                           int* iflag);
+
+//! add a left preconditioner created by jadaPrec_create to a jadaOp.
+
+//! The effect of the apply function will afterwards by Y <- alpha*(jadaPrec*jadaOp*X) + beta*Y,
+//! the projections used are determined by the AB_op and jadaPrec operators. If jadaPrec==NULL, 
+//! the operator is reset to it's original effect.
+void SUBR(jadaOp_set_leftPrecond)(TYPE(linearOp_ptr) jadaOp, TYPE(const_linearOp_ptr) jadaPrec, int* iflag);

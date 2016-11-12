@@ -279,3 +279,53 @@ public:
     AA_op.destroy(&AA_op,&iflag_);
     ASSERT_EQ(0,iflag_);
   }
+
+  TEST_F(CLASSNAME,linearOp_identity)
+  {
+    if (!typeImplemented_ || problemTooSmall_) return;
+
+    TYPE(linearOp) I_op;
+    SUBR(linearOp_identity)(&I_op,map_,map_,&iflag_);
+    ASSERT_EQ(0,iflag_);
+    
+    ASSERT_TRUE(map_==I_op.range_map);
+    ASSERT_TRUE(map_==I_op.domain_map);
+
+    ST v1=st::prand();
+    ST v2=st::prand();
+    SUBR(mvec_put_value)(vec1_,v1,&iflag_);
+    ASSERT_EQ(0,iflag_);
+    SUBR(mvec_put_value)(vec2_,v2,&iflag_);
+    ASSERT_EQ(0,iflag_);
+    
+    _ST_ alpha=st::prand(), beta=st::prand();
+
+    I_op.apply(alpha,I_op.A,vec1_,beta,vec2_,&iflag_);
+    ASSERT_EQ(0,iflag_);
+    ASSERT_NEAR(mt::one(),MvecEqual(vec2_,alpha*v1+beta*v2),VTest::releps());
+    
+    _ST_ sigma[nvec_],asig_plusI[nvec_];
+    for (int i=0; i<nvec_; i++) 
+    {
+      sigma[i]=-st::prand();
+      asig_plusI[i]=alpha*(st::one()+sigma[i]);
+    }
+    
+    SUBR(mvec_random)(vec1_,&iflag_);
+    ASSERT_EQ(0,iflag_);
+    SUBR(mvec_random)(vec2_,&iflag_);
+    ASSERT_EQ(0,iflag_);
+    SUBR(mvec_add_mvec)(st::one(),vec2_,st::zero(),vec3_,&iflag_);
+    ASSERT_EQ(0,iflag_);
+    
+    // vec3 contains alpha*sigma[j]*vec1+beta*vec2
+    SUBR(mvec_vadd_mvec)(asig_plusI,vec1_,beta,vec3_,&iflag_);
+    
+    I_op.apply_shifted(alpha,I_op.A,sigma,vec1_,beta,vec2_,&iflag_);
+    ASSERT_EQ(0,iflag_);
+    ASSERT_NEAR(mt::one(),MvecsEqual(vec2_,vec3_),VTest::releps());
+        
+    // clean up the operator
+    I_op.destroy(&I_op,&iflag_);
+    ASSERT_EQ(0,iflag_);
+  }

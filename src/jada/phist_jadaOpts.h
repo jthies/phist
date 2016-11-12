@@ -46,9 +46,12 @@ int initialShiftIters; // perform given number of iterations with a fixed shift
  * inner solver configuration     *
  **********************************/
 
-phist_ElinSolv innerSolvType; //! GMRES, MINRES, CARP_CG, USER_DEFINED currently supported.
+phist_ElinSolv innerSolvType; //! GMRES, MINRES, CARP_CG, USER_DEFINED and NO_LINSOLV currently supported.
                               //! If set to USER_DEFINED, you have to provide the customSolver*
                               //! interface below.
+                              //! The value "NO_LINSOLV", combined with a preconditioner, leads to an Olsen
+                              //! method (only the preconditioner is applied, with appropriate projections 
+                              //! if preconSkewProject!=0 is set.
 
 int innerSolvBlockSize;
 int innerSolvMaxBas;
@@ -76,6 +79,16 @@ int innerSolvRobust; /*! extra effort to get good jada updates
 
   //! option string passed to precon_create alongside preconType (if it is not NO_PRECON or INVALID_PRECON)
   char preconOpts[1024];
+  
+  //! if 0, just apply the preconditioner K "as is"
+  //! if 1, apply skew-projection with the currend approximation(s) q, giving the operator
+  //!       (I-(K\q) ((Bq)'(K\q))^{-1}(Bq)')K^{-1}.
+  //! if 2, a symmetric variant with pre- and postprojection). This is currently not imple-
+  //!       mented, though, because we currently only have MINRES to exploit symmetry in the
+  //!       inner iterations. Unless all locked eigenvectors are projected out, the resulting
+  //!       operator will be indefinite even if K is hpd, so it can't be used as a precon-
+  //!       ditioner for MINRES anyway.
+  int preconSkewProject;
 
   //! pointer to solver object if innerSolvType==USER_DEFINED
   void* customSolver;

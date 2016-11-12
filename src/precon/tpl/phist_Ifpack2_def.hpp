@@ -77,6 +77,13 @@ class PreconTraits<ST,phist_IFPACK>
     return;
   }
 
+  static void Update(void* P, const void* A, ST sigma, const void* B,
+        const void* Vkern, const void* BVkern,
+        int* iflag)
+  {
+    PHIST_CHK_IERR(*iflag=PHIST_NOT_IMPLEMENTED,*iflag);
+  }                                                                             
+
   static void Delete(void* vP, int *iflag)
   {
     PHIST_ENTER_FCN(__FUNCTION__);

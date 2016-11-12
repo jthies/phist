@@ -1,57 +1,109 @@
+// this file implements various forms of (skew-)projected       
+// linear operators that can be used in Jacobi-Davidson type    
+// algorithms. The general form is:                             
+//                                                              
+// post-project:   y <- (I - W V')*Op          * x  (1)         
+// pre-/post:      y <- (I - W V')*Op*(I-V W') * x  (2)         
+//                                                              
+// In Jacobi-Davidson, we want to perform an iterative solve    
+// (e.g. GMRES) for the correction equation. The                
+// corresponding operator we put in the GMRES solver is         
+//                                                              
+// (I-QQ')(A-sigma_j I)               for standard EVP, and     
+// (I-(BQ)Q')(A-sigma_j B)(I-Q(BQ)')  for generalized EVP with  
+//                              hpd B. Here Q'BQ=I.             
+//                                                              
+// Q = [Q_locked v] is the basis of locked eigenvectors,        
+//  extended by the current search direction(s) v (also called  
+// Qtil in the JaDa implementations).                           
+//                                                              
+// We want the GMRES method to run for several shifts           
+// sigma_j simultaneously, which we achieve by using the        
+// operator's apply_shifted function.                           
+//                                                              
+// skew-projected preconditioning                               
+// ==============================                               
+//                                                              
+/// If the jada option "preconSkewProject" is not 0, the correc-
+// tion equation is preconditioned using (here K is a precondi- 
+// tioner for (A-sigma*B):                                      
+//                                                              
+// x <- (I - (K\V)*((BV)'K\V)^{-1} (BV)') K\y   (3)             
+//                                                              
+// To save memory and projection operations we use V=v instead  
+// of V=Q (which would project all converged eigenvectors out). 
+// This can be implemented by (1) using W = (K\v)((Bv)'K\v)^{-1}
+// and V=Bv. If K is symmetric and we want to preserve this     
+// property, pre-/post (2) could be used, too.                  
+//                                                              
+// derivation:                                                  
+//                                                              
+// correction equation with B=B' hpd:                           
+//                                                              
+// (A - sigma*B)t = Q*S -r      with S s.t.    Q'Bt=0           
+//                                                              
+// approximate LHS by a preconditioner K:                       
+//                                                              
+// t_      = K \ (Q*S - r_)            s.t. t_'Bv=0             
+//                                                              
+// Q'Bt_   = (Q'BK\Q)*S - Q'BK\r_      = 0                      
+// =>    S = (Q'B*K\Q)^{-1} (Q'BK\r_)                           
+//                                                              
+// Let y:=-r_ and x:=t_ here.                                   
+// this results in the preconditioning operator (3)             
+//                                                              
 
-// these are some thoughts I wrote down some time ago, I keep
-// them here for the moment to look at later
-
-//! in Jacobi-Davidson, we want ot perform an iterative solve
-//! (GMRES to start with) for the correction equation. The   
-//! corresponding operator we put in the GMRES solver is     
-//!                                                          
-//! (I-BVV') M\(A-sigma_j B),                                 
-//!                                                          
-//! where V = [Q v] is the basis                             
-//! of converged eigenvectors combined with the current      
-//! search space, and M is some preconditioner for a nearby  
-//! matrix A-tau*B). We want the GMRES method to run in para-
-//! lel for several shifts sigma_j, which we achieve by using
-//! the task-buffer programming model (cf. examples/sched/...
-//! main_task_model.c for a simple example). For now we let  
-//! the jadaOp handle the orthogonalization wrt. V, but in   
-//! the end we can hopefully use some bordered preconditio-  
-//! ning (like in HYMLS) for the matrix                      
-//!                                                          
-//! A-tau*B  BV                                               
-//!     V'   0                                               
-//!                                                          
-//! There are in principle two options, use (A-sigma_jI) as  
-//! operator and "(I-BVV')M\" as left preconditioner, or use  
-//! (I-BVV')(A-sigma_jB) as operator and M\ as right precond. 
-//! The first is more suitable for the case where the pre-   
-//! conditioner can handle the border, the second if flexible
-//! ible GMRES has to be used, e.g. in case of nested ite-   
-//! rations on the separators in DSC. Combining the right    
-//! preconditioner with the projection should also be fine,  
-//! the operator is then (A-sigma_j B) M\(I-VV'B), I think    
-//! that should give the same results more or less.
-//!
-//! Remark: for the generalized eigenvalue problem with hpd. B
-//!         we need always both projections, e.g. Y = (I-BVV')(A*X_-B*X_*sigma)
-//!         with X_ = (I-VV'B)X
-//!         (melven)
-//! Remark: if we directly store -sigma, we can avoid an additional vector operation
-//!         (as the mvec_vadd_mvec doesn't provei an additional scaling argument)
 
 
 // private struct to keep all the pointers we need in order to apply the operator.
-typedef struct TYPE(jadaOp_data)
+class TYPE(jadaOp_data)
 {
+  public:
+  
+  TYPE(jadaOp_data)(){}
+
   TYPE(const_linearOp_ptr)    AB_op;   // operator of the general matrix A
   TYPE(const_linearOp_ptr)    B_op;   // operator of the hpd. matrix B, assumed I when NULL
+  TYPE(const_linearOp_ptr)    leftPrecon_op;   // left preconditioning operator
   TYPE(const_mvec_ptr)  V;      // B-orthonormal basis
   TYPE(const_mvec_ptr)  BV;     // B*V
   const _ST_*           sigma;  // array of NEGATIVE shifts, assumed to have correct size; TODO: what about 'complex' shifts for real JDQR?
   TYPE(mvec_ptr)        X_proj; // temporary storage for (I-VV'B)X, only used for B!= NULL
-} TYPE(jadaOp_data);
+  MvecOwner<_ST_> _X_proj, _V_prec; // these objects make sure that some temporary storage is freed when the object is deleted
+};
 
+
+//! simply apply original operator shifted, no pre- or postprojection
+void SUBR(jadaOp_apply_project_none)(_ST_ alpha, const void* op, TYPE(const_mvec_ptr) X,
+    _ST_ beta, TYPE(mvec_ptr) Y, int* iflag)
+{
+#include "phist_std_typedefs.hpp"
+  PHIST_ENTER_FCN(__FUNCTION__);
+  PHIST_CAST_PTR_FROM_VOID(const TYPE(jadaOp_data), jadaOp, op, *iflag);
+
+  if( alpha == st::zero() )
+  {
+    PHIST_CHK_IERR( SUBR( mvec_scale       ) (Y, beta, iflag), *iflag);
+  }
+  else
+  {
+
+    // y_i <- alpha*(A+sigma_i I)*x_i + beta * y_i
+    if (jadaOp->leftPrecon_op==NULL)
+    {
+      PHIST_CHK_IERR(jadaOp->AB_op->apply_shifted(alpha, jadaOp->AB_op->A, jadaOp->sigma, X, beta, Y, iflag),*iflag);
+    }
+    else
+    {
+      PHIST_CHK_IERR(*iflag = (alpha==st::one() && beta==st::zero())?0: PHIST_NOT_IMPLEMENTED,*iflag);
+      TYPE(mvec_ptr) opX=NULL;
+      PHIST_CHK_IERR(SUBR(mvec_clone_shape)(&opX,X,iflag),*iflag);
+      MvecOwner<_ST_> _opX(opX);
+      PHIST_CHK_IERR(jadaOp->AB_op->apply_shifted(alpha, jadaOp->AB_op->A, jadaOp->sigma, X, beta, opX, iflag),*iflag);
+      PHIST_CHK_IERR(jadaOp->leftPrecon_op->apply(alpha, jadaOp->leftPrecon_op->A, opX, beta, Y, iflag),*iflag);
+    }
+  }
+}
 
 // applies the jada-operator with only post-projection:
 //
@@ -139,7 +191,7 @@ void SUBR(jadaOp_apply_project_pre_post)(_ST_ alpha, const void* op, TYPE(const_
     if (nvec!=nvec_tmp || X_proj==NULL)
     {
       // can not use the temporary vector in the jadaOp
-      PHIST_CHK_IERR(SUBR(mvec_create)(&X_proj,map,nvec,iflag),*iflag);      
+      PHIST_CHK_IERR(SUBR(mvec_create)(&X_proj,map,nvec,iflag),*iflag);
     }
     
     TYPE(sdMat_ptr) tmp;
@@ -175,7 +227,7 @@ PHIST_ENTER_FCN("phist_jadaOp_mvec_times_sdMat");
 
 
 // allocate and initialize the jadaOp struct
-void SUBR(jadaOp_create)(TYPE(const_linearOp_ptr)    AB_op,
+extern "C" void SUBR(jadaOp_create)(TYPE(const_linearOp_ptr)    AB_op,
                          TYPE(const_linearOp_ptr)     B_op,
                          TYPE(const_mvec_ptr)  V,       TYPE(const_mvec_ptr)  BV,
                          const _ST_            sigma[], int                   nvec,
@@ -187,7 +239,7 @@ void SUBR(jadaOp_create)(TYPE(const_linearOp_ptr)    AB_op,
 
   int i;
   // allocate jadaOp struct
-  TYPE(jadaOp_data) *myOp = new(TYPE(jadaOp_data));
+  TYPE(jadaOp_data) *myOp = new TYPE(jadaOp_data);
   
   if (AB_op->apply_shifted==NULL)
   {
@@ -200,6 +252,7 @@ void SUBR(jadaOp_create)(TYPE(const_linearOp_ptr)    AB_op,
   // setup jadaOp members
   myOp->AB_op   = AB_op;
   myOp->B_op   = B_op;
+  myOp->leftPrecon_op = NULL;
   myOp->V      = V;
   myOp->BV     = (BV != NULL ? BV     : V);
   myOp->sigma  = sigma;
@@ -211,14 +264,21 @@ void SUBR(jadaOp_create)(TYPE(const_linearOp_ptr)    AB_op,
   {
     PHIST_CHK_IERR(SUBR(mvec_num_vectors)(V, &nvecp, iflag), *iflag);
   }
-  // this vector is created if needed in apply() (only if pre-projection is desired)
+  // this vector is created for a fixed number of vectors nvec to which the operator
+  // is applied. if another blocksize occurs, temporary storage is used in the apply
+  // function, which may mean some overhead!
   myOp->X_proj = NULL;
 
   // setup op_ptr function pointers. For standard EVP, just post-project. For generalized EVP,
-  // pre- and postproject.
+  // pre- and postproject. X_proj is only needed if B!=NULL, otherwise we don't do any pre-
+  // projection.
   jdOp->A     = (const void*)myOp;
+
   if (B_op!=NULL)
   {
+    PHIST_CHK_IERR(SUBR(mvec_create)(&myOp->X_proj,AB_op->domain_map,nvec,iflag),*iflag);
+    // make sure X_proj gets deleted automatically when myOp is deleted
+    myOp->_X_proj.set(myOp->X_proj);
     // if the user passes in a B opeartor and projection vectors V, he also has to provide BV
     PHIST_CHK_IERR(*iflag= (V!=NULL && BV==V)? PHIST_INVALID_INPUT: 0, *iflag);
     jdOp->apply = (&SUBR(jadaOp_apply_project_pre_post));
@@ -243,7 +303,7 @@ void SUBR(jadaOp_create)(TYPE(const_linearOp_ptr)    AB_op,
 
 
 // deallocate jadaOp struct
-void SUBR(jadaOp_delete)(TYPE(linearOp_ptr) jdOp, int *iflag)
+extern "C" void SUBR(jadaOp_delete)(TYPE(linearOp_ptr) jdOp, int *iflag)
 {
   PHIST_ENTER_FCN(__FUNCTION__);
   *iflag = 0;
@@ -251,54 +311,111 @@ void SUBR(jadaOp_delete)(TYPE(linearOp_ptr) jdOp, int *iflag)
   if( jdOp == NULL )
     return;
 
-  // get jadaOp
-  TYPE(jadaOp_data) *jadaOp = (TYPE(jadaOp_data)*) jdOp->A;
-  if( jdOp->A == NULL )
-    return;
+  if (jdOp->A == NULL) return;
 
-  // delete temporary arrays
-  if (jadaOp->X_proj!=NULL)
-  {
-    PHIST_CHK_IERR(SUBR(mvec_delete)(jadaOp->X_proj, iflag), *iflag);
-  }
+  // get jadaOp_data
+  TYPE(jadaOp_data) *jadaOp = (TYPE(jadaOp_data)*) jdOp->A;
 
   // delete jadaOp
   delete jadaOp;
 }
 
+// create a preconditioner for the inner solve in Jacobi-Davidson.
+//
+// Given a linear operator that is a preconditioner for A-sigma_j*B, this function will simply          
+// wrap it up to use apply_shifted when apply() is called. We need this because our implementations     
+// of blockedGMRES and MINRES are not aware of the shifts so they can only call apply in the precon-    
+// ditioning operator. Obviously not all preconditioners are able to handle varying shifts without      
+// recomputing, this is not taken into account by this function:in that case the input P_op must be     
+// updated beforehand, or the existing preconditioner for e.g. A or A-tau*B is applied.
+//
+// If V is given, the preconditioner application will include a skew-projection
+//
+// Y <- (I - P_op\V (BV'P_op\V)^{-1} (BV)') P_op\X
+//
+// If BV==NULL, BV=V is assumed.
+extern "C" void SUBR(jadaPrec_create)(TYPE(const_linearOp_ptr) P_op,
+        TYPE(const_mvec_ptr) V, TYPE(const_mvec_ptr) BV,
+        const _ST_ sigma[], int nvec,
+        TYPE(linearOp_ptr) jdPrec, int* iflag)
 
-
-void SUBR(jadaOp_apply_project_none)(_ST_ alpha, const void* op, TYPE(const_mvec_ptr) X,
-    _ST_ beta, TYPE(mvec_ptr) Y, int* iflag)
 {
 #include "phist_std_typedefs.hpp"
-  PHIST_ENTER_FCN(__FUNCTION__);
-  PHIST_CAST_PTR_FROM_VOID(const TYPE(jadaOp_data), jadaOp, op, *iflag);
-
-  if( alpha == st::zero() )
+  if (V==NULL)
   {
-    PHIST_CHK_IERR( SUBR( mvec_scale       ) (Y, beta, iflag), *iflag);
+    // simply apply the preconditioner "as is"
+    PHIST_CHK_IERR(SUBR(jadaOp_create)(P_op,NULL,NULL,NULL,sigma, nvec, jdPrec,iflag),*iflag);
+    // use the version without the projections:
+    jdPrec->apply=SUBR(jadaOp_apply_project_none);
   }
   else
   {
-
-    // y_i <- alpha*(A+sigma_i I)*x_i + beta * y_i
-    PHIST_CHK_IERR(jadaOp->AB_op->apply_shifted(alpha, jadaOp->AB_op->A, jadaOp->sigma, X, beta, Y, iflag),*iflag);
+    // we always require BV!=NULL, but it may point to the same memory or object in memory
+    if (BV==NULL)
+    {
+      PHIST_SOUT(PHIST_ERROR,"jadaPrec_create requires BV if V is given, but it may be the same object or a view \n"
+                             " of the same memory as V\n");
+      *iflag=PHIST_INVALID_INPUT;
+      return;
+    }
+    // construct a skew-projected operator, first we need to construct P\V*(BV'P\V)^{-1}
+    int nproj;
+    PHIST_CHK_IERR(SUBR(mvec_num_vectors)(V,&nproj,iflag),*iflag);
+    if (nproj==0) PHIST_CHK_IERR(*iflag=PHIST_INVALID_INPUT,*iflag);
+    
+    TYPE(mvec_ptr) PV=NULL;
+    PHIST_CHK_IERR(SUBR(mvec_create)(&PV,P_op->domain_map,nproj,iflag),*iflag);
+    PHIST_CHK_IERR(P_op->apply(st::one(),P_op->A,V,st::zero(),PV,iflag),*iflag);
+    TYPE(sdMat_ptr) BVtPV=NULL, M=NULL;
+    phist_const_comm_ptr comm=NULL;
+    PHIST_CHK_IERR(phist_map_get_comm(P_op->domain_map,&comm,iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(sdMat_create)(&BVtPV, nproj,nproj,comm,iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(sdMat_create)(&M, nproj,nproj,comm,iflag),*iflag);
+    SdMatOwner<_ST_> _BVtPV(BVtPV), _M(M);
+    
+    PHIST_CHK_IERR(SUBR(mvecT_times_mvec)(st::one(),BV,PV,st::zero(),BVtPV,iflag),*iflag);
+      
+    // compute the *transposed* pseudo-inverse of V'K\V in place
+    int rank;
+    PHIST_CHK_IERR(SUBR(sdMat_pseudo_inverse)(BVtPV,&rank,iflag),*iflag);
+    // explicitly transpose the result
+    PHIST_CHK_IERR(SUBR(sdMatT_add_sdMat)(st::one(),BVtPV,st::zero(),M,iflag),*iflag);
+    // in-place PV*(V'P\V)^+
+    PHIST_CHK_IERR(SUBR(mvec_times_sdMat_inplace)(PV,M,iflag),*iflag);
+            
+    // use the version with only post-projection by giving B_op==NULL:
+    PHIST_CHK_IERR(SUBR(jadaOp_create)(P_op,NULL,BV,PV,sigma, nvec, jdPrec,iflag),*iflag);
+    jdPrec->apply=SUBR(jadaOp_apply_project_post);
+    // add the PV block vector to be deleted automatically when the operator is deleted.
+    TYPE(jadaOp_data)* jdDat=(TYPE(jadaOp_data)*)jdPrec->A;
+    jdDat->_V_prec.set(PV);
   }
 }
 
-//! create a preconditioner for the inner solve in Jacobi-Davidson.
-//!
-//! Given a linear operator that is a preconditioner for A, this function will simply
-//! wrap it up to use apply_shifted when apply() is called. We need this because our implementations
-//! of blockedGMRES and MINRES are not aware of the shifts so they can only call apply in the precon-
-//! ditioning operator. Obviously not all preconditioners are able to handle varying shifts without
-//! recomputing, this is not taken into account by this function:in that case the input P_op must be
-//! updated beforehand.
-void SUBR(jadaPrec_create)(TYPE(const_linearOp_ptr) P_op, const _ST_ sigma[], int nvec,
-        TYPE(linearOp_ptr) jdPrec, int* iflag)
+//! add a left preconditioner created by jadaPrec_create to a jadaOp.
+
+//! The effect of the apply function will afterwards by Y <- alpha*(jadaPrec*jadaOp*X) + beta*Y,
+//! the projections used are determined by the AB_op and jadaPrec operators. If jadaPrec==NULL, 
+//! the operator is reset to it's original effect.
+extern "C" void SUBR(jadaOp_set_leftPrecond)(TYPE(linearOp_ptr) jdOp, TYPE(const_linearOp_ptr) jadaPrec, int* iflag)
 {
-  PHIST_CHK_IERR(SUBR(jadaOp_create)(P_op,NULL,NULL,NULL,sigma, nvec, jdPrec,iflag),*iflag);
-  // use the version without the projections:
-  jdPrec->apply=SUBR(jadaOp_apply_project_none);
+  PHIST_CAST_PTR_FROM_VOID(TYPE(jadaOp_data), jdDat, jdOp->A, *iflag);
+  jdDat->leftPrecon_op = jadaPrec;
+  if (jadaPrec==NULL)
+  {
+    // recover original behavior: post-project for B=I, pre/post for B!=I
+    if (jdDat->B_op==NULL)
+    {
+      jdOp->apply=SUBR(jadaOp_apply_project_post);
+    }
+    else
+    {
+      jdOp->apply=SUBR(jadaOp_apply_project_pre_post);
+    }
+  }
+  else
+  { // not sure what to do with B!=NULL, do we need a symmetric operator?
+    if (jdDat->B_op!=NULL) PHIST_SOUT(PHIST_WARNING,"left preconditioning and B!=I is untested\n");
+    jdOp->apply=SUBR(jadaOp_apply_project_none);
+  }
 }

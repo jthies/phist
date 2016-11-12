@@ -114,17 +114,20 @@ void SUBR(private_idOp_fused_apply_mvTmv)(_ST_ alpha, const void* A, TYPE(const_
 void SUBR(private_idOp_apply_shifted)(_ST_ alpha, const void* A, _ST_ const *sigma, 
         TYPE(const_mvec_ptr) X,  _ST_ beta, TYPE(mvec_ptr) Y, int* iflag)
 {
+#include "phist_std_typedefs.hpp"
   *iflag=0;
   PHIST_TOUCH(A)
   int nvec;
   PHIST_CHK_IERR(SUBR(mvec_num_vectors)(X,&nvec,iflag),*iflag);
   _ST_ shifts[nvec];
-  for (int i=0;i<nvec;i++) shifts[i]=sigma[i]*alpha;
+  for (int i=0;i<nvec;i++) shifts[i]=(st::one()+sigma[i])*alpha;
   SUBR(mvec_vadd_mvec)(shifts,X,beta,Y,iflag);
 }
 
 // setup identity operator that returns Y=alpha*X + beta*Y
-void SUBR(linearOp_identity)(TYPE(linearOp_ptr) op, int* iflag)
+void SUBR(linearOp_identity)(TYPE(linearOp_ptr) op, 
+                             phist_const_map_ptr  range_map,
+                             phist_const_map_ptr domain_map, int* iflag)
 {
   *iflag=0;
   op->A=NULL;
@@ -133,6 +136,8 @@ void SUBR(linearOp_identity)(TYPE(linearOp_ptr) op, int* iflag)
   op->apply_shifted = &SUBR(private_idOp_apply_shifted);
   op->fused_apply_mvTmv = &SUBR(private_idOp_fused_apply_mvTmv);
   op->destroy=&SUBR(private_linearOp_destroy_nothing);
+  op->range_map=range_map;
+  op->domain_map=domain_map;
 }
 
 } // extern "C"

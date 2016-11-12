@@ -17,6 +17,9 @@
 #include "phist_operator.h"
 #include "phist_lapack.h"
 
+#ifdef PHIST_HIGH_PRECISION_KERNELS
+#include "prec_helpers.h"
+#endif
 #ifdef PHIST_HAVE_GHOST
 #include <ghost/types.h>
 #endif
@@ -115,14 +118,21 @@ class ScalarTraits< float >
                    scalar_t& sqrt, scalar_t& sqrtC,
                    scalar_t& inv_sqrt, scalar_t& inv_sqrtC)
   {
-    throw "not implemented";
+    double dsqrt = std::sqrt((double)x+(double)xC);
+    double dinv_sqrt=1.0/dsqrt;
+    sqrt = (scalar_t)dsqrt; 
+    sqrtC= (scalar_t)(dsqrt-(double)sqrt);
+    inv_sqrt=(scalar_t)(dinv_sqrt);
+    inv_sqrtC= (scalar_t)(dinv_sqrt-(double)inv_sqrt);
   }
   
   //! in-place computation of 1/x with increased precision
   static inline void prec_div(const scalar_t& x, const scalar_t& xC,
                                scalar_t& inv,     scalar_t& invC)
   {
-    throw "not implemented";
+    double dinv = 1.0/((double)x+(double)xC);
+    inv = (scalar_t)dinv;
+    invC= (scalar_t)(dinv-(double)inv);
   }
     
   //! absolute value
@@ -206,7 +216,7 @@ class ScalarTraits< float >
 #endif
 template<>
 class ScalarTraits< double >
-  {
+{
   public: 
   
   //! alternative typename for ST
@@ -283,18 +293,27 @@ class ScalarTraits< double >
   }
 
   //! square root with increased precision. also returns 1/sqrt(x).
-  static inline void prec_sqrt(const scalar_t& x, const scalar_t& xC,
+  static void prec_sqrt(const scalar_t& x, const scalar_t& xC,
                    scalar_t& sqrt, scalar_t& sqrtC,
                    scalar_t& inv_sqrt, scalar_t& inv_sqrtC)
   {
+#ifdef PHIST_HIGH_PRECISION_KERNELS
+    DOUBLE_4SQRT_NEWTONRAPHSON_FMA(x,xC,sqrt,sqrtC,inv_sqrt,inv_sqrtC);
+#else
+    throw "prec_sqrt not implemented without PHIST_HIGH_PRECISION_KERNELS";
+#endif
     throw "not implemented";
   }
   
   //! in-place computation of 1/x with increased precision
-  static inline void prec_div(const scalar_t& x, const scalar_t& xC,
+  static void prec_div(const scalar_t& x, const scalar_t& xC,
                                scalar_t& inv,     scalar_t& invC)
   {
-    throw "not implemented";
+#ifdef PHIST_HIGH_PRECISION_KERNELS
+    DOUBLE_4DIV_NEWTONRAPHSON_FMA(x,xC,inv,invC);
+#else
+    throw "prec_div not implemented without PHIST_HIGH_PRECISION_KERNELS";
+#endif
   }
 
   //! absolute value

@@ -40,6 +40,16 @@ void SUBR(precon_create)(TYPE(linearOp_ptr) op, TYPE(const_sparseMat_ptr) A,
                          TYPE(const_mvec_ptr) Vkern, TYPE(const_mvec_ptr) BVkern,
                          const char* method, const char* options, int* iflag);
 
+//! given an existing preconditioner, recompute it for a new shift sigma and (near) kernel Vkern.
+
+//! The matrices A and B and preconditioning options remain unchanged from the cann SUBR(precon_create).
+//! This means that the preconditioner needs to store pointers to A and B at create() time and can assume
+//! those matrices are still there and unchanged. If they aren't (there or unchanged), a new preconditioner
+//! must be created instead.
+void SUBR(precon_update)(TYPE(linearOp_ptr) op, _ST_ sigma,
+                         TYPE(const_mvec_ptr) Vkern,
+                         TYPE(const_mvec_ptr) BVkern,
+                         int* iflag);
 
 //! destroy preconditioner
 void SUBR(precon_delete)(TYPE(linearOp_ptr) op, int* iflag);

@@ -84,6 +84,16 @@ class PreconTraits<double,phist_IFPACK>
     return;
   }
 
+  static void Update(void* vP, const void* A, _ST_ sigma, const void* B,
+        const void* Vkern, const void* BVkern,
+        int* iflag)
+  {
+    PHIST_ENTER_FCN(__FUNCTION__);
+    *iflag=0;
+    PHIST_CAST_PTR_FROM_VOID(Ifpack_Preconditioner, P, vP,*iflag);
+    *iflag=PHIST_NOT_IMPLEMENTED;
+  }                                                                             
+
   static void Delete(void* vP, int *iflag)
   {
     PHIST_ENTER_FCN(__FUNCTION__);

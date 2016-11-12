@@ -4,10 +4,12 @@
 #include <mpi.h>
 #endif
 
-#include "phist_jadaOp.hpp"
+#include "phist_jadaOp.h"
 #include "phist_kernels.h"
 #include "phist_macros.h"
 #include "phist_ScalarTraits.hpp"
+#include "phist_sdFact.h"
+#include "phist_memOwner.hpp"
 
 #ifdef PHIST_HAVE_SP
 #include "phist_gen_s.h"

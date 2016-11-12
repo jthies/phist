@@ -200,7 +200,7 @@ void SUBR(sdMat_inverse)(TYPE(sdMat_ptr) A_hpd, int* rank, int* iflag)
 }
 
 //! computes in-place the (transpose of the Moore-Penrose)
-//! pseudo-inverse of an arbitrary square matrix. The rank
+//! pseudo-inverse of an arbitrary m x n matrix. The rank
 //! of A on input is returned as *rank.
 void SUBR(sdMat_pseudo_inverse)(TYPE(sdMat_ptr) A_gen, int* rank, int* iflag)
 {
@@ -215,20 +215,24 @@ void SUBR(sdMat_pseudo_inverse)(TYPE(sdMat_ptr) A_gen, int* rank, int* iflag)
   
   phist_const_comm_ptr comm=NULL;
   
+  *rank=-1;
+  
   TYPE(sdMat_ptr) U=NULL, Sigma=NULL, Vt=NULL;
   PHIST_CHK_IERR(SUBR(sdMat_create)(&U,m,m,comm,iflag),*iflag);
   PHIST_CHK_IERR(SUBR(sdMat_create)(&Sigma,m,n,comm,iflag),*iflag);
   PHIST_CHK_IERR(SUBR(sdMat_create)(&Vt,n,n,comm,iflag),*iflag);
-  
+  SdMatOwner<_ST_> _Sigma(Sigma),_U(U),_Vt(Vt);
+
   // eigenvalue decomposition, A = V*Sigma*W'
   *iflag=iflag_in;
   PHIST_CHK_IERR(SUBR(sdMat_svd)(A_gen,U,Sigma,Vt,iflag),*iflag);
-  
+
   // make tiny singular values exactly 0, invert the others
   _ST_ *Sigma_raw=NULL, *Sigma_err=NULL;
   phist_lidx ldS;
   PHIST_CHK_IERR(SUBR(sdMat_extract_view)(Sigma,&Sigma_raw,&ldS,iflag),*iflag);
   _MT_ sval_max = st::abs(Sigma_raw[0]), sval_max_err=mt::zero();
+  *rank=std::min(m,n);
   if (high_prec)
   {
 #ifdef PHIST_HIGH_PRECISION_KERNELS
@@ -249,6 +253,7 @@ void SUBR(sdMat_pseudo_inverse)(TYPE(sdMat_ptr) A_gen, int* rank, int* iflag)
       {
         Sigma_raw[i*ldS+i]=st::zero();
         Sigma_err[i*ldS+i]=st::zero();
+        (*rank)--;
       }
       else
       {
@@ -265,6 +270,7 @@ void SUBR(sdMat_pseudo_inverse)(TYPE(sdMat_ptr) A_gen, int* rank, int* iflag)
       if (st::abs(sval)<sval_max*mt::rankTol())
       {
         Sigma_raw[i*ldS+i]=st::zero();
+        (*rank)--;
       }
       else
       {
@@ -272,11 +278,19 @@ void SUBR(sdMat_pseudo_inverse)(TYPE(sdMat_ptr) A_gen, int* rank, int* iflag)
       }
     }
   }
+  // multiply the three matrices back together to get the Pseudo-Inverse,
+  // B=A^{+,T} <- U*inv(Sigma)*V'
   
+  // USig <- U*inv(Sigma)
+  TYPE(sdMat_ptr) USig=NULL;
+  PHIST_CHK_IERR(SUBR(sdMat_create)(&USig,m,n,comm,iflag),*iflag);
+  SdMatOwner<_ST_> _USig(USig);
+  PHIST_CHK_IERR(SUBR(sdMat_times_sdMat)(st::one(),U,Sigma,st::zero(),USig,iflag),*iflag);
   
-  PHIST_CHK_IERR(SUBR(sdMat_delete)(U,iflag),*iflag);
-  PHIST_CHK_IERR(SUBR(sdMat_delete)(Sigma,iflag),*iflag);
-  PHIST_CHK_IERR(SUBR(sdMat_delete)(Vt,iflag),*iflag);
+  // A <- U*inv(Sigma)*V'
+  PHIST_CHK_IERR(SUBR(sdMat_times_sdMat)(st::one(),USig,Vt,st::zero(),A_gen,iflag),*iflag);
+  
+  return;  
 }
 
 //! singular value decomposition, A = U*Sigma*Vt  
@@ -370,10 +384,10 @@ void SUBR(sdMat_svd)(TYPE(sdMat_ptr) A, TYPE(sdMat_ptr) U, TYPE(sdMat_ptr) Sigma
         (mt::blas_scalar_t*)RS_val,
         (st::blas_scalar_t*)U_val,&ldU,
         (st::blas_scalar_t*)Vt_val,&ldVt,
-        (st::blas_scalar_t*)&tmp_work,&lwork,
+        (st::blas_scalar_t*)&work,&lwork,
         (mt::blas_scalar_t*)rwork,iflag);
 #else
-    PHIST_TG_PREFIX(GESVD)((phist_blas_char*)(&jobu),(phist_blas_char*)(&jobvt),&m,&n,A_val,&ldA,RS_val,U_val,&ldU,Vt_val,&ldVt,&tmp_work,&lwork,iflag);
+    PHIST_TG_PREFIX(GESVD)((phist_blas_char*)(&jobu),(phist_blas_char*)(&jobvt),&m,&n,A_val,&ldA,RS_val,U_val,&ldU,Vt_val,&ldVt,work,&lwork,iflag);
 #endif
     delete [] work;
     int ldS=svals_only?0: ldSigma;

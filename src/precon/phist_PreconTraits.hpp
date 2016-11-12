@@ -3,6 +3,7 @@
 
 #include "phist_config.h"
 #include "phist_enums.h"
+#include "phist_operator.h"
 #include "phist_ScalarTraits.hpp"
 
 namespace phist {
@@ -42,6 +43,14 @@ public:
         const void* A, ST sigma, const void* B, 
         const void* Vkern, const void* BVkern,
         const char* options, int* iflag)
+  {
+    NotImplemented(iflag);
+    return;
+  }
+
+  static void Update(void* P, const void* A, ST sigma, const void* B,
+        const void* Vkern, const void* BVkern,
+        int* iflag)
   {
     NotImplemented(iflag);
     return;
@@ -94,7 +103,12 @@ public:
     *P=NULL;
     return;
   }
-
+  static void Update(void* P, const void* A, ST sigma, const void* B,
+        const void* Vkern, const void* BVkern,
+        int* iflag)
+  {
+    return;
+  }
   static void Delete(void* P, int* iflag)
   {
     *iflag=0;

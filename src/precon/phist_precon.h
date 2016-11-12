@@ -9,8 +9,9 @@
 #ifdef PHIST_HAVE_MPI
 #include <mpi.h>
 #endif
-#include "phist_kernels.h"
 #include "phist_operator.h"
+#include "phist_kernels.h"
+
 
 
 #include "phist_enums.h"
@@ -28,7 +29,10 @@ typedef struct {
   //! identifies the preconditioner type (e.g. IFPACK), this is used to
   //! internally call the correct create/delete/apply etc functions
   phist_Eprecon type_;
-  void* P_;
+  void const* A_; //! pointer to matrix A
+  void const* B_; //! pointer to matrix B
+  void const *Vkern_, *BVkern_; //! pointers to vector spaces approximating the kernel of A-sigma*B 
+  void* P_; //! pointer to preconditioning object
 } phist_internal_precon;
 
 #ifdef PHIST_HAVE_SP

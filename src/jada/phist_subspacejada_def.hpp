@@ -816,7 +816,7 @@ PHIST_TESTING_CHECK_SUBSPACE_INVARIANTS;
       int k0=0;
      if (opts.innerSolvMaxProjectionSpace>=0) k0=std::max(0,k_-opts.innerSolvMaxProjectionSpace);
 
-     PHIST_SOUT(PHIST_VERBOSE,"using %d projection vectors\n",k_-k0+1); 
+     PHIST_SOUT(PHIST_DEBUG,"using %d projection vectors\n",k_-k0+1); 
 
       // we only need to view the part of Q which is to be projected out
       PHIST_CHK_IERR(SUBR( mvec_view_block  ) (Q_,   &Qtil,  k0, k_, iflag), *iflag);
@@ -832,10 +832,10 @@ PHIST_TESTING_CHECK_SUBSPACE_INVARIANTS;
         innerTol[nConvEig+i] = mt::min(innerTol[nConvEig+i], 0.1);
         lastOuterRes[nConvEig+i] = resNorm[nConvEig+i];
       }
-PHIST_SOUT(PHIST_INFO,"selectedRes: ");
+PHIST_SOUT(PHIST_VERBOSE,"selectedRes: ");
 for(int i = 0; i < k; i++)
-  PHIST_SOUT(PHIST_INFO,"\t%d (%e, tol %e)", selectedRes[i], resNorm[selectedRes[i]], innerTol[nConvEig+i]);
-PHIST_SOUT(PHIST_INFO,"\n");
+  PHIST_SOUT(PHIST_VERBOSE,"\t%d (%e, tol %e)", selectedRes[i], resNorm[selectedRes[i]], innerTol[nConvEig+i]);
+PHIST_SOUT(PHIST_VERBOSE,"\n");
 
 
       for(int i = 0; i < blockDim; i++)

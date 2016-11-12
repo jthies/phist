@@ -7,7 +7,7 @@
 
 /*! Test fixure. */
 class CLASSNAME: public KernelTestWithSdMats<_ST_,_NROWS_,_NCOLS_,_USE_VIEWS_> 
-  {
+{
 
 public:
 
@@ -45,6 +45,7 @@ public:
   void doForwardBackwardTestsWithPreparedMat3(int rank, int* perm);
 };
 
+#if (_N_==_M_)
   // check rank revealing cholesky decomposition
   TEST_F(CLASSNAME, cholesky)
   {
@@ -444,11 +445,120 @@ PrintSdMat(PHIST_DEBUG,"reconstructed X",mat2_vp_,m_lda_,1,mpi_comm_);
 #endif
   }
 
-  // under construction... (TODO)
-  TEST_F(CLASSNAME, DISABLED_pseudo_inverse)
+#endif /* _N_==_M_ */
+
+  TEST_F(CLASSNAME, svd)
+  {
+    if( !typeImplemented_ ) return;
+    // for random A, compute A=U*Sigma*V' and verify the product gives A,
+    // Sigma is diagonal and it's entries are decreasing and positive, and
+    // U and V are orthonormal.
+    TYPE(sdMat_ptr) A=mat1_, A_bak=mat2_, Sigma=mat3_, U=NULL, Vt=NULL,UtU=NULL,VtV=NULL;
+
+    SUBR(sdMat_create)(&U,nrows_,nrows_,comm_,&iflag_);
+    ASSERT_EQ(0,iflag_);
+    SUBR(sdMat_create)(&Vt,ncols_,ncols_,comm_,&iflag_);
+    ASSERT_EQ(0,iflag_);
+    SUBR(sdMat_create)(&UtU,nrows_,nrows_,comm_,&iflag_);
+    ASSERT_EQ(0,iflag_);
+    SUBR(sdMat_create)(&VtV,ncols_,ncols_,comm_,&iflag_);
+    ASSERT_EQ(0,iflag_);
+    
+#ifdef IS_DOUBLE
+    _MT_ tol=mt::eps()*100;
+#else
+    _MT_ tol=mt::eps()*100;
+#endif
+
+    SdMatOwner<_ST_> _U(U),_Vt(Vt),_UtU(UtU),_VtV(VtV);
+
+    // initialize Sigma, U and V with random entries, this should not hurt...
+    //SUBR(sdMat_put_value)(Sigma,st::zero(),&iflag_);
+    SUBR(sdMat_random)(Sigma,&iflag_);
+    ASSERT_EQ(0,iflag_);
+    SUBR(sdMat_random)(U,&iflag_);
+    ASSERT_EQ(0,iflag_);
+    SUBR(sdMat_random)(Vt,&iflag_);
+    ASSERT_EQ(0,iflag_);
+    
+    SUBR(sdMat_from_device)(Sigma,&iflag_);
+    ASSERT_EQ(0,iflag_);
+    SUBR(sdMat_from_device)(U,&iflag_);
+    ASSERT_EQ(0,iflag_);
+    SUBR(sdMat_from_device)(Vt,&iflag_);
+    ASSERT_EQ(0,iflag_);
+    SUBR(sdMat_from_device)(A,&iflag_);
+    ASSERT_EQ(0,iflag_);
+        
+    //save A
+    SUBR(sdMat_add_sdMat)(st::one(),A,st::zero(),A_bak,&iflag_);
+    ASSERT_EQ(0,iflag_);
+    
+    // compute the singular value decomposition, destroying A
+    SUBR(sdMat_svd)(A,U,Sigma,Vt,&iflag_);
+    ASSERT_EQ(0,iflag_);
+
+    SUBR(sdMat_to_device)(Sigma,&iflag_);
+    ASSERT_EQ(0,iflag_);
+    SUBR(sdMat_to_device)(U,&iflag_);
+    ASSERT_EQ(0,iflag_);
+    SUBR(sdMat_to_device)(Vt,&iflag_);
+    ASSERT_EQ(0,iflag_);
+    SUBR(sdMat_to_device)(A,&iflag_);
+    ASSERT_EQ(0,iflag_);
+
+    // see if we can reconstruct A:
+    triple_product(U,false,Sigma,false,Vt,false,A,&iflag_);
+    ASSERT_EQ(0,iflag_);
+    ASSERT_NEAR(mt::one(),SdMatsEqual(A,A_bak),nrows_*ncols_*tol);
+    _ST_* Sigma_vp=NULL;
+    phist_lidx ldSigma;
+    SUBR(sdMat_extract_view)(Sigma,&Sigma_vp,&ldSigma,&iflag_);
+    ASSERT_EQ(0,iflag_);
+
+    // check singular values are positive and decreasing on the diagonal
+    _ST_ last_sigma=st::zero();
+    for (int i=std::min(nrows_,ncols_)-1; i>=0; i--)
+    {
+      _ST_ sigma_i=Sigma_vp[MIDX(i,i,ldSigma)];
+      ASSERT_TRUE(st::real(sigma_i)>=st::real(last_sigma));
+      ASSERT_TRUE(mt::abs(st::imag(sigma_i))<=mt::eps());
+      last_sigma=sigma_i;
+    }
+    _MT_ max_offdiag=mt::zero();
+    for (int i=0; i<nrows_; i++)
+    {
+      for (int j=0; j<ncols_; j++)
+      {
+        if (i!=j) max_offdiag=std::max(max_offdiag,st::abs(Sigma_vp[MIDX(i,j,ldSigma)]));
+      }
+    }
+    ASSERT_NEAR(mt::zero(),max_offdiag,mt::eps());
+    // compute U'U and V'V and check they are identity matrices
+    SUBR(sdMat_identity)(UtU,&iflag_);
+    ASSERT_EQ(0,iflag_);
+    SUBR(sdMatT_times_sdMat)(-st::one(),U,U,st::one(),UtU,&iflag_);
+    ASSERT_EQ(0,iflag_);
+    ASSERT_NEAR(mt::one(),SdMatEqual(UtU,mt::zero()),10*mt::eps());
+
+    SUBR(sdMat_identity)(VtV,&iflag_);
+    ASSERT_EQ(0,iflag_);
+    SUBR(sdMat_times_sdMatT)(-st::one(),Vt,Vt,st::one(),VtV,&iflag_);
+    ASSERT_EQ(0,iflag_);
+    ASSERT_NEAR(mt::one(),SdMatEqual(VtV,mt::zero()),10*mt::eps());
+  }
+
+  TEST_F(CLASSNAME, pseudo_inverse)
   {
     if( typeImplemented_ )
     {
+#ifdef IS_DOUBLE
+      _MT_ tol=mt::eps()*100;
+#else
+      // we get quite poor accuracy in SP, probably the better thing would be to
+      // store sdMats in DP in that case!
+      _MT_ tol=0.00002;
+#endif
       int iflag_in=0;
 #ifdef HIGH_PRECISION_KERNELS
       iflag_in=PHIST_ROBUST_REDUCTIONS;
@@ -456,47 +566,52 @@ PrintSdMat(PHIST_DEBUG,"reconstructed X",mat2_vp_,m_lda_,1,mpi_comm_);
       // copy mat2=mat1
       SUBR(sdMat_add_sdMat)(st::one(),mat1_,st::zero(),mat2_,&iflag_);
       ASSERT_EQ(0,iflag_);
-      // these kernels only work on the host, so we need to manually perform up/downloads
-      SUBR(sdMat_from_device)(mat1_,&iflag_);
-      ASSERT_EQ(0,iflag_);
       
       // aliases for clarity: AplusT is A^{+,T}, the transpose of the Moore-Penrose Pseudo-Inverse
-      TYPE(sdMat_ptr) A = mat2_, AplusT=mat1_;
+      TYPE(sdMat_ptr) A = mat2_, AplusT=mat1_, A_chk=mat3_;
+
+      // these kernels only work on the host, so we need to manually perform up/downloads
+      SUBR(sdMat_from_device)(AplusT,&iflag_);
+      ASSERT_EQ(0,iflag_);
       
       int rank;
       SUBR(sdMat_pseudo_inverse)(AplusT,&rank,&iflag_);
       ASSERT_EQ(0,iflag_);
       // for a random n x m matrix, we expect min(n,m) to be the rank
       ASSERT_EQ(std::min(nrows_,ncols_),rank);
-      
-      // check the four defining properties of A+:
-#if 0      
-      // 1. A A+ A = A
-      TripleProduct(A,false,AplusT,true,A,false,mat3_);
+
+      SUBR(sdMat_to_device)(AplusT,&iflag_);
       ASSERT_EQ(0,iflag_);
-      ASSERT_NEAR(st::one(),SdMatsEqual(A,mat3_),st::eps());
+
+      // check the four defining properties of A+:
+
+      // 1. A A+ A = A
+      MTest::triple_product(A,false,AplusT,true,A,false,A_chk,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      EXPECT_NEAR(st::one(),SdMatsEqual(A,A_chk),nrows_*nrows_*tol);
       
       // 2. A+ A A+ = A+ => A+^T A^T A+^T = A+^T
-      TripleProduct(AplusT,false,A,false,AplusT,false,mat3_);
+      MTest::triple_product(AplusT,false,A,true,AplusT,false,A_chk,&iflag_);
       ASSERT_EQ(0,iflag_);
-      ASSERT_NEAR(st::one(),SdMatsEqual(AplusT,mat3_),st::eps());
-#endif
+      EXPECT_NEAR(st::one(),SdMatsEqual(AplusT,A_chk),ncols_*ncols_*tol);
+
       // 3. (AA+)^* = AA+
       TYPE(sdMat_ptr) mat_tmp=NULL;
       SUBR(sdMat_create)(&mat_tmp, nrows_,nrows_,comm_,&iflag_);
       SUBR(sdMat_times_sdMatT)(st::one(),A,AplusT,st::zero(),mat_tmp,&iflag_);
       ASSERT_EQ(0,iflag_);
-      
-      ASSERT_NEAR(mt::one(),mt::one()+MTest::symmetry_check(mat_tmp,&iflag_),mt::eps());
+
+      EXPECT_NEAR(mt::one(),mt::one()+MTest::symmetry_check(mat_tmp,&iflag_),5*nrows_*nrows_*mt::eps());
       SUBR(sdMat_delete)(mat_tmp,&iflag_);
       ASSERT_EQ(0,iflag_);
       
-      // 4. (A+ A)^* = A+ A
+      // 4. (A+ A)^H = A+ A
+      mat_tmp=NULL;
       SUBR(sdMat_create)(&mat_tmp, ncols_,ncols_,comm_,&iflag_);
       SUBR(sdMatT_times_sdMat)(st::one(),AplusT,A,st::zero(),mat_tmp,&iflag_);
-      ASSERT_EQ(0,iflag_);
+      EXPECT_EQ(0,iflag_);
       
-      ASSERT_NEAR(mt::one(),mt::one()+MTest::symmetry_check(mat_tmp,&iflag_),mt::eps());
+      EXPECT_NEAR(mt::one(),mt::one()+MTest::symmetry_check(mat_tmp,&iflag_),ncols_*ncols_*mt::eps());
       SUBR(sdMat_delete)(mat_tmp,&iflag_);
       ASSERT_EQ(0,iflag_);
     }
