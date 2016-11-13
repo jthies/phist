@@ -107,17 +107,20 @@ const char* filename,int* iflag)
 }
 //!@}
 
-extern "C" void SUBR(sparseMat_create_fromRowFuncAndMap)(TYPE(sparseMat_ptr) *vA, phist_const_map_ptr vmap,
+extern "C" void SUBR(sparseMat_create_fromRowFuncAndContext)(TYPE(sparseMat_ptr) *vA, phist_const_context_ptr vctx,
         phist_lidx maxnne,phist_sparseMat_rowFunc rowFunPtr,void* last_arg,
         int *iflag)
 {
   int iflag_in=*iflag;
   bool repart = (*iflag)&PHIST_SPARSEMAT_PERM_GLOBAL;
+  bool ownMaps= (*iflag)&PHIST_SPARSEMAT_OWN_MAPS;
   *iflag=0;
-  PHIST_CAST_PTR_FROM_VOID(const Epetra_Map,map,vmap,*iflag);
-  PHIST_SOUT(PHIST_DEBUG,"sparseMat_create_fromRowFuncAndMap with iflag=%d\n",iflag_in);
+  PHIST_CAST_PTR_FROM_VOID(phist::internal::default_context,ctx,vctx,*iflag);
+  PHIST_CAST_PTR_FROM_VOID(const Epetra_Map,map,ctx->row_map,*iflag);
+  PHIST_SOUT(PHIST_DEBUG,"sparseMat_create_fromRowFuncAndContext with iflag=%d\n",iflag_in);
   phist_gidx cols[maxnne];
   double vals[maxnne];
+ 
 
   Epetra_CrsMatrix* A=NULL;
   PHIST_TRY_CATCH(A   = new Epetra_CrsMatrix(Copy,*map,maxnne),*iflag);
@@ -133,8 +136,17 @@ extern "C" void SUBR(sparseMat_create_fromRowFuncAndMap)(TYPE(sparseMat_ptr) *vA
     PHIST_CHK_IERR(*iflag=rowFunPtr(row,&row_nnz,cols,vals,last_arg),*iflag);
     PHIST_TRY_CATCH(A->InsertGlobalValues(row,row_nnz,vals,cols),*iflag);
   }
-  PHIST_TRY_CATCH(A->FillComplete(),*iflag);
-  *vA = (TYPE(sparseMat_ptr))(A);
+  if (ctx->range_map==NULL || ctx->domain_map==NULL)
+  {
+    PHIST_TRY_CATCH(A->FillComplete(),*iflag);
+  }
+  else
+  {
+    const Epetra_Map* domain_map=(const Epetra_Map*)(ctx->domain_map);
+    const Epetra_Map* range_map=(const Epetra_Map*)(ctx->range_map);
+    PHIST_TRY_CATCH(A->FillComplete(*domain_map,*range_map),*iflag);
+  }
+  
 
   if (repart)
   {
@@ -147,10 +159,12 @@ extern "C" void SUBR(sparseMat_create_fromRowFuncAndMap)(TYPE(sparseMat_ptr) *vA
       *iflag=PHIST_BAD_CAST;
       return;
     }
+    phist::internal::default_context *ctx=new phist::internal::default_context(newRowMap.release());
     // create the matrix again and use this new map instead
     delete A;
     *iflag=iflag_in & ~PHIST_SPARSEMAT_PERM_GLOBAL;
-    PHIST_CHK_IERR(SUBR(sparseMat_create_fromRowFuncAndMap)(vA,newRowMap.get(),maxnne,rowFunPtr,last_arg,iflag),*iflag);
+    *iflag=*iflag & PHIST_SPARSEMAT_OWN_MAPS;
+    PHIST_CHK_IERR(SUBR(sparseMat_create_fromRowFuncAndContext)(vA,newContext,maxnne,rowFunPtr,last_arg,iflag),*iflag);
 
     // TODO: print statistics on the partitioning? Isorropia has nice tools for this in examples/
 
@@ -158,6 +172,10 @@ extern "C" void SUBR(sparseMat_create_fromRowFuncAndMap)(TYPE(sparseMat_ptr) *vA
     PHIST_SOUT(PHIST_WARNING,"matrix repartitioning with Epetra requires Isorropia (and Zoltan)\n");
 #endif
   }
+
+  *vA = (TYPE(sparseMat_ptr))(A);
+  phist::internal::contextCollection[*vA]=ctx;
+
   return;
 }
 
@@ -176,8 +194,9 @@ extern "C" void SUBR(sparseMat_create_fromRowFunc)(TYPE(sparseMat_ptr) *vA, phis
   }
   phist_map_ptr map=NULL;
   PHIST_CHK_IERR(phist_map_create(&map,vcomm,nrows,iflag),*iflag);
-  *iflag=iflag_in;
-  PHIST_CHK_IERR(SUBR(sparseMat_create_fromRowFuncAndMap)(vA,map,
+  phist::internal::default_context *ctx=new phist::internal::default_context(map);
+  *iflag=iflag_in|PHIST_SPARSEMAT_OWN_MAPS;
+  PHIST_CHK_IERR(SUBR(sparseMat_create_fromRowFuncAndContext)(vA,ctx,
         maxnne,rowFunPtr,last_arg,iflag),*iflag);
   // we're responsible for deleting this map object, Epetra is responsibible for keeping it in the created matrix
   PHIST_CHK_IERR(phist_map_delete(map,iflag),*iflag);
@@ -469,6 +488,8 @@ extern "C" void SUBR(sparseMat_delete)(TYPE(sparseMat_ptr) vA, int* iflag)
   *iflag=0;
   if(vA==NULL) return;
   PHIST_CAST_PTR_FROM_VOID(Epetra_CrsMatrix,A,vA,*iflag);
+  phist::internal::default_context* ctx=phist::internal::contextCollection[vA];
+  if (ctx!=NULL) delete ctx;
   delete A;
 }
 

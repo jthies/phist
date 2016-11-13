@@ -227,6 +227,7 @@ extern "C" void phist_maps_compatible(phist_const_map_ptr vmap1, phist_const_map
   return;
 }
 
+#include "../common/default_context.h"
 
 #include "../common/phist_bench_kernels.cpp"
 
@@ -242,6 +243,7 @@ extern "C" void phist_maps_compatible(phist_const_map_ptr vmap1, phist_const_map
 
 #include "phist_gen_d.h"
 #include "kernels_def.hpp"
+#include "../common/default_context_def.hpp"
 #include "carp_def.hpp"
 #include "../common/kernels_no_io.cpp"
 #include "../common/kernels_no_gpu.cpp"
