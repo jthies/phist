@@ -85,7 +85,7 @@ PHIST_TASK_BEGIN_SMALLDETERMINISTIC(ComputeTask)
 #endif
     }
   }
-  PHIST_CHK_IERR("GEES",*iflag);
+  PHIST_CHK_IERR(PHIST_TOUCH("GEES"),*iflag);
 
 #if PHIST_OUTLEV>=PHIST_DEBUG
 //PHIST_OUT(0,"eigenvalues of unsorted Schur form:\n");
@@ -249,7 +249,7 @@ void SUBR(GenSchurDecomp)(_ST_* S, int ldS, _ST_* T, int ldT,
                           // function which does not compare the Ritz values)
   int sdim;
   CT* ev = (CT*)v_ev;
-  bool some_beta_zero=false;
+//  bool some_beta_zero=false;
 
   // can select at most m Ritz values (and at least 0)
   nselect=std::max(0,std::min(nselect,m));
@@ -281,10 +281,10 @@ void SUBR(GenSchurDecomp)(_ST_* S, int ldS, _ST_* T, int ldT,
         {
           ev[i]=std::complex<MT>(alpha[i],alphai[i])/beta[i];
         }
-        else
-        {
-          some_beta_zero=true;
-        }
+//        else
+//        {
+//          some_beta_zero=true;
+//        }
       }
 #endif
     }
