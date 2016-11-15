@@ -53,7 +53,9 @@ public:
     KernelTestWithMap<_N_>::SetUpTestCase();
     TestWithType<_ST_>::SetUpTestCase();
 #ifdef ORTHOG_WITH_HPD_B
-    BTest::SetUpTestCase(map_);
+    EXPECT_EQ(map_, defaultMap_); // this means we can use the defaultContext_, too
+    phist_const_context_ptr ctx=defaultContext_;
+    BTest::SetUpTestCase(ctx);
 #endif
 }
   
@@ -88,16 +90,9 @@ public:
 
     if (typeImplemented_ && !problemTooSmall_)
     {
+      EXPECT_EQ(this->map_, this->defaultMap_);
       phist_const_map_ptr map=this->map_;
-#ifdef ORTHOG_WITH_HPD_B
-      // get the map from the mass matrix. In principle the mass mat is
-      // created using the map_ of the base class, but with GHOST we   
-      // need additional info (like #halo elements) that only the matrix
-      // can provide.
-      map=NULL;
-      SUBR(sparseMat_get_domain_map)(B_,&map,&iflag_);
-      ASSERT_EQ(0,iflag_);
-#endif      
+
       // create vectors V, W and vector views for setting/checking entries
       PHISTTEST_MVEC_CREATE(&V_,map,this->m_,&this->iflag_);
       ASSERT_EQ(0,this->iflag_);

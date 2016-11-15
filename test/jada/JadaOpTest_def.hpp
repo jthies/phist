@@ -20,7 +20,7 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,MATNAME>,
     {
       int sparseMatCreateFlag=getSparseMatCreateFlag(_N_,_NV_);
       SparseMatTest::SetUpTestCase(sparseMatCreateFlag);
-      BTest::SetUpTestCase(map_);
+      BTest::SetUpTestCase(context_);
       VTest::SetUpTestCase();
       MTest::SetUpTestCase();
     }
