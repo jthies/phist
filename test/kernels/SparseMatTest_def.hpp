@@ -1291,19 +1291,14 @@ TEST_F(CLASSNAME,fromRowFuncAndContext)
     return;
 
   TYPE(sparseMat_ptr) A1=NULL, A2=NULL;
-//TODO: needs a defaultContext_ similar to the defaultMap_,
-//      but since we don't have a kernel function to construct
-//      a context without a matrix, this currently doesn't make
-//      sense.
-  //iflag_=PHIST_SPARSEMAT_QUIET;
-//  SUBR(sparseMat_create_fromRowFuncAndContext)(&A1,defaultContext_,7,&MATPDE3D_rowFunc,NULL,&iflag_);
-//  ASSERT_EQ(0,iflag_);
+  iflag_=PHIST_SPARSEMAT_QUIET;
+  SUBR(sparseMat_create_fromRowFuncAndContext)(&A1,defaultContext_,7,&MATPDE3D_rowFunc,NULL,&iflag_);
+  ASSERT_EQ(0,iflag_);
     iflag_=PHIST_SPARSEMAT_QUIET;
   SUBR(sparseMat_create_fromRowFuncAndContext)(&A2,context_,7,&MATPDE3D_rowFunc,NULL,&iflag_);
   EXPECT_EQ(0,iflag_);
   phist_const_map_ptr domain1, domain2, range1, range2, row1, row2, col1, col2;
   // first check if the created matrices are compatible with vectors of the given map:
-/*
   SUBR(sparseMat_get_range_map)(A1,&range1,&iflag_);
   EXPECT_EQ(0,iflag_);
   SUBR(sparseMat_get_domain_map)(A1,&domain1,&iflag_);
@@ -1312,7 +1307,6 @@ TEST_F(CLASSNAME,fromRowFuncAndContext)
   EXPECT_EQ(0,iflag_);
   phist_maps_compatible(range1,defaultMap_,&iflag_);
   EXPECT_EQ(0,iflag_);
-*/
   SUBR(sparseMat_get_range_map)(A2,&range2,&iflag_);
   EXPECT_EQ(0,iflag_);
   SUBR(sparseMat_get_domain_map)(A2,&domain2,&iflag_);
@@ -1322,7 +1316,7 @@ TEST_F(CLASSNAME,fromRowFuncAndContext)
   EXPECT_EQ(0,iflag_);
   phist_maps_compatible(range2,map_,&iflag_);
   EXPECT_EQ(0,iflag_);
-  // then check if all of the maps are identical to those of A_ if the map_ is given
+  // then check if all of the maps are identical to those of A_ if the context of A is given
   SUBR(sparseMat_get_range_map)(A_,&range1,&iflag_);
   EXPECT_EQ(0,iflag_);
   SUBR(sparseMat_get_domain_map)(A_,&domain1,&iflag_);

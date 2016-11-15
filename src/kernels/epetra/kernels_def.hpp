@@ -159,12 +159,12 @@ extern "C" void SUBR(sparseMat_create_fromRowFuncAndContext)(TYPE(sparseMat_ptr)
       *iflag=PHIST_BAD_CAST;
       return;
     }
-    phist::internal::default_context *ctx=new phist::internal::default_context(newRowMap.release());
+    phist::internal::default_context *ctx=new phist::internal::default_context(newRowMap.release().get());
     // create the matrix again and use this new map instead
     delete A;
     *iflag=iflag_in & ~PHIST_SPARSEMAT_PERM_GLOBAL;
     *iflag=*iflag & PHIST_SPARSEMAT_OWN_MAPS;
-    PHIST_CHK_IERR(SUBR(sparseMat_create_fromRowFuncAndContext)(vA,newContext,maxnne,rowFunPtr,last_arg,iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(sparseMat_create_fromRowFuncAndContext)(vA,ctx,maxnne,rowFunPtr,last_arg,iflag),*iflag);
 
     // TODO: print statistics on the partitioning? Isorropia has nice tools for this in examples/
 

@@ -52,9 +52,12 @@ typedef phist_gidx ghost_gidx;
 //!   stored in column-major order but may have a leading dimension larger than the number of rows.
 //! - sparseMat: sparse matrix in *any* storage format
 //! - context: encapsulates all information to construct a sparse matrix with the same shape and
-//!   distribution as another. The context is inherent to a sparseMat and must be obtained from such
+//!   distribution as another. The context is inherent to a sparseMat and is typically obtained from such
 //!   an object after construction. For kernel libraries that do not have (or need) this concept,
-//!   we provide a default implementation (a struct containing the four maps of a sparseMat).
+//!   we provide a default implementation (a class containing the relevant maps of a sparseMat: the row map for
+//!   the row distribution and ordering, the range and domain maps to define the shape of the matrix).
+//!   There is an interface to construct a context only from these maps, this allows defining the row distribution
+//!   before calling e.g. sparseMat_createFromRowFuncAndContext.
 //!
 //! The type-specific objects for mvecs, sdMats and sparseMats are called
 //! phist_Smvec, phist_Dmvec, phist_Cmvec etc. and their related functions defined in 
@@ -114,6 +117,22 @@ void phist_map_get_iupper(phist_const_map_ptr map, phist_gidx* iupper, int* ifla
 //! This function may require communication, so it has to be called by all processes in the map's comm object.
 //! 
 void phist_maps_compatible(phist_const_map_ptr map1, phist_const_map_ptr map2, int* iflag);
+//! create a context object defining the shape of a matrix by three maps.
+//! The row map determines the distribution of rows of the matrix over the processes.
+//! The range and domain map determine the size and distribution of y and x, resp. in y=A*x, and therefore the
+//! shape of the sparse matrices created with this context. Note that it is typically not necessary to create a
+//! context a priori, the more common case is creating a sparseMat, obtaining its context and using it to create
+//! another ("compatible") sparseMat. This gives the kernel library the freedom to apply permutations and load-
+//! balancing when creating a new matrix.
+void phist_context_create(phist_context_ptr* ctx, 
+                          phist_const_map_ptr row_map, 
+                          phist_const_map_ptr range_map, 
+                          phist_const_map_ptr domain_map, 
+                          int* iflag);
+
+//! delete a context created by context_create
+void phist_context_delete(phist_context_ptr vctx, int* iflag);
+
 //!@}
 
 //! \name STREAM benchmarks for measuring main memory bandwidth. These are implemented in the common/
