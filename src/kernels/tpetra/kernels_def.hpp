@@ -161,7 +161,7 @@ extern "C" void SUBR(sparseMat_create_fromRowFunc)(TYPE(sparseMat_ptr) *vA, phis
   phist_map_ptr vmap=NULL;
   PHIST_CHK_IERR(phist_map_create(&vmap,vcomm,nrows,iflag),*iflag);
   // we have to pass in a context object, but only the row map is actually needed to create the matrix:
-  phist::internal::default_context *ctx=new phist::internal::default_context(vmap);
+  phist::internal::default_context *ctx=new phist::internal::default_context(vmap,NULL,NULL);
   //The matrix will take ownership of the map and context:
   *iflag=iflag_in|PHIST_SPARSEMAT_OWN_MAPS;
   PHIST_CHK_IERR(SUBR(sparseMat_create_fromRowFuncAndContext)(vA,ctx,maxnne,rowFunPtr,last_arg,iflag),*iflag);

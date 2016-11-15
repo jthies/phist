@@ -24,10 +24,16 @@ namespace phist
       phist_const_map_ptr range_map;
       phist_const_map_ptr domain_map;
     };
-
-    static std::map<const void*,default_context*> contextCollection;
     
+    typedef std::map<const void*,default_context*> contextMap;
+
+    static contextMap contextCollection;
+    
+    //! delete any context objects associated with the memory location A
     void delete_default_context(const void* A);
+    //! retrieve a context associated with the memory location A, or create a
+    //! new one and associate it with A.
+    default_context* get_default_context(const void* A);
   
   }
 }
