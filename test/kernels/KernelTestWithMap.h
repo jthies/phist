@@ -27,7 +27,7 @@ static void SetUpTestCase()
     map_ = map;
     phist_map_get_local_length(map_,&nloc_,&iflag_);
     EXPECT_EQ(0,iflag_);
-    phist_context_create(&defaultContext_,map_,map_,map_,&iflag_);
+    phist_context_create(&defaultContext_,defaultMap_,defaultMap_,defaultMap_,&iflag_);
     EXPECT_EQ(0,iflag_);
   }
 }
@@ -56,6 +56,7 @@ static void TearDownTestCase()
   {
     phist_context_delete(defaultContext_,&iflag_);
     EXPECT_EQ(0,iflag_);
+    defaultContext_=NULL;
     phist_map_delete(defaultMap_,&iflag_);
     EXPECT_EQ(0,iflag_);
     defaultMap_=NULL;

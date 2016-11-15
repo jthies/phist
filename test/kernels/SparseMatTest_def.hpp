@@ -510,6 +510,8 @@ protected:
     if( !typeImplemented_ || problemTooSmall_ )
       return;
 
+    ASSERT_TRUE(context_!=NULL);
+
     TYPE(sparseMat_ptr) A=NULL;
     iflag_=PHIST_SPARSEMAT_QUIET;
     SUBR(sparseMat_create_fromRowFuncAndContext)(&A,context_,1,&PHIST_TG_PREFIX(idfunc),NULL,&iflag_);
@@ -1290,13 +1292,19 @@ TEST_F(CLASSNAME,fromRowFuncAndContext)
   if( !typeImplemented_ || problemTooSmall_ )
     return;
 
+    ASSERT_TRUE(defaultContext_!=NULL);
+
   TYPE(sparseMat_ptr) A1=NULL, A2=NULL;
   iflag_=PHIST_SPARSEMAT_QUIET;
   SUBR(sparseMat_create_fromRowFuncAndContext)(&A1,defaultContext_,7,&MATPDE3D_rowFunc,NULL,&iflag_);
   ASSERT_EQ(0,iflag_);
+
+    ASSERT_TRUE(context_!=NULL);
+
     iflag_=PHIST_SPARSEMAT_QUIET;
   SUBR(sparseMat_create_fromRowFuncAndContext)(&A2,context_,7,&MATPDE3D_rowFunc,NULL,&iflag_);
   EXPECT_EQ(0,iflag_);
+  
   phist_const_map_ptr domain1, domain2, range1, range2, row1, row2, col1, col2;
   // first check if the created matrices are compatible with vectors of the given map:
   SUBR(sparseMat_get_range_map)(A1,&range1,&iflag_);
