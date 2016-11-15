@@ -174,7 +174,10 @@ extern "C" void SUBR(sparseMat_create_fromRowFuncAndContext)(TYPE(sparseMat_ptr)
   }
 
   *vA = (TYPE(sparseMat_ptr))(A);
-  phist::internal::contextCollection[*vA]=ctx;
+  if (ownMaps||(ctx!=vctx))
+  {
+    phist::internal::contextCollection[*vA]=ctx;
+  }
 
   return;
 }
