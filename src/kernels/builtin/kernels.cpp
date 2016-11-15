@@ -255,6 +255,9 @@ void phist_map_get_ilower(phist_const_map_ptr vmap, phist_gidx* ilower, int* ifl
 void phist_map_get_iupper(phist_const_map_ptr vmap, phist_gidx* iupper, int* iflag);
 void phist_maps_compatible(phist_const_map_ptr map1, phist_const_map_ptr map2, int* iflag);
 
+#include "../common/default_context.h"
+#include "../common/default_context.cpp"
+
 #include "../common/phist_bench_kernels.cpp"
 
 #ifdef PHIST_HAVE_SP
