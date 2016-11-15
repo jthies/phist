@@ -52,11 +52,14 @@ static void SetUpTestCaseWithMap(phist_const_map_ptr map)
 
 static void TearDownTestCase()
 {
-  if (defaultMap_!=NULL)
+  if (defaultContext_!=NULL)
   {
     phist_context_delete(defaultContext_,&iflag_);
     EXPECT_EQ(0,iflag_);
     defaultContext_=NULL;
+  }
+  if (defaultMap_!=NULL)
+  {
     phist_map_delete(defaultMap_,&iflag_);
     EXPECT_EQ(0,iflag_);
     defaultMap_=NULL;

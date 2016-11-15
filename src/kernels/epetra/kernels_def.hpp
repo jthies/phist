@@ -488,8 +488,10 @@ extern "C" void SUBR(sparseMat_delete)(TYPE(sparseMat_ptr) vA, int* iflag)
   *iflag=0;
   if(vA==NULL) return;
   PHIST_CAST_PTR_FROM_VOID(Epetra_CrsMatrix,A,vA,*iflag);
-  phist::internal::default_context* ctx=phist::internal::contextCollection[vA];
-  if (ctx!=NULL) delete ctx;
+  // this is to avoid memory leaks, the function sparseMat_get_context will create
+  // a small wrapper object and store it in a map, associated with this pointer to
+  // a sparseMat.
+  phist::internal::delete_default_context(vA);        
   delete A;
 }
 

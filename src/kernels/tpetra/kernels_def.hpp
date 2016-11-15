@@ -102,7 +102,7 @@ extern "C" void SUBR(sparseMat_create_fromRowFuncAndContext)(TYPE(sparseMat_ptr)
   PHIST_CAST_PTR_FROM_VOID(const phist::internal::default_context,ctx,vctx,*iflag);
   PHIST_CAST_PTR_FROM_VOID(const phist::tpetra::map_type,tpetra_map,ctx->row_map,*iflag);
   
-  bool ownMap = iflag_in&PHIST_SPARSEMAT_OWN_MAPS;  
+  bool ownMap = iflag_in&PHIST_SPARSEMAT_OWN_MAPS;
   Teuchos::RCP<const phist::tpetra::map_type> map_ptr=Teuchos::rcp(tpetra_map,ownMap);
   Traits<_ST_>::sparseMat_t* A=new Traits<_ST_>::sparseMat_t(map_ptr,(int)maxnne);
 
@@ -128,8 +128,8 @@ extern "C" void SUBR(sparseMat_create_fromRowFuncAndContext)(TYPE(sparseMat_ptr)
 
   if (range_map!=NULL && domain_map!=NULL)
   {
-    Teuchos::RCP<const phist::tpetra::map_type> range=Teuchos::rcp(range_map,false);
-    Teuchos::RCP<const phist::tpetra::map_type> domain=Teuchos::rcp(domain_map,false);
+    Teuchos::RCP<const phist::tpetra::map_type> range=Teuchos::rcp(range_map,ownMap);
+    Teuchos::RCP<const phist::tpetra::map_type> domain=Teuchos::rcp(domain_map,ownMap);
     PHIST_TRY_CATCH(A->fillComplete(domain,range),*iflag);
   }
   else

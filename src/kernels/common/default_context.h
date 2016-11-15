@@ -18,6 +18,8 @@ namespace phist
                       phist_const_map_ptr range_map=NULL,
                       phist_const_map_ptr domain_map=NULL);
 
+      ~default_context();
+
       phist_const_map_ptr row_map;
       phist_const_map_ptr range_map;
       phist_const_map_ptr domain_map;
