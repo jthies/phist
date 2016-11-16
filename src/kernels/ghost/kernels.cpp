@@ -468,7 +468,34 @@ extern "C" void phist_map_delete(phist_map_ptr vmap, int *iflag)
   ghost_map_destroy(map);
   vmap=NULL;
 }
-  
+
+//
+extern "C" void phist_context_create(phist_context_ptr* vctx, 
+                phist_const_map_ptr vrow_map, 
+                phist_const_map_ptr vrange_map, 
+                phist_const_map_ptr vdomain_map, 
+                int *iflag)
+{
+  PHIST_ENTER_FCN(__FUNCTION__);
+  *iflag=0;
+  PHIST_CAST_PTR_FROM_VOID(const ghost_map,row_map,vrow_map,*iflag);
+  ghost_map const* range_map=(ghost_map const*)vrange_map;
+  ghost_map const* domain_map=(ghost_map const*)vdomain_map;
+  ghost_context* ctx=NULL;
+  *vctx=(phist_comm_ptr)ctx;
+  *iflag=PHIST_NOT_IMPLEMENTED;
+}
+
+extern "C" void phist_context_delete(phist_context_ptr vctx, int* iflag)
+{
+  *iflag=0;
+  PHIST_ENTER_FCN(__FUNCTION__);
+  if (vctx==NULL) return;
+  PHIST_CAST_PTR_FROM_VOID(ghost_context,ctx,vctx,*iflag);
+  ghost_context_destroy(ctx);
+  delete ctx;
+}
+
 //!
 extern "C" void phist_map_get_comm(phist_const_map_ptr vmap, phist_const_comm_ptr* vcomm, int* iflag)
 {
