@@ -2,6 +2,9 @@
 #define PHIST_TYPEDEFS_H
 
 #include "phist_config.h"
+
+#ifndef DOXYGEN
+
 /* needs to be included before system headers for some intel compilers+mpi */
 #ifdef PHIST_HAVE_MPI
 #include <mpi.h>
@@ -27,6 +30,8 @@ typedef  complex double phist_d_complex;
 
 #include <ghost/config.h>
 #include <ghost/types.h>
+
+#endif /* DOXYGEN */
 
 //! type of node-local indices. 
 typedef ghost_lidx phist_lidx;

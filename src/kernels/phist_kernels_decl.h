@@ -418,7 +418,7 @@ void SUBR(mvec_add_mvec)(_ST_ alpha, TYPE(const_mvec_ptr) X,
 
 //! y[i]=alpha[i]*x[i]+beta*y[i]. \ingroup mvec
 void SUBR(mvec_vadd_mvec)(const _ST_ alpha[], TYPE(const_mvec_ptr) X,
-                          const _ST_ beta,  TYPE(mvec_ptr)       Y,     
+                                _ST_ beta,    TYPE(mvec_ptr)       Y,     
                           int* iflag);
 
 

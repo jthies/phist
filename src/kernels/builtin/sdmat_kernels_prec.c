@@ -6,7 +6,7 @@
 
 #include "phist_config.h"
 #include "phist_defs.h"
-#include "prec_helpers.h"
+#include "phist_prec_helpers.h"
 
 #ifdef PHIST_SDMATS_ROWMAJOR
 #error "functionality not implemented for row-major sdMats"

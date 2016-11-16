@@ -61,6 +61,33 @@ void SUBR(linearOp_identity)(TYPE(linearOp_ptr) op,
 
 //@}
 
+//! \name wrappers that simply call the corresponding function in the linearOp struct
+//! These are particularly useful for Fortran users, for which it is awkward to use  
+//! the c_funptr members of the linearOp types (cf. https://bitbucket.org/essex/phist_fort)
+//@{
+ //! pointer to function for computing Y=alpha*A*X+beta*Y
+ void SUBR(linearOp_apply)(_ST_ alpha, TYPE(const_linearOp_ptr) A_op, 
+        TYPE(const_mvec_ptr) X, _ST_ beta,  TYPE(mvec_ptr) Y, int* iflag);
+//! apply transpose
+ void SUBR(linearOp_applyT)(_ST_ alpha, TYPE(const_linearOp_ptr) A_op, 
+        TYPE(const_mvec_ptr) X, _ST_ beta,  TYPE(mvec_ptr) Y, int* iflag);
+ //! pointer to function for computing Y=(A-sigma[j]B)*X[j]+beta*Y[j]
+ void SUBR(linearOp_apply_shifted)(_ST_ alpha, TYPE(const_linearOp_ptr) A_op, _ST_ const * sigma,
+        TYPE(const_mvec_ptr) X, _ST_ beta,  TYPE(mvec_ptr) Y, int* iflag);
+  //! apply operator and compute inner products with in- and output vector
+  void SUBR(linearOp_fused_apply_mvTmv)(_ST_ alpha, TYPE(const_linearOp_ptr) A_op, TYPE(const_mvec_ptr)  V,
+                            _ST_ beta,                 TYPE(mvec_ptr)        W,
+                            TYPE(sdMat_ptr) WtW, TYPE(sdMat_ptr) VtW,
+                            int* iflag);
+  
+  //! this function can be used to clean up any data the operator may *own*,
+  //! if the operator is just a wrapper for some other object that is created
+  //! and deleted separately, this function should not do anything.
+  //! The me object itself should *not* be free'd.
+  void SUBR(linearOp_destroy)(TYPE(linearOp_ptr) A_op, int* iflag);
+
+//@}
+
 //@}
 
 

@@ -16,8 +16,9 @@ void SUBR(jadaCorrectionSolver_create)(TYPE(jadaCorrectionSolver_ptr) *me, phist
     (*me)->gmresBlockDim_ = opts.innerSolvBlockSize;
     (*me)->blockedGMRESstates_  = new TYPE(blockedGMRESstate_ptr)[(*me)->gmresBlockDim_];
     PHIST_CHK_IERR(SUBR(blockedGMRESstates_create)((*me)->blockedGMRESstates_, opts.innerSolvBlockSize, map, opts.innerSolvMaxBas, iflag), *iflag);
-    (*me)->leftPrecon=(TYPE(const_linearOp_ptr))opts.preconOp;
+    (*me)->leftPrecon=(TYPE(linearOp_ptr))opts.preconOp;
     (*me)->preconSkewProject=opts.preconSkewProject;
+    (*me)->preconUpdate=opts.preconUpdate;
   }
   else if ((*me)->method_==phist_CARP_CG)
   {
@@ -35,7 +36,7 @@ void SUBR(jadaCorrectionSolver_create)(TYPE(jadaCorrectionSolver_ptr) *me, phist
   }
   else if ((*me)->method_==phist_NO_LINSOLV)
   {
-    (*me)->rightPrecon=(TYPE(const_linearOp_ptr))opts.preconOp;
+    (*me)->rightPrecon=(TYPE(linearOp_ptr))opts.preconOp;
     (*me)->preconSkewProject=opts.preconSkewProject;
   }
   else
@@ -89,7 +90,7 @@ void SUBR(jadaCorrectionSolver_run)(TYPE(jadaCorrectionSolver_ptr) me,
                                     const _ST_            sigma[],  TYPE(const_mvec_ptr)  res,      const int resIndex[], 
                                     const _MT_            tol[],    int                   maxIter,
                                     TYPE(mvec_ptr)        t,
-                                    bool useIMGS,                   bool abortAfterFirstConvergedInBlock,
+                                    int useIMGS,                   int abortAfterFirstConvergedInBlock,
                                     int *                 iflag)
 {
 #include "phist_std_typedefs.hpp"
@@ -170,6 +171,28 @@ void SUBR(jadaCorrectionSolver_run)(TYPE(jadaCorrectionSolver_ptr) me,
 */
   // make sure these vectors get deleted at the end of the scope
   MvecOwner<_ST_> _q(q!=Qtil?q:NULL),_Bq(( (Bq!=q)&&(Bq!=BQtil) )?Bq:NULL);
+  
+  if (me->preconUpdate!=0)
+  {
+    // select a single shift for the preconditioner (various strategies could be used)
+    _ST_ prec_sigma=sigma[0];
+    if (me->leftPrecon!=NULL)
+    {
+      // not all preconditioners may support this, so only warn on non-zero output
+      SUBR(precon_update)(me->leftPrecon,prec_sigma,q,Bq,iflag);
+      if (*iflag) PHIST_SOUT(PHIST_WARNING,"precon_update returned non-zero code %d\n"
+                                           "(file %s, line %d). Ignoring return value.\n",
+                                           __FILE__,__LINE__);
+    }
+    if (me->rightPrecon!=NULL)
+    {
+      // not all preconditioners may support this, so only warn on non-zero output
+      SUBR(precon_update)(me->rightPrecon,prec_sigma,q,Bq,iflag);
+      if (*iflag) PHIST_SOUT(PHIST_WARNING,"precon_update returned non-zero code %d\n"
+                                           "(file %s, line %d). Ignoring return value.\n",
+                                           __FILE__,__LINE__);
+    }
+  }
  
   // if no Krylov method is used, only apply the preconditioner. This is also known as Olsen's method.
   if (me->method_==phist_NO_LINSOLV)

@@ -13,7 +13,7 @@
 #include <omp.h>
 #endif
 #include "phist_defs.h"
-#include "prec_helpers.h"
+#include "phist_prec_helpers.h"
 
 // define our own datatype for aligned doubles
 typedef double aligned_double __attribute__((aligned(64)));

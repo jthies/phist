@@ -13,10 +13,6 @@
 #include "phist_ScalarTraits.hpp"
 #include "phist_sdFact.h"
 
-#ifdef PHIST_HAVE_MPACK_QD
-#define ORTHOGRR_USE_SVQB
-#endif
-
 #ifdef PHIST_HAVE_SP
 #include "phist_gen_s.h"
 #include "phist_orthogrr_def.hpp"
