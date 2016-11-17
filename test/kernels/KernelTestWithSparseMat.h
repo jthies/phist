@@ -17,10 +17,6 @@
 
 using namespace testing;
 
-extern "C" int phist_Sidfunc(ghost_gidx row, ghost_lidx* len, ghost_gidx* cols, void* vals, void *arg);
-extern "C" int phist_Didfunc(ghost_gidx row, ghost_lidx* len, ghost_gidx* cols, void* vals, void *arg);
-extern "C" int phist_Cidfunc(ghost_gidx row, ghost_lidx* len, ghost_gidx* cols, void* vals, void *arg);
-extern "C" int phist_Zidfunc(ghost_gidx row, ghost_lidx* len, ghost_gidx* cols, void* vals, void *arg);
 
 // available matrices
 // need to be preprocessor definitions to allow "#if MATNAME == MATNAME_speye" style comparisons

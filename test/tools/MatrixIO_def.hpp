@@ -54,6 +54,21 @@ void SUBR(read_mat)(const char* filebase,phist_const_comm_ptr comm,
 // some functions for initializing matrices and mvecs
 int PHIST_TG_PREFIX(idfunc)(ghost_gidx row, ghost_lidx *len, ghost_gidx* cols, void* vval, void *arg)
 {
+  static phist_gidx gnrows=-1;
+  static phist_gidx gncols=-1;
+  if (row==-1)
+  {
+    gnrows=cols[0];
+    gncols=cols[1];
+    return 0;
+  }
+  if (gnrows>0 && row>=gnrows) return -1;
+  if (row<0) return -1;
+  if (gncols>0 && row>=gncols)
+  {
+    *len=0;
+    return 0;
+  }
   *len=1;
   _ST_* val = (_ST_*)vval;
   val[0]=(_ST_)1.0;

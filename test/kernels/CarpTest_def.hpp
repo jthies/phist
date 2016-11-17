@@ -4,6 +4,8 @@
 #error "file not included correctly."
 #endif
 
+using namespace phist::testing;
+
 #if !defined(IS_COMPLEX)&&defined(IS_DOUBLE)
 
 /*! Test fixure. 
@@ -77,7 +79,7 @@ public:
     if (typeImplemented_ && !problemTooSmall_)
     {
       iflag_=PHIST_SPARSEMAT_OPT_CARP | getSparseMatCreateFlag(_N_,_NV_);
-      SUBR(sparseMat_create_fromRowFunc)(&I_,comm_,_N_,_N_,1,&SUBR(idfunc),NULL,&iflag_);
+      SUBR(sparseMat_create_fromRowFunc)(&I_,comm_,_N_,_N_,1,&PHIST_TG_PREFIX(idfunc),NULL,&iflag_);
       ASSERT_EQ(0,iflag_);
       
       SUBR(mvec_random)(vec1_,&iflag_);

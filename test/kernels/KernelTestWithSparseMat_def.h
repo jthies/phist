@@ -11,12 +11,18 @@ void SUBR(create_matrix)(TYPE(sparseMat_ptr)* mat, phist_const_comm_ptr comm,
 
 } //extern "C"
 
+namespace phist {
+namespace testing {
+int PHIST_TG_PREFIX(idfunc)(ghost_gidx row, ghost_lidx *len, ghost_gidx* cols, void* vval, void *arg);
+}
+}
+
 /*! Test fixture. */
 template<phist_gidx _Nglob, phist_gidx _Mglob, MATNAME_ENUM _MatName, int _multipleDefinitionCounter>
 class KernelTestWithSparseMat<_ST_, _Nglob, _Mglob, _MatName, _multipleDefinitionCounter> : 
                                                                                     public virtual TestWithType< _ST_ >,
                                                                                     public virtual KernelTest,
-                                                                                    public virtual KernelTestWithMap<_Nglob> 
+                                                                                    public virtual KernelTestWithMap<_Nglob>
 {
 
   public:
@@ -37,7 +43,15 @@ class KernelTestWithSparseMat<_ST_, _Nglob, _Mglob, _MatName, _multipleDefinitio
         if (_MatName==MATNAME_IDFUNC)
         {
           // this is not handled by create_matrix, so it gets an extra treatment
-          SUBR(sparseMat_create_fromRowFunc)(&A_,comm_,_Nglob,_Mglob,1,&SUBR(idfunc),NULL,&iflag_);
+          phist_gidx ini_dim[2];
+          ini_dim[0]=_Nglob;
+          ini_dim[1]=_Mglob;
+          PHIST_TG_PREFIX(idfunc)(-1,NULL,ini_dim,NULL,NULL);
+          SUBR(sparseMat_create_fromRowFunc)(&A_,comm_,_Nglob,_Mglob,1,&PHIST_TG_PREFIX(idfunc),NULL,&iflag_);
+          // "uninitialize"
+          ini_dim[0]=-1;
+          ini_dim[1]=-1;
+          PHIST_TG_PREFIX(idfunc)(-1,NULL,ini_dim,NULL,NULL);
         }
         else if (MatNameEnumIsMatFunc(_MatName)==false)
         {
@@ -81,7 +95,7 @@ class KernelTestWithSparseMat<_ST_, _Nglob, _Mglob, _MatName, _multipleDefinitio
         ASSERT_EQ(0,iflag_);
 
         // now setup the map
-        KernelTestWithMap<_Nglob>::SetUpTestCaseWithMap(domain_map);
+        KernelTestWithMap<_Nglob>::SetUpTestCaseWithMap(range_map);
       }
     }
 
@@ -93,7 +107,7 @@ class KernelTestWithSparseMat<_ST_, _Nglob, _Mglob, _MatName, _multipleDefinitio
       if( this->typeImplemented_ && !this->problemTooSmall_ )
       {
         phist_const_map_ptr map = NULL;
-        SUBR(sparseMat_get_domain_map)(A_,&map,&this->iflag_);
+        SUBR(sparseMat_get_range_map)(A_,&map,&this->iflag_);
         ASSERT_EQ(0,this->iflag_);
         // make sure that the domain map of the matrix is the base map of this test class
         phist_maps_compatible(map,KernelTestWithMap<_Nglob>::map_,&iflag_);

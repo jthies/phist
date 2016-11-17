@@ -7,7 +7,10 @@ void SUBR(read_mat)(const char* filebase,phist_const_comm_ptr comm,int nglob, in
 //! \name some functions for initializing sparseMats and mvecs
 //!@{
 
-  //! create identity matrix
+  //! create identity matrix. If called with row=-1, cols[0] and cols[1] are interpreted as global number of
+  //! rows and columns, respectively (gnrows and gncols).
+  //! If gnrows>gncols, creates [speye(gncols);zeros(gnrows-gncols,gncols)].
+  //! If gncols>gnrows, creates [speye(gnrows),zeros(gnrows,gncols-gnrows)].
   int PHIST_TG_PREFIX(idfunc)(ghost_gidx row, ghost_lidx *len, ghost_gidx* cols, void* vval, void *arg);
 
   //! create some sparse matrix without specific properties
