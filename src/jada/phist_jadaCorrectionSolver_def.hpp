@@ -149,9 +149,10 @@ void SUBR(jadaCorrectionSolver_run)(TYPE(jadaCorrectionSolver_ptr) me,
   {
     q=(TYPE(mvec_ptr))Qtil; Bq=(TYPE(mvec_ptr))BQtil;
   }
-/*
+
   if (me->rightPrecon && me->preconSkewProject)
   {
+    q=NULL; Bq=NULL;
     phist_const_map_ptr map;
     int nqp=totalNumSys, nq=numProj;
     int nq0=std::max(0,nq-nqp);
@@ -168,7 +169,7 @@ void SUBR(jadaCorrectionSolver_run)(TYPE(jadaCorrectionSolver_ptr) me,
       Bq=q;
     }
   }
-*/
+
   // make sure these vectors get deleted at the end of the scope
   MvecOwner<_ST_> _q(q!=Qtil?q:NULL),_Bq(( (Bq!=q)&&(Bq!=BQtil) )?Bq:NULL);
   
