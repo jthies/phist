@@ -12,8 +12,9 @@ void SUBR(create_matrix)(TYPE(sparseMat_ptr)* mat, phist_const_comm_ptr comm,
 } //extern "C"
 
 /*! Test fixture. */
-template<phist_gidx _Nglob, MATNAME_ENUM _MatName, int _multipleDefinitionCounter>
-class KernelTestWithSparseMat<_ST_, _Nglob, _MatName, _multipleDefinitionCounter> : public virtual TestWithType< _ST_ >,
+template<phist_gidx _Nglob, phist_gidx _Mglob, MATNAME_ENUM _MatName, int _multipleDefinitionCounter>
+class KernelTestWithSparseMat<_ST_, _Nglob, _Mglob, _MatName, _multipleDefinitionCounter> : 
+                                                                                    public virtual TestWithType< _ST_ >,
                                                                                     public virtual KernelTest,
                                                                                     public virtual KernelTestWithMap<_Nglob> 
 {
@@ -36,11 +37,11 @@ class KernelTestWithSparseMat<_ST_, _Nglob, _MatName, _multipleDefinitionCounter
         if (_MatName==MATNAME_IDFUNC)
         {
           // this is not handled by create_matrix, so it gets an extra treatment
-          SUBR(sparseMat_create_fromRowFunc)(&A_,comm_,_Nglob,_Nglob,1,&SUBR(idfunc),NULL,&iflag_);
+          SUBR(sparseMat_create_fromRowFunc)(&A_,comm_,_Nglob,_Mglob,1,&SUBR(idfunc),NULL,&iflag_);
         }
         else if (MatNameEnumIsMatFunc(_MatName)==false)
         {
-          SUBR(read_mat)(MatNameEnumToStr(_MatName),comm_,_Nglob,&A_,&iflag_);
+          SUBR(read_mat)(MatNameEnumToStr(_MatName),comm_,_Nglob,_Mglob,&A_,&iflag_);
         }
         else
         {
@@ -54,19 +55,27 @@ class KernelTestWithSparseMat<_ST_, _Nglob, _MatName, _multipleDefinitionCounter
         ASSERT_EQ(0,iflag_);
 
         phist_const_map_ptr range_map = NULL;
-        SUBR(sparseMat_get_domain_map)(A_,&range_map,&iflag_);
+        SUBR(sparseMat_get_range_map)(A_,&range_map,&iflag_);
         ASSERT_EQ(0,iflag_);
 
-        // check the size of the map
+        // check the size of the maps
         phist_gidx map_nglob = 0;
-        phist_map_get_global_length(domain_map,&map_nglob,&iflag_);
+        phist_map_get_global_length(range_map,&map_nglob,&iflag_);
         ASSERT_EQ(0,iflag_);
         ASSERT_EQ(_Nglob,map_nglob);
+
+        phist_gidx map_mglob = 0;
+        phist_map_get_global_length(domain_map,&map_mglob,&iflag_);
+        ASSERT_EQ(0,iflag_);
+        ASSERT_EQ(_Mglob,map_mglob);
         
         // check that the range- and domain map are the same. Our tests dassume
         // the matrix is square and symmetrically permuted.
-        phist_maps_compatible(range_map,domain_map,&iflag_);
-        ASSERT_EQ(0,iflag_);
+        if (_Nglob==_Mglob)
+        {
+          phist_maps_compatible(range_map,domain_map,&iflag_);
+          ASSERT_EQ(0,iflag_);
+        }
         
         SUBR(sparseMat_get_context)(A_,&context_,&iflag_);
         ASSERT_EQ(0,iflag_);
@@ -118,7 +127,7 @@ class KernelTestWithSparseMat<_ST_, _Nglob, _MatName, _multipleDefinitionCounter
 };
 
 
-template<phist_gidx _Nglob,MATNAME_ENUM _MatName,int _multipleDefinitionCounter>
-TYPE(sparseMat_ptr) KernelTestWithSparseMat<_ST_,_Nglob,_MatName,_multipleDefinitionCounter> :: A_;
-template<phist_gidx _Nglob,MATNAME_ENUM _MatName,int _multipleDefinitionCounter>
-phist_const_context_ptr KernelTestWithSparseMat<_ST_,_Nglob,_MatName,_multipleDefinitionCounter> :: context_;
+template<phist_gidx _Nglob,phist_gidx _Mglob,MATNAME_ENUM _MatName,int _multipleDefinitionCounter>
+TYPE(sparseMat_ptr) KernelTestWithSparseMat<_ST_,_Nglob,_Mglob, _MatName,_multipleDefinitionCounter> :: A_;
+template<phist_gidx _Nglob,phist_gidx _Mglob,MATNAME_ENUM _MatName,int _multipleDefinitionCounter>
+phist_const_context_ptr KernelTestWithSparseMat<_ST_,_Nglob,_Mglob,_MatName,_multipleDefinitionCounter> :: context_;

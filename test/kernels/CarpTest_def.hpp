@@ -26,12 +26,12 @@
   ... TODO: add tests ...
   
 */
-class CLASSNAME: public KernelTestWithSparseMat<_ST_,_N_,MATNAME>,
+class CLASSNAME: public KernelTestWithSparseMat<_ST_,_N_,_N_,MATNAME>,
                  public KernelTestWithVectors<_ST_,_N_,_NV_,0,3> 
 {
 
 public:
-  typedef KernelTestWithSparseMat<_ST_,_N_,MATNAME> SparseMatTest;
+  typedef KernelTestWithSparseMat<_ST_,_N_,_N_,MATNAME> SparseMatTest;
   typedef KernelTestWithVectors<_ST_,_N_,_NV_,0,3>  VTest;
   typedef KernelTestWithSdMats<_ST_,_NV_,_NV_> MTest;
 

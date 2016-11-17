@@ -4,9 +4,13 @@ namespace phist
   namespace testing
   {
 
-void SUBR(read_mat)(const char* filebase,phist_const_comm_ptr comm, int nglob,TYPE(sparseMat_ptr) *ptr, int* iflag)
+void SUBR(read_mat)(const char* filebase,phist_const_comm_ptr comm, 
+        int nglob, int mglob, TYPE(sparseMat_ptr) *ptr, int* iflag)
 {
   int iflag_in=*iflag;
+  std::stringstream dimstr;
+  dimstr<<nglob;
+  if (mglob!=nglob) dimstr<<"x"<<mglob;
   iflag_in |= PHIST_OUTLEV>=PHIST_DEBUG ? 0 : PHIST_SPARSEMAT_QUIET;
   *ptr = NULL;
   char tpc = ::phist::ScalarTraits< _ST_ >::type_char();
@@ -14,15 +18,15 @@ void SUBR(read_mat)(const char* filebase,phist_const_comm_ptr comm, int nglob,TY
   sprintf(mmfile,"%c%s%d.mm",tpc,filebase,nglob);
   if (::phist::ScalarTraits< _ST_ >::is_complex())
   {
-    sprintf(hbfile,"%c%s%d.cua",tpc,filebase,nglob);
+    sprintf(hbfile,"%c%s%s.cua",tpc,filebase,dimstr.str().c_str());
   } 
   else
   {
-    sprintf(hbfile,"%c%s%d.rua",tpc,filebase,nglob);
+    sprintf(hbfile,"%c%s%s.rua",tpc,filebase,dimstr.str().c_str());
   }
 
-  sprintf(binfile,"%c%s%d.bin",tpc,filebase,nglob);
-  sprintf(crsfile,"%c%s%d.crs",tpc,filebase,nglob);
+  sprintf(binfile,"%c%s%s.bin",tpc,filebase,dimstr.str().c_str());
+  sprintf(crsfile,"%c%s%s.crs",tpc,filebase,dimstr.str().c_str());
   
   PHIST_SOUT(PHIST_DEBUG, "Looking for matrix \'%s\'..\n", filebase);
 
