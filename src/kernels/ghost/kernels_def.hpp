@@ -1027,7 +1027,7 @@ extern "C" void SUBR(mvec_random)(TYPE(mvec_ptr) vV, int* iflag)
 PHIST_TASK_DECLARE(ComputeTask)
 PHIST_TASK_BEGIN(ComputeTask)
   PHIST_CAST_PTR_FROM_VOID(ghost_densemat,V,vV,*iflag);
-  V->fromRand(V);
+  ghost_densemat_init_rand(V);
 PHIST_TASK_END(iflag);
 }
 #endif
@@ -1092,7 +1092,7 @@ extern "C" void SUBR(sdMat_random)(TYPE(sdMat_ptr) vM, int* iflag)
 PHIST_TASK_DECLARE(ComputeTask)
 PHIST_TASK_BEGIN_SMALLDETERMINISTIC(ComputeTask)
   PHIST_CAST_PTR_FROM_VOID(ghost_densemat,M,vM,*iflag);
-  M->fromRand(M);
+  ghost_densemat_init_rand(M);
 PHIST_TASK_END(iflag);
 }
 #endif
