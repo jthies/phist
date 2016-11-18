@@ -17,10 +17,6 @@
 
 using namespace testing;
 
-extern "C" int phist_Sidfunc(ghost_gidx row, ghost_lidx* len, ghost_gidx* cols, void* vals, void *arg);
-extern "C" int phist_Didfunc(ghost_gidx row, ghost_lidx* len, ghost_gidx* cols, void* vals, void *arg);
-extern "C" int phist_Cidfunc(ghost_gidx row, ghost_lidx* len, ghost_gidx* cols, void* vals, void *arg);
-extern "C" int phist_Zidfunc(ghost_gidx row, ghost_lidx* len, ghost_gidx* cols, void* vals, void *arg);
 
 // available matrices
 // need to be preprocessor definitions to allow "#if MATNAME == MATNAME_speye" style comparisons
@@ -47,7 +43,7 @@ const char* MatNameEnumToStr(MATNAME_ENUM);
  * _multipleDefinitionCounter: used to enforce multiple template instantiations of static class variables where needed
    mvec blocks.
  */
-template<typename T, phist_gidx _Nglob, MATNAME_ENUM _MatName, int _multipleDefinitionCounter=0>
+template<typename T, phist_gidx _Nglob, phist_gidx _Mglob, MATNAME_ENUM _MatName, int _multipleDefinitionCounter=0>
 class KernelTestWithSparseMat:
         public virtual KernelTestWithMap<_Nglob>,
         public virtual TestWithType<T>

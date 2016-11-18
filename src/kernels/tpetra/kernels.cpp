@@ -347,4 +347,5 @@ extern "C" void phist_maps_compatible(phist_const_map_ptr vmap1, phist_const_map
 }
 
 
+#include "../common/default_context.cpp"
 #include "../common/phist_bench_kernels.cpp"

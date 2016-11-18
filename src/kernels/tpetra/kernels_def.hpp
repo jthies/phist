@@ -74,19 +74,19 @@ const char* filename,int* iflag)
   *vA = (TYPE(sparseMat_ptr))(Aptr.get());
 }
 
-extern "C" void SUBR(sparseMat_read_mm_with_map)(TYPE(sparseMat_ptr)* A, phist_const_map_ptr map,
+extern "C" void SUBR(sparseMat_read_mm_with_context)(TYPE(sparseMat_ptr)* A, phist_const_context_ptr ctx,
         const char* filename,int* iflag)
 {
   *iflag=PHIST_NOT_IMPLEMENTED;
 }
 
-extern "C" void SUBR(sparseMat_read_bin_with_map)(TYPE(sparseMat_ptr)* A, phist_const_map_ptr map,
+extern "C" void SUBR(sparseMat_read_bin_with_context)(TYPE(sparseMat_ptr)* A, phist_const_context_ptr ctx,
         const char* filename,int* iflag)
 {
   *iflag=PHIST_NOT_IMPLEMENTED;
 }
 
-extern "C" void SUBR(sparseMat_read_hb_with_map)(TYPE(sparseMat_ptr)* A, phist_const_map_ptr map,
+extern "C" void SUBR(sparseMat_read_hb_with_context)(TYPE(sparseMat_ptr)* A, phist_const_context_ptr ctx,
         const char* filename,int* iflag)
 {
   *iflag=PHIST_NOT_IMPLEMENTED;
@@ -95,13 +95,15 @@ extern "C" void SUBR(sparseMat_read_hb_with_map)(TYPE(sparseMat_ptr)* A, phist_c
 //!@}
 
 
-extern "C" void SUBR(sparseMat_create_fromRowFuncAndMap)(TYPE(sparseMat_ptr) *vA, phist_const_map_ptr vmap,
-        phist_lidx maxnne,phist_sparseMat_rowFunc rowFunPtr,void* last_arg,
-        int *iflag)
+extern "C" void SUBR(sparseMat_create_fromRowFuncAndContext)(TYPE(sparseMat_ptr) *vA, phist_const_context_ptr vctx,
+        phist_lidx maxnne,phist_sparseMat_rowFunc rowFunPtr,void* last_arg, int *iflag)
 {
-  PHIST_CAST_PTR_FROM_VOID(const phist::tpetra::map_type,tpetra_map,vmap,*iflag);
-  bool ownMap = *iflag&PHIST_SPARSEMAT_OWN_MAPS;
-Teuchos::RCP<const phist::tpetra::map_type> map_ptr=Teuchos::rcp(tpetra_map,ownMap);
+  int iflag_in=*iflag;
+  PHIST_CAST_PTR_FROM_VOID(const phist::internal::default_context,ctx,vctx,*iflag);
+  PHIST_CAST_PTR_FROM_VOID(const phist::tpetra::map_type,tpetra_map,ctx->row_map,*iflag);
+  
+  bool ownMap = iflag_in&PHIST_SPARSEMAT_OWN_MAPS;
+  Teuchos::RCP<const phist::tpetra::map_type> map_ptr=Teuchos::rcp(tpetra_map,ownMap);
   Traits<_ST_>::sparseMat_t* A=new Traits<_ST_>::sparseMat_t(map_ptr,(int)maxnne);
 
   phist_gidx cols[maxnne];
@@ -120,13 +122,30 @@ Teuchos::RCP<const phist::tpetra::map_type> map_ptr=Teuchos::rcp(tpetra_map,ownM
     
     PHIST_TRY_CATCH(A->insertGlobalValues (row,cols_v,vals_v),*iflag);
   }
-  PHIST_TRY_CATCH(A->fillComplete(),*iflag);
+
+  const phist::tpetra::map_type* range_map=(const phist::tpetra::map_type*)(ctx->range_map);
+  const phist::tpetra::map_type* domain_map=(const phist::tpetra::map_type*)(ctx->domain_map);
+
+  if (range_map!=NULL && domain_map!=NULL)
+  {
+    Teuchos::RCP<const phist::tpetra::map_type> range=Teuchos::rcp(range_map,ownMap);
+    Teuchos::RCP<const phist::tpetra::map_type> domain=Teuchos::rcp(domain_map,ownMap);
+    PHIST_TRY_CATCH(A->fillComplete(domain,range),*iflag);
+  }
+  else
+  {
+    PHIST_TRY_CATCH(A->fillComplete(),*iflag);
+  }
+
+  *vA = (TYPE(sparseMat_ptr))(A);  
 
 //  Teuchos::FancyOStream fos(Teuchos::rcp(&std::cout,false));
 //  fos << std::scientific << std::setw(16) << std::setprecision(12);
 //  A->describe(fos,Teuchos::VERB_EXTREME);
-                            
-  *vA = (TYPE(sparseMat_ptr))(A);  
+  if (ownMap)
+  {
+    phist::internal::contextCollection[*vA]=(phist::internal::default_context*)ctx;
+  }
   return;
 }
 
@@ -141,9 +160,11 @@ extern "C" void SUBR(sparseMat_create_fromRowFunc)(TYPE(sparseMat_ptr) *vA, phis
 
   phist_map_ptr vmap=NULL;
   PHIST_CHK_IERR(phist_map_create(&vmap,vcomm,nrows,iflag),*iflag);
-  //The matrix will take ownership of the map:
+  // we have to pass in a context object, but only the row map is actually needed to create the matrix:
+  phist::internal::default_context *ctx=new phist::internal::default_context(vmap,NULL,NULL);
+  //The matrix will take ownership of the map and context:
   *iflag=iflag_in|PHIST_SPARSEMAT_OWN_MAPS;
-  PHIST_CHK_IERR(SUBR(sparseMat_create_fromRowFuncAndMap)(vA,vmap,maxnne,rowFunPtr,last_arg,iflag),*iflag);
+  PHIST_CHK_IERR(SUBR(sparseMat_create_fromRowFuncAndContext)(vA,ctx,maxnne,rowFunPtr,last_arg,iflag),*iflag);
 }
                                                             
 
@@ -175,6 +196,10 @@ extern "C" void SUBR(sparseMat_get_domain_map)(TYPE(const_sparseMat_ptr) vA, phi
   PHIST_CAST_PTR_FROM_VOID(const Traits<_ST_>::sparseMat_t, A, vA, *iflag);
   *vmap = (phist_const_map_ptr)(A->getDomainMap().get());
 }
+
+// there's no context concept in Tpetra, so just use the default implementation:
+// context=row, column, range, and domain map.
+#include "../common/default_context_def.hpp"
 
 //! get the map for vectors y in y=A*x
 extern "C" void SUBR(sparseMat_get_range_map)(TYPE(const_sparseMat_ptr) vA, phist_const_map_ptr* vmap, int* iflag)
@@ -649,6 +674,10 @@ extern "C" void SUBR(sparseMat_delete)(TYPE(sparseMat_ptr) vA, int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   *iflag=0;
+  // this is to avoid memory leaks, the function sparseMat_get_context will create
+  // a small wrapper object and store it in a map, associated with this pointer to
+  // a sparseMat.
+  phist::internal::delete_default_context(vA);
   if (vA==NULL) return;
   PHIST_CAST_PTR_FROM_VOID(Traits<_ST_>::sparseMat_t,A,vA,*iflag);
   delete A;

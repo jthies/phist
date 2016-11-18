@@ -19,7 +19,6 @@ static void SetUpTestCase()
   // do not re-build the map if it has been called already
   if( defaultMap_ == NULL)
   {
-
     phist_map_ptr map;
     iflag_=PHIST_SPARSEMAT_QUIET;
     phist_map_create(&map,comm_,nglob_,&iflag_);
@@ -27,6 +26,8 @@ static void SetUpTestCase()
     defaultMap_=map;
     map_ = map;
     phist_map_get_local_length(map_,&nloc_,&iflag_);
+    EXPECT_EQ(0,iflag_);
+    phist_context_create(&defaultContext_,defaultMap_,defaultMap_,defaultMap_,&iflag_);
     EXPECT_EQ(0,iflag_);
   }
 }
@@ -51,6 +52,12 @@ static void SetUpTestCaseWithMap(phist_const_map_ptr map)
 
 static void TearDownTestCase()
 {
+  if (defaultContext_!=NULL)
+  {
+    phist_context_delete(defaultContext_,&iflag_);
+    EXPECT_EQ(0,iflag_);
+    defaultContext_=NULL;
+  }
   if (defaultMap_!=NULL)
   {
     phist_map_delete(defaultMap_,&iflag_);
@@ -64,6 +71,7 @@ static const phist_gidx nglob_=_Nglob;
 static phist_lidx nloc_;
 static phist_const_map_ptr map_;
 static phist_map_ptr defaultMap_;
+static phist_context_ptr defaultContext_;
 static bool problemTooSmall_;
 };
 
@@ -78,6 +86,9 @@ phist_const_map_ptr KernelTestWithMap<_Nglob>::map_ = NULL;
 
 template<phist_gidx _Nglob>
 phist_map_ptr KernelTestWithMap<_Nglob>::defaultMap_ = NULL;
+
+template<phist_gidx _Nglob>
+phist_context_ptr KernelTestWithMap<_Nglob>::defaultContext_ = NULL;
 
 template<phist_gidx _Nglob>
 bool KernelTestWithMap<_Nglob>::problemTooSmall_ = false;

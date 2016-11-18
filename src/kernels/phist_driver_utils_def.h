@@ -6,7 +6,8 @@ void SUBR(sparseMat_read)(TYPE(sparseMat_ptr)* A, phist_const_comm_ptr comm,
   {
     if (map)
     {
-      PHIST_CHK_IERR(SUBR(sparseMat_read_mm_with_map)(A,map,filename,iflag),*iflag);
+      //PHIST_CHK_IERR(SUBR(sparseMat_read_mm_with_map)(A,map,filename,iflag),*iflag);
+      *iflag=PHIST_NOT_IMPLEMENTED;
     }
     else
     {
@@ -17,7 +18,8 @@ void SUBR(sparseMat_read)(TYPE(sparseMat_ptr)* A, phist_const_comm_ptr comm,
   {
     if (map)
     {
-      PHIST_CHK_IERR(SUBR(sparseMat_read_hb_with_map)(A,map,filename,iflag),*iflag);
+      //PHIST_CHK_IERR(SUBR(sparseMat_read_hb_with_map)(A,map,filename,iflag),*iflag);
+      *iflag=PHIST_NOT_IMPLEMENTED;
     }
     else
     {
@@ -28,7 +30,8 @@ void SUBR(sparseMat_read)(TYPE(sparseMat_ptr)* A, phist_const_comm_ptr comm,
   {
     if (map)
     {
-      PHIST_CHK_IERR(SUBR(sparseMat_read_bin_with_map)(A,map,filename,iflag),*iflag);
+      //PHIST_CHK_IERR(SUBR(sparseMat_read_bin_with_map)(A,map,filename,iflag),*iflag);
+      *iflag=PHIST_NOT_IMPLEMENTED;
     }
     else
     {

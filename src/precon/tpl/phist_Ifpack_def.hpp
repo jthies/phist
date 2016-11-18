@@ -11,14 +11,22 @@
 #include "phist_macros.h"
 
 #include "Epetra_CrsMatrix.h"
+#include "EpetraExt_MatrixMatrix.h"
 #include "Epetra_MultiVector.h"
+#include "Epetra_Vector.h"
 #include "Ifpack.h"
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
 
 namespace phist {
-
+namespace internal {
+  typedef struct prec_and_mat 
+  {
+    Teuchos::RCP<Ifpack_Preconditioner> Prec;
+    Teuchos::RCP<Epetra_CrsMatrix> Mat;
+  } prec_and_mat;
+}
 template<>
 class PreconTraits<double,phist_IFPACK>
 {
@@ -63,50 +71,85 @@ class PreconTraits<double,phist_IFPACK>
       ifpack_list->remove("fact: ilut level-of-fill");
       ifpack_list->set("fact: ilut level-of-fill",(double)lof);
     }
-
-    // computing A-sigma*B is possible in Epetra but not implemented here
-    PHIST_CHK_IERR(*iflag= (sigma!=0.0)? -99:0,*iflag);
     
-    // note: the Ifpack class requires a non-const Epetra_RowMatrix*, so technically at this point we're
-    // forced to copy the matrix anyway. Just for testing things out we avoid this right now, we'd have
-    // to decide who's responsible for deleting the copied matrix and when (TODO).
+    phist::internal::prec_and_mat* PAM=new phist::internal::prec_and_mat;
+    PAM->Mat=Teuchos::null;
+    PAM->Prec=Teuchos::null;
 
-    Ifpack_Preconditioner* Prec = Factory.Create(PrecType, (Epetra_CrsMatrix*)A, OverlapLevel);
-    PHIST_CHK_IERR(*iflag=Prec!=NULL?0:PHIST_BAD_CAST,*iflag);
+    // note: the Ifpack class requires a non-const Epetra_RowMatrix*, so at this point we're
+    // forced to copy the matrix even if sigma==0
+    PAM->Mat = Teuchos::rcp(new Epetra_CrsMatrix(*A));
+    if (sigma!=0.0)
+    {
+      if (B!=NULL)
+      {
+        PHIST_CHK_IERR(*iflag=EpetraExt::MatrixMatrix::Add(*B,false,-sigma,*(PAM->Mat),1.0),*iflag);
+      }
+      else
+      {
+        Teuchos::RCP<Epetra_Vector> diag=Teuchos::rcp(new Epetra_Vector(A->RowMap()));
+        PHIST_CHK_IERR(*iflag=A->ExtractDiagonalCopy(*diag),*iflag);
+        for (int i=0; i<diag->MyLength(); i++) (*diag)[i]-=sigma;
+        PHIST_CHK_IERR(*iflag=PAM->Mat->ReplaceDiagonalValues(*diag),*iflag);
+      }
+    }
 
-    PHIST_CHK_IERR(*iflag=Prec->SetParameters(*ifpack_list),*iflag);
-    PHIST_CHK_IERR(*iflag=Prec->Initialize(),*iflag);
-    PHIST_CHK_IERR(*iflag=Prec->Compute(),*iflag);
+    PAM->Prec = Teuchos::rcp(Factory.Create(PrecType, PAM->Mat.get(), OverlapLevel));
+    PHIST_CHK_IERR(*iflag=PAM->Prec.get()!=NULL?0:PHIST_BAD_CAST,*iflag);
+
+    PHIST_CHK_IERR(*iflag=PAM->Prec->SetParameters(*ifpack_list),*iflag);
+    PHIST_CHK_IERR(*iflag=PAM->Prec->Initialize(),*iflag);
+    PHIST_CHK_IERR(*iflag=PAM->Prec->Compute(),*iflag);
     
     // return created object as void pointer
-    *P=(void*)Prec;
+    *P=(void*)PAM;
     
     return;
   }
 
-  static void Update(void* vP, const void* A, _ST_ sigma, const void* B,
+  static void Update(void* vP, const void* vA, double sigma, const void* vB,
         const void* Vkern, const void* BVkern,
         int* iflag)
   {
     PHIST_ENTER_FCN(__FUNCTION__);
     *iflag=0;
-    PHIST_CAST_PTR_FROM_VOID(Ifpack_Preconditioner, P, vP,*iflag);
-    *iflag=PHIST_NOT_IMPLEMENTED;
+    PHIST_CAST_PTR_FROM_VOID(phist::internal::prec_and_mat, PAM, vP,*iflag);
+    PHIST_CAST_PTR_FROM_VOID(const Epetra_CrsMatrix,A,vA,*iflag);
+    const Epetra_CrsMatrix* B=(const Epetra_CrsMatrix*)vB;
+    *(PAM->Mat) = *A;
+    if (sigma!=0.0)
+    {
+      if (B!=NULL)
+      {
+        PHIST_CHK_IERR(*iflag=EpetraExt::MatrixMatrix::Add(*B,false,-sigma,*(PAM->Mat),1.0),*iflag);
+      }
+      else
+      {
+        Teuchos::RCP<Epetra_Vector> diag=Teuchos::rcp(new Epetra_Vector(A->RowMap()));
+        PHIST_CHK_IERR(*iflag=A->ExtractDiagonalCopy(*diag),*iflag);
+        for (int i=0; i<diag->MyLength(); i++) (*diag)[i]-=sigma;
+        PHIST_CHK_IERR(*iflag=PAM->Mat->ReplaceDiagonalValues(*diag),*iflag);
+      }
+    }
+    
+    PHIST_CHK_IERR(*iflag=PAM->Prec->Compute(),*iflag);
   }                                                                             
 
   static void Delete(void* vP, int *iflag)
   {
     PHIST_ENTER_FCN(__FUNCTION__);
     *iflag=0;
-    PHIST_CAST_PTR_FROM_VOID(Ifpack_Preconditioner, P, vP,*iflag);
-    delete P;
+    PHIST_CAST_PTR_FROM_VOID(phist::internal::prec_and_mat, PAM, vP,*iflag);
+    PAM->Prec=Teuchos::null;
+    PAM->Mat=Teuchos::null;
+    delete PAM;
   }
   
   static void Apply(double alpha, void const* vP, phist_Dconst_mvec_ptr vX, double beta, phist_Dmvec_ptr vY, int* iflag)
   {
     PHIST_ENTER_FCN(__FUNCTION__);
     *iflag=0;
-    PHIST_CAST_PTR_FROM_VOID(const Ifpack_Preconditioner, P, vP,*iflag);
+    PHIST_CAST_PTR_FROM_VOID(const phist::internal::prec_and_mat, PAM, vP,*iflag);
     PHIST_CAST_PTR_FROM_VOID(const Epetra_MultiVector, X, vX,*iflag);
     PHIST_CAST_PTR_FROM_VOID(      Epetra_MultiVector, Y, vY,*iflag);
     Teuchos::RCP<Epetra_MultiVector> Y2 = Teuchos::rcp(Y,false);
@@ -114,7 +157,7 @@ class PreconTraits<double,phist_IFPACK>
     {
       Y2=Teuchos::rcp(new Epetra_MultiVector(*Y));
     }
-    PHIST_CHK_IERR(*iflag=P->ApplyInverse(*X,*Y2),*iflag);
+    PHIST_CHK_IERR(*iflag=PAM->Prec->ApplyInverse(*X,*Y2),*iflag);
     if (beta!=0.0)
     {
       Y->Update(alpha,*Y2,beta);
