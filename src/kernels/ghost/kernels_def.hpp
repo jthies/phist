@@ -385,10 +385,6 @@ PHIST_TASK_BEGIN_SMALLDETERMINISTIC(ComputeTask)
   if (vcomm!=NULL) comm=*((MPI_Comm*)vcomm);
   ghost_map *map=ghost_map_create_light(nrows,comm);
   ghost_densemat_create(&result,map,dmtraits);
-  // the map is created in this context, so we need to
-  // release memory ownership here. The densemat has
-  // taken ownership of the new map.
-  map->ref_count--;
   ST zero = st::zero();
   PHIST_CHK_GERR(ghost_densemat_init_val(result,&zero),*iflag);
   *vM=(TYPE(sdMat_ptr))result;
@@ -646,10 +642,10 @@ extern "C" void SUBR(mvec_to_mvec)(TYPE(const_mvec_ptr) v_in, TYPE(mvec_ptr) v_o
   ghost_maptype _orig_permuted = _vec->map->type; \
   ghost_lidx *_orig_lperm=(_vec)->map->loc_perm; \
   ghost_gidx *_orig_gperm=(_vec)->map->glb_perm; \
-  (_vec)->map=(_map);\
+  ghost_densemat_set_map(_vec,_map);\
   (_vec)->traits.flags = (ghost_densemat_flags)( (_permflag&GHOST_DENSEMAT_PERMUTED) ? GHOST_DENSEMAT_PERMUTED|(_vec)->traits.flags : (~GHOST_DENSEMAT_PERMUTED)&(_vec)->traits.flags ); \
   _gerr=_fnc(__VA_ARGS__);\
-  (_vec)->map=_orig_map;\
+  ghost_densemat_set_map(_vec,_orig_map);\
   (_vec)->traits.flags = _orig_flags; \
   PHIST_CHK_GERR(_gerr,*iflag); \
 }
@@ -1501,8 +1497,8 @@ PHIST_TASK_BEGIN(ComputeTask)
     // call ghosts spMV
     PHIST_CHK_GERR(ghost_spmv(y,A,x,spMVM_opts),*iflag);
 
-    x->map=map_x;
-    y->map=map_y;
+    ghost_densemat_set_map(x,map_x);
+    ghost_densemat_set_map(y,map_y);
     
     // copy the dot results if necessary
     if (ydoty!=NULL)
