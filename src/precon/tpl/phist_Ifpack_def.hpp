@@ -9,9 +9,9 @@
 #include "phist_void_aliases.h"
 #include "phist_trilinos_macros.h"
 #include "phist_macros.h"
+#include "../../kernels/epetra/epetra_helpers.h"
 
 #include "Epetra_CrsMatrix.h"
-#include "EpetraExt_MatrixMatrix.h"
 #include "Epetra_MultiVector.h"
 #include "Epetra_Vector.h"
 #include "Ifpack.h"
@@ -20,13 +20,7 @@
 #include "Teuchos_XMLParameterListHelpers.hpp"
 
 namespace phist {
-namespace internal {
-  typedef struct prec_and_mat 
-  {
-    Teuchos::RCP<Ifpack_Preconditioner> Prec;
-    Teuchos::RCP<Epetra_CrsMatrix> Mat;
-  } prec_and_mat;
-}
+
 template<>
 class PreconTraits<double,phist_IFPACK>
 {
@@ -72,34 +66,15 @@ class PreconTraits<double,phist_IFPACK>
       ifpack_list->set("fact: ilut level-of-fill",(double)lof);
     }
     
-    phist::internal::prec_and_mat* PAM=new phist::internal::prec_and_mat;
-    PAM->Mat=Teuchos::null;
-    PAM->Prec=Teuchos::null;
+    phist::internal::prec_and_mat* PAM=new phist::internal::prec_and_mat(A,sigma,B);
 
-    // note: the Ifpack class requires a non-const Epetra_RowMatrix*, so at this point we're
-    // forced to copy the matrix even if sigma==0
-    PAM->Mat = Teuchos::rcp(new Epetra_CrsMatrix(*A));
-    if (sigma!=0.0)
-    {
-      if (B!=NULL)
-      {
-        PHIST_CHK_IERR(*iflag=EpetraExt::MatrixMatrix::Add(*B,false,-sigma,*(PAM->Mat),1.0),*iflag);
-      }
-      else
-      {
-        Teuchos::RCP<Epetra_Vector> diag=Teuchos::rcp(new Epetra_Vector(A->RowMap()));
-        PHIST_CHK_IERR(*iflag=A->ExtractDiagonalCopy(*diag),*iflag);
-        for (int i=0; i<diag->MyLength(); i++) (*diag)[i]-=sigma;
-        PHIST_CHK_IERR(*iflag=PAM->Mat->ReplaceDiagonalValues(*diag),*iflag);
-      }
-    }
-
-    PAM->Prec = Teuchos::rcp(Factory.Create(PrecType, PAM->Mat.get(), OverlapLevel));
+    PAM->IfpackPrec = Teuchos::rcp(Factory.Create(PrecType, PAM->Mat.get(), OverlapLevel));
+    PAM->Prec=PAM->IfpackPrec;
     PHIST_CHK_IERR(*iflag=PAM->Prec.get()!=NULL?0:PHIST_BAD_CAST,*iflag);
 
-    PHIST_CHK_IERR(*iflag=PAM->Prec->SetParameters(*ifpack_list),*iflag);
-    PHIST_CHK_IERR(*iflag=PAM->Prec->Initialize(),*iflag);
-    PHIST_CHK_IERR(*iflag=PAM->Prec->Compute(),*iflag);
+    PHIST_CHK_IERR(*iflag=PAM->IfpackPrec->SetParameters(*ifpack_list),*iflag);
+    PHIST_CHK_IERR(*iflag=PAM->IfpackPrec->Initialize(),*iflag);
+    PHIST_CHK_IERR(*iflag=PAM->IfpackPrec->Compute(),*iflag);
     
     // return created object as void pointer
     *P=(void*)PAM;
@@ -114,25 +89,8 @@ class PreconTraits<double,phist_IFPACK>
     PHIST_ENTER_FCN(__FUNCTION__);
     *iflag=0;
     PHIST_CAST_PTR_FROM_VOID(phist::internal::prec_and_mat, PAM, vP,*iflag);
-    PHIST_CAST_PTR_FROM_VOID(const Epetra_CrsMatrix,A,vA,*iflag);
-    const Epetra_CrsMatrix* B=(const Epetra_CrsMatrix*)vB;
-    *(PAM->Mat) = *A;
-    if (sigma!=0.0)
-    {
-      if (B!=NULL)
-      {
-        PHIST_CHK_IERR(*iflag=EpetraExt::MatrixMatrix::Add(*B,false,-sigma,*(PAM->Mat),1.0),*iflag);
-      }
-      else
-      {
-        Teuchos::RCP<Epetra_Vector> diag=Teuchos::rcp(new Epetra_Vector(A->RowMap()));
-        PHIST_CHK_IERR(*iflag=A->ExtractDiagonalCopy(*diag),*iflag);
-        for (int i=0; i<diag->MyLength(); i++) (*diag)[i]-=sigma;
-        PHIST_CHK_IERR(*iflag=PAM->Mat->ReplaceDiagonalValues(*diag),*iflag);
-      }
-    }
-    
-    PHIST_CHK_IERR(*iflag=PAM->Prec->Compute(),*iflag);
+    PHIST_CHK_IERR(PAM->UpdateMatrix(vA,sigma,vB,iflag),*iflag);
+    PHIST_CHK_IERR(*iflag=PAM->IfpackPrec->Compute(),*iflag);
   }                                                                             
 
   static void Delete(void* vP, int *iflag)
@@ -140,8 +98,6 @@ class PreconTraits<double,phist_IFPACK>
     PHIST_ENTER_FCN(__FUNCTION__);
     *iflag=0;
     PHIST_CAST_PTR_FROM_VOID(phist::internal::prec_and_mat, PAM, vP,*iflag);
-    PAM->Prec=Teuchos::null;
-    PAM->Mat=Teuchos::null;
     delete PAM;
   }
   
@@ -157,7 +113,7 @@ class PreconTraits<double,phist_IFPACK>
     {
       Y2=Teuchos::rcp(new Epetra_MultiVector(*Y));
     }
-    PHIST_CHK_IERR(*iflag=PAM->Prec->ApplyInverse(*X,*Y2),*iflag);
+    PHIST_CHK_IERR(*iflag=PAM->IfpackPrec->ApplyInverse(*X,*Y2),*iflag);
     if (beta!=0.0)
     {
       Y->Update(alpha,*Y2,beta);

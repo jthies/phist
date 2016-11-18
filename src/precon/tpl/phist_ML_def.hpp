@@ -71,7 +71,13 @@ class PreconTraits<double,phist_ML>
                      TYPE(const_mvec_ptr) Vkern, TYPE(const_mvec_ptr) BVkern,
                      int* iflag) 
   {
+    // TODO
+    // without null space:
+//    PHIST_CHK_IERR(*iflag=P->ComputePreconditioner(true),*iflag);
+    // with null space (adaptive SA)
+//    PHIST_CHK_IERR(*iflag=P->ComputeAdaptivePreonditioner(dimV,Vkern_as_double*),*iflag);
     PHIST_CHK_IERR(*iflag=PHIST_NOT_IMPLEMENTED,*iflag);
+    
   }                                                                             
 
   static void Delete(void* vP, int *iflag)
