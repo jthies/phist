@@ -121,7 +121,6 @@ extern "C" void SUBR(sparseMat_create_fromRowFuncAndContext)(TYPE(sparseMat_ptr)
   phist_gidx cols[maxnne];
   double vals[maxnne];
  
-
   Epetra_CrsMatrix* A=NULL;
   PHIST_TRY_CATCH(A   = new Epetra_CrsMatrix(Copy,*map,maxnne),*iflag);
   for (phist_lidx i=0; i<A->NumMyRows(); i++)
@@ -189,20 +188,33 @@ extern "C" void SUBR(sparseMat_create_fromRowFunc)(TYPE(sparseMat_ptr) *vA, phis
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   int iflag_in=*iflag;
   *iflag=0;
+
+  phist_map_ptr row_and_range_map=NULL;
+  PHIST_CHK_IERR(phist_map_create(&row_and_range_map,vcomm,nrows,iflag),*iflag);
+  phist_map_ptr domain_map=row_and_range_map;
   if (nrows!=ncols)
   {
-    PHIST_SOUT(PHIST_ERROR,"Can only handle square matrices in current phist/epetra interface\n");
-    *iflag=-99;
-    return;
+    domain_map=NULL;
+    PHIST_CHK_IERR(phist_map_create(&domain_map,vcomm,ncols,iflag),*iflag);
   }
-  phist_map_ptr map=NULL;
-  PHIST_CHK_IERR(phist_map_create(&map,vcomm,nrows,iflag),*iflag);
-  phist::internal::default_context *ctx=new phist::internal::default_context(map);
+  phist::internal::default_context *ctx=NULL;
+  if (domain_map!=row_and_range_map)
+  {
+    ctx=new phist::internal::default_context(row_and_range_map,row_and_range_map,domain_map);
+  }
+  else
+  {
+    ctx=new phist::internal::default_context(row_and_range_map,NULL,NULL);
+  }
   *iflag=iflag_in|PHIST_SPARSEMAT_OWN_MAPS;
   PHIST_CHK_IERR(SUBR(sparseMat_create_fromRowFuncAndContext)(vA,ctx,
         maxnne,rowFunPtr,last_arg,iflag),*iflag);
   // we're responsible for deleting this map object, Epetra is responsibible for keeping it in the created matrix
-  PHIST_CHK_IERR(phist_map_delete(map,iflag),*iflag);
+  if (domain_map!=row_and_range_map && domain_map!=NULL)
+  {
+    PHIST_CHK_IERR(phist_map_delete(domain_map,iflag),*iflag);
+  }
+  PHIST_CHK_IERR(phist_map_delete(row_and_range_map,iflag),*iflag);
   return;
 }
 
