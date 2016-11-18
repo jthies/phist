@@ -10,7 +10,7 @@ class KernelTestWithMassMat<_ST_, _Nglob> : public virtual TestWithType< _ST_ >,
 
   public:
 
-    static void SetUpTestCase(phist_const_map_ptr map)
+    static void SetUpTestCase(phist_const_context_ptr ctx)
     {
       TestWithType<_ST_>::SetUpTestCase();
       KernelTest::SetUpTestCase();
@@ -26,7 +26,7 @@ class KernelTestWithMassMat<_ST_, _Nglob> : public virtual TestWithType< _ST_ >,
       // initialize rowFunc
       iflag_=phist::testing::PHIST_TG_PREFIX(hpd_tridiag)(-1,NULL,&gnrows,NULL,NULL);
       ASSERT_EQ(0,iflag_);
-      SUBR(sparseMat_create_fromRowFuncAndMap)(&B_,map,3,&phist::testing::PHIST_TG_PREFIX(hpd_tridiag),NULL,&iflag_);
+      SUBR(sparseMat_create_fromRowFuncAndContext)(&B_,ctx,3,&phist::testing::PHIST_TG_PREFIX(hpd_tridiag),NULL,&iflag_);
       ASSERT_EQ(0,iflag_);
 
         ASSERT_TRUE(B_ != NULL);

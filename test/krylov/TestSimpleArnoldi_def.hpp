@@ -12,14 +12,14 @@
 #endif
 
 /*! Test fixure. */
-class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,MATNAME>,
+class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,_N_,MATNAME>,
                  public virtual KernelTestWithMassMat<_ST_,_N_>,
                  public virtual KernelTestWithSdMats<_ST_,_M_+BLOCK_SIZE1,_M_>,
                  public virtual KernelTestWithVectors<_ST_,_N_,_M_+BLOCK_SIZE1,0,3>
 {
 
   public:
-    typedef KernelTestWithSparseMat<_ST_,_N_,MATNAME> SparseMatTest;
+    typedef KernelTestWithSparseMat<_ST_,_N_,_N_,MATNAME> SparseMatTest;
     typedef KernelTestWithMassMat<_ST_,_N_> BTest;
     typedef KernelTestWithVectors<_ST_,_N_,_M_+BLOCK_SIZE1,0,3> VTest;
     typedef KernelTestWithSdMats<_ST_,_M_+BLOCK_SIZE1,_M_> MTest;
@@ -33,7 +33,7 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,MATNAME>,
       int sparseMatCreateFlag=getSparseMatCreateFlag(_N_,BLOCK_SIZE);
 
       SparseMatTest::SetUpTestCase(sparseMatCreateFlag);
-      BTest::SetUpTestCase(map_);
+      BTest::SetUpTestCase(context_);
       VTest::SetUpTestCase();
       MTest::SetUpTestCase();
     }

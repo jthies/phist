@@ -31,7 +31,7 @@ void SUBR(svqb)(TYPE(mvec_ptr) V, TYPE(sdMat_ptr) B, _MT_* D, int* iflag)
       SUBR(sdMat_qb)(B,NULL,&rank,iflag);
       if (*iflag!=PHIST_NOT_IMPLEMENTED)
       {
-        PHIST_CHK_IERR(*iflag=*iflag,*iflag);
+        PHIST_CHK_IERR(PHIST_TOUCH(*iflag),*iflag);
         *iflag = PHIST_ROBUST_REDUCTIONS;
         PHIST_CHK_IERR(SUBR(mvec_times_sdMat_inplace)(V,B,iflag),*iflag);
         PHIST_CHK_IERR(SUBR(sdMat_to_device)(B,iflag),*iflag);

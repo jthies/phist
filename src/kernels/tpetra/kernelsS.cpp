@@ -9,6 +9,7 @@
 #include "../phist_kernels.h"
 #include "phist_trilinos_macros.h"
 #include "phist_ScalarTraits.hpp"
+#include "../common/default_context.h"
 
 #include "Teuchos_StandardCatchMacros.hpp"
 #include "Teuchos_DefaultComm.hpp"

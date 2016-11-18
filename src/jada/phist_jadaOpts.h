@@ -1,7 +1,9 @@
 #ifndef PHIST_JADAOPTS_H
 #define PHIST_JADAOPTS_H
 
+#ifndef DOXYGEN
 #include "phist_enums.h"
+#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -69,7 +71,10 @@ int innerSolvRobust; /*! extra effort to get good jada updates
   //! pointer to a inearOp whose apply_shifted function serves as a preconditioner for the inner solver. May be NULL (no preconditioning) or created by phist_Xprecon_create.
   //! This pointer can be used to pass an already computed preconditioner to the Jacobi-Davidson solver. The preconditioner will not be updated explicitly during the run, but
   //! differentsshift will be supplied to the apply_shifted function.
-  void const* preconOp;
+  //!
+  //! note: this field has no 'const' qualifier, however, if preconUpdate==0, the preconditioner pointed to
+  //! is in fact not modified.
+  void* preconOp;
 
   //! This fields allows specifying a preconditioner (along with preconOpts to pass in options) in an option file.
   //! Currently it is the responsibility of the driver routine to create the preconditioner in "preconOp", but in 
@@ -89,6 +94,12 @@ int innerSolvRobust; /*! extra effort to get good jada updates
   //!       operator will be indefinite even if K is hpd, so it can't be used as a precon-
   //!       ditioner for MINRES anyway.
   int preconSkewProject;
+  
+  //! if 0, the preconditioner is kept the same throughout the
+  //! Jacobi-Davidson process. Otherwise it is updated with the
+  //! current shift before each correction solve (variants like
+  //! updating based on convergence rate may be added later).
+  int preconUpdate;
 
   //! pointer to solver object if innerSolvType==USER_DEFINED
   void* customSolver;

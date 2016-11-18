@@ -14,7 +14,7 @@
 #include "TestWithType.h"
 
 #ifdef PHIST_HIGH_PRECISION_KERNELS
-#include "prec_helpers.h"
+#include "phist_prec_helpers.h"
 #endif
 
 using namespace testing;

@@ -16,9 +16,9 @@
 #else
 #include <stdio.h>
 #endif
+#include "phist_defs.h"
 #endif
 
-#include "phist_defs.h"
 
 #ifdef PHIST_HAVE_MPI
 #define PHIST_OUT(level,msg, ...) {\
@@ -122,8 +122,10 @@ PHIST_OUT(PHIST_ERROR,"Error code %d (%s) returned from call %s\n(file %s, line 
 #endif
 
 #ifdef PHIST_HAVE_GHOST
-#include <ghost/config.h>
-#include <ghost/types.h>
+# ifndef DOXYGEN
+# include <ghost/config.h>
+# include <ghost/types.h>
+# endif
 // check return value from GHOST
 #define PHIST_CHK_GERR(func,FLAG) { PHIST_TIMEMONITOR_PERLINE_MACRO \
 ghost_error gerr=func; FLAG=PHIST_SUCCESS; if (gerr!=GHOST_SUCCESS) { FLAG=PHIST_FUNCTIONAL_ERROR;\

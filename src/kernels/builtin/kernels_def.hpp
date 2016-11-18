@@ -13,7 +13,8 @@
 extern "C" {
   void SUBR(crsMat_create_fromRowFunc_f)(TYPE(sparseMat_ptr)*,phist_const_comm_ptr,phist_gidx,phist_gidx, 
       phist_lidx, phist_sparseMat_rowFunc,void*, int*);
-//  void SUBR(crsMat_create_fromRowFuncAndMap_f)(TYPE(sparseMat_ptr)*,phist_const_comm_ptr,phist_const_map_ptr, 
+// note: this function doesn't exist yet!
+//  void SUBR(crsMat_create_fromRowFuncAndContext_f)(TYPE(sparseMat_ptr)*,phist_const_comm_ptr,phist_const_context_ptr, 
 //      phist_lidx, phist_sparseMat_rowFunc,void*, int*);
   void SUBR(crsMat_delete_f)(TYPE(sparseMat_ptr) A, int* iflag);
   void SUBR(crsMat_get_map_f)(TYPE(const_sparseMat_ptr),phist_const_map_ptr*,int*);
@@ -354,6 +355,9 @@ extern "C" void SUBR(sparseMat_delete)(TYPE(sparseMat_ptr) A, int* iflag)
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   PHIST_PERFCHECK_VERIFY_SMALL;
   PHIST_CHK_IERR(SUBR(crsMat_delete_f)(A,iflag), *iflag);
+  // from common/default_context.h: if anyone obtained the context from this matrix
+  //    it was created at that moment and is now deleted:
+  phist::internal::delete_default_context(A);
 }
 
 extern "C" void SUBR(mvec_delete)(TYPE(mvec_ptr) V, int* iflag)
@@ -943,21 +947,25 @@ extern "C" void SUBR(mvec_times_sdMat_inplace)(TYPE(mvec_ptr) V, TYPE(const_sdMa
   }
 }
 
-extern "C" void SUBR(sparseMat_create_fromRowFuncAndMap)(TYPE(sparseMat_ptr) *vA, phist_const_map_ptr vmap,
+extern "C" void SUBR(sparseMat_create_fromRowFuncAndContext)(TYPE(sparseMat_ptr) *vA, phist_const_context_ptr vctx,
         phist_lidx maxnne,phist_sparseMat_rowFunc rowFunPtr,void* last_arg,
         int *iflag)
 {
   //TODO - we don't actually support this up to now. So as a fallback, check if the given map
   //       happens to be the default map anyway, and otherwise return -99 (not implemented)
   phist_gidx N;
-  PHIST_CHK_IERR(phist_map_get_global_length(vmap,&N,iflag),*iflag);
+  PHIST_CAST_PTR_FROM_VOID(phist::internal::default_context,ctx,vctx,*iflag);
+  PHIST_CHK_IERR(*iflag=(ctx->range_map!=NULL &&
+                          ctx->row_map!=NULL   &&
+                          ctx->domain_map!=NULL)? 0:PHIST_NOT_IMPLEMENTED,*iflag);
+  PHIST_CHK_IERR(phist_map_get_global_length(ctx->range_map,&N,iflag),*iflag);
   phist_const_comm_ptr vcomm=NULL;
-  PHIST_CHK_IERR(phist_map_get_comm(vmap,&vcomm,iflag),*iflag);
+  PHIST_CHK_IERR(phist_map_get_comm(ctx->range_map,&vcomm,iflag),*iflag);
   PHIST_CHK_IERR(SUBR(crsMat_create_fromRowFunc_f)(vA, vcomm, N, N, maxnne,
         rowFunPtr, last_arg, iflag), *iflag);
   phist_const_map_ptr new_map=NULL;
   PHIST_CHK_IERR(SUBR(sparseMat_get_range_map)(*vA,&new_map,iflag),*iflag);
-  phist_maps_compatible(vmap,new_map,iflag);
+  phist_maps_compatible(ctx->range_map,new_map,iflag);
   if (*iflag!=0) 
   {
     PHIST_CHK_IERR(SUBR(sparseMat_delete)(*vA,iflag),*iflag);

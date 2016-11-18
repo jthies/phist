@@ -86,7 +86,7 @@ int main(int argc, char** argv)
   }
 #elif defined(PHIST_KERNEL_LIB_GHOST)
   ghost_sparsemat* ghost_A = (ghost_sparsemat*)A;
-  sparsemat_write(ghost_A,(char*)filename);
+  ghost_sparsemat_to_mm((char*)filename,ghost_A);
 #else
   PHIST_SOUT(PHIST_ERROR,"This driver is only meant for the ghost and epetra kernel libs");
   return -99;

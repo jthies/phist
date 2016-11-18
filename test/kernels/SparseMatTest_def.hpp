@@ -16,14 +16,14 @@ using namespace phist::testing;
 
 
 /*! Test fixure. */
-class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,MATNAME>,
+class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,_N_,MATNAME>,
                  public virtual KernelTestWithVectors<_ST_,_N_,_NV_,_USE_VIEWS_,3>,
                  public virtual KernelTestWithSdMats<_ST_,_NV_,_NV_,_USE_VIEWS_>
 {
 
   public:
   
-  typedef KernelTestWithSparseMat<_ST_,_N_,MATNAME> SparseMatTest;
+  typedef KernelTestWithSparseMat<_ST_,_N_,_N_,MATNAME> SparseMatTest;
   typedef KernelTestWithVectors<_ST_,_N_,_NV_,_USE_VIEWS_,3> VTest;
   typedef KernelTestWithSdMats<_ST_,_NV_,_NV_,_USE_VIEWS_> MTest;
   typedef TestWithType< _MT_ > MT_Test;
@@ -505,15 +505,17 @@ protected:
     EXPECT_EQ(0,iflag_);
   }
 
-  TEST_F(CLASSNAME,A1_fromRowFuncAndMap)
+  TEST_F(CLASSNAME,A1_fromRowFuncAndContext)
   {
     if( !typeImplemented_ || problemTooSmall_ )
       return;
 
+    ASSERT_TRUE(context_!=NULL);
+
     TYPE(sparseMat_ptr) A=NULL;
     iflag_=PHIST_SPARSEMAT_QUIET;
-    SUBR(sparseMat_create_fromRowFuncAndMap)(&A,map_,1,&PHIST_TG_PREFIX(idfunc),NULL,&iflag_);
-    EXPECT_EQ(0,iflag_);
+    SUBR(sparseMat_create_fromRowFuncAndContext)(&A,context_,1,&PHIST_TG_PREFIX(idfunc),NULL,&iflag_);
+    ASSERT_EQ(0,iflag_);
 
     // check that AX=X
     SUBR(mvec_random)(vec1_,&iflag_);
@@ -1285,38 +1287,44 @@ TEST_F(CLASSNAME,compare_with_rowFunc)
   }
 }
 
-TEST_F(CLASSNAME,fromRowFuncAndMap)
+TEST_F(CLASSNAME,fromRowFuncAndContext)
 {
   if( !typeImplemented_ || problemTooSmall_ )
     return;
 
+    ASSERT_TRUE(defaultContext_!=NULL);
+
   TYPE(sparseMat_ptr) A1=NULL, A2=NULL;
   iflag_=PHIST_SPARSEMAT_QUIET;
-  SUBR(sparseMat_create_fromRowFuncAndMap)(&A1,defaultMap_,7,&MATPDE3D_rowFunc,NULL,&iflag_);
-  EXPECT_EQ(0,iflag_);
+  SUBR(sparseMat_create_fromRowFuncAndContext)(&A1,defaultContext_,7,&MATPDE3D_rowFunc,NULL,&iflag_);
+  ASSERT_EQ(0,iflag_);
+
+    ASSERT_TRUE(context_!=NULL);
+
     iflag_=PHIST_SPARSEMAT_QUIET;
-  SUBR(sparseMat_create_fromRowFuncAndMap)(&A2,map_,7,&MATPDE3D_rowFunc,NULL,&iflag_);
+  SUBR(sparseMat_create_fromRowFuncAndContext)(&A2,context_,7,&MATPDE3D_rowFunc,NULL,&iflag_);
   EXPECT_EQ(0,iflag_);
+  
   phist_const_map_ptr domain1, domain2, range1, range2, row1, row2, col1, col2;
   // first check if the created matrices are compatible with vectors of the given map:
   SUBR(sparseMat_get_range_map)(A1,&range1,&iflag_);
   EXPECT_EQ(0,iflag_);
   SUBR(sparseMat_get_domain_map)(A1,&domain1,&iflag_);
   EXPECT_EQ(0,iflag_);
+  phist_maps_compatible(domain1,defaultMap_,&iflag_);
+  EXPECT_EQ(0,iflag_);
+  phist_maps_compatible(range1,defaultMap_,&iflag_);
+  EXPECT_EQ(0,iflag_);
   SUBR(sparseMat_get_range_map)(A2,&range2,&iflag_);
   EXPECT_EQ(0,iflag_);
   SUBR(sparseMat_get_domain_map)(A2,&domain2,&iflag_);
   EXPECT_EQ(0,iflag_);
   
-  phist_maps_compatible(domain1,defaultMap_,&iflag_);
-  EXPECT_EQ(0,iflag_);
-  phist_maps_compatible(range1,defaultMap_,&iflag_);
-  EXPECT_EQ(0,iflag_);
   phist_maps_compatible(domain2,map_,&iflag_);
   EXPECT_EQ(0,iflag_);
   phist_maps_compatible(range2,map_,&iflag_);
   EXPECT_EQ(0,iflag_);
-  // then check if all of the maps are identical to those of A_ if the map_ is given
+  // then check if all of the maps are identical to those of A_ if the context of A is given
   SUBR(sparseMat_get_range_map)(A_,&range1,&iflag_);
   EXPECT_EQ(0,iflag_);
   SUBR(sparseMat_get_domain_map)(A_,&domain1,&iflag_);

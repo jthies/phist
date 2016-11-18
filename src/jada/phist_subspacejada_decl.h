@@ -51,7 +51,7 @@ void SUBR(subspacejada)( TYPE(const_linearOp_ptr) A_op,  TYPE(const_linearOp_ptr
 void SUBR(harmonicjada)( TYPE(const_linearOp_ptr) A_op,  TYPE(const_linearOp_ptr) B_op,
                          phist_jadaOpts opts,
                          TYPE(mvec_ptr) Q,         TYPE(sdMat_ptr) R,
-                         _CT_* ev,                 _MT_* resNorm,
+                         _CT_ ev[],                 _MT_ resNorm[],
                          int *nConv,                int *nIter,
                         int* iflag);
 

@@ -18,7 +18,7 @@
 #include "phist_lapack.h"
 
 #ifdef PHIST_HIGH_PRECISION_KERNELS
-#include "prec_helpers.h"
+#include "phist_prec_helpers.h"
 #endif
 #ifdef PHIST_HAVE_GHOST
 #include <ghost/types.h>

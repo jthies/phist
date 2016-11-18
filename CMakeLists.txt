@@ -25,7 +25,7 @@ SET(CMAKE_SKIP_INSTALL_ALL_DEPENDENCY TRUE)
 # the function claims to do, depending on the status of the repository.
 set(PHIST_VERSION_MAJOR 1)
 set(PHIST_VERSION_MINOR 1)
-set(PHIST_VERSION_PATCH 0)
+set(PHIST_VERSION_PATCH 1)
 set(PHIST_VERSION ${PHIST_VERSION_MAJOR}.${PHIST_VERSION_MINOR}.${PHIST_VERSION_PATCH})
 set(PRODUCT_NAME phist-${PHIST_VERSION})
 
@@ -115,7 +115,7 @@ set(PHIST_PKG_CONFIG_CFLAGS)
 # Deal with LAPACK and LAPACKe
 # Specify paths in CMAKE_PREFIX_PATH.
 ########################################################################
-find_path(LAPACKE_INCL NAMES "lapacke.h" "mkl_lapacke.h" $ENV{MKLROOT}/include)
+find_path(LAPACKE_INCL NAMES "lapacke.h" "mkl_lapacke.h" PATHS $ENV{MKLROOT}/include)
 if(LAPACKE_INCL STREQUAL "LAPACKE_INCL-NOTFOUND")
   message(FATAL_ERROR "LAPACKe include file not found. Add the proper path to CMAKE_PREFIX_PATH.")
 else()
@@ -128,7 +128,7 @@ endif()
 # finding LAPACK(e)/BLAS later on is not an error.
 if (NOT MKL_INCLUDE_DIR)
   message(STATUS "Try to find MKL in default paths and via MKLROOT")
-  find_path(MKL_INCLUDE_DIR mkl.h $ENV{MKLROOT}/include)
+  find_path(MKL_INCLUDE_DIR mkl.h PATHS $ENV{MKLROOT}/include)
 endif()
 if (MKL_INCLUDE_DIR)
   set(PHIST_HAVE_MKL 1)
@@ -675,7 +675,7 @@ if (PHIST_KERNEL_LIB STREQUAL "builtin")
                           )
   if(PHIST_HIGH_PRECISION_KERNELS)
     set (PHIST_KERNEL_SOURCE ${PHIST_KERNEL_SOURCE}
-                          ${PROJECT_SOURCE_DIR}/src/kernels/builtin/prec_helpers.c
+                          ${PROJECT_SOURCE_DIR}/src/tools/phist_prec_helpers.c
                           ${PROJECT_SOURCE_DIR}/src/core/DsdFact_prec_kernels.c
                           ${PROJECT_SOURCE_DIR}/src/core/mlapack_wrapper.cpp
                           ${PROJECT_SOURCE_DIR}/src/kernels/builtin/sdmat_kernels_prec.c
@@ -1362,8 +1362,8 @@ if(INTEGRATION_BUILD AND NOT DISABLE_PYTHON_TESTS)
       set(GCC_SANITIZE_LIB "lib${GCC_SANITIZE_FIRST_CHAR}san.so")
       # work around cmake bug (specifying multiple set_tests_properties(...ENVIRONMENT...)
       set_property(TEST ${pyt_name} APPEND PROPERTY ENVIRONMENT "LD_PRELOAD=${GCC_SANITIZE_LIB}:$ENV{LD_PRELOAD}")
-      set_property(TEST ${pyt_name} APPEND PROPERTY ENVIRONMENT "LSAN_OPTIONS=\"exitcode=0 log_path=${pyt_name}_asan_log\"")
-      set_property(TEST ${pyt_name} APPEND PROPERTY ENVIRONMENT "ASAN_OPTIONS=\"exitcode=0\"")
+      set_property(TEST ${pyt_name} APPEND PROPERTY ENVIRONMENT "LSAN_OPTIONS=exitcode=0 log_path=${pyt_name}_asan_log")
+      set_property(TEST ${pyt_name} APPEND PROPERTY ENVIRONMENT "ASAN_OPTIONS=exitcode=0")
     endif()
   endforeach()
   if (INTEGRATION_BUILD AND CMAKE_BUILD_TYPE MATCHES "Release")

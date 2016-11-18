@@ -28,9 +28,9 @@ namespace phist
         ghost_context_flags_t flags, void *matrixSource, ghost_sparsemat_src srcType, ghost_mpi_comm comm, double proc_weight, int* iflag);
     
     //! private helper function to create a vtraits object
-    ghost_densemat_traits phist_default_vtraits();
+    ghost_densemat_traits default_vtraits();
     
-
+#if DELETE_ME
 //! map object for ghost kernel library
 //!                                                                                        
 //! in the petra object model that this abstract kernel interface follows, a map describes 
@@ -54,31 +54,39 @@ namespace phist
 //!
 //! The only way to convert an mvec from one map into another is by calling the function
 //! mvec_to_mvec. 
-class ghost_map
+class phist_ghost_map
 {
 
   public:
 
   ghost_context* ctx;
-  ghost_densemat_permutation *perm_local;
-  ghost_densemat_permutation *perm_global;
+
+  // the active map, may be one of ctx->col_map or ctx->row_map
+  ghost_map* map;
   // blueprints for how to create a densemat (mvec) object from this map
   ghost_densemat_traits vtraits_template;
   // blueprints for how to create a sparsemat object from this map
   ghost_sparsemat_traits mtraits_template;
+
+  ghost_lidx *perm_local, *perm_local_inv;
+  ghost_gidx *perm_global, *perm_global_inv;
   
   //! create a new map which gets a context, a permutation type (defining which permutation object, row/col/none of the
   //! context should be applied to an mvec based on the map, and two flags:
   //! own_ctx=true means that when the map is deleted, the context should be deleted, too.
   //! if own_ctx=true and own_perm=false, the permutation objects of the context are *not* deleted,
   //! this is used to share permutation objects among multiple contexts/maps.
-  ghost_map(ghost_context* ctx_in, ghost_densemat_permuted pt=NONE, bool own_ctx=false, bool own_perm=true)
+  phist_ghost_map(ghost_context* ctx_in, ghost_map* map_in, bool own_ctx=false, bool own_perm=true)
   {
-    perm_local=NULL;
-    perm_global=NULL;
     ctx=ctx_in;
+    map=map_in;
     ownContext_=own_ctx;
     ownPermutations_=own_perm;
+    
+    perm_local=map->loc_perm;
+    perm_local_inv=map->loc_perm_inv;
+    perm_global=map->glb_perm;
+    perm_global_inv=map->glb_perm_inv;
 
     vtraits_template=phist_default_vtraits();
     mtraits_template=(ghost_sparsemat_traits)GHOST_SPARSEMAT_TRAITS_INITIALIZER;
@@ -89,45 +97,42 @@ class ghost_map
     mtraits_template.C=-2;
     mtraits_template.sortScope=-2;
     mtraits_template.flags=GHOST_SPARSEMAT_DEFAULT;
-    if (pt==COLUMN)
+    if (map==ctx_in->col_map)
     {
       // we need to set a few things by hand to make sure we can
       // check compatibility of maps
-      int me;
-      ghost_rank(&me,ctx->mpicomm);
-      vtraits_template.gnrows=ctx->gnrows;
-      vtraits_template.nrows=ctx->lnrows[me];
+      //vtraits_template.gnrows=ctx->gnrows;
+      //vtraits_template.nrows=ctx->row_map->nrows;
     }
     else
     {
-      vtraits_template.gnrows=ctx->gncols;
+      //vtraits_template.gnrows=ctx->gncols;
       // NOTE: if we have non-square matrices, the number of
       //       local rows of the vector must be determined  
       //       differently, for now we leave it at its default
       //       value (0 or -1, I guess) and let ghost decide.
       //       such a map can currently not be comapred with
       //       maps_compatible, however!
-      if (ctx->gncols==ctx->gnrows)
+      if (ctx->col_map->gdim==ctx->row_map->gdim)
       {
         int me;
         ghost_rank(&me,ctx->mpicomm);
-        vtraits_template.nrows=ctx->lnrows[me];
+        //vtraits_template.nrows=ctx->row_map->nrows;
       }
     }
         
-    if (pt!=NONE && (ctx->perm_local || ctx->perm_global))
+    if (map!=NULL && (map->loc_perm || map->glb_perm))
     {
-      vtraits_template.permutemethod=pt;
+//      map = map_in;
       vtraits_template.flags|=GHOST_DENSEMAT_PERMUTED;
   
-      perm_local=new ghost_densemat_permutation;
-      perm_global=new ghost_densemat_permutation;
-      perm_local->perm=NULL;
-      perm_local->invPerm=NULL;
-      perm_global->perm=NULL;
-      perm_global->invPerm=NULL;
+//      perm_local=NULL;
+//      perm_local_inv=NULL;
+//      perm_global=NULL;
+//      perm_global_inv=NULL;
     }
-    if (pt==ROW)
+    /*
+    if (map==ctx_in->row_map)
     {
       if (ctx->perm_local) 
       {
@@ -140,7 +145,7 @@ class ghost_map
         perm_global->invPerm=ctx->perm_global->invPerm;
       }
     }
-    else if (pt==COLUMN)
+    else if (map==ctx_in->col_map)
     {
       if (ctx->perm_local) 
       {
@@ -153,9 +158,10 @@ class ghost_map
         perm_global->invPerm=ctx->perm_global->colInvPerm;
       }
     }
+    */
   }
   
-  ~ghost_map()
+  ~phist_ghost_map()
   {
     if (ownContext_)
     {
@@ -163,8 +169,9 @@ class ghost_map
       {
         // someone else has to take care of this,
         // we're sharing the data with another context
-        ctx->perm_local=NULL;
-        ctx->perm_global=NULL;
+        // TODO Check what's needed here
+        //ctx->perm_local=NULL;
+        //ctx->perm_global=NULL;
       }
       ghost_context_destroy(ctx);
     }
@@ -172,8 +179,8 @@ class ghost_map
     // perm objects only have pointers to data in the context,
     // so we can always allocate the objects without too much 
     // overhead
-    if (perm_local) delete perm_local;
-    if (perm_global) delete perm_global;
+    //if (perm_local) delete perm_local;
+    //if (perm_global) delete perm_global;
   }
   
   private:
@@ -185,7 +192,7 @@ class ghost_map
   bool ownPermutations_;
   
 };
-
+#endif
 
     //! small helper function to preclude integer overflows (ghost allows 64 bit local indices, 
     //! but we don't right now)
@@ -215,6 +222,7 @@ class ghost_map
     //! to ghost_context_create (used in phist_map_create and sparseMat construction routines)
     double get_proc_weight(double force_value=-1.0);
 
+#if DELETE_ME
     //! A Garbage collection for maps as they need to be recreated dynamically with GHOST.
     
     //! Each time someone requests a map from an mvec or sparseMat, a new object is created
@@ -237,22 +245,22 @@ class ghost_map
       
         //! create a new map and associate it with the object pointed to by p. If there are already maps
         //! associated with pointer p, return the first one found *if reuse_if_exists==true*.
-        ghost_map* new_map(const void* p, ghost_context* ctx=NULL, ghost_densemat_permuted pt=NONE, 
+        phist_ghost_map* new_map(const void* p, ghost_context* ctx=NULL, ghost_maptype pt=GHOST_MAP_NONE, 
                 bool own_ctx=false, bool own_perm=true, bool reuse_if_exists=false);
         //! associate an existing map with the object pointed to by p
-        void add_map(const void* p, ghost_map* m);
+        void add_map(const void* p, phist_ghost_map* m);
         //! delete all maps associated with the object pointed to by p
         void delete_maps(void* p);
 
       private:
         //!
-        typedef std::map<const void*, std::vector<ghost_map*> > MapCollection;
+        typedef std::map<const void*, std::vector<phist_ghost_map*> > MapCollection;
         //!
         MapCollection maps_;
     };
   
     static MapGarbageCollector mapGarbageCollector;
-  
+#endif
   }
 }
 

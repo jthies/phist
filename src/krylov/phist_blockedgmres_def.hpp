@@ -204,7 +204,7 @@ void SUBR(blockedGMRESstate_reset)(TYPE(blockedGMRESstate_ptr) S, TYPE(const_mve
 // states in a vectorized way, x+=Vs
 void SUBR(blockedGMRESstates_updateSol)(TYPE(blockedGMRESstate_ptr) S[], int numSys, 
         TYPE(const_linearOp_ptr) rightPrecon,
-        TYPE(mvec_ptr) x, _MT_* resNorm, bool scaleSolutionToOne, int* iflag)
+        TYPE(mvec_ptr) x, _MT_* resNorm, int scaleSolutionToOne, int* iflag)
 {
 #include "phist_std_typedefs.hpp"
   PHIST_ENTER_FCN(__FUNCTION__);
@@ -441,7 +441,7 @@ PHIST_TASK_END(iflag)
 
 // implementation of gmres on several systems simultaneously
 void SUBR(blockedGMRESstates_iterate)(TYPE(const_linearOp_ptr) Aop, TYPE(const_linearOp_ptr) Pop,
-        TYPE(blockedGMRESstate_ptr) S[], int numSys, int* nIter, bool useIMGS, int* iflag)
+        TYPE(blockedGMRESstate_ptr) S[], int numSys, int* nIter, int useIMGS, int* iflag)
 {
 #include "phist_std_typedefs.hpp"
   *iflag = 0;

@@ -206,8 +206,6 @@ PHIST_MAIN_TASK_BEGIN
   PHIST_ICHK_IERR(phist_Dmvec_delete(x,&iflag),iflag);
   PHIST_ICHK_IERR(phist_Dmvec_delete(y,&iflag),iflag);
   PHIST_ICHK_IERR(phist_DsparseMat_delete(A,&iflag),iflag);
-
-  PHIST_ICHK_IERR(phist_comm_delete(comm,&iflag),iflag);
 PHIST_MAIN_TASK_END
   PHIST_ICHK_IERR(phist_kernels_finalize(&iflag),iflag);
   }

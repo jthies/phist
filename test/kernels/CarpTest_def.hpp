@@ -4,6 +4,8 @@
 #error "file not included correctly."
 #endif
 
+using namespace phist::testing;
+
 #if !defined(IS_COMPLEX)&&defined(IS_DOUBLE)
 
 /*! Test fixure. 
@@ -26,12 +28,12 @@
   ... TODO: add tests ...
   
 */
-class CLASSNAME: public KernelTestWithSparseMat<_ST_,_N_,MATNAME>,
+class CLASSNAME: public KernelTestWithSparseMat<_ST_,_N_,_N_,MATNAME>,
                  public KernelTestWithVectors<_ST_,_N_,_NV_,0,3> 
 {
 
 public:
-  typedef KernelTestWithSparseMat<_ST_,_N_,MATNAME> SparseMatTest;
+  typedef KernelTestWithSparseMat<_ST_,_N_,_N_,MATNAME> SparseMatTest;
   typedef KernelTestWithVectors<_ST_,_N_,_NV_,0,3>  VTest;
   typedef KernelTestWithSdMats<_ST_,_NV_,_NV_> MTest;
 
@@ -70,10 +72,14 @@ public:
     b=vec3_;
 
     I_=NULL;
+    z_A_=NULL;
+    z_A_shift0_=NULL;
+    z_A_shift1_=NULL;
+    
     if (typeImplemented_ && !problemTooSmall_)
     {
       iflag_=PHIST_SPARSEMAT_OPT_CARP | getSparseMatCreateFlag(_N_,_NV_);
-      SUBR(sparseMat_create_fromRowFunc)(&I_,comm_,_N_,_N_,1,&SUBR(idfunc),NULL,&iflag_);
+      SUBR(sparseMat_create_fromRowFunc)(&I_,comm_,_N_,_N_,1,&PHIST_TG_PREFIX(idfunc),NULL,&iflag_);
       ASSERT_EQ(0,iflag_);
       
       SUBR(mvec_random)(vec1_,&iflag_);
@@ -135,13 +141,13 @@ public:
         // note: we make sure the complex matrices use the same map as the real ones, this sames some
         // trouble when comparing result vectors.
         iflag_=PHIST_SPARSEMAT_QUIET;
-        phist_ZsparseMat_create_fromRowFuncAndMap(&z_A_,map_,7,&ZMATFUNC,NULL,&iflag_);
+        phist_ZsparseMat_create_fromRowFuncAndContext(&z_A_,context_,7,&ZMATFUNC,NULL,&iflag_);
         ASSERT_EQ(0,iflag_);
         iflag_=PHIST_SPARSEMAT_QUIET;
-        phist_ZsparseMat_create_fromRowFuncAndMap(&z_A_shift0_,map_,7,&ZMATFUNC,&sigma_[0],&iflag_);
+        phist_ZsparseMat_create_fromRowFuncAndContext(&z_A_shift0_,context_,7,&ZMATFUNC,&sigma_[0],&iflag_);
         ASSERT_EQ(0,iflag_);
         iflag_=PHIST_SPARSEMAT_QUIET;
-        phist_ZsparseMat_create_fromRowFuncAndMap(&z_A_shift1_,map_,7,&ZMATFUNC,&sigma_[1],&iflag_);
+        phist_ZsparseMat_create_fromRowFuncAndContext(&z_A_shift1_,context_,7,&ZMATFUNC,&sigma_[1],&iflag_);
         ASSERT_EQ(0,iflag_);
 
       }

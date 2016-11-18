@@ -13,7 +13,7 @@ void SUBR(anasazi)(      TYPE(const_linearOp_ptr) A_op,  TYPE(const_linearOp_ptr
                          _MT_ tol,                 int *nEig,
                          int* nIter,               int blockDim,
                          int numBlocks,
-                         bool symmetric,
+                         int symmetric,
                          TYPE(mvec_ptr) vX,         _ST_* eigs,
                          int* iflag);
 
