@@ -117,8 +117,7 @@ public:
   
   static void Apply(ST alpha, void const* P, mvec_t const* X, ST beta, mvec_t* Y, int* iflag)
   {
-    *iflag=0;
-    PHIST_CHK_IERR(SUBR(mvec_add_mvec)(alpha,X,beta,Y,iflag),*iflag);
+    *iflag=PHIST_NOT_IMPLEMENTED;
     return;
   } 
 
@@ -129,11 +128,7 @@ public:
   static void ApplyShifted(ST alpha, const void* P, ST const * sigma,
           mvec_t const* X, ST beta,  mvec_t* Y, int* iflag)
   {
-    int nvec;
-    PHIST_CHK_IERR(SUBR(mvec_num_vectors)(X,&nvec,iflag),*iflag);
-    _ST_ alphas[nvec];
-    for (int i=0; i<nvec;i++) alphas[i]=alpha*(st::one()-sigma[i]);
-    PHIST_CHK_IERR(SUBR(mvec_vadd_mvec)(alphas,X,beta,Y,iflag),*iflag);
+    *iflag=PHIST_NOT_IMPLEMENTED;
     return;
   }
 };

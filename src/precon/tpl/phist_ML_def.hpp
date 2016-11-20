@@ -54,29 +54,29 @@ class PreconTraits<double,phist_ML>
       ML_Epetra::SetDefaults(defaults,*ml_list,NULL,NULL,false);
       ml_list->remove("default values");
     }
-    
-    // computing A-sigma*B is possible in Epetra but not implemented here
-    PHIST_CHK_IERR(*iflag= (sigma!=0.0)? -99:0,*iflag);
-    
-    ML_Epetra::MultiLevelPreconditioner* Prec = new ML_Epetra::MultiLevelPreconditioner(*A, *ml_list);
-    PHIST_CHK_IERR(*iflag=Prec!=NULL?0:PHIST_BAD_CAST,*iflag);
+
+    phist::internal::prec_and_mat* PAM=new phist::internal::prec_and_mat(A,sigma,B);
+
+    PAM->MLPrec = Teuchos::rcp(new ML_Epetra::MultiLevelPreconditioner(*(PAM->Mat), *ml_list));
+    PHIST_CHK_IERR(*iflag=PAM->Prec!=Teuchos::null?0:PHIST_BAD_CAST,*iflag);
+    PAM->Prec=PAM->MLPrec;
     
     // return created object as void pointer
-    *P=(void*)Prec;
+    *P=(void*)PAM;
     
     return;
   }
 
-  static void Update(void* P, const void* A, _ST_ sigma, const void* B,
-                     TYPE(const_mvec_ptr) Vkern, TYPE(const_mvec_ptr) BVkern,
+  static void Update(void* P, const void* A, double sigma, const void* B,
+                     phist_Dconst_mvec_ptr Vkern, phist_Dconst_mvec_ptr BVkern,
                      int* iflag) 
   {
-    // TODO
+    PHIST_CAST_PTR_FROM_VOID(phist::internal::prec_and_mat,PAM,P,*iflag);
+    PHIST_CHK_IERR(PAM->UpdateMatrix(A,sigma,B,iflag),*iflag);
     // without null space:
-//    PHIST_CHK_IERR(*iflag=P->ComputePreconditioner(true),*iflag);
+    PHIST_CHK_IERR(*iflag=PAM->MLPrec->ComputePreconditioner(true),*iflag);
     // with null space (adaptive SA)
 //    PHIST_CHK_IERR(*iflag=P->ComputeAdaptivePreonditioner(dimV,Vkern_as_double*),*iflag);
-    PHIST_CHK_IERR(*iflag=PHIST_NOT_IMPLEMENTED,*iflag);
     
   }                                                                             
 
@@ -84,15 +84,15 @@ class PreconTraits<double,phist_ML>
   {
     PHIST_ENTER_FCN(__FUNCTION__);
     *iflag=0;
-    PHIST_CAST_PTR_FROM_VOID(ML_Epetra::MultiLevelPreconditioner, P, vP,*iflag);
-    delete P;
+    PHIST_CAST_PTR_FROM_VOID(phist::internal::prec_and_mat, PAM, vP,*iflag);
+    delete PAM;
   }
   
   static void Apply(double alpha, void const* vP, phist_Dconst_mvec_ptr vX, double beta, phist_Dmvec_ptr vY, int* iflag)
   {
     PHIST_ENTER_FCN(__FUNCTION__);
     *iflag=0;
-    PHIST_CAST_PTR_FROM_VOID(const ML_Epetra::MultiLevelPreconditioner, P, vP,*iflag);
+    PHIST_CAST_PTR_FROM_VOID(const phist::internal::prec_and_mat, PAM, vP,*iflag);
     PHIST_CAST_PTR_FROM_VOID(const Epetra_MultiVector, X, vX,*iflag);
     PHIST_CAST_PTR_FROM_VOID(      Epetra_MultiVector, Y, vY,*iflag);
     Teuchos::RCP<Epetra_MultiVector> Y2 = Teuchos::rcp(Y,false);
@@ -100,7 +100,7 @@ class PreconTraits<double,phist_ML>
     {
       Y2=Teuchos::rcp(new Epetra_MultiVector(*Y));
     }
-    PHIST_CHK_IERR(*iflag=P->ApplyInverse(*X,*Y2),*iflag);
+    PHIST_CHK_IERR(*iflag=PAM->Prec->ApplyInverse(*X,*Y2),*iflag);
     if (beta!=0.0)
     {
       Y->Update(alpha,*Y2,beta);

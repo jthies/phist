@@ -1,3 +1,27 @@
+namespace phist 
+{
+
+template<> void PreconTraits<_ST_,phist_NO_PRECON>::Apply
+                                         (_ST_ alpha, void const* P, TYPE(const_mvec_ptr) X, 
+                                          _ST_ beta,                 TYPE(mvec_ptr)       Y, 
+                                            int* iflag)
+  {
+    PHIST_CHK_IERR(SUBR(mvec_add_mvec)(alpha,X,beta,Y,iflag),*iflag);
+    return;
+  }
+  template<> void PreconTraits<_ST_,phist_NO_PRECON>::ApplyShifted
+         (_ST_ alpha, const void* P, _ST_ const * sigma, TYPE(const_mvec_ptr) X, 
+          _ST_ beta,                                     TYPE(mvec_ptr) Y, int* iflag)
+  {
+    int nvec;
+    PHIST_CHK_IERR(SUBR(mvec_num_vectors)(X,&nvec,iflag),*iflag);
+    _ST_ alphas[nvec];
+    for (int i=0; i<nvec;i++) alphas[i]=alpha*(st::one()-sigma[i]);
+    PHIST_CHK_IERR(SUBR(mvec_vadd_mvec)(alphas,X,beta,Y,iflag),*iflag);
+    return;
+  }
+}//namespace phist
+  
 // this file maps stuff implemented in a C++ traits class (e.g. PreconTraits<ST,phist_IFPACK>::Apply) to plain C 
 // (e.g. void (*apply)(...) in a linearOp_t struct. It therefore instantiates all the supported PreconTraits
 // templates and selects them with the following macro
