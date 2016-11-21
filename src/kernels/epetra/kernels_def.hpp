@@ -145,7 +145,8 @@ extern "C" void SUBR(sparseMat_create_fromRowFuncAndContext)(TYPE(sparseMat_ptr)
     const Epetra_Map* range_map=(const Epetra_Map*)(ctx->range_map);
     PHIST_TRY_CATCH(A->FillComplete(*domain_map,*range_map),*iflag);
   }
-  
+
+  *vA = (TYPE(sparseMat_ptr))(A);  
 
   if (repart)
   {
@@ -158,12 +159,32 @@ extern "C" void SUBR(sparseMat_create_fromRowFuncAndContext)(TYPE(sparseMat_ptr)
       *iflag=PHIST_BAD_CAST;
       return;
     }
+    if (ownMaps)
+    {
+      if (ctx->domain_map && ctx->domain_map!=ctx->range_map && ctx->domain_map!=ctx->row_map)
+      {
+//        PHIST_CHK_IERR(phist_map_delete(ctx->domain_map,iflag),*iflag);
+        ctx->domain_map=NULL;
+      }
+      if (ctx->range_map!=ctx->row_map)
+      {
+//        PHIST_CHK_IERR(phist_map_delete(ctx->range_map,iflag),*iflag);
+        ctx->range_map=NULL;
+      }
+      if (ctx->row_map!=NULL) 
+      {
+//        PHIST_CHK_IERR(phist_map_delete(ctx->row_map,iflag),*iflag);
+        ctx->row_map=NULL;
+      }
+        
+    }
     phist::internal::default_context *ctx=new phist::internal::default_context(newRowMap.release().get());
     // create the matrix again and use this new map instead
     delete A;
     *iflag=iflag_in & ~PHIST_SPARSEMAT_PERM_GLOBAL;
     *iflag=*iflag & PHIST_SPARSEMAT_OWN_MAPS;
     PHIST_CHK_IERR(SUBR(sparseMat_create_fromRowFuncAndContext)(vA,ctx,maxnne,rowFunPtr,last_arg,iflag),*iflag);
+    A=(Epetra_CrsMatrix*)(*vA);
 
     // TODO: print statistics on the partitioning? Isorropia has nice tools for this in examples/
 
@@ -172,10 +193,9 @@ extern "C" void SUBR(sparseMat_create_fromRowFuncAndContext)(TYPE(sparseMat_ptr)
 #endif
   }
 
-  *vA = (TYPE(sparseMat_ptr))(A);
   if (ownMaps||(ctx!=vctx))
   {
-    phist::internal::contextCollection[*vA]=ctx;
+//    phist::internal::contextCollection[*vA]=ctx;
   }
 
   return;
