@@ -30,8 +30,10 @@ extern "C" void SUBR(sparseMat_read_mm)(TYPE(sparseMat_ptr)* A, phist_const_comm
   phist_gidx globalRows, globalCols, globalLines;
   infile >> globalRows >> globalCols >> globalLines;
   phist_map_ptr map;
+  phist_context_ptr ctx;
   PHIST_CHK_IERR(phist_map_create(&map,vcomm,globalRows,iflag),*iflag);
-  PHIST_CHK_IERR(SUBR(sparseMat_read_mm_with_map)(A, map, filename, iflag), *iflag);
+  PHIST_CHK_IERR(phist_context_create(&ctx,map,map,map,iflag),*iflag);
+  PHIST_CHK_IERR(SUBR(sparseMat_read_mm_with_context)(A, ctx, filename, iflag), *iflag);
 
   *iflag=PHIST_SUCCESS;
 }
@@ -50,11 +52,12 @@ const char* filename,int* iflag)
   *iflag=PHIST_NOT_IMPLEMENTED;
 }
 
-extern "C" void SUBR(sparseMat_read_mm_with_map)(TYPE(sparseMat_ptr)* vA, phist_const_map_ptr map,
+extern "C" void SUBR(sparseMat_read_mm_with_context)(TYPE(sparseMat_ptr)* vA, phist_const_context_ptr vctx,
         const char* filename,int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   PHIST_CAST_PTR_FROM_VOID(Traits<_ST_>::sparseMat_t*,A,vA,*iflag);
+  PHIST_CAST_PTR_FROM_VOID(phist::internal::default_context,ctx,vctx,*iflag);
 
   std::string line;
   std::ifstream infile(filename);
@@ -83,6 +86,7 @@ extern "C" void SUBR(sparseMat_read_mm_with_map)(TYPE(sparseMat_ptr)* vA, phist_
   phist_lidx nlocal;
   phist_gidx ilower, iupper, nglob;
   phist_const_comm_ptr comm;
+  phist_const_map_ptr map=ctx->row_map;
   PHIST_CHK_IERR(phist_map_get_local_length(map, &nlocal, iflag), *iflag);
   PHIST_CHK_IERR(phist_map_get_ilower(map, &ilower, iflag), *iflag);
   PHIST_CHK_IERR(phist_map_get_iupper(map, &iupper, iflag), *iflag);
@@ -1046,13 +1050,15 @@ extern "C" void SUBR(mvec_scatter_mvecs)(TYPE(const_mvec_ptr) V, TYPE(mvec_ptr) 
   *iflag=PHIST_NOT_IMPLEMENTED;
 }
 
-extern "C" void SUBR(sparseMat_create_fromRowFuncAndMap)(TYPE(sparseMat_ptr) *vA,
-        phist_const_map_ptr map,
+extern "C" void SUBR(sparseMat_create_fromRowFuncAndContext)(TYPE(sparseMat_ptr) *vA,
+        phist_const_context_ptr vctx,
         phist_lidx maxnne,phist_sparseMat_rowFunc rowFunPtr,void* last_arg,
         int *iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   PHIST_CAST_PTR_FROM_VOID(Traits<_ST_>::sparseMat_t*,A,vA,*iflag);
+  PHIST_CAST_PTR_FROM_VOID(phist::internal::default_context,ctx,vctx,*iflag);
+  phist_const_map_ptr map=ctx->row_map;
 
   phist_lidx nlocal;
   phist_gidx ilower, nglob;
@@ -1117,7 +1123,9 @@ extern "C" void SUBR(sparseMat_create_fromRowFunc)(TYPE(sparseMat_ptr) *A, phist
 
   phist_map_ptr map = NULL;
   PHIST_CHK_IERR(phist_map_create(&map, vcomm, nrows, iflag), *iflag);
-  PHIST_CHK_IERR(SUBR(sparseMat_create_fromRowFuncAndMap)(A, map, maxnne, rowFunPtr, last_arg, iflag), *iflag);
+  phist_context_ptr ctx = NULL;
+  PHIST_CHK_IERR(phist_context_create(&ctx,map,map,map,iflag),*iflag);
+  PHIST_CHK_IERR(SUBR(sparseMat_create_fromRowFuncAndContext)(A, ctx, maxnne, rowFunPtr, last_arg, iflag), *iflag);
 
   *iflag = PHIST_SUCCESS;
 }
