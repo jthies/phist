@@ -161,30 +161,16 @@ extern "C" void SUBR(sparseMat_create_fromRowFuncAndContext)(TYPE(sparseMat_ptr)
     }
     if (ownMaps)
     {
-      if (ctx->domain_map && ctx->domain_map!=ctx->range_map && ctx->domain_map!=ctx->row_map)
-      {
-//        PHIST_CHK_IERR(phist_map_delete(ctx->domain_map,iflag),*iflag);
-        ctx->domain_map=NULL;
-      }
-      if (ctx->range_map!=ctx->row_map)
-      {
-//        PHIST_CHK_IERR(phist_map_delete(ctx->range_map,iflag),*iflag);
-        ctx->range_map=NULL;
-      }
-      if (ctx->row_map!=NULL) 
-      {
-//        PHIST_CHK_IERR(phist_map_delete(ctx->row_map,iflag),*iflag);
-        ctx->row_map=NULL;
-      }
-        
+      delete (phist::internal::default_context*)ctx;
     }
-    phist::internal::default_context *ctx=new phist::internal::default_context(newRowMap.release().get());
+    phist::internal::default_context *new_ctx=new 
+        phist::internal::default_context(newRowMap.get(),NULL,NULL);
     // create the matrix again and use this new map instead
     delete A;
     *iflag=iflag_in & ~PHIST_SPARSEMAT_PERM_GLOBAL;
-    *iflag=*iflag & PHIST_SPARSEMAT_OWN_MAPS;
-    PHIST_CHK_IERR(SUBR(sparseMat_create_fromRowFuncAndContext)(vA,ctx,maxnne,rowFunPtr,last_arg,iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(sparseMat_create_fromRowFuncAndContext)(vA,new_ctx,maxnne,rowFunPtr,last_arg,iflag),*iflag);
     A=(Epetra_CrsMatrix*)(*vA);
+    delete new_ctx;
 
     // TODO: print statistics on the partitioning? Isorropia has nice tools for this in examples/
 
@@ -192,12 +178,10 @@ extern "C" void SUBR(sparseMat_create_fromRowFuncAndContext)(TYPE(sparseMat_ptr)
     PHIST_SOUT(PHIST_WARNING,"matrix repartitioning with Epetra requires Isorropia (and Zoltan)\n");
 #endif
   }
-
-  if (ownMaps||(ctx!=vctx))
+  else if (ownMaps)
   {
-//    phist::internal::contextCollection[*vA]=ctx;
+    ::phist::internal::contextCollection[*vA]=ctx;
   }
-
   return;
 }
 
@@ -226,15 +210,14 @@ extern "C" void SUBR(sparseMat_create_fromRowFunc)(TYPE(sparseMat_ptr) *vA, phis
   {
     ctx=new phist::internal::default_context(row_and_range_map,NULL,NULL);
   }
-  *iflag=iflag_in|PHIST_SPARSEMAT_OWN_MAPS;
   PHIST_CHK_IERR(SUBR(sparseMat_create_fromRowFuncAndContext)(vA,ctx,
         maxnne,rowFunPtr,last_arg,iflag),*iflag);
-  // we're responsible for deleting this map object, Epetra is responsibible for keeping it in the created matrix
-  if (domain_map!=row_and_range_map && domain_map!=NULL)
+  if (domain_map!=row_and_range_map)
   {
     PHIST_CHK_IERR(phist_map_delete(domain_map,iflag),*iflag);
   }
   PHIST_CHK_IERR(phist_map_delete(row_and_range_map,iflag),*iflag);
+  delete ctx;
   return;
 }
 
@@ -526,7 +509,7 @@ extern "C" void SUBR(sparseMat_delete)(TYPE(sparseMat_ptr) vA, int* iflag)
   // this is to avoid memory leaks, the function sparseMat_get_context will create
   // a small wrapper object and store it in a map, associated with this pointer to
   // a sparseMat.
-  phist::internal::delete_default_context(vA);        
+  phist::internal::delete_default_context(vA);
   delete A;
 }
 
