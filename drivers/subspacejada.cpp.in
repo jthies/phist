@@ -203,9 +203,11 @@ else
   
   if (strcmp(problemB, "I") && strcasecmp(problemB, "none"))
   {
+    phist_const_context_ptr ctx = NULL;
+    PHIST_ICHK_IERR(SUBR(sparseMat_get_context)(A,&ctx,&iflag),iflag);
     iflag=0;
     PHIST_SOUT(PHIST_VERBOSE,"generalized eigenproblem...\n");
-    PHIST_ICHK_IERR(SUBR(create_matrix_with_map)(&B,map,problemB,&iflag), iflag);
+    PHIST_ICHK_IERR(SUBR(create_matrix_with_context)(&B,ctx,problemB,&iflag), iflag);
     opB=new TYPE(linearOp);
     PHIST_ICHK_IERR(SUBR(linearOp_wrap_sparseMat)(opB,B,&iflag),iflag);
     PHIST_ICHK_IERR(SUBR(linearOp_wrap_sparseMat_pair)(opA,A,B,&iflag),iflag);

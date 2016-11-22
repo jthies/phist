@@ -51,12 +51,13 @@ if (repart)
 }
 
 //! read a matrix from a MatrixMarket (ASCII) file
-extern "C" void SUBR(sparseMat_read_mm_with_map)(TYPE(sparseMat_ptr)* vA, phist_const_map_ptr vmap,
+extern "C" void SUBR(sparseMat_read_mm_with_context)(TYPE(sparseMat_ptr)* vA, phist_const_context_ptr vctx,
         const char* filename,int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   *iflag=0;
-  PHIST_CAST_PTR_FROM_VOID(const Epetra_Map,map,vmap,*iflag);
+  PHIST_CAST_PTR_FROM_VOID(const phist::internal::default_context,ctx,vctx,*iflag);
+  PHIST_CAST_PTR_FROM_VOID(const Epetra_Map,map,ctx->row_map,*iflag);
   if (filename==NULL)
   {
     *iflag=PHIST_INVALID_INPUT;
@@ -82,7 +83,7 @@ const char* filename,int* iflag)
 }
 
 //! read a matrix from a Ghost CRS (binary) file.
-extern "C" void SUBR(sparseMat_read_bin_with_map)(TYPE(sparseMat_ptr)* vA, phist_const_map_ptr vmap,
+extern "C" void SUBR(sparseMat_read_bin_with_context)(TYPE(sparseMat_ptr)* vA, phist_const_context_ptr vctx,
 const char* filename,int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
@@ -99,7 +100,7 @@ const char* filename,int* iflag)
 }
 
 //! read a matrix from a Harwell-Boeing (HB) file
-extern "C" void SUBR(sparseMat_read_hb_with_map)(TYPE(sparseMat_ptr)* vA, phist_const_map_ptr vmap,
+extern "C" void SUBR(sparseMat_read_hb_with_context)(TYPE(sparseMat_ptr)* vA, phist_const_context_ptr vctx,
 const char* filename,int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);

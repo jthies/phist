@@ -75,7 +75,7 @@ void SUBR(create_matrix)(TYPE(sparseMat_ptr)* mat, phist_const_comm_ptr comm,
         const char* problem, int* iflag);
 
 //!
-void SUBR(create_matrix_with_map)(TYPE(sparseMat_ptr)* mat, phist_const_map_ptr map,
+void SUBR(create_matrix_with_context)(TYPE(sparseMat_ptr)* mat, phist_const_context_ptr ctx,
         const char* problem, int* iflag);
 
 //! For testing linear solvers, generates an 'exact solution' sol and right-hand side rhs
