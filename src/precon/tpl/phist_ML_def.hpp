@@ -58,8 +58,8 @@ class PreconTraits<double,phist_ML>
     phist::internal::prec_and_mat* PAM=new phist::internal::prec_and_mat(A,sigma,B);
 
     PAM->MLPrec = Teuchos::rcp(new ML_Epetra::MultiLevelPreconditioner(*(PAM->Mat), *ml_list));
-    PHIST_CHK_IERR(*iflag=PAM->Prec!=Teuchos::null?0:PHIST_BAD_CAST,*iflag);
     PAM->Prec=PAM->MLPrec;
+    PHIST_CHK_IERR(*iflag=PAM->Prec!=Teuchos::null?0:PHIST_BAD_CAST,*iflag);
     
     // return created object as void pointer
     *P=(void*)PAM;

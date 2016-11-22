@@ -27,6 +27,8 @@ class PreconTraits<ST,phist_IFPACK>
 
   typedef typename tpetra::Traits<ST>::mvec_t mvec_t;
   typedef typename tpetra::Traits<ST>::sparseMat_t sparseMat_t;
+  typedef typename phist::ScalarTraits<ST>::mvec_t* phist_mvec_ptr;
+  typedef typename phist::ScalarTraits<ST>::mvec_t const* phist_const_mvec_ptr;
   typedef Ifpack2::Preconditioner<ST,phist_lidx,phist_gidx,tpetra::node_type> prec_type;
   typedef phist::ScalarTraits<ST> st;
 
@@ -92,7 +94,7 @@ class PreconTraits<ST,phist_IFPACK>
     delete P;
   }
   
-  static void Apply(ST alpha, void const* vP, TYPE(const_mvec_ptr) vX, ST beta, TYPE(mvec_ptr) vY, int* iflag)
+  static void Apply(ST alpha, void const* vP, phist_const_mvec_ptr vX, ST beta, phist_mvec_ptr vY, int* iflag)
   {
     PHIST_ENTER_FCN(__FUNCTION__);
     *iflag=0;
@@ -117,7 +119,7 @@ class PreconTraits<ST,phist_IFPACK>
 
   }
   
-  static void ApplyT(ST alpha, void const* P, TYPE(const_mvec_ptr) X, ST beta, TYPE(mvec_ptr) Y, int* iflag)
+  static void ApplyT(ST alpha, void const* P, phist_const_mvec_ptr X, ST beta, phist_mvec_ptr Y, int* iflag)
   {
     PHIST_ENTER_FCN(__FUNCTION__);
     // we currently don't need to apply the transpose of a preconditioner, and in Ifpack
@@ -129,7 +131,7 @@ class PreconTraits<ST,phist_IFPACK>
   }
   
   static void ApplyShifted(ST alpha, const void* vP, ST const * sigma,
-          TYPE(const_mvec_ptr) vX, ST beta,  TYPE(mvec_ptr) vY, int* iflag)
+          phist_const_mvec_ptr vX, ST beta,  phist_mvec_ptr vY, int* iflag)
   {
     // As we are talking about preconditioning here, we have the freedom to simply apply the same operator
     // to each column (ignoring the shift altogether or using a single shift). We could decide what to do 
