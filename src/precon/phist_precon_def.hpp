@@ -168,6 +168,7 @@ extern "C" void SUBR(precon_delete)(TYPE(linearOp_ptr) op, int* iflag)
   PHIST_CAST_PTR_FROM_VOID(phist_internal_precon, pt, op->A,*iflag);
   phist_Eprecon precType=pt->type_;
   CALL_PT_MEMBER(precType,Delete,pt->P_,iflag);
+  delete pt;
 }
 
 // given an existing preconditioner, recompute it for a new shift sigma and (near) kernel Vkern.     
