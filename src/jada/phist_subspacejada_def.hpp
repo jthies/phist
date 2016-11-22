@@ -89,7 +89,7 @@ extern "C" void SUBR(subspacejada)( TYPE(const_linearOp_ptr) AB_op,  TYPE(const_
 int minBase=opts.minBas;
 int maxBase=opts.maxBas;
 int innerBlockDim=opts.innerSolvBlockSize;        
-int innerMaxBase=opts.innerSolvMaxBas;
+int innerMaxIters=opts.innerSolvMaxIters;
 int initialShiftIter=opts.initialShiftIters;   
 _ST_ initialShift   =(_ST_)opts.initialShift_r
                     +(_ST_)opts.initialShift_i*st::cmplx_I();
@@ -841,7 +841,8 @@ PHIST_SOUT(PHIST_VERBOSE,"\n");
       for(int i = 0; i < blockDim; i++)
         selectedRes[i] -= nConvEig-nNewConvEig;
       PHIST_CHK_NEG_IERR(SUBR(jadaCorrectionSolver_run)(innerSolv, AB_op, B_op, Qtil, BQtil, sigma, res, &selectedRes[0],
-                                                    &innerTol[nConvEig], innerMaxBase, t, innerIMGS, innerGMRESabortAfterFirstConverged, iflag), *iflag);
+                                                    &innerTol[nConvEig], innerMaxIters, t, innerIMGS, 
+                                                    innerGMRESabortAfterFirstConverged, iflag), *iflag);
 
       // get solution and reuse res for At
       PHIST_CHK_IERR(SUBR( mvec_view_block  ) (t_, &Vv,  0, k-1, iflag), *iflag);
