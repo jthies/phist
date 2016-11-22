@@ -2058,9 +2058,6 @@ extern "C" void SUBR(sparseMat_create_fromRowFuncAndContext)(TYPE(sparseMat_ptr)
 {
 #include "phist_std_typedefs.hpp"
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
-#ifndef FIX_ME
-  *iflag=PHIST_NOT_IMPLEMENTED;
-#else
 
   int iflag_in=*iflag;
   int outlev = *iflag&PHIST_SPARSEMAT_QUIET ? PHIST_DEBUG : PHIST_INFO;
@@ -2080,7 +2077,7 @@ extern "C" void SUBR(sparseMat_create_fromRowFuncAndContext)(TYPE(sparseMat_ptr)
   // recently added).
   int sellC=PHIST_SELL_C,sellSigma=PHIST_SELL_SIGMA;
   int sellC_suggested, sellSigma_suggested;
-  phist::ghost_internal::get_C_sigma(&sellC_suggested,&sellSigma_suggested,iflag_in,map->mpicomm);
+  phist::ghost_internal::get_C_sigma(&sellC_suggested,&sellSigma_suggested,iflag_in,ctx->row_map->mpicomm);
   if (sellC<0) sellC=sellC_suggested;
   if (sellSigma<0) sellSigma=sellSigma_suggested;
   
@@ -2090,8 +2087,8 @@ extern "C" void SUBR(sparseMat_create_fromRowFuncAndContext)(TYPE(sparseMat_ptr)
   src.func = rowFunPtr;
   src.maxrowlen = maxnne;
   src.arg=last_arg;
-  src.gnrows = map->gdim;
-  src.gncols = map->gdim;
+  src.gnrows = ctx->row_map->gdim;
+  src.gncols = ctx->row_map->gdim;
 
 
 /*
@@ -2117,7 +2114,6 @@ extern "C" void SUBR(sparseMat_create_fromRowFuncAndContext)(TYPE(sparseMat_ptr)
   mtraits.C=sellC;
   mtraits.sortScope=sellSigma;
 
-#ifdef FIX_ME
   if (!own_map && (mtraits.sortScope>1 || mtraits.flags&GHOST_SPARSEMAT_PERMUTE) )
   {
     // we have to disable sorting for now and reset the flags after the matrix has been created with the
@@ -2125,29 +2121,26 @@ extern "C" void SUBR(sparseMat_create_fromRowFuncAndContext)(TYPE(sparseMat_ptr)
     mtraits.flags = (ghost_sparsemat_flags)(mtraits.flags & ~GHOST_SPARSEMAT_PERMUTE);
     mtraits.sortScope=1;
   }
-#endif
   PHIST_SOUT(outlev, "Creating sparseMat with SELL-%d-%d format.\n", mtraits.C, mtraits.sortScope);
 
   mtraits.datatype = st::ghost_dt;
-  PHIST_CHK_GERR(ghost_sparsemat_create(&mat,ctx,&mtraits,1),*iflag);                               
+  // create with fully initialized context. TODO: maybe we should rather clone the context
+  // for instance by calling phist_context_create and passing in ctx->row_map?
+  PHIST_CHK_GERR(ghost_sparsemat_create(&mat,(ghost_context*)ctx,&mtraits,1),*iflag);
   mtraits.flags=GHOST_SPARSEMAT_DEFAULT; // map->mtraits_template.flags;
-  double weight=phist::ghost_internal::get_proc_weight();
-  //TODO: I want to create the matrix with the given context, at the moment this will re-initialize
-  //      the context!!!
-  PHIST_CHK_GERR(ghost_sparsemat_init_rowfunc(mat,&src,map->mpicomm,weight),*iflag);
-//#if PHIST_OUTLEV >= PHIST_VERBOSE
+  PHIST_CHK_GERR(ghost_sparsemat_init_rowfunc(mat,&src,ctx->row_map->mpicomm,1.0),*iflag);
+
   char *str;
-  ghost_context_string(&str,ctx);
+  ghost_context_string(&str,(ghost_context*)ctx);
   PHIST_SOUT(outlev,"%s\n",str);
   free(str); str = NULL;
   ghost_sparsemat_info_string(&str,mat);
   PHIST_SOUT(outlev,"%s\n",str);
   free(str); str = NULL;
-//#endif
+
   *vA = (TYPE(sparseMat_ptr))mat;
 
 PHIST_TASK_END(iflag);
-#endif
   return;
 }
 

@@ -275,7 +275,8 @@ int get_perm_flag(int iflag, int outlev)
         PHIST_CHK_GERR(ghost_context_create(ctx,gnrows, gncols, flags, comm,proc_weight),*iflag);
         // TODO - select padding based on get_C_simga?
         int pad=32; // works for typical chunk sizes 4,8,16,32 and SSE/AVX/AVX512
-        ghost_map_create_distribution((*ctx)->row_map,(ghost_sparsemat_src_rowfunc*)matrixSource,(*ctx)->weight,GHOST_MAP_DIST_NROWS,pad);
+        //TODO: can't pass in pad right now
+        PHIST_CHK_GERR(ghost_map_create_distribution((*ctx)->row_map,(ghost_sparsemat_src_rowfunc*)matrixSource,(*ctx)->weight,GHOST_MAP_DIST_NROWS,NULL);
         nglob_count=0;
         any_empty=false;
         for (int i=0;i<nproc;i++)
@@ -447,7 +448,7 @@ extern "C" void phist_map_create(phist_map_ptr* vmap, phist_const_comm_ptr vcomm
   // allow distribution based on memory bandwidth benchmark:
   double weight=::phist::ghost_internal::get_proc_weight();
   int pad=std::max(32,PHIST_SELL_C);
-  PHIST_CHK_GERR(ghost_map_create_distribution(map,NULL,weight,GHOST_MAP_DIST_NROWS),*iflag);
+  PHIST_CHK_GERR(ghost_map_create_distribution(map,NULL,weight,GHOST_MAP_DIST_NROWS,NULL),*iflag);
   map->dimpad=PAD(map->dimpad,pad);
   
   // in ghost terminology, we look at LHS=A*RHS, the LHS is based on the
@@ -482,8 +483,13 @@ extern "C" void phist_context_create(phist_context_ptr* vctx,
   ghost_map const* range_map=(ghost_map const*)vrange_map;
   ghost_map const* domain_map=(ghost_map const*)vdomain_map;
   ghost_context* ctx=NULL;
-  *vctx=(phist_comm_ptr)ctx;
-  *iflag=PHIST_NOT_IMPLEMENTED;
+  
+  ghost_gidx gnrows=row_map->gdim;
+  ghost_gidx gncols=gnrows;
+  if (domain_map!=NULL) gncols=domain_map->gdim;
+  ghost_context_create(&ctx,gnrows,gncols,GHOST_CONTEXT_DEFAULT,row_map->mpicomm,1.);
+  ghost_map_create_distribution(ctx->row_map,NULL,1.0,GHOST_MAP_DIST_NROWS,row_map->ldim);
+  *vctx=(phist_context_ptr)ctx;
 }
 
 extern "C" void phist_context_delete(phist_context_ptr vctx, int* iflag)
@@ -493,7 +499,7 @@ extern "C" void phist_context_delete(phist_context_ptr vctx, int* iflag)
   if (vctx==NULL) return;
   PHIST_CAST_PTR_FROM_VOID(ghost_context,ctx,vctx,*iflag);
   ghost_context_destroy(ctx);
-  delete ctx;
+  ctx=NULL;
 }
 
 //!
