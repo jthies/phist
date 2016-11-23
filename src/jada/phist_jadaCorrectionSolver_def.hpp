@@ -185,7 +185,7 @@ void SUBR(jadaCorrectionSolver_run)(TYPE(jadaCorrectionSolver_ptr) me,
       SUBR(precon_update)(me->leftPrecon,prec_sigma,q,Bq,iflag);
       if (*iflag) PHIST_SOUT(PHIST_WARNING,"precon_update returned non-zero code %d\n"
                                            "(file %s, line %d). Ignoring return value.\n",
-                                           __FILE__,__LINE__);
+                                           *iflag,__FILE__,__LINE__);
     }
     if (me->rightPrecon!=NULL)
     {
@@ -193,7 +193,7 @@ void SUBR(jadaCorrectionSolver_run)(TYPE(jadaCorrectionSolver_ptr) me,
       SUBR(precon_update)(me->rightPrecon,prec_sigma,q,Bq,iflag);
       if (*iflag) PHIST_SOUT(PHIST_WARNING,"precon_update returned non-zero code %d\n"
                                            "(file %s, line %d). Ignoring return value.\n",
-                                           __FILE__,__LINE__);
+                                           *iflag,__FILE__,__LINE__);
     }
   }
  
