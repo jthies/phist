@@ -105,7 +105,7 @@ public:
       SUBR(mvec_extract_view)(W2_,&W2_vp_,&this->ldaW2_,&this->iflag_);
       ASSERT_EQ(0,this->iflag_);
       
-      B_op=NULL; BV_=BV_; BW_=W_; BQ_=Q_;
+      B_op=NULL; BV_=V_; BW_=W_; BQ_=Q_;
 
 #ifdef ORTHOG_WITH_HPD_B
       B_op=new TYPE(linearOp);
