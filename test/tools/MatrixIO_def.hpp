@@ -101,10 +101,6 @@ int PHIST_TG_PREFIX(hpd_tridiag)(ghost_gidx row, ghost_lidx *len, ghost_gidx* co
   if (vals) vals[0]=st::one();
   if (cols && row>=0) cols[0]=row;
 
-// create identity matrix (just while developing stuff with B-inner products
-//  if (len) *len=1;
-//  return 0;
-
   if (row<0)
   {
     gnrows=cols[0];
@@ -150,6 +146,111 @@ int PHIST_TG_PREFIX(hpd_tridiag)(ghost_gidx row, ghost_lidx *len, ghost_gidx* co
   }
   return 0;
 }
+
+  // defines a matrix with only a constant subdiagonal and an entry (1,N)
+  // that defines a periodic "right shift" of vector elements.
+  int PHIST_TG_PREFIX(right_shift_perio)(ghost_gidx row, ghost_lidx *len, ghost_gidx* cols, void* vval, void *arg)
+  {
+#include "phist_std_typedefs.hpp"
+    static ghost_gidx gnrows=-1;
+    _ST_ *vals=(_ST_*)vval;
+  
+    if (row<0)
+    {
+      gnrows=cols[0];
+      return 0;
+    }
+    else if (gnrows<0)
+    {
+      PHIST_SOUT(PHIST_ERROR,"%s not correctly initialized, call with row=-1 and cols[0]=gnrows first!",__FUNCTION__);
+      return -1;
+    }
+    else
+    {
+      *len=1;
+      cols[0]=row>0?row-1:gnrows-1;
+      vals[0]=st::one();
+    }
+    return 0;
+  }
+
+  // defines a matrix with only a constant subdiagonal that defines a non-periodic "right shift" of vector elements.
+  int PHIST_TG_PREFIX(right_shift)(ghost_gidx row, ghost_lidx *len, ghost_gidx* cols, void* vval, void *arg)
+  {
+#include "phist_std_typedefs.hpp"
+    _ST_ *vals=(_ST_*)vval;
+    
+    if (row<0) return 0;
+  
+    *len=0;
+    if (row>0)
+    {
+      *len=1;
+      cols[0]=row-1;
+      vals[0]=st::one();
+    }
+    return 0;
+  }
+
+  // defines a matrix with only a constant superdiagonal and an entry (N,1)
+  // that defines a periodic "left shift" of vector elements.
+  int PHIST_TG_PREFIX(left_shift_perio)(ghost_gidx row, ghost_lidx *len, ghost_gidx* cols, void* vval, void *arg)
+  {
+#include "phist_std_typedefs.hpp"
+    static ghost_gidx gnrows=-1;
+    _ST_ *vals=(_ST_*)vval;
+  
+    if (row<0)
+    {
+      gnrows=cols[0];
+      return 0;
+    }
+    else if (gnrows<0)
+    {
+      PHIST_SOUT(PHIST_ERROR,"%s not correctly initialized, call with row=-1 and cols[0]=gnrows first!",__FUNCTION__);
+      return -1;
+    }
+    else
+    {
+      *len=1;
+      cols[0]=row<gnrows-1?row+1:0;
+      vals[0]=st::one();
+    }
+    return 0;
+  }
+
+
+  // defines a matrix with only a constant superdiagonal that defines a non-periodic "left shift" of vector elements.
+  int PHIST_TG_PREFIX(left_shift)(ghost_gidx row, ghost_lidx *len, ghost_gidx* cols, void* vval, void *arg)
+  {
+#include "phist_std_typedefs.hpp"
+    static ghost_gidx gnrows=-1;
+    _ST_ *vals=(_ST_*)vval;
+    if (row<0)
+    {
+      gnrows=cols[0];
+      return 0;
+    }
+    else if (gnrows<0)
+    {
+      PHIST_SOUT(PHIST_ERROR,"%s not correctly initialized, call with row=-1 and cols[0]=gnrows first!",__FUNCTION__);
+      return -1;
+    }
+    else
+    {
+      *len=0;
+      if (row<gnrows-1)
+      {
+        *len=1;
+        cols[0]=row+1;
+        vals[0]=st::one();
+      }
+    }
+    return 0;
+  }
+
+
+
 
   int PHIST_TG_PREFIX(mvec123func)(ghost_gidx i, ghost_lidx j, void* val, void* last_arg)
   {

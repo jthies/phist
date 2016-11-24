@@ -21,6 +21,20 @@ void SUBR(read_mat)(const char* filebase,phist_const_comm_ptr comm,int nglob, in
   //! the global number of rows (gnrows). The maximum row length is 3.
   int PHIST_TG_PREFIX(hpd_tridiag)(ghost_gidx row, ghost_lidx *len, ghost_gidx* cols, void* vval, void *arg);
 
+  //! defines a matrix with only a constant subdiagonal and an entry (1,N)
+  //! that defines a periodic "right shift" of vector elements.
+  int PHIST_TG_PREFIX(right_shift_perio)(ghost_gidx row, ghost_lidx *len, ghost_gidx* cols, void* vval, void *arg);
+
+  //! defines a matrix with only a constant subdiagonal that defines a non-periodic "right shift" of vector elements.
+  int PHIST_TG_PREFIX(right_shift)(ghost_gidx row, ghost_lidx *len, ghost_gidx* cols, void* vval, void *arg);
+
+  //! defines a matrix with only a constant superdiagonal and an entry (N,1)
+  //! that defines a periodic "left shift" of vector elements.
+  int PHIST_TG_PREFIX(left_shift_perio)(ghost_gidx row, ghost_lidx *len, ghost_gidx* cols, void* vval, void *arg);
+
+  //! defines a matrix with only a constant superdiagonal that defines a non-periodic "left shift" of vector elements.
+  int PHIST_TG_PREFIX(left_shift)(ghost_gidx row, ghost_lidx *len, ghost_gidx* cols, void* vval, void *arg);
+
   //! fill an mvec with characteristic values [1 2 3 ...] so we can more easily check permutation functionality
   int PHIST_TG_PREFIX(mvec123func)(ghost_gidx i, ghost_lidx j, void* val, void* last_arg);
 

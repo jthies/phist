@@ -331,7 +331,7 @@ protected:
       alpha=st::zero(); 
       beta=st::prand();
 #if PHIST_OUTLEV>=PHIST_INFO
-      std::cout << "MVM with A=I, alpha="<<alpha<<", beta="<<beta<<std::endl;
+      if (mpi_rank_==0) std::cout << "MVM with A=I, alpha="<<alpha<<", beta="<<beta<<std::endl;
 #endif
       SUBR(mvec_random)(vec1_,&iflag_); 
       SUBR(mvec_random)(vec2_,&iflag_); 
@@ -355,7 +355,7 @@ protected:
       alpha = st::one();
       beta = st::prand();
 #if PHIST_OUTLEV>=PHIST_INFO
-      std::cout << "MVM with A=I, alpha="<<alpha<<", beta="<<beta<<std::endl;
+      if (mpi_rank_==0) std::cout << "MVM with A=I, alpha="<<alpha<<", beta="<<beta<<std::endl;
 #endif
       SUBR(mvec_random)(vec1_,&iflag_);
       SUBR(mvec_random)(vec2_,&iflag_);
@@ -598,7 +598,7 @@ protected:
 
       // apply our shift matrix
 #if PHIST_OUTLEV>=PHIST_INFO
-      std::cout << "MVM with A='shift', alpha=1, beta=0"<<std::endl;
+      if (mpi_rank_==0) std::cout << "MVM with A='shift', alpha=1, beta=0"<<std::endl;
 #endif
 
       PrintVector(PHIST_DEBUG,"input",vec1_vp_,nloc_,lda_,stride_,mpi_comm_);
@@ -694,7 +694,7 @@ protected:
 
       // apply our shift matrix
 #if PHIST_OUTLEV>=PHIST_INFO
-      std::cout << "MVM with A='rand', alpha=1, beta=0"<<std::endl;
+      if (mpi_rank_==0) std::cout << "MVM with A='rand', alpha=1, beta=0"<<std::endl;
 #endif
 
       PrintVector(PHIST_DEBUG,"input",vec1_vp_,nloc_,lda_,stride_,mpi_comm_);
@@ -1168,6 +1168,7 @@ TEST_F(CLASSNAME,mvecT_times_mvec_after_spmvm)
   phist_map_get_ilower(map_,&ilower,&iflag_);
   EXPECT_EQ(0,iflag_);// make sure this is a linear map, otherwise the
                       // analytical sum below is not matched
+
   for (int ii=0; ii< nloc_; ii++)
   {
     for (int j=0; j<nvec_; j++)
@@ -1177,6 +1178,7 @@ TEST_F(CLASSNAME,mvecT_times_mvec_after_spmvm)
   }
   SUBR(mvec_to_device)(vec1_,&iflag_);
   SUBR(mvec_to_device)(vec2_,&iflag_);
+
   SUBR(mvecT_times_mvec)(st::one(),vec1_,vec2_,st::zero(),mat1_,&iflag_);
   ASSERT_EQ(0,iflag_);
   SUBR(sdMat_from_device)(mat1_,&iflag_);
