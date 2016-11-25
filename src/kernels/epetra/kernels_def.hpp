@@ -121,6 +121,10 @@ extern "C" void SUBR(sparseMat_create_fromRowFuncAndContext)(TYPE(sparseMat_ptr)
   PHIST_SOUT(PHIST_DEBUG,"sparseMat_create_fromRowFuncAndContext with iflag=%d\n",iflag_in);
   phist_gidx cols[maxnne];
   double vals[maxnne];
+
+  // note: if the context contains a col_map, we do not force it onto the matrix anyway.
+  //       this is because we don't have a fused_spmv_pair kernel for Epetra, so restricting
+  //       the sparsity pattern of subsequently created matrices doesn't help.
  
   Epetra_CrsMatrix* A=NULL;
   PHIST_TRY_CATCH(A   = new Epetra_CrsMatrix(Copy,*map,maxnne),*iflag);

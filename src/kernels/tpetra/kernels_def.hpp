@@ -109,6 +109,10 @@ extern "C" void SUBR(sparseMat_create_fromRowFuncAndContext)(TYPE(sparseMat_ptr)
   phist_gidx cols[maxnne];
   _ST_ vals[maxnne];
 
+  // note: if the context contains a col_map, we do not force it onto the matrix anyway.
+  //       this is because we don't have a fused_spmv_pair kernel for Tpetra, so restricting
+  //       the sparsity pattern of subsequently created matrices doesn't help.
+
   //TODO: this can't be the way, what about the Kokkos node?
   for (phist_lidx i=0; i<A->getNodeNumRows(); i++)
   {

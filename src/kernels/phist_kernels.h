@@ -117,15 +117,30 @@ void phist_map_get_iupper(phist_const_map_ptr map, phist_gidx* iupper, int* ifla
 //! This function may require communication, so it has to be called by all processes in the map's comm object.
 //! 
 void phist_maps_compatible(phist_const_map_ptr map1, phist_const_map_ptr map2, int* iflag);
-//! create a context object defining the shape of a matrix by three maps.
-//! The row map determines the distribution of rows of the matrix over the processes.
-//! The range and domain map determine the size and distribution of y and x, resp. in y=A*x, and therefore the
-//! shape of the sparse matrices created with this context. Note that it is typically not necessary to create a
+
+//! create a context object defining the shape, distribution and communication requirements of a matrix:
+
+//!                                                                                                             
+//! The row map determines the distribution of rows of the matrix over the processes and must be provided.      
+//!                                                                                                             
+//! The col map may be NULL. In that case, there will be no restrictions on the sparsity pattern of matrices    
+//! created subsequently. If the col map is given, it defines the halo elements available during an spMVM and   
+//! therefore puts limitations on the sparsity pattern allowed for matrices created with this context.          
+//! Two matrices sharing the same col_map can potentially be combined in a "fused_spmv_pair" to compute         
+//! e.g. Y=alpha*A+beta*B)X with a single communication step. This is of interest when solving generalized EVP. 
+//!                                                                                                             
+//! The range and domain map determine the size and distribution of y and x, resp. in y=A*x, and therefore the  
+//! shape of the sparse matrices created with this context. If either of these maps is NULL, the row map is     
+//! used. The most common use of prescribing the domain_map is to define a non-square matrix.                   
+//!                                                                                                             
+//! Note that it is typically not necessary to create a                                                         
 //! context a priori, the more common case is creating a sparseMat, obtaining its context and using it to create
-//! another ("compatible") sparseMat. This gives the kernel library the freedom to apply permutations and load-
-//! balancing when creating a new matrix.
+//! another ("compatible") sparseMat. This gives the kernel library the freedom to apply permutations and load- 
+//! balancing when creating a new matrix.                                                                       
+//!                                                                                                             
 void phist_context_create(phist_context_ptr* ctx, 
                           phist_const_map_ptr row_map, 
+                          phist_const_map_ptr col_map,
                           phist_const_map_ptr range_map, 
                           phist_const_map_ptr domain_map, 
                           int* iflag);
