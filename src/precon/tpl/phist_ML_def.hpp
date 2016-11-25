@@ -73,11 +73,19 @@ class PreconTraits<double,phist_ML>
   {
     PHIST_CAST_PTR_FROM_VOID(phist::internal::prec_and_mat,PAM,P,*iflag);
     PHIST_CHK_IERR(PAM->UpdateMatrix(A,sigma,B,iflag),*iflag);
-    // without null space:
-    PHIST_CHK_IERR(*iflag=PAM->MLPrec->ComputePreconditioner(true),*iflag);
-    // with null space (adaptive SA)
-//    PHIST_CHK_IERR(*iflag=P->ComputeAdaptivePreonditioner(dimV,Vkern_as_double*),*iflag);
-    
+    int dimV=0;
+    Epetra_MultiVector* V = (Epetra_MultiVector*)Vkern;
+    dimV=V->NumVectors();
+    if (dimV==0)
+    {
+      // without null space:
+      PHIST_CHK_IERR(*iflag=PAM->MLPrec->ComputePreconditioner(true),*iflag);
+    }
+    else
+    {
+      // with null space (adaptive SA)
+      PHIST_CHK_IERR(*iflag=PAM->MLPrec->ComputeAdaptivePreconditioner(dimV,V->Values()),*iflag);
+    }
   }                                                                             
 
   static void Delete(void* vP, int *iflag)
