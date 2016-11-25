@@ -209,7 +209,7 @@ extern "C" void SUBR(sparseMat_create_fromRowFunc)(TYPE(sparseMat_ptr) *vA, phis
   phist::internal::default_context *ctx=NULL;
   if (domain_map!=row_and_range_map)
   {
-    ctx=new phist::internal::default_context(row_and_range_map,row_and_range_map,domain_map);
+    ctx=new phist::internal::default_context(row_and_range_map,NULL,row_and_range_map,domain_map);
   }
   else
   {
