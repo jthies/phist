@@ -62,6 +62,11 @@ int PHIST_TG_PREFIX(idfunc)(ghost_gidx row, ghost_lidx *len, ghost_gidx* cols, v
     gncols=cols[1];
     return 0;
   }
+  else if (row==-2)
+  {
+    gnrows=-1;
+    gncols=-1;
+  }
   if (gnrows>0 && row>=gnrows) return -1;
   if (row<0) return -1;
   if (gncols>0 && row>=gncols)
@@ -101,10 +106,14 @@ int PHIST_TG_PREFIX(hpd_tridiag)(ghost_gidx row, ghost_lidx *len, ghost_gidx* co
   if (vals) vals[0]=st::one();
   if (cols && row>=0) cols[0]=row;
 
-  if (row<0)
+  if (row==-1)
   {
     gnrows=cols[0];
     return 0;
+  }
+  else if (row==-2)
+  {
+    gnrows=-2;
   }
   else if (gnrows<0)
   {
@@ -155,10 +164,14 @@ int PHIST_TG_PREFIX(hpd_tridiag)(ghost_gidx row, ghost_lidx *len, ghost_gidx* co
     static ghost_gidx gnrows=-1;
     _ST_ *vals=(_ST_*)vval;
   
-    if (row<0)
+    if (row==-1)
     {
       gnrows=cols[0];
       return 0;
+    }
+    else if (row==-2)
+    {
+      gnrows=-1;
     }
     else if (gnrows<0)
     {
@@ -200,9 +213,14 @@ int PHIST_TG_PREFIX(hpd_tridiag)(ghost_gidx row, ghost_lidx *len, ghost_gidx* co
     static ghost_gidx gnrows=-1;
     _ST_ *vals=(_ST_*)vval;
   
-    if (row<0)
+    if (row==-1)
     {
       gnrows=cols[0];
+      return 0;
+    }
+    else if (row==-2)
+    {
+      gnrows=-1;
       return 0;
     }
     else if (gnrows<0)
@@ -226,9 +244,14 @@ int PHIST_TG_PREFIX(hpd_tridiag)(ghost_gidx row, ghost_lidx *len, ghost_gidx* co
 #include "phist_std_typedefs.hpp"
     static ghost_gidx gnrows=-1;
     _ST_ *vals=(_ST_*)vval;
-    if (row<0)
+    if (row==-1)
     {
       gnrows=cols[0];
+      return 0;
+    }
+    else if (row==-2)
+    {
+      gnrows=-1;
       return 0;
     }
     else if (gnrows<0)

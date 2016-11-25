@@ -43,7 +43,7 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_,_USE_VIEWS_,
     ghost_gidx gdim[2];
     gdim[0]=_N_;
     gdim[1]=_N_;
-    // initialize rowFunc
+    // initialize rowFuncs
     iflag_=phist::testing::PHIST_TG_PREFIX(hpd_tridiag)(-1,NULL,gdim,NULL,NULL);
     ASSERT_EQ(0,iflag_);
     iflag_=phist::testing::PHIST_TG_PREFIX(left_shift)(-1,NULL,gdim,NULL,NULL);
@@ -63,7 +63,7 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_,_USE_VIEWS_,
     phist_const_map_ptr range_map=NULL;
     SUBR(sparseMat_get_range_map)(A_,&range_map,&iflag_);
     ASSERT_EQ(0,iflag_);
-    
+        
     // initialize the base class with the context/maps
     KernelTestWithMap<_N_>::SetUpTestCaseWithMap(range_map);
 
@@ -78,6 +78,12 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_,_USE_VIEWS_,
     ASSERT_EQ(0,iflag_);
     SUBR(sparseMat_create_fromRowFuncAndContext)(&Ar_,context_,1,&phist::testing::PHIST_TG_PREFIX(right_shift),NULL,&iflag_);
     ASSERT_EQ(0,iflag_);
+
+    // uninitialize rowFuncs
+    iflag_=phist::testing::PHIST_TG_PREFIX(idfunc)(-2,NULL,NULL,NULL,NULL);
+    iflag_=phist::testing::PHIST_TG_PREFIX(hpd_tridiag)(-2,NULL,NULL,NULL,NULL);
+    iflag_=phist::testing::PHIST_TG_PREFIX(right_shift)(-2,NULL,NULL,NULL,NULL);
+    iflag_=phist::testing::PHIST_TG_PREFIX(left_shift)(-2,NULL,NULL,NULL,NULL);
 
     VTest::SetUpTestCase();
   }

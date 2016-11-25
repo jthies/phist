@@ -49,9 +49,7 @@ class KernelTestWithSparseMat<_ST_, _Nglob, _Mglob, _MatName, _multipleDefinitio
           PHIST_TG_PREFIX(idfunc)(-1,NULL,ini_dim,NULL,NULL);
           SUBR(sparseMat_create_fromRowFunc)(&A_,comm_,_Nglob,_Mglob,1,&PHIST_TG_PREFIX(idfunc),NULL,&iflag_);
           // "uninitialize"
-          ini_dim[0]=-1;
-          ini_dim[1]=-1;
-          PHIST_TG_PREFIX(idfunc)(-1,NULL,ini_dim,NULL,NULL);
+          PHIST_TG_PREFIX(idfunc)(-2,NULL,NULL,NULL,NULL);
         }
         else if (MatNameEnumIsMatFunc(_MatName)==false)
         {
