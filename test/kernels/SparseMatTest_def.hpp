@@ -330,7 +330,7 @@ protected:
       //0*I*X+beta*Y = beta*Y? 
       alpha=st::zero(); 
       beta=st::prand();
-#if PHIST_OUTLEV>=PHIST_INFO
+#if PHIST_OUTLEV>=PHIST_DEBUG
       if (mpi_rank_==0) std::cout << "MVM with A=I, alpha="<<alpha<<", beta="<<beta<<std::endl;
 #endif
       SUBR(mvec_random)(vec1_,&iflag_); 
