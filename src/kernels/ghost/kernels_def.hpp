@@ -2087,9 +2087,10 @@ extern "C" void SUBR(sparseMat_create_fromRowFuncAndContext)(TYPE(sparseMat_ptr)
   src.func = rowFunPtr;
   src.maxrowlen = maxnne;
   src.arg=last_arg;
+  // TODO: the shape is actually determined by the range and domain maps, but
+  // GHOST coesn't have these concepts yet
   src.gnrows = ctx->row_map->gdim;
-  src.gncols = ctx->row_map->gdim;
-
+  src.gncols = ctx->col_map->gdim;
 
 /*
   // TODO: introduce ghost functions context_comm_initialized() and context_clone() etc.
@@ -2134,9 +2135,10 @@ extern "C" void SUBR(sparseMat_create_fromRowFuncAndContext)(TYPE(sparseMat_ptr)
   // are not compatible even with regular spMVMs (this is because ghost doesn't have the concept
   // of a domain map yet).
   ghost_context* cloned_ctx=NULL;
-  ghost_gidx gnrows=ctx->row_map->gdim;
-  ghost_gidx gncols=ctx->col_map->gdim;
-  PHIST_CHK_GERR(ghost_context_create(&cloned_ctx,gnrows,gncols,ctx->flags,ctx->row_map->mpicomm,1.0),*iflag);
+  PHIST_CHK_GERR(ghost_context_create(&cloned_ctx,src.gnrows,src.gncols,ctx->flags,ctx->row_map->mpicomm,ctx->weight),*iflag);
+  PHIST_CHK_GERR(ghost_context_set_map(cloned_ctx,GHOST_MAP_ROW,ctx->row_map),*iflag);
+  PHIST_CHK_GERR(ghost_context_set_map(cloned_ctx,GHOST_MAP_COL,ctx->col_map),*iflag);
+  
   PHIST_CHK_GERR(ghost_sparsemat_create(&mat,cloned_ctx,&mtraits,1),*iflag);
   mtraits.flags=GHOST_SPARSEMAT_DEFAULT; // map->mtraits_template.flags;
   PHIST_CHK_GERR(ghost_sparsemat_init_rowfunc(mat,&src,ctx->row_map->mpicomm,1.0),*iflag);
