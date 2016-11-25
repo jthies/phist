@@ -23,7 +23,7 @@ void SUBR(read_mat)(const char* filebase,phist_const_comm_ptr comm,int nglob, in
   int PHIST_TG_PREFIX(hpd_tridiag)(ghost_gidx row, ghost_lidx *len, ghost_gidx* cols, void* vval, void *arg);
 
   //! defines a matrix with only a constant subdiagonal and an entry (1,N)
-  //! that defines a periodic "right shift" of vector elements.\
+  //! that defines a periodic "right shift" of vector elements.
   //! To initialize and finalize, call with row=-1 and -2, resp. (see hpd_tridiag above)
   int PHIST_TG_PREFIX(right_shift_perio)(ghost_gidx row, ghost_lidx *len, ghost_gidx* cols, void* vval, void *arg);
 
