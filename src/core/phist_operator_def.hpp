@@ -144,21 +144,21 @@ void SUBR(linearOp_identity)(TYPE(linearOp_ptr) op,
  void SUBR(linearOp_apply)(_ST_ alpha, TYPE(const_linearOp_ptr) A_op, 
         TYPE(const_mvec_ptr) X, _ST_ beta,  TYPE(mvec_ptr) Y, int* iflag)
   {
-    PHIST_CHK_IERR(A_op->apply==NULL? PHIST_BAD_CAST:0,*iflag);
+    PHIST_CHK_IERR(*iflag=(A_op->apply==NULL)? PHIST_BAD_CAST:0,*iflag);
     PHIST_CHK_IERR(A_op->apply(alpha,A_op->A,X,beta,Y,iflag),*iflag);
   }
 //! apply transpose
  void SUBR(linearOp_applyT)(_ST_ alpha, TYPE(const_linearOp_ptr) A_op, 
         TYPE(const_mvec_ptr) X, _ST_ beta,  TYPE(mvec_ptr) Y, int* iflag)
   {
-    PHIST_CHK_IERR(A_op->applyT==NULL? PHIST_BAD_CAST:0,*iflag);
+    PHIST_CHK_IERR(*iflag=(A_op->applyT==NULL)? PHIST_BAD_CAST:0,*iflag);
     PHIST_CHK_IERR(A_op->applyT(alpha,A_op->A,X,beta,Y,iflag),*iflag);
   }
  //! pointer to function for computing Y=(A-sigma[j]B)*X[j]+beta*Y[j]
  void SUBR(linearOp_apply_shifted)(_ST_ alpha, TYPE(const_linearOp_ptr) A_op, _ST_ const * sigma,
         TYPE(const_mvec_ptr) X, _ST_ beta,  TYPE(mvec_ptr) Y, int* iflag)
     {
-    PHIST_CHK_IERR(A_op->apply_shifted==NULL? PHIST_BAD_CAST:0,*iflag);
+    PHIST_CHK_IERR(*iflag=(A_op->apply_shifted==NULL)? PHIST_BAD_CAST:0,*iflag);
     PHIST_CHK_IERR(A_op->apply_shifted(alpha,A_op->A,sigma,X,beta,Y,iflag),*iflag);
   }
 //! apply operator and compute inner products with in- and output vector
@@ -167,7 +167,7 @@ void SUBR(linearOp_identity)(TYPE(linearOp_ptr) op,
                             TYPE(sdMat_ptr) WtW, TYPE(sdMat_ptr) VtW,
                             int* iflag)
   {
-    PHIST_CHK_IERR(A_op->fused_apply_mvTmv==NULL? PHIST_BAD_CAST:0,*iflag);
+    PHIST_CHK_IERR(*iflag=(A_op->fused_apply_mvTmv==NULL)? PHIST_BAD_CAST:0,*iflag);
     PHIST_CHK_IERR(A_op->fused_apply_mvTmv(alpha,A_op->A,V,beta,W,WtW,VtW,iflag),*iflag);
   }
   
