@@ -62,11 +62,14 @@ double get_proc_weight(double force_value)
     double max_bw, mean_bw;
     phist_bench_stream_triad(&mean_bw,&max_bw,&iflag);
     proc_weight=mean_bw*1.0e-9;
-    if (iflag) proc_weight=1.0;
+    if (iflag) 
+    {
+      PHIST_OUT(PHIST_WARNING,"WARNING: stream benchmark for row distribution returned iflag=%d\n"
+                              "(file %s, line %d). Setting proc_weight=1 on this rank!\n",
+                              iflag,__FILE__,__LINE__);
+      proc_weight=1.0;
+    }
   }
-  // do not return exactly 1.0 even if it was measured or an error occured on a single MPI process.
-  // context_create below may hang if one process assumes it is in the default case of 1.0
-  if (proc_weight==1.0) proc_weight+=1.0e-12;
   return proc_weight;
 }
 
@@ -205,109 +208,7 @@ int get_perm_flag(int iflag, int outlev)
       vtraits.storage=GHOST_DENSEMAT_COLMAJOR;
 #endif
       return vtraits;
-    }  
-#if DELETE_ME    
-    phist_ghost_map* MapGarbageCollector::new_map(const void* p,
-        ghost_context* ctx, ghost_maptype pt, bool own_ctx, bool own_perm,
-        bool reuse_if_exists)
-    {
-      if (p==NULL)
-      {
-        PHIST_SOUT(PHIST_ERROR,"cannot associate a map with the NULL pointer\n");
-        return NULL;
-      }
-      phist_ghost_map* m=NULL;
-      if (reuse_if_exists==true)
-      {
-        MapCollection::iterator it = maps_.find(p);
-        if( it != maps_.end() )
-        {
-          if (it->second.size()>0)
-          {
-            m = it->second[0];
-          }
-        }
-      }
-
-      if (m!=NULL) return m;
-      m = new phist_ghost_map(ctx,ghost_context_map(ctx,pt),own_ctx,own_perm);
-      add_map(p,m);
-      return m;
     }
-
-    void MapGarbageCollector::add_map(const void* p, phist_ghost_map* m)
-    {
-      if (p==NULL)
-      {
-        PHIST_SOUT(PHIST_ERROR,"cannot associate a map with the NULL pointer\n");
-        return;
-      }
-      maps_[p].push_back(m);
-    }
-
-    void MapGarbageCollector::delete_maps(void* p)
-    {
-      MapCollection::iterator it = maps_.find(p);
-      if( it != maps_.end() )
-      {
-        for(int i = 0; i < it->second.size(); i++)
-        {
-          delete it->second[i];
-        }
-        maps_.erase(it);
-      }
-    }
-
-    // this calls ghost_context_create with the given arguments and retries with a proc_weight of 1 if there are empty partitions
-    void context_create(ghost_context **ctx, ghost_gidx gnrows, ghost_gidx gncols, 
-        ghost_context_flags_t flags, void *matrixSource, ghost_sparsemat_src srcType, ghost_mpi_comm comm, double proc_weight, int* iflag)
-    {
-      *iflag=0;
-      phist_gidx nglob_count;
-      bool any_empty;
-      *ctx=NULL;
-      while (*ctx==NULL)
-      {
-        int rank,nproc;
-        ghost_rank(&rank,comm);
-        ghost_nrank(&nproc,comm);
-        PHIST_ORDERED_OUT(PHIST_VERBOSE,comm,"PE%6d partition weight %4.2g\n",rank,proc_weight);
-        PHIST_CHK_GERR(ghost_context_create(ctx,gnrows, gncols, flags, comm,proc_weight),*iflag);
-        // TODO - select padding based on get_C_simga?
-        int pad=32; // works for typical chunk sizes 4,8,16,32 and SSE/AVX/AVX512
-        //TODO: can't pass in pad right now
-        PHIST_CHK_GERR(ghost_map_create_distribution((*ctx)->row_map,(ghost_sparsemat_src_rowfunc*)matrixSource,(*ctx)->weight,GHOST_MAP_DIST_NROWS,NULL);
-        nglob_count=0;
-        any_empty=false;
-        for (int i=0;i<nproc;i++)
-        {
-          any_empty|=((*ctx)->row_map->ldim[i]<=0);
-          // do not count/compare number of rows if none was given
-          if (gnrows!=0) nglob_count+=(*ctx)->row_map->ldim[i];
-        }
-        if (nglob_count!=gnrows||(any_empty&&proc_weight!=1.0))
-        {
-          if (any_empty)          PHIST_SOUT(PHIST_WARNING,"empty partition in map/context\n");
-          if (nglob_count!=gnrows) PHIST_SOUT(PHIST_WARNING,"number of nodes %ld in context does not match given nglob=%ld\n", (int64_t)nglob_count,(int64_t)gnrows);
-          PHIST_SOUT(PHIST_WARNING,"GHOST did not give a correct context, %s\n",proc_weight==1.0?"aborting!":"retrying...");
-          ghost_context_destroy(*ctx);
-          *ctx=NULL;
-          if (proc_weight==1.0)
-          {
-            *iflag=-1;
-            break;
-          }
-          proc_weight=1.0;
-        }
-      }
-      if (*iflag==0)
-      {
-        // set proc weight for subsequent contexts/maps
-        get_proc_weight(proc_weight);
-      }
-    }
-
-#endif
     
   }//namespace ghost_internal
 }//namespace phist
@@ -472,7 +373,8 @@ extern "C" void phist_map_delete(phist_map_ptr vmap, int *iflag)
 
 //
 extern "C" void phist_context_create(phist_context_ptr* vctx, 
-                phist_const_map_ptr vrow_map, 
+                phist_const_map_ptr vrow_map,
+                phist_const_map_ptr vcol_map,
                 phist_const_map_ptr vrange_map, 
                 phist_const_map_ptr vdomain_map, 
                 int *iflag)
@@ -480,15 +382,37 @@ extern "C" void phist_context_create(phist_context_ptr* vctx,
   PHIST_ENTER_FCN(__FUNCTION__);
   *iflag=0;
   PHIST_CAST_PTR_FROM_VOID(const ghost_map,row_map,vrow_map,*iflag);
+  ghost_map const* col_map=(ghost_map const*)vcol_map;
   ghost_map const* range_map=(ghost_map const*)vrange_map;
   ghost_map const* domain_map=(ghost_map const*)vdomain_map;
+  
+  if (domain_map==NULL) domain_map=row_map; // assume a square matrix
+  if (range_map==NULL) range_map=row_map;  
+  {
+    PHIST_SOUT(PHIST_ERROR,"Error: ghost does not allow the case range_map!=row_map right now!\n");
+  }
+  PHIST_CHK_IERR(*iflag=(range_map!=row_map)?PHIST_INVALID_INPUT:0,*iflag);
+  
   ghost_context* ctx=NULL;
   
   ghost_gidx gnrows=row_map->gdim;
-  ghost_gidx gncols=gnrows;
-  if (domain_map!=NULL) gncols=domain_map->gdim;
+  ghost_gidx gncols=domain_map->gdim;
   ghost_context_create(&ctx,gnrows,gncols,GHOST_CONTEXT_DEFAULT,row_map->mpicomm,1.);
-  ghost_map_create_distribution(ctx->row_map,NULL,1.0,GHOST_MAP_DIST_NROWS,row_map->ldim);
+  
+  PHIST_CHK_GERR(ghost_context_set_map(ctx,GHOST_MAP_ROW,(ghost_map*)row_map),*iflag);
+  
+  if (col_map!=NULL)
+  {
+    // this map will use the same communication as the matrix that originally created the maps
+    // This means that the sparsity pattern must not include ghost nodes other than those in the
+    // pattern of the matrix that originally created the context.
+    PHIST_CHK_GERR(ghost_context_set_map(ctx,GHOST_MAP_COL,(ghost_map*)col_map),*iflag);
+  }
+  else
+  {
+    // the matrix has the same shape but may require different communication than the original one
+    ghost_map_create_distribution(ctx->col_map,NULL,1.0,GHOST_MAP_DIST_NROWS,domain_map->ldim);
+  }
   *vctx=(phist_context_ptr)ctx;
 }
 

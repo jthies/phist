@@ -2124,9 +2124,20 @@ extern "C" void SUBR(sparseMat_create_fromRowFuncAndContext)(TYPE(sparseMat_ptr)
   PHIST_SOUT(outlev, "Creating sparseMat with SELL-%d-%d format.\n", mtraits.C, mtraits.sortScope);
 
   mtraits.datatype = st::ghost_dt;
-  // create with fully initialized context. TODO: maybe we should rather clone the context
-  // for instance by calling phist_context_create and passing in ctx->row_map?
-  PHIST_CHK_GERR(ghost_sparsemat_create(&mat,(ghost_context*)ctx,&mtraits,1),*iflag);
+  // we have to clone the context we get to avoid destroying other matrices with this context.
+  // We create a new context but use the initialized row- and col-map. This will only work if 
+  // the matrix created here requires at most the same halo elements for an spMVM as the one  
+  // that originally created the context. If this is not the case, one has to create the new  
+  // matrix without a prescribed context for now. GHOST does allow us to create a context that
+  // shares only the row map and then initialize a new col_map, but then (at least at the moment),
+  // the input vector to an spMVM has to be based on that new col_map, so the resulting matrices
+  // are not compatible even with regular spMVMs (this is because ghost doesn't have the concept
+  // of a domain map yet).
+  ghost_context* cloned_ctx=NULL;
+  ghost_gidx gnrows=ctx->row_map->gdim;
+  ghost_gidx gncols=ctx->col_map->gdim;
+  PHIST_CHK_GERR(ghost_context_create(&cloned_ctx,gnrows,gncols,ctx->flags,ctx->row_map->mpicomm,1.0),*iflag);
+  PHIST_CHK_GERR(ghost_sparsemat_create(&mat,cloned_ctx,&mtraits,1),*iflag);
   mtraits.flags=GHOST_SPARSEMAT_DEFAULT; // map->mtraits_template.flags;
   PHIST_CHK_GERR(ghost_sparsemat_init_rowfunc(mat,&src,ctx->row_map->mpicomm,1.0),*iflag);
 
