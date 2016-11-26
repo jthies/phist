@@ -79,8 +79,12 @@ public:
     if (typeImplemented_ && !problemTooSmall_)
     {
       iflag_=PHIST_SPARSEMAT_OPT_CARP | getSparseMatCreateFlag(_N_,_NV_);
+      phist_gidx ini_dim[2];
+      ini_dim[0]=_N_; ini_dim[1]=_N_;
+      PHIST_TG_PREFIX(idfunc)(-1,NULL,ini_dim,NULL,NULL);
       SUBR(sparseMat_create_fromRowFunc)(&I_,comm_,_N_,_N_,1,&PHIST_TG_PREFIX(idfunc),NULL,&iflag_);
       ASSERT_EQ(0,iflag_);
+      PHIST_TG_PREFIX(idfunc)(-2,NULL,NULL,NULL,NULL);
       
       SUBR(mvec_random)(vec1_,&iflag_);
       ASSERT_EQ(0,iflag_);
