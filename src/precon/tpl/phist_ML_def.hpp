@@ -75,7 +75,7 @@ class PreconTraits<double,phist_ML>
     PHIST_CHK_IERR(PAM->UpdateMatrix(A,sigma,B,iflag),*iflag);
     int dimV=0;
     Epetra_MultiVector* V = (Epetra_MultiVector*)Vkern;
-    dimV=V->NumVectors();
+    if (V) dimV=std::min(2,V->NumVectors());
     if (dimV==0)
     {
       // without null space:
