@@ -845,7 +845,8 @@ PHIST_SOUT(PHIST_VERBOSE,"\n");
       // update preconditioner before solve if the corresponding option is set and
       // at least one eigenvalue converged in this iteration (meaning that we're solving
       // a new system primarily)
-      int updatePrecon=(opts.preconUpdate!=0) && (nNewConvEig>0);
+//      int updatePrecon=(opts.preconUpdate!=0) && (nNewConvEig>0);
+      int updatePrecon=(opts.preconUpdate!=0);
       PHIST_CHK_NEG_IERR(SUBR(jadaCorrectionSolver_run)(innerSolv, AB_op, B_op, Qtil, BQtil, sigma, res, &selectedRes[0],
                                                     &innerTol[nConvEig], innerMaxIters, t, innerIMGS, 
                                                     innerGMRESabortAfterFirstConverged, updatePrecon, iflag), *iflag);
