@@ -238,7 +238,7 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,_N_,MATNAME>,
         ASSERT_EQ(0, iflag_);
 
         // run
-        SUBR(jadaCorrectionSolver_run)(solver, opA_, NULL, q_, NULL, &sigma_[i],res_i, NULL, &tol[i], 200, t_i, 1, 0, &iflag_);
+        SUBR(jadaCorrectionSolver_run)(solver, opA_, NULL, q_, NULL, &sigma_[i],res_i, NULL, &tol[i], 200, t_i, 1, 0, 0, &iflag_);
         ASSERT_EQ(0, iflag_);
       }
 
@@ -275,7 +275,7 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,_N_,MATNAME>,
       ASSERT_EQ(0, iflag_);
 
       // run
-      SUBR(jadaCorrectionSolver_run)(solver, opA_, NULL, q_, NULL, sigma_,vec3_, NULL, tol, 200, vec2_, 1, 0, &iflag_);
+      SUBR(jadaCorrectionSolver_run)(solver, opA_, NULL, q_, NULL, sigma_,vec3_, NULL, tol, 200, vec2_, 1, 0, 0, &iflag_);
       ASSERT_EQ(0, iflag_);
 
       // check all solutions
@@ -307,7 +307,7 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,_N_,MATNAME>,
       ASSERT_EQ(0, iflag_);
 
       // run
-      SUBR(jadaCorrectionSolver_run)(solver, opA_, NULL, q_, NULL, sigma_, vec3_, NULL, tol, 200, vec2_, 1, 0, &iflag_);
+      SUBR(jadaCorrectionSolver_run)(solver, opA_, NULL, q_, NULL, sigma_, vec3_, NULL, tol, 200, vec2_, 1, 0, 0, &iflag_);
       ASSERT_EQ(0, iflag_);
 
       // check all solutions
@@ -339,7 +339,7 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,_N_,MATNAME>,
       ASSERT_EQ(0, iflag_);
 
       // run
-      SUBR(jadaCorrectionSolver_run)(solver, opA_, NULL, q_, NULL, sigma_, vec3_, NULL, tol, 200, vec2_, 1, 0, &iflag_);
+      SUBR(jadaCorrectionSolver_run)(solver, opA_, NULL, q_, NULL, sigma_, vec3_, NULL, tol, 200, vec2_, 1, 0, 0, &iflag_);
       ASSERT_EQ(0, iflag_);
 
       // check all solutions
@@ -371,7 +371,7 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,_N_,MATNAME>,
       ASSERT_EQ(0, iflag_);
 
       // run
-      SUBR(jadaCorrectionSolver_run)(solver, opA_, NULL, q_, NULL, sigma_, vec3_, NULL, tol, 200, vec2_, 1, 0, &iflag_);
+      SUBR(jadaCorrectionSolver_run)(solver, opA_, NULL, q_, NULL, sigma_, vec3_, NULL, tol, 200, vec2_, 1, 0, 0, &iflag_);
       ASSERT_EQ(0, iflag_);
 
       // check all solutions

@@ -717,7 +717,8 @@ extern "C" void SUBR(jdqr)(TYPE(const_linearOp_ptr) A_op, TYPE(const_linearOp_pt
       int nIt=opts.innerSolvMaxIters;
       PHIST_CHK_NEG_IERR(SUBR(jadaCorrectionSolver_run)(innerSolv, A_op, B_op, Qtil, NULL, 
                                                       sigma, rtil_ptr, NULL, 
-                                                      innerTol, nIt, t_ptr, opts.innerSolvRobust, false, iflag), *iflag);
+                                                      innerTol, nIt, t_ptr, opts.innerSolvRobust, 0, 0, iflag), 
+                                                      *iflag);
       expand=nv;
       PHIST_CHK_IERR(SUBR(jadaCorrectionSolver_delete)(innerSolv,iflag),*iflag);
       innerSolv=NULL;

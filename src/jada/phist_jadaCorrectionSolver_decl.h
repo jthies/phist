@@ -13,7 +13,6 @@ typedef struct TYPE(jadaCorrectionSolver) {
   phist_ElinSolv     method_;    //! supported values are GMRES, MINRES, CARP_CG and CUSTOM.
   
   int preconSkewProject;
-  int preconUpdate;
 
   TYPE(linearOp_ptr) leftPrecon;
   TYPE(linearOp_ptr) rightPrecon;
@@ -31,8 +30,8 @@ typedef struct TYPE(jadaCorrectionSolver) {
                                     TYPE(const_mvec_ptr)  res, const int resIndex[],
                                     const double        tol[], int       maxIter,
                                     TYPE(mvec_ptr)        t,
-                                    int robust,                   int abortAfterFirstConvergedInBlock,
-                                    int *                 iflag);
+                                    int robust,                int abortAfterFirstConvergedInBlock,
+                                    int *iflag);
 
   //! simplified interface if only single-vector jdqr or subspacejada is used.
   void (*customSolver_run1)(        void*  customSolverData,
@@ -76,10 +75,10 @@ void SUBR(jadaCorrectionSolver_delete)(TYPE(jadaCorrectionSolver_ptr) jdCorrSolv
 //! t               returns approximate solution vectors
 //! iflag            a value > 0 indicates the number of systems that have not converged to the desired tolerance
 void SUBR(jadaCorrectionSolver_run)(TYPE(jadaCorrectionSolver_ptr) jdCorrSolver,
-                                    TYPE(const_linearOp_ptr)    A_op,     TYPE(const_linearOp_ptr)    B_op, 
-                                    TYPE(const_mvec_ptr)  Qtil,     TYPE(const_mvec_ptr)  BQtil,
-                                    const _ST_            sigma[],  TYPE(const_mvec_ptr)  res,      const int resIndex[], 
-                                    const _MT_            tol[],    int                   maxIter,
-                                    TYPE(mvec_ptr)        t,
-                                    int useIMGS,                   int abortAfterFirstConvergedInBlock,
+                                    TYPE(const_linearOp_ptr)    BA_op, TYPE(const_linearOp_ptr) B_op, 
+                                    TYPE(const_mvec_ptr)  Qtil,        TYPE(const_mvec_ptr)     BQtil,
+                                    const _ST_            sigma[],     TYPE(const_mvec_ptr)     res,      
+                                    const int             resIndex[],  const _MT_               tol[],    
+                                    int                   maxIter,     TYPE(mvec_ptr)           t,
+                                    int useIMGS, int abortAfterFirstConvergedInBlock, int updatePrecon,
                                     int *                 iflag);

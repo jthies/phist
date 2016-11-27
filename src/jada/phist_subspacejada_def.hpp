@@ -839,10 +839,16 @@ PHIST_SOUT(PHIST_VERBOSE,"\n");
 
 
       for(int i = 0; i < blockDim; i++)
+      {
         selectedRes[i] -= nConvEig-nNewConvEig;
+      }
+      // update preconditioner before solve if the corresponding option is set and
+      // at least one eigenvalue converged in this iteration (meaning that we're solving
+      // a new system primarily)
+      int updatePrecon=(opts.preconUpdate!=0) && (nNewConvEig>0);
       PHIST_CHK_NEG_IERR(SUBR(jadaCorrectionSolver_run)(innerSolv, AB_op, B_op, Qtil, BQtil, sigma, res, &selectedRes[0],
                                                     &innerTol[nConvEig], innerMaxIters, t, innerIMGS, 
-                                                    innerGMRESabortAfterFirstConverged, iflag), *iflag);
+                                                    innerGMRESabortAfterFirstConverged, updatePrecon, iflag), *iflag);
 
       // get solution and reuse res for At
       PHIST_CHK_IERR(SUBR( mvec_view_block  ) (t_, &Vv,  0, k-1, iflag), *iflag);

@@ -20,7 +20,6 @@ void SUBR(jadaCorrectionSolver_create)(TYPE(jadaCorrectionSolver_ptr) *me, phist
     PHIST_CHK_IERR(SUBR(blockedGMRESstates_create)((*me)->blockedGMRESstates_, opts.innerSolvBlockSize, map, opts.maxBas, iflag), *iflag);
     (*me)->leftPrecon=(TYPE(linearOp_ptr))opts.preconOp;
     (*me)->preconSkewProject=opts.preconSkewProject;
-    (*me)->preconUpdate=opts.preconUpdate;
   }
   else if ((*me)->method_==phist_CARP_CG)
   {
@@ -92,8 +91,8 @@ void SUBR(jadaCorrectionSolver_run)(TYPE(jadaCorrectionSolver_ptr) me,
                                     const _ST_            sigma[],  TYPE(const_mvec_ptr)  res,      const int resIndex[], 
                                     const _MT_            tol[],    int                   maxIter,
                                     TYPE(mvec_ptr)        t,
-                                    int useIMGS,                   int abortAfterFirstConvergedInBlock,
-                                    int *                 iflag)
+                                    int useIMGS,                    int abortAfterFirstConvergedInBlock,
+                                    int preconUpdate,               int *iflag)
 {
 #include "phist_std_typedefs.hpp"
   PHIST_ENTER_FCN(__FUNCTION__);
@@ -175,7 +174,7 @@ void SUBR(jadaCorrectionSolver_run)(TYPE(jadaCorrectionSolver_ptr) me,
   // make sure these vectors get deleted at the end of the scope
   MvecOwner<_ST_> _q(q!=Qtil?q:NULL),_Bq(( (Bq!=q)&&(Bq!=BQtil) )?Bq:NULL);
   
-  if (me->preconUpdate!=0)
+  if (preconUpdate!=0)
   {
     // select a single shift for the preconditioner (various strategies could be used)
     _ST_ prec_sigma=sigma[0];
