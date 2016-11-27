@@ -32,7 +32,7 @@ extern "C" void SUBR(sparseMat_read_mm)(TYPE(sparseMat_ptr)* A, phist_const_comm
   phist_map_ptr map;
   phist_context_ptr ctx;
   PHIST_CHK_IERR(phist_map_create(&map,vcomm,globalRows,iflag),*iflag);
-  PHIST_CHK_IERR(phist_context_create(&ctx,map,map,map,iflag),*iflag);
+  PHIST_CHK_IERR(phist_context_create(&ctx,map,NULL,map,map,iflag),*iflag);
   PHIST_CHK_IERR(SUBR(sparseMat_read_mm_with_context)(A, ctx, filename, iflag), *iflag);
 
   *iflag=PHIST_SUCCESS;
@@ -1124,7 +1124,7 @@ extern "C" void SUBR(sparseMat_create_fromRowFunc)(TYPE(sparseMat_ptr) *A, phist
   phist_map_ptr map = NULL;
   PHIST_CHK_IERR(phist_map_create(&map, vcomm, nrows, iflag), *iflag);
   phist_context_ptr ctx = NULL;
-  PHIST_CHK_IERR(phist_context_create(&ctx,map,map,map,iflag),*iflag);
+  PHIST_CHK_IERR(phist_context_create(&ctx,map,NULL,map,map,iflag),*iflag);
   PHIST_CHK_IERR(SUBR(sparseMat_create_fromRowFuncAndContext)(A, ctx, maxnne, rowFunPtr, last_arg, iflag), *iflag);
 
   *iflag = PHIST_SUCCESS;
