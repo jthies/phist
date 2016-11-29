@@ -18,6 +18,7 @@
 #include "phist_subspacejada.h"
 #include "phist_harmonicjada.h"
 #include "phist_precon.h"
+#include "phist_normF.h"
 
 #include ${PHIST_TG_HFILE}
 #include "phist_driver_utils.h"
@@ -283,18 +284,38 @@ else
           Q, R, ev, resNorm, &nEig, &nIter, &iflag), iflag);
   }
 
+  int nvQ;
+  PHIST_ICHK_IERR(SUBR(mvec_num_vectors)(Q,&nvQ,&iflag),iflag);
+
   // calculate real residual, res = AQ - BQR
   mvec_ptr BQ = Q;
   if (B!=NULL)
   {
-    int nvQ;
-    PHIST_ICHK_IERR(SUBR(mvec_num_vectors)(Q,&nvQ,&iflag),iflag);
     PHIST_ICHK_IERR(SUBR(mvec_create)(&BQ,map,nvQ,&iflag),iflag);
     PHIST_ICHK_IERR(SUBR(sparseMat_times_mvec)(st::one(),B,Q,st::zero(),BQ,&iflag),iflag);
   }
   
   PHIST_ICHK_IERR(SUBR(sparseMat_times_mvec)(st::one(),A,Q,st::zero(),res,&iflag),iflag);
     PHIST_ICHK_IERR(SUBR(mvec_times_sdMat)(-st::one(),BQ,R,st::one(),res,&iflag),iflag);
+
+  TYPE(sdMat_ptr) QtQ=NULL;
+  PHIST_ICHK_IERR(SUBR(sdMat_create)(&QtQ,nvQ,nvQ,comm,&iflag),iflag);
+  PHIST_ICHK_IERR(SUBR(sdMat_identity)(QtQ,&iflag),iflag);
+  PHIST_ICHK_IERR(SUBR(mvecT_times_mvec)(st::one(),Q,BQ,-st::one(),QtQ,&iflag),iflag);
+  PHIST_ICHK_IERR(SUBR(sdMat_from_device)(QtQ,&iflag),iflag);
+  _MT_ ortho_err=mt::zero();
+  //_MT_ normQtQ[nvQ];
+  //PHIST_ICHK_IERR(SUBR(sdMat_normF)(QtQ,normQtQ,&iflag),iflag);
+  //for (int i=0; i<nvQ; i++) ortho_err=std::max(ortho_err,normQtQ[i]);
+  _ST_* val=NULL;
+  phist_lidx lda;
+  PHIST_ICHK_IERR(SUBR(sdMat_extract_view)(QtQ,&val,&lda,&iflag),iflag);
+  for (int i=0; i<nvQ; i++)
+    for (int j=0; j<nvQ; j++)
+    {
+      ortho_err=std::max(ortho_err,std::abs(val[i*lda+j]));
+    }
+  PHIST_ICHK_IERR(SUBR(sdMat_delete)(QtQ,&iflag),iflag);
 
   if (BQ!=Q) PHIST_ICHK_IERR(SUBR(mvec_delete)(BQ,&iflag),iflag);
 
@@ -305,12 +326,13 @@ else
       nConvergedEig++;
 
   PHIST_SOUT(PHIST_INFO, "subspacejada terminated after %d iterations and calculated %d eigenvalues.", nIter, nConvergedEig);
+  PHIST_SOUT(PHIST_INFO, "\n deviation from (B-)orthogonality in Q: %8.4e\n",ortho_err);
   PHIST_SOUT(PHIST_INFO, "\n eigenvalues:              ");
 
   if( opts.symmetry==phist_HERMITIAN )
   {
     for(int i = 0; i < nEig; i++)
-      PHIST_SOUT(PHIST_INFO, "\t%8.4e", ct::real(ev[i]));
+      PHIST_SOUT(PHIST_INFO, "\t%25.16e\n", ct::real(ev[i]));
     PHIST_SOUT(PHIST_INFO, "\n (est.) ritz residual norm:");
     for(int i = 0; i < nEig; i++)
       PHIST_SOUT(PHIST_INFO, "\t%8.4e", resNorm[i]);
@@ -321,7 +343,7 @@ else
   else
   {
     for(int i = 0; i < nEig; i++)
-      PHIST_SOUT(PHIST_INFO, "\t( %8.4e + i%8.4e )", ct::real(ev[i]), ct::imag(ev[i]));
+      PHIST_SOUT(PHIST_INFO, "\t%25.16e%+25.16ei\n", ct::real(ev[i]), ct::imag(ev[i]));
     PHIST_SOUT(PHIST_INFO, "\n (est.) ritz residual norm:");
     for(int i = 0; i < nEig; i++)
       PHIST_SOUT(PHIST_INFO, "\t%8.4e                  ", resNorm[i]);
