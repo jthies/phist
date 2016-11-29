@@ -111,8 +111,15 @@ void SUBR(jadaCorrectionSolver_run)(TYPE(jadaCorrectionSolver_ptr) me,
   {
     if (totalNumSys==1 && me->customSolver_run1!=NULL)
     {
+      TYPE(mvec_ptr) res0=(TYPE(mvec_ptr))res;
+      if (resIndex)
+      {
+        res0=NULL;
+        PHIST_CHK_IERR(SUBR(mvec_view_block)((TYPE(mvec_ptr))res,&res0,resIndex[0],resIndex[0],iflag),*iflag);
+      }
+      MvecOwner<_ST_> _res0(res0!=res?res0:NULL);
       PHIST_CHK_IERR(me->customSolver_run1(me->customSolver_,AB_op,B_op,Qtil,BQtil,(double)st::real(sigma[0]),
-        (double)st::imag(sigma[0]), res,
+        (double)st::imag(sigma[0]), res0,
         (double)tol[0],maxIter,t,useIMGS,iflag),*iflag);
     }
     else if (me->customSolver_run!=NULL)
