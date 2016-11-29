@@ -79,7 +79,7 @@ int main(int argc, char** argv)
 
   if (argc<2)
   {
-    PHIST_SOUT(PHIST_INFO,"Usage: %s <matrix> <num eigs> <which> <tol> <max it>\n"
+    PHIST_SOUT(PHIST_ERROR,"Usage: %s <matrix> <num eigs> <which> <tol> <max it>\n"
                           "               <min bas> <max bas> <arno> <init shift> <solver type>\n\n"
                           "       \"matrix\" is the matrix file to be read/created (compulsory)\n\n"
                           "       all other args are optional but are interpreted in the order given, so only the last\n"

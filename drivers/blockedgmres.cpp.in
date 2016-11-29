@@ -58,7 +58,7 @@ int main(int argc, char** argv)
 
   if (argc<2)
   {
-    PHIST_SOUT(PHIST_VERBOSE,"Usage: %s <matrix> [<max iters> [<tol> [<num rhs> [<max blocks> [<precon> [<prec_opts>]>]]]]]\n",argv[0]);
+    PHIST_SOUT(PHIST_ERROR,"Usage: %s <matrix> [<max iters> [<tol> [<num rhs> [<max blocks> [<precon> [<prec_opts>]>]]]]]\n",argv[0]);
     SUBR(create_matrix)(NULL,NULL,"usage",&iflag);
     SUBR(precon_create)(NULL,NULL,st::zero(),NULL,NULL,NULL,"usage",NULL,&iflag);
     return 1;
