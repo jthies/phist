@@ -336,7 +336,7 @@ extern "C" void SUBR(mvec_create_view)(TYPE(mvec_ptr)* vV, phist_const_map_ptr v
     PHIST_OUT(PHIST_ERROR,"viewing plain data as ghost_densemat only works \n"
                           "if the given lda can accomodate the required comm buffer of the vector!\n"
                           "nrows=%" PRlidx ", nrowshalopadded=%" PRlidx ", lda=%" PRlidx "\n",
-        result->map->dim,result->map->dimhalopadded,lda);
+        result->map->dim,result->map->dimpad,lda);
     *iflag=-1;
     return;
   }
