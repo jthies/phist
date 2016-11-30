@@ -7,17 +7,15 @@
 
 //!
 typedef struct TYPE(linearOp) {
- const void* A; //! data structure needed for representing A
+ void const* A; //! data structure needed for representing A
+ void * aux;    //! non-const data field that can e.g. be used
+                //! for storing preconditioner data to be updated
+                //! when calling update(). To implement this one
+                //! can e.g. have aux point to A (providing a non-
+                //! const path to the preconditioner to the update
+                //! function).
  phist_const_map_ptr range_map; //! map for vectors Y in Y=A*X
  phist_const_map_ptr domain_map; //! map for vectors X in Y=A*X
- void const* aux; //! This field can be used to carry along
-                  //! additional info like a space which
-                  //! is projected out of the operator etc.,
-                  //! it is currently ignored in phist but
-                  //! used in HYMLS to implement a custom
-                  //! residual evaluation. In the future we
-                  //! want to provide some mechanism to add
-                  //! user-defined projections
  //! pointer to function for computing Y=alpha*A*X+beta*Y
  void (*apply)(_ST_ alpha, const void* A, 
         TYPE(const_mvec_ptr) X, _ST_ beta,  TYPE(mvec_ptr) Y, int* iflag);
@@ -35,10 +33,10 @@ typedef struct TYPE(linearOp) {
   // given an existing operator, update it for a new shift sigma and (near) kernel Vkern.
   // this function is mainly intended for implementing custom preconditioners, before actually
   // calling it on any linearOp you should check if it is not NULL.
-  void (*update)(struct TYPE(linearOp)* me, _ST_ sigma,
+  void (*update)(const void* A, void* aux, _ST_ sigma,
                         TYPE(const_mvec_ptr) Vkern,
                         TYPE(const_mvec_ptr) BVkern,
-                        int* iflag);  
+                        int* iflag);
   //! this function can be used to clean up any data the operator may *own*,
   //! if the operator is just a wrapper for some other object that is created
   //! and deleted separately, this function should not do anything.

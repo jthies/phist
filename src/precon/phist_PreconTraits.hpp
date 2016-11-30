@@ -175,7 +175,7 @@ public:
     {
       // NOTE: can't update A or B via this interface unless the preconditioner
       // has his own pointers to/copies of the matrices
-      PHIST_CHK_IERR(userOp->update(userOp,sigma,Vkern,BVkern,iflag),*iflag);
+      PHIST_CHK_IERR(userOp->update(userOp->A,userOp->aux,sigma,Vkern,BVkern,iflag),*iflag);
     }
     else
     {
