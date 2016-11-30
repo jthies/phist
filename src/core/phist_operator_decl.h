@@ -32,7 +32,13 @@ typedef struct TYPE(linearOp) {
                             _ST_ beta,                 TYPE(mvec_ptr)        W,
                             TYPE(sdMat_ptr) WtW, TYPE(sdMat_ptr) VtW,
                             int* iflag);
-  
+  // given an existing operator, update it for a new shift sigma and (near) kernel Vkern.
+  // this function is mainly intended for implementing custom preconditioners, before actually
+  // calling it on any linearOp you should check if it is not NULL.
+  void (*update)(struct TYPE(linearOp)* me, _ST_ sigma,
+                        TYPE(const_mvec_ptr) Vkern,
+                        TYPE(const_mvec_ptr) BVkern,
+                        int* iflag);  
   //! this function can be used to clean up any data the operator may *own*,
   //! if the operator is just a wrapper for some other object that is created
   //! and deleted separately, this function should not do anything.

@@ -79,6 +79,7 @@ public:
 };
 
 
+// specialization for phist_NO_PRECON: P=identity operator
 template<typename ST>
 class PreconTraits<ST,phist_NO_PRECON>
 {
@@ -129,6 +130,104 @@ public:
           mvec_t const* X, ST beta,  mvec_t* Y, int* iflag)
   {
     *iflag=PHIST_NOT_IMPLEMENTED;
+    return;
+  }
+};
+
+// specialization for phist_USER_PRECON: assume that the user has wrapped
+// his preconditioner as a phist_XlinearOp and dispatch to the function  
+// pointers here.
+template<typename ST>
+class PreconTraits<ST,phist_USER_PRECON>
+{
+
+  typedef ScalarTraits<ST> st;
+  typedef typename st::linearOp_t linearOp;
+  typedef typename st::mvec_t* mvec_ptr;
+  typedef typename st::mvec_t const* const_mvec_ptr;
+
+public:
+
+
+  static void Usage()
+  {
+    PHIST_SOUT(PHIST_INFO,"USER_PRECON assumes that the preconditioner is provided by\n"
+                          "the user in the form of a phist_XlinearOp.\n"
+                          "The constructed preconditioner with all the linearOp functions set should be\n"
+                          "passed to precon_create via the 'last_arg' argument.\n");
+  }
+
+  static void Create(void** P, 
+        const void* A, ST sigma, const void* B, 
+        const_mvec_ptr Vkern, const_mvec_ptr BVkern,
+        const char* options, void* last_arg, int* iflag)
+  {
+    *P=last_arg;
+    *iflag=0;
+    return;
+  }
+  static void Update(void* P, const void* A, ST sigma, const void* B,
+        const void* Vkern, const void* BVkern,
+        int* iflag)
+  {
+    PHIST_CAST_PTR_FROM_VOID(linearOp,userOp,P,*iflag);
+    if (userOp->update!=NULL)
+    {
+      // NOTE: can't update A or B via this interface unless the preconditioner
+      // has his own pointers to/copies of the matrices
+      PHIST_CHK_IERR(userOp->update(userOp,sigma,Vkern,BVkern,iflag),*iflag);
+    }
+    else
+    {
+      static int first_time=1;
+      if (first_time)
+      {
+        PHIST_SOUT(PHIST_WARNING,"your user-provided preconditioner does not have the 'update' function pointer\n"
+                             "set, so either set it or disable preconUpdate in your options file.\n"
+                             "Not updating the preconditioner.\n");
+        first_time=0;
+      }
+    }
+    return;
+  }
+  static void Delete(void* P, int* iflag)
+  {
+    PHIST_CAST_PTR_FROM_VOID(linearOp,userOp,P,*iflag);
+    if (userOp->destroy!=NULL)
+    {
+      PHIST_CHK_IERR(userOp->destroy(userOp,iflag),*iflag);
+    }
+    *iflag=0;
+    return;
+  }
+  
+  static void Apply(ST alpha, void const* P, const_mvec_ptr X, ST beta, mvec_ptr Y, int* iflag)
+  {
+    PHIST_CAST_PTR_FROM_VOID(linearOp,userOp,P,*iflag);
+    PHIST_CHK_IERR(*iflag = userOp->apply!=NULL?0:PHIST_INVALID_INPUT,*iflag);
+    PHIST_CHK_IERR(userOp->apply(alpha,userOp->A,X,beta,Y,iflag),*iflag);
+    return;
+  } 
+
+  static void ApplyT(ST alpha, void const* P, const_mvec_ptr X, ST beta, mvec_ptr Y, int* iflag)
+  {
+    PHIST_CAST_PTR_FROM_VOID(linearOp,userOp,P,*iflag);
+    PHIST_CHK_IERR(*iflag = userOp->applyT!=NULL?0:PHIST_INVALID_INPUT,*iflag);
+    PHIST_CHK_IERR(userOp->applyT(alpha,userOp->A,X,beta,Y,iflag),*iflag);
+    return;
+  }
+  static void ApplyShifted(ST alpha, const void* P, ST const * sigma,
+          const_mvec_ptr X, ST beta,  mvec_ptr Y, int* iflag)
+  {
+    PHIST_CAST_PTR_FROM_VOID(linearOp,userOp,P,*iflag);
+    if (userOp->apply_shifted!=NULL)
+    {
+      PHIST_CHK_IERR(userOp->apply_shifted(alpha,userOp->A,sigma,X,beta,Y,iflag),*iflag);
+    }
+    else
+    {
+      Apply(alpha,P,X,beta,Y,iflag);
+    }
     return;
   }
 };

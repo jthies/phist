@@ -36,6 +36,7 @@ void SUBR(linearOp_wrap_sparseMat)(TYPE(linearOp_ptr) op, TYPE(const_sparseMat_p
   op->applyT = &SUBR(sparseMatT_times_mvec);
   op->apply_shifted = &SUBR(sparseMat_times_mvec_vadd_mvec);
   op->fused_apply_mvTmv = &SUBR(fused_spmv_mvTmv);
+  op->update=NULL;
   op->destroy=&SUBR(private_linearOp_destroy_nothing);
   return;
 }
@@ -84,6 +85,7 @@ void SUBR(linearOp_wrap_sparseMat_pair)(TYPE(linearOp_ptr) op,
   op->A=(void*)(pair);
   op->apply=&SUBR(private_linearOp_apply_sparseMat_pair_only_A);
   op->apply_shifted=&SUBR(private_linearOp_apply_sparseMat_pair_shifted);
+  op->update=NULL;
   op->destroy=&SUBR(private_linearOp_destroy_sparseMat_pair_wrapper);
 }
 
@@ -135,6 +137,7 @@ void SUBR(linearOp_identity)(TYPE(linearOp_ptr) op,
   op->applyT = &SUBR(private_idOp_apply);
   op->apply_shifted = &SUBR(private_idOp_apply_shifted);
   op->fused_apply_mvTmv = &SUBR(private_idOp_fused_apply_mvTmv);
+  op->update=NULL;
   op->destroy=&SUBR(private_linearOp_destroy_nothing);
   op->range_map=range_map;
   op->domain_map=domain_map;
