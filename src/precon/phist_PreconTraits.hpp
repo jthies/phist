@@ -42,7 +42,7 @@ public:
   static void Create(void** P, 
         const void* A, ST sigma, const void* B, 
         const void* Vkern, const void* BVkern,
-        const char* options, int* iflag)
+        const char* options, void* last_arg, int* iflag)
   {
     NotImplemented(iflag);
     return;
@@ -98,7 +98,7 @@ public:
   static void Create(void** P, 
         const void* A, ST sigma, const void* B, 
         const void* Vkern, const void* BVkern,
-        const char* options, int* iflag)
+        const char* options, void* last_arg, int* iflag)
   {
     *P=NULL;
     return;

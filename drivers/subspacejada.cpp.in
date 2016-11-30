@@ -264,7 +264,7 @@ else
   {
     precon = new TYPE(linearOp);
     PHIST_ICHK_IERR(SUBR(precon_create)(precon,A,st::zero(),NULL,NULL,NULL,
-                        precon2str(opts.preconType), opts.preconOpts, &iflag),iflag);
+                        precon2str(opts.preconType), opts.preconOpts, NULL, &iflag),iflag);
     opts.preconOp=precon;
   }
   

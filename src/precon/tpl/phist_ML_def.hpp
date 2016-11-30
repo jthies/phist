@@ -38,7 +38,7 @@ class PreconTraits<double,phist_ML>
   static void Create(void** P, 
         const void* vA, double sigma, const void* vB, 
         phist_Dconst_mvec_ptr Vkern, phist_Dconst_mvec_ptr BVkern,
-        std::string options, int* iflag)
+        std::string options, void* last_arg, int* iflag)
   {
     PHIST_ENTER_FCN(__FUNCTION__);
     *iflag=0;

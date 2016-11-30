@@ -60,7 +60,7 @@ int main(int argc, char** argv)
   {
     PHIST_SOUT(PHIST_ERROR,"Usage: %s <matrix> [<max iters> [<tol> [<num rhs> [<max blocks> [<precon> [<prec_opts>]>]]]]]\n",argv[0]);
     SUBR(create_matrix)(NULL,NULL,"usage",&iflag);
-    SUBR(precon_create)(NULL,NULL,st::zero(),NULL,NULL,NULL,"usage",NULL,&iflag);
+    SUBR(precon_create)(NULL,NULL,st::zero(),NULL,NULL,NULL,"usage",NULL,NULL,&iflag);
     return 1;
   }
 
@@ -129,7 +129,7 @@ int main(int argc, char** argv)
     P_op = (linearOp_ptr)malloc(sizeof(TYPE(linearOp)));
     PHIST_SOUT(PHIST_VERBOSE,"compute preconditioner '%s'\n",prec_type);
     PHIST_ENTER_FCN("main: preconditioner setup");
-    PHIST_ICHK_IERR(SUBR(precon_create)(P_op,A,st::zero(),NULL,NULL,NULL,prec_type,prec_opts,&iflag),iflag);
+    PHIST_ICHK_IERR(SUBR(precon_create)(P_op,A,st::zero(),NULL,NULL,NULL,prec_type,prec_opts,NULL,&iflag),iflag);
   }
 
   TYPE(blockedGMRESstate_ptr) states[block_size];

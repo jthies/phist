@@ -40,6 +40,7 @@ template<> void PreconTraits<_ST_,phist_NO_PRECON>::Apply
         PRECON_TYPE==phist_ML? phist::PreconTraits<_ST_,phist_ML>::MEMBER: \
         PRECON_TYPE==phist_MUELU? phist::PreconTraits<_ST_,phist_MUELU>::MEMBER: \
         PRECON_TYPE==phist_AMESOS2? phist::PreconTraits<_ST_,phist_AMESOS2>::MEMBER: \
+        PRECON_TYPE==phist_USER_PRECON? phist::PreconTraits<_ST_,phist_USER_PRECON>::MEMBER: \
         NULL;
 
 #define CALL_PT_MEMBER(PRECON_TYPE,MEMBER,...) \
@@ -48,6 +49,7 @@ template<> void PreconTraits<_ST_,phist_NO_PRECON>::Apply
         else if (PRECON_TYPE==phist_ML) PHIST_CHK_IERR((phist::PreconTraits<_ST_,phist_ML>::MEMBER)(__VA_ARGS__),*iflag) \
         else if (PRECON_TYPE==phist_MUELU) PHIST_CHK_IERR((phist::PreconTraits<_ST_,phist_MUELU>::MEMBER)(__VA_ARGS__),*iflag) \
         else if(PRECON_TYPE==phist_AMESOS2) PHIST_CHK_IERR((phist::PreconTraits<_ST_,phist_AMESOS2>::MEMBER)(__VA_ARGS__),*iflag) \
+        else if(PRECON_TYPE==phist_USER_PRECON) PHIST_CHK_IERR((phist::PreconTraits<_ST_,phist_USER_PRECON>::MEMBER)(__VA_ARGS__),*iflag) \
         else PHIST_CHK_IERR(*iflag=PHIST_INVALID_INPUT,*iflag);
 
 // create a preconditioner for an iterative linear solver
@@ -67,10 +69,11 @@ template<> void PreconTraits<_ST_,phist_NO_PRECON>::Apply
 // in turn depends on the input <method>. Passing in a supported method and options="usage" prints     
 // usage information for that particular preconditioner.                                               
 //                                                                                                     
-// The special string method="update" can be used if a preconditioner has already                      
-// been created and only the values (but not the pattern) of A, B and sigma changed.                   
-// method="update shift" indicates that only the value of sigma changed. In both cases, the options    
-// string is ignored.                                                                                  
+// The string method="usage" will lead to a list of available preconditioners being printed.
+// The string method="user_defined" can be used if an application provides its own precondi-           
+// tioning. In that case, the class phist::PreconTraits<_ST_,phist_USER_PRECON> should be implemented  
+// by the application. The "last_arg" pointer can be used to provide the actual preconditioner object  
+// to the PreconTraits::Create member function.                                                        
 //
 // Example:                                                                                            
 //                                                                                                     
@@ -78,7 +81,7 @@ template<> void PreconTraits<_ST_,phist_NO_PRECON>::Apply
 // preconditioners) is available, you could use                                                        
 //                                                                                                     
 // DlinearOp_t P;                                                                                      
-// phist_Dprecon_create(&P, &A, 0, NULL, NULL, NULL, "ifpack", "ifpack_params.xml", &iflag);           
+// phist_Dprecon_create(&P, &A, 0, NULL, NULL, NULL, "ifpack", "ifpack_params.xml", NULL, &iflag);     
 //                                                                                                     
 // which will read the preconditioner settings from an XML file compatible with the Teuchos            
 // ParameterList.                                                                                      
@@ -86,7 +89,8 @@ template<> void PreconTraits<_ST_,phist_NO_PRECON>::Apply
 extern "C" void SUBR(precon_create)(TYPE(linearOp_ptr) op, TYPE(const_sparseMat_ptr) A, 
                          _ST_ sigma, TYPE(const_sparseMat_ptr) B,
                          TYPE(const_mvec_ptr) Vkern, TYPE(const_mvec_ptr) BVkern,
-                         const char* method, const char* options, int* iflag)
+                         const char* method, const char* options, 
+                         void* last_arg, int* iflag)
 {
   PHIST_ENTER_FCN(__FUNCTION__);
   *iflag=0;
@@ -140,12 +144,12 @@ extern "C" void SUBR(precon_create)(TYPE(linearOp_ptr) op, TYPE(const_sparseMat_
     PHIST_SOUT(PHIST_ERROR,"your given precon type '%s' was not recognized,\n"
                            "please check the spelling and if the required TPLs are\n"
                            "available in PHIST (cf. phist_config.h)\n",method);
-    SUBR(precon_create)(NULL,NULL,sigma,NULL,NULL,NULL,"usage",NULL,iflag);
+    SUBR(precon_create)(NULL,NULL,sigma,NULL,NULL,NULL,"usage",NULL,NULL,iflag);
     *iflag=PHIST_INVALID_INPUT;
     return;
   }
   
-  CALL_PT_MEMBER(precType,Create,&pt->P_,A,sigma,B,Vkern,BVkern,options,iflag);
+  CALL_PT_MEMBER(precType,Create,&pt->P_,A,sigma,B,Vkern,BVkern,options,last_arg,iflag);
   
   pt->A_=A;
   pt->B_=B;
