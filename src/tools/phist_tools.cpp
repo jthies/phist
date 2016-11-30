@@ -80,7 +80,7 @@ extern "C" const char* linSolv2str(phist_ElinSolv s)
            s==phist_MINRES?"MINRES":
            s==phist_CARP_CG?"CARP_CG":
            s==phist_NO_LINSOLV?"NONE":
-           s==phist_USER_DEFINED?"USER_DEFINED":
+           s==phist_USER_LINSOLV?"USER_DEFINED":
                          "INVALID";
 }
 
@@ -101,6 +101,7 @@ extern "C" const char* precon2str(phist_Eprecon s)
 #ifdef PHIST_HAVE_AMESOS2
            s==phist_AMESOS2?"AMESOS2":
 #endif
+           s==phist_USER_PRECON?"USER_DEFINED":
                 "INVALID";
 }
 
@@ -151,7 +152,7 @@ extern "C" phist_ElinSolv str2linSolv(const char* c_str)
   else if (str=="MINRES") s=phist_MINRES;
   else if (str=="CARP_CG") s=phist_CARP_CG;
   else if (str=="NONE") s=phist_NO_LINSOLV;
-  else if (str=="user_defined"||str=="USER_DEFINED") s=phist_USER_DEFINED;
+  else if (str=="user_defined"||str=="USER_DEFINED") s=phist_USER_LINSOLV;
   return s;
 }
 
@@ -176,6 +177,7 @@ extern "C" phist_Eprecon str2precon(const char* c_str)
 #ifdef PHIST_HAVE_AMESOS2
   else if (str=="AMESOS2") s=phist_AMESOS2;
 #endif
+  else if (str=="USER_DEFINED") s=phist_USER_PRECON;
   return s;
 }
 

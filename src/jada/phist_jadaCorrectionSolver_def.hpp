@@ -25,7 +25,7 @@ void SUBR(jadaCorrectionSolver_create)(TYPE(jadaCorrectionSolver_ptr) *me, phist
   {
     *iflag=PHIST_NOT_IMPLEMENTED;
   }
-  else if ((*me)->method_==phist_USER_DEFINED)
+  else if ((*me)->method_==phist_USER_LINSOLV)
   {
     if (opts.customSolver_run==NULL && opts.customSolver_run1==NULL)
     {
@@ -63,7 +63,7 @@ void SUBR(jadaCorrectionSolver_delete)(TYPE(jadaCorrectionSolver_ptr) me, int *i
   {
     *iflag=PHIST_NOT_IMPLEMENTED;
   }
-  else if (me->method_==phist_USER_DEFINED)
+  else if (me->method_==phist_USER_LINSOLV)
   {
   }
   delete me;
@@ -107,7 +107,7 @@ void SUBR(jadaCorrectionSolver_run)(TYPE(jadaCorrectionSolver_ptr) me,
   // this check may fail: subspacejada expects us to grab the RHS's needed from res(:,resIndex[0:totalNumSys-1])
   //PHIST_CHK_IERR(*iflag=totalNumSys==totalNumRHS?0:PHIST_INVALID_INPUT,*iflag);
 
-  if (me->method_==phist_USER_DEFINED)
+  if (me->method_==phist_USER_LINSOLV)
   {
     if (totalNumSys==1 && me->customSolver_run1!=NULL)
     {

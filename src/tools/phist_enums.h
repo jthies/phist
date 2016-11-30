@@ -33,7 +33,7 @@ typedef enum phist_ElinSolv
   phist_GMRES=1, // unpreconditioned GMRES
   phist_MINRES=2, // unpreconditioned MINRES
   phist_CARP_CG=3, // CG on the normal equations, preconditioned by CARP (parallel SSOR)
-  phist_USER_DEFINED=98,// user wants to provide custom solver
+  phist_USER_LINSOLV=98,// user wants to provide custom solver
   phist_INVALID_LINSOLV // returned if str2linSolv gets an invalid string
 } phist_ElinSolv;
 
@@ -53,6 +53,7 @@ typedef enum
   phist_ML,
   phist_MUELU,
   phist_AMESOS2,
+  phist_USER_PRECON=98,
   phist_INVALID_PRECON
 } phist_Eprecon;
 
