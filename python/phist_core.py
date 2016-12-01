@@ -67,7 +67,7 @@ for _varT in ('S', 'D', 'C', 'Z'):
     class _linearOp(_ct.Structure):
         pass
     _linearOp._fields_ = [('A', _ct.c_void_p),
-                    *'aux', _ct.c_void_p),
+                    ('aux', _ct.c_void_p),
                     ('range_map', _map_ptr),
                     ('domain_map', _map_ptr),
                     ('aux',   _ct.c_void_p),
