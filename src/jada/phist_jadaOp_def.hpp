@@ -91,7 +91,7 @@ void SUBR(jadaOp_apply_project_none)(_ST_ alpha, const void* op, TYPE(const_mvec
     // y_i <- alpha*(A+sigma_i I)*x_i + beta * y_i
     if (jadaOp->leftPrecon_op==NULL)
     {
-      PHIST_CHK_IERR(jadaOp->AB_op->apply_shifted(alpha, jadaOp->AB_op->A, jadaOp->sigma, X, beta, Y, iflag),*iflag);
+      PHIST_CHK_IERR(SUBR(linearOp_apply_shifted)(alpha, jadaOp->AB_op, jadaOp->sigma, X, beta, Y, iflag),*iflag);
     }
     else
     {
@@ -99,8 +99,9 @@ void SUBR(jadaOp_apply_project_none)(_ST_ alpha, const void* op, TYPE(const_mvec
       TYPE(mvec_ptr) opX=NULL;
       PHIST_CHK_IERR(SUBR(mvec_clone_shape)(&opX,X,iflag),*iflag);
       MvecOwner<_ST_> _opX(opX);
-      PHIST_CHK_IERR(jadaOp->AB_op->apply_shifted(alpha, jadaOp->AB_op->A, jadaOp->sigma, X, beta, opX, iflag),*iflag);
-      PHIST_CHK_IERR(jadaOp->leftPrecon_op->apply(alpha, jadaOp->leftPrecon_op->A, opX, beta, Y, iflag),*iflag);
+      PHIST_CHK_IERR(SUBR(linearOp_apply_shifted)(alpha, jadaOp->AB_op, jadaOp->sigma, X, 
+                                                  beta, opX, iflag),*iflag);
+      PHIST_CHK_IERR(SUBR(linearOp_apply)(alpha, jadaOp->leftPrecon_op, opX, beta, Y, iflag),*iflag);
     }
   }
 }
@@ -135,7 +136,7 @@ void SUBR(jadaOp_apply_project_post)(_ST_ alpha, const void* op, TYPE(const_mvec
     // y_i <- alpha*(A+sigma_i I)*x_i + beta * y_i
 {
 PHIST_ENTER_FCN("phist_jadaOp_shifted_A_times_mvec");
-    PHIST_CHK_IERR(jadaOp->AB_op->apply_shifted(alpha, jadaOp->AB_op->A, jadaOp->sigma, X, beta, Y, iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(linearOp_apply_shifted)(alpha, jadaOp->AB_op, jadaOp->sigma, X, beta, Y, iflag),*iflag);
 }
     // tmp <- V'*Y
 {

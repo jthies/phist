@@ -176,6 +176,15 @@ void SUBR(linearOp_identity)(TYPE(linearOp_ptr) op,
     PHIST_CHK_IERR(*iflag=(A_op->fused_apply_mvTmv==NULL)? PHIST_BAD_CAST:0,*iflag);
     PHIST_CHK_IERR(A_op->fused_apply_mvTmv(alpha,A_op->A,V,beta,W,WtW,VtW,iflag),*iflag);
   }
+
+  
+  void SUBR(linearOp_update)(TYPE(linearOp_ptr) A_op, _ST_ sigma,
+                        TYPE(const_mvec_ptr) Vkern,
+                        TYPE(const_mvec_ptr) BVkern,
+                        int *iflag)
+  {
+    PHIST_CHK_IERR(A_op->update(A_op->A,A_op->aux,sigma,Vkern,BVkern,iflag),*iflag);
+  }
   
   //! this function can be used to clean up any data the operator may *own*,
   //! if the operator is just a wrapper for some other object that is created

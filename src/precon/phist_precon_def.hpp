@@ -129,7 +129,7 @@ extern "C" void SUBR(precon_create)(TYPE(linearOp_ptr) op, TYPE(const_sparseMat_
   
   phist_Eprecon precType=str2precon(method);
 
-  if (!strcasecmp(options,"usage"))
+  if (options!=NULL && !strcasecmp(options,"usage"))
   {
     CALL_PT_MEMBER(precType,Usage);
     return;

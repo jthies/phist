@@ -162,7 +162,9 @@ void SUBR(jadaCorrectionSolver_run)(TYPE(jadaCorrectionSolver_ptr) me,
   {
     q=NULL; Bq=NULL;
     phist_const_map_ptr map;
-    int nqp=totalNumSys, nq=numProj;
+    //int nqp=totalNumSys;
+    int nqp=numProj;
+    int nq=numProj;
     int nq0=std::max(0,nq-nqp);
     PHIST_CHK_IERR(SUBR(mvec_get_map)(Qtil,&map,iflag),*iflag);
     PHIST_CHK_IERR(SUBR(mvec_create)(&q,map,nqp,iflag),*iflag);
