@@ -93,6 +93,7 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,_N_,MATNAME>,
         ASSERT_EQ(0,iflag_);
         SUBR(mvec_view_block)(vec3_,&VH_,BLOCK_SIZE1,m_+BLOCK_SIZE1-1,&iflag_);
         ASSERT_EQ(0,iflag_);
+        iflag_ = PHIST_MVEC_REPLICATE_DEVICE_MEM;
         SUBR(mvec_create)(&BV_,map_,m_+BLOCK_SIZE1,&iflag_);
         ASSERT_EQ(0,iflag_);
         SUBR(mvec_view_block)(BV_,&BVm_,0,m_-1,&iflag_);

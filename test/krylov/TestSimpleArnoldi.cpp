@@ -8,6 +8,7 @@
 
 #include "phist_macros.h"
 #include "phist_kernels.h"
+#include "phist_kernel_flags.h"
 #include "phist_enums.h"
 #include "phist_simple_arnoldi.h"
 #include "../kernels/KernelTestWithSparseMat.h"
