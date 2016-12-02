@@ -9,6 +9,7 @@ void SUBR(sdMat_normF)(TYPE(const_sdMat_ptr) M, _MT_ *f, int* iflag)
   PHIST_CHK_IERR(SUBR(sdMat_get_ncols)(M,&n,iflag),*iflag);
   PHIST_CHK_IERR(SUBR(sdMat_create)(&tmp,n,n,NULL,iflag),*iflag);
   PHIST_CHK_IERR(SUBR(sdMatT_times_sdMat)(st::one(),M,M,st::zero(),tmp,iflag),*iflag);
+  PHIST_CHK_IERR(SUBR(sdMat_from_device)(tmp,iflag),*iflag);
   PHIST_CHK_IERR(SUBR(sdMat_extract_view)(tmp,&raw_tmp,&lda_tmp,iflag),*iflag);
   *f = mt::zero();
   for(int i = 0; i < n; i++)

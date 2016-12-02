@@ -230,6 +230,7 @@ void SUBR(sdMat_pseudo_inverse)(TYPE(sdMat_ptr) A_gen, int* rank, int* iflag)
   // make tiny singular values exactly 0, invert the others
   _ST_ *Sigma_raw=NULL, *Sigma_err=NULL;
   phist_lidx ldS;
+
   PHIST_CHK_IERR(SUBR(sdMat_extract_view)(Sigma,&Sigma_raw,&ldS,iflag),*iflag);
   _MT_ sval_max = st::abs(Sigma_raw[0]), sval_max_err=mt::zero();
   *rank=std::min(m,n);
@@ -285,9 +286,12 @@ void SUBR(sdMat_pseudo_inverse)(TYPE(sdMat_ptr) A_gen, int* rank, int* iflag)
   TYPE(sdMat_ptr) USig=NULL;
   PHIST_CHK_IERR(SUBR(sdMat_create)(&USig,m,n,comm,iflag),*iflag);
   SdMatOwner<_ST_> _USig(USig);
+  PHIST_CHK_IERR(SUBR(sdMat_to_device)(Sigma,iflag),*iflag);
+  PHIST_CHK_IERR(SUBR(sdMat_to_device)(U,iflag),*iflag);
   PHIST_CHK_IERR(SUBR(sdMat_times_sdMat)(st::one(),U,Sigma,st::zero(),USig,iflag),*iflag);
   
   // A <- U*inv(Sigma)*V'
+  PHIST_CHK_IERR(SUBR(sdMat_to_device)(Vt,iflag),*iflag);
   PHIST_CHK_IERR(SUBR(sdMat_times_sdMat)(st::one(),USig,Vt,st::zero(),A_gen,iflag),*iflag);
   
   return;  
@@ -321,6 +325,7 @@ void SUBR(sdMat_svd)(TYPE(sdMat_ptr) A, TYPE(sdMat_ptr) U, TYPE(sdMat_ptr) Sigma
   bool svals_only = nrowsSigma<m || ncolsSigma<n;
   
   PHIST_CHK_IERR(SUBR(sdMat_put_value)(Sigma,st::zero(),iflag),*iflag);
+  PHIST_CHK_IERR(SUBR(sdMat_from_device)(Sigma,iflag),*iflag);
   
   _ST_ *A_val, *U_val, *Vt_val, *S_val;
   int ldA, ldU, ldVt, ldSigma;

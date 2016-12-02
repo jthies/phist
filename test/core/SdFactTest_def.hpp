@@ -487,8 +487,6 @@ PrintSdMat(PHIST_DEBUG,"reconstructed X",mat2_vp_,m_lda_,1,mpi_comm_);
     ASSERT_EQ(0,iflag_);
     SUBR(sdMat_from_device)(Vt,&iflag_);
     ASSERT_EQ(0,iflag_);
-    SUBR(sdMat_from_device)(A,&iflag_);
-    ASSERT_EQ(0,iflag_);
         
     //save A
     SUBR(sdMat_add_sdMat)(st::one(),A,st::zero(),A_bak,&iflag_);
@@ -579,9 +577,6 @@ PrintSdMat(PHIST_DEBUG,"reconstructed X",mat2_vp_,m_lda_,1,mpi_comm_);
       ASSERT_EQ(0,iflag_);
       // for a random n x m matrix, we expect min(n,m) to be the rank
       ASSERT_EQ(std::min(nrows_,ncols_),rank);
-
-      SUBR(sdMat_to_device)(AplusT,&iflag_);
-      ASSERT_EQ(0,iflag_);
 
       // check the four defining properties of A+:
 

@@ -9,9 +9,12 @@ static void SUBR(orthogrr_cholrr)(TYPE(sdMat_ptr) RR, TYPE(sdMat_ptr) R_1, int* 
   {
     // stable rank-revealing cholesky
     int perm[m];
+    PHIST_CHK_IERR(SUBR(sdMat_from_device)(RR,iflag),*iflag);
     PHIST_CHK_IERR(SUBR(sdMat_cholesky)(RR,perm,rank,iflag),*iflag);
     PHIST_CHK_IERR(SUBR(sdMat_identity)(R_1,iflag),*iflag);
     PHIST_CHK_IERR(SUBR(sdMat_backwardSubst_sdMat)(RR,perm,*rank,R_1,iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(sdMat_to_device)(R_1,iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(sdMat_to_device)(RR,iflag),*iflag);
   }
 //PHIST_CHK_IERR(SUBR(sdMat_print)(R_1,iflag),*iflag);
 }
