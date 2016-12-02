@@ -90,6 +90,12 @@ void SUBR(linearOp_identity)(TYPE(linearOp_ptr) op,
   //! The me object itself should *not* be free'd.
   void SUBR(linearOp_destroy)(TYPE(linearOp_ptr) A_op, int* iflag);
 
+  //!
+  void SUBR(linearOp_update)(TYPE(linearOp_ptr) A_op, _ST_ sigma,
+                        TYPE(const_mvec_ptr) Vkern,
+                        TYPE(const_mvec_ptr) BVkern,
+                        int* iflag);
+
 //@}
 
 //@}
