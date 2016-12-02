@@ -55,3 +55,10 @@
  void SUBR(ReorderPartialGenSchurDecomp)(_ST_* S, int ldS, _ST_* T, int ldT, _ST_* VS, int ldVS, _ST_* WS, int ldWS,
         int m, int nselected, phist_EeigSort which, _MT_ tol, _MT_* resNorm, void* ev, int* permutation, int *iflag);
 
+//! high-level function to convert an eigenbasis Q into eigenvectors X
+
+//! given Q,R: AQ=QR, computes X: AX=X*D with D a diagonal matrix.
+//! R is overwritten by D, X must be pre-allocated, Q must be orthonormal.
+//! Q is N x n, R n x n, and X may be N x m with m<=n.
+void SUBR(ComputeEigenvectors)(TYPE(const_mvec_ptr) Q, TYPE(sdMat_ptr) R,
+                               TYPE(mvec_ptr) X, int* iflag);

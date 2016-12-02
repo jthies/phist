@@ -13,6 +13,7 @@
 #include "jada_helpers.hpp"
 #include "phist_kernels.h"
 #include "phist_lapack.h"
+#include "phist_memOwner.hpp"
 
 #include "phist_ScalarTraits.hpp"
 

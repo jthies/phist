@@ -716,3 +716,60 @@ PHIST_TASK_END(iflag)
   }
 }
 
+
+// high-level function to convert an eigenbasis Q into eigenvectors X
+
+// given Q,R: AQ=QR, computes X: AX=X*D with D a diagonal matrix.
+// R is overwritten by D, X must be pre-allocated, Q must be orthonormal.
+void SUBR(ComputeEigenvectors)(TYPE(const_mvec_ptr) Q, TYPE(sdMat_ptr) R,
+                               TYPE(mvec_ptr) X, int* iflag)
+{
+#include "phist_std_typedefs.hpp"
+    PHIST_ENTER_FCN(__FUNCTION__);
+    *iflag=0;
+    // compute eigenvectors. Given the Schur form R, first compute all its 
+    // eigenvectors in S. Then compute the eigenvectors of A as Q*S.
+    TYPE(sdMat_ptr) S, S0; // S0 views the first nX columns of S
+    _ST_ *S_raw, *R_raw;
+    phist_lidx n,nX,ldR,ldS;
+    PHIST_CHK_IERR(SUBR(mvec_num_vectors)(Q,&n,iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(mvec_num_vectors)(X,&nX,iflag),*iflag);
+    phist_const_comm_ptr comm=NULL;
+    PHIST_CHK_IERR(SUBR(mvec_get_comm)(Q,&comm,iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(sdMat_create)(&S,n,n,comm,iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(sdMat_view_block)(S,&S0,0,n-1,0,nX-1,iflag),*iflag);
+    SdMatOwner<ST> _S(S),_S0(S0);
+
+    PHIST_CHK_IERR(SUBR(sdMat_extract_view)(S,&S_raw, &ldS,iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(sdMat_extract_view)(R,&R_raw, &ldR,iflag),*iflag);
+    
+    PHIST_CHK_IERR(SUBR(sdMat_from_device)(R,iflag),*iflag);
+    const char* side="R";
+    const char* howmny="A";
+    int m_out;
+    MT* work=new MT[5*n];
+    phist_blas_idx ildS=static_cast<phist_blas_idx>(ldS);
+    phist_blas_idx ildR=static_cast<phist_blas_idx>(ldR);
+    if (ildS<0 || ildR<0)
+    {
+    *iflag=PHIST_INTEGER_OVERFLOW;
+    return;
+    }
+#ifdef IS_COMPLEX
+    MT* rwork = work+4*n;
+    PHIST_CHK_IERR(PHIST_TG_PREFIX(TREVC)((phist_blas_char*)side, (phist_blas_char*)howmny, NULL, 
+    &n, (mt::blas_cmplx_t*)R_raw, &ildR, NULL, &ildS, 
+    (mt::blas_cmplx_t*)S_raw, &ildS, &n, &m_out, (mt::blas_cmplx_t*)work, 
+    rwork, iflag),*iflag);
+#else
+    PHIST_CHK_IERR(PHIST_TG_PREFIX(TREVC)((phist_blas_char*)side, (phist_blas_char*)howmny, NULL, 
+    &n,R_raw, &ildR, NULL, &ildS, S_raw, &ildS, &n, &m_out, work, iflag),*iflag);
+#endif  
+    delete [] work;
+
+    PHIST_CHK_IERR(SUBR(sdMat_to_device)(R,iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(sdMat_to_device)(S,iflag),*iflag);
+    
+    PHIST_CHK_IERR(SUBR(mvec_times_sdMat)(st::one(),Q,S0,st::zero(),X,iflag),*iflag);
+
+}
