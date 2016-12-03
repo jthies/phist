@@ -477,6 +477,14 @@ protected:
     phist_maps_compatible(map_,domainA,&iflag_);
     EXPECT_TRUE(iflag_>=0);
     bool other_map=(iflag_>0);
+#ifdef PHIST_KERNEL_LIB_GHOST
+    // TODO: the whol compatibility check stuff is not quite compatible with GHOST
+    //       at the moment because GHOST stores info on the permutation state of  
+    //       an mvec (densemat) in the object itself, nto its map. Also, there is no
+    //       distinction between column and domain map, so we typically can't use
+    //       the row_map for building x in y=Ax even if there are no halo elements, like here.
+    other_map=true;
+#endif
     TYPE(mvec_ptr) vec1=vec1_, vec2=vec2_;
     if (other_map)
     {
