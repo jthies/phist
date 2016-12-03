@@ -9,11 +9,11 @@
 #endif
 
 /*! Test fixure. */
-class CLASSNAME: public virtual TestWithType< _ST_ >,
-                 public virtual KernelTestWithMap<_N_>
+class CLASSNAME: public virtual TestWithType< _ST_ >
 #ifdef ORTHOG_WITH_HPD_B
                  , public virtual KernelTestWithMassMat<_ST_,_N_>
 #endif
+                 , public virtual KernelTestWithMap<_N_>
 {
 
 public:
@@ -50,12 +50,13 @@ public:
 
   static void SetUpTestCase()
   {
-    KernelTestWithMap<_N_>::SetUpTestCase();
     TestWithType<_ST_>::SetUpTestCase();
 #ifdef ORTHOG_WITH_HPD_B
-    EXPECT_EQ(map_, defaultMap_); // this means we can use the defaultContext_, too
-    phist_const_context_ptr ctx=defaultContext_;
-    BTest::SetUpTestCase(ctx);
+    // creates mass matrix B_ without a given context, and
+    // re-initializes the KernelTestWithMap by calling SetUpTestCaseWithMap
+    BTest::SetUpTestCase(NULL);
+#else
+    KernelTestWithMap<_N_>::SetUpTestCase();
 #endif
 }
   
@@ -68,9 +69,10 @@ public:
   virtual void SetUp()
   {
     TestWithType<_ST_>::SetUp();
-    KernelTestWithMap<_N_>::SetUp();
 #ifdef ORTHOG_WITH_HPD_B
     BTest::SetUp();
+#else
+    KernelTestWithMap<_N_>::SetUp();
 #endif
       if(typeImplemented_ && !problemTooSmall_)
       {
@@ -90,7 +92,6 @@ public:
 
     if (typeImplemented_ && !problemTooSmall_)
     {
-      EXPECT_EQ(this->map_, this->defaultMap_);
       phist_const_map_ptr map=this->map_;
 
       // create vectors V, W and vector views for setting/checking entries
@@ -165,6 +166,8 @@ public:
   {
 #ifdef ORTHOG_WITH_HPD_B
     BTest::TearDownTestCase();
+#else
+    KernelTestWithMap<_N_>::TearDownTestCase();
 #endif
   }
 
