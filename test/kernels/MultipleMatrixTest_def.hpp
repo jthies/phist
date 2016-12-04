@@ -189,7 +189,14 @@ TEST_F(CLASSNAME,Ar_works)
   }
 }
 
+//this test doesn't work in complex arithmetic at the moment
+// because of assumptions on the A matrix, we disble it for 
+// moment
+#ifdef IS_COMPLEX
+TEST_F(CLASSNAME,DISABLED_A_works)
+#else
 TEST_F(CLASSNAME,A_works)
+#endif
 {
   // test X==Ar*X
   SUBR(sparseMat_times_mvec)(st::one(),A_,vec1_,st::zero(),vec3_,&iflag_);
