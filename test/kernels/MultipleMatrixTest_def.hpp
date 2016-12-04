@@ -161,7 +161,7 @@ TEST_F(CLASSNAME,Al_works)
   {
     _ST_ v2=vec2_vp_[VIDX(nloc_-1,0,lda_)];
     _ST_ v3=vec3_vp_[VIDX(nloc_-1,0,lda_)];
-    _ST_ v_expect=(int)v2%_N_? v2+st::one(): st::zero();
+    _ST_ v_expect=((int)st::real(v2)%(_N_))? v2+st::one(): st::zero();
     ASSERT_REAL_EQ(st::real(v3),st::real(v_expect));
     ASSERT_REAL_EQ(st::imag(v3),st::imag(v_expect));
   }

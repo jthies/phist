@@ -583,12 +583,12 @@ PrintSdMat(PHIST_DEBUG,"reconstructed X",mat2_vp_,m_lda_,1,mpi_comm_);
       // 1. A A+ A = A
       MTest::triple_product(A,false,AplusT,true,A,false,A_chk,&iflag_);
       ASSERT_EQ(0,iflag_);
-      EXPECT_NEAR(st::one(),SdMatsEqual(A,A_chk),nrows_*nrows_*tol);
+      EXPECT_NEAR(mt::one(),SdMatsEqual(A,A_chk),nrows_*nrows_*tol);
       
       // 2. A+ A A+ = A+ => A+^T A^T A+^T = A+^T
       MTest::triple_product(AplusT,false,A,true,AplusT,false,A_chk,&iflag_);
       ASSERT_EQ(0,iflag_);
-      EXPECT_NEAR(st::one(),SdMatsEqual(AplusT,A_chk),ncols_*ncols_*tol);
+      EXPECT_NEAR(mt::one(),SdMatsEqual(AplusT,A_chk),ncols_*ncols_*tol);
 
       // 3. (AA+)^* = AA+
       TYPE(sdMat_ptr) mat_tmp=NULL;

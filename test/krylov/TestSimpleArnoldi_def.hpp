@@ -238,6 +238,10 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,_N_,MATNAME>,
           SUBR(simple_arnoldi)(opA,opB_,v0_,V_,AV_,BV_,H_,m_,&iflag_);
           ASSERT_EQ(0,iflag_);
         }
+        SUBR(sdMat_from_device)(H_,&iflag_);
+        ASSERT_EQ(0,iflag_);
+        PHIST_SOUT(PHIST_INFO,"TROET, H_=\n");
+        SUBR(sdMat_print)(H_,&iflag_);
         // check if AV and BV are returned correctly
         PHIST_CHK_IERR(SUBR(sparseMat_times_mvec)(-st::one(),A_,Vm_,st::one(),AV_,&iflag_),iflag_);
         PHIST_CHK_IERR(SUBR(sparseMat_times_mvec)(-st::one(),B_,V_,st::one(),BV_,&iflag_),iflag_);
@@ -260,6 +264,10 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,_N_,MATNAME>,
         // calculate H_' = H_ - V(:,1:m+BLOCK_SIZE1)^T AV(:,1:m)
         SUBR(mvecT_times_mvec)(-st::one(),V_,AV_,st::one(),H_,&iflag_);
         ASSERT_EQ(0,iflag_);
+        PHIST_CHK_IERR(SUBR(sdMat_from_device)(H_,&iflag_),iflag_);
+        ASSERT_EQ(0,iflag_);
+        PHIST_SOUT(PHIST_INFO,"TROET, H_-V'AV=\n");
+        SUBR(sdMat_print)(H_,&iflag_);
         ASSERT_NEAR(mt::one(),ArrayEqual(mat2_vp_,m_,m_-1,m_lda_,stride_,st::zero()), (MT)200.*releps(V_));
       }
     }
