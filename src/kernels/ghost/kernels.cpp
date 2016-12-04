@@ -391,10 +391,11 @@ extern "C" void phist_context_create(phist_context_ptr* vctx,
   ghost_map const* domain_map=(ghost_map const*)vdomain_map;
   
   if (domain_map==NULL) domain_map=row_map; // assume a square matrix
-  if (range_map==NULL) range_map=row_map;  
+  if (range_map==NULL) 
   {
-    PHIST_SOUT(PHIST_ERROR,"Error: ghost does not allow the case range_map!=row_map right now!\n");
+    range_map=row_map;  
   }
+  // ghost doesn't allow range_map!=row_map!
   PHIST_CHK_IERR(*iflag=(range_map!=row_map)?PHIST_INVALID_INPUT:0,*iflag);
   
   ghost_context* ctx=NULL;
