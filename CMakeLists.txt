@@ -623,7 +623,7 @@ if (PHIST_ENABLE_COMPLEX)
   if(NOT PHIST_SUPPORT_COMPLEX)
     message(WARNING "Enabled PHIST_ENABLE_COMPLEX, but ${PHIST_KERNEL_LIB} kernel lib does not support complex-valued calculations!")
   endif()
-  set(PHIST_HAVE_COMPLEX 1)
+  set(PHIST_HAVE_CMPLX 1)
 endif()
 
 # these specific versions of type-generic drivers have to be created
