@@ -280,15 +280,19 @@ PHIST_TASK_BEGIN(ComputeTask)
     {
       // allocate both host and device side (useful for testing)
       vtraits.location = (ghost_location)(GHOST_LOCATION_HOST|GHOST_LOCATION_DEVICE);
+      // but perforrm computations on the device
+      vtraits.compute_at = GHOST_LOCATION_DEVICE;
     }
     else
     {
       vtraits.location = GHOST_LOCATION_DEVICE;
+      vtraits.compute_at = vtraits.location;
     }
   } 
   else 
   {
     vtraits.location = GHOST_LOCATION_HOST;
+    vtraits.compute_at = vtraits.location;
   }
 
 
@@ -374,10 +378,12 @@ PHIST_TASK_BEGIN_SMALLDETERMINISTIC(ComputeTask)
   if (ghost_type == GHOST_TYPE_CUDA) 
   {
     dmtraits.location = (ghost_location)(GHOST_LOCATION_HOST|GHOST_LOCATION_DEVICE);
+    dmtraits.compute_at=GHOST_LOCATION_DEVICE;
   } 
   else 
   {
     dmtraits.location = GHOST_LOCATION_HOST;
+    dmtraits.compute_at=dmtraits.location;
   }
 
   // I think the sdMat should not have a context
@@ -1047,7 +1053,7 @@ extern "C" void SUBR(mvec_print)(TYPE(const_mvec_ptr) vV, int* iflag)
   // which allocates memory on the CPU. Also, the download changes
   // the semantic of the program. If the user wants to print vector
   // elements, we should add an input flag like PHIST_FORCE.
-  if (V->traits.location == GHOST_LOCATION_HOST)
+  if (V->traits.location == GHOST_LOCATION_HOST||true)
   {
     char *str=NULL;
     ghost_densemat_string(&str,V);
