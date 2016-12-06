@@ -7,6 +7,7 @@
 
 #include "kernels/phist_kernels.h"
 #include "KernelTestWithMap.h"
+#include "TestWithType.h"
 #include "KernelTestWithVectors.h"
 #include "../tools/MatrixIO.h"
 

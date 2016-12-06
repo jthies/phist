@@ -11,6 +11,7 @@
 #include <mpi.h>
 #endif
 
+#include <petscconf.h>
 #include <petscsys.h>
 #include <petsc/private/petscimpl.h>
 
