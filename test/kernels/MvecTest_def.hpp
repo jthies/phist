@@ -108,7 +108,7 @@ public:
   virtual void TearDown() 
   {
 #ifdef IS_COMPLEX
-    if (!problemTooSmall_)
+    if (!problemTooSmall_ && typeImplemented_)
     {
       if (re_!=NULL) RSUBR(mvec_delete)(re_,&iflag_);
       if (im_!=NULL) RSUBR(mvec_delete)(im_,&iflag_);
