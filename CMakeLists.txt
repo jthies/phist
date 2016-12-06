@@ -601,7 +601,7 @@ endif()
 ##############################################################################
 # enable single precision and complex valued calculation if supported
 ##############################################################################
-if( "${PHIST_KERNEL_LIB}" MATCHES "tpetra|ghost|magma|petsc" )
+if( "${PHIST_KERNEL_LIB}" MATCHES "tpetra|ghost|magma" )
   set(PHIST_SUPPORT_SP ON)
   set(PHIST_SUPPORT_COMPLEX ON)
 else()
