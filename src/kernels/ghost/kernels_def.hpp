@@ -28,6 +28,10 @@ ghost_location _orig_location = _densemat_ptr->traits.compute_at; \
 if (*iflag&PHIST_SDMAT_RUN_ON_HOST) _densemat_ptr->traits.compute_at=GHOST_LOCATION_HOST;
 #endif
 
+#ifndef TMP_RESET_DENSEMAT_LOCATION
+#define TMP_RESET_DENSEMAT_LOCATION(_densemat_ptr,_orig_location) \
+(_densemat_ptr)->traits.compute_at=_orig_location;
+#endif
 #if defined(PHIST_HAVE_TEUCHOS)&&defined(PHIST_HAVE_KOKKOS)
 template<>
 Teuchos::RCP<node_type> ghost::TsqrAdaptor< _ST_ >::node_=Teuchos::null;
@@ -1268,11 +1272,11 @@ extern "C" void SUBR(sdMat_add_sdMat)(_ST_ alpha, TYPE(const_sdMat_ptr) vA,
 
 PHIST_TASK_DECLARE(ComputeTask)
 PHIST_TASK_BEGIN_SMALLDETERMINISTIC(ComputeTask)
-
+  PHIST_CAST_PTR_FROM_VOID(const ghost_densemat,A,vA,*iflag);
   // if the user specifies PHIST_SDMAT_RUN_ON_HOST, manually switch the compute_at setting
   // of the result densemat and reset it after the call.
   TMP_SET_DENSEMAT_LOCATION(vB,B,locB);
-    PHIST_CHK_GERR(ghost_axpby(B,A,(void*)&a,(void*)&b),*iflag);
+  PHIST_CHK_GERR(ghost_axpby(B,(ghost_densemat*)A,(void*)&a,(void*)&b),*iflag);
   TMP_RESET_DENSEMAT_LOCATION(B,locB);
 PHIST_TASK_END(iflag);
 }
@@ -1285,6 +1289,7 @@ extern "C" void SUBR(sdMatT_add_sdMat)(_ST_ alpha, TYPE(const_sdMat_ptr) vA,
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   PHIST_PERFCHECK_VERIFY_SMALL;
   int iflag_in=*iflag;
+  PHIST_CAST_PTR_FROM_VOID(const ghost_densemat,A,vA,*iflag);
   *iflag=0;
   // simple workaround
   TYPE(sdMat_ptr) I = NULL;
