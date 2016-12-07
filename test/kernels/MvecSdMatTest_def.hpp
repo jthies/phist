@@ -143,6 +143,10 @@ public:
       SUBR(mvecT_times_mvec)(st::one(),V1_,V2_,st::zero(),M1_,&iflag_);
       ASSERT_EQ(0,iflag_);
 
+      // check the host memory first: on GPU processes both host nd
+      // device memory must be correct in the resulting sdMat
+      ASSERT_REAL_EQ(mt::one(),ArrayEqual(M1_vp_,m_,k_,ldaM1_,1,(ST)nglob_,KernelTest::mflag_));
+
 #if PHIST_OUTLEV>=PHIST_DEBUG
       SUBR(mvec_from_device)(V1_,&iflag_);
       ASSERT_EQ(0,iflag_);
@@ -156,6 +160,7 @@ public:
 #endif
       MTest::sdMat_parallel_check(M1_,&iflag_);
       ASSERT_EQ(0,iflag_);
+      // checks the device memory in case of GPU process
       ASSERT_REAL_EQ(mt::one(),SdMatEqual(M1_,(ST)nglob_));
       ASSERT_EQ(0,iflag_);
 
