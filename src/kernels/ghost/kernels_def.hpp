@@ -991,13 +991,26 @@ PHIST_TASK_DECLARE(ComputeTask)
 //! put scalar value into all elements of a multi-vector
 extern "C" void SUBR(sdMat_put_value)(TYPE(sdMat_ptr) vV, _ST_ value, int* iflag)
 {
+  int run_on_host = *iflag&PHIST_SDMAT_RUN_ON_HOST;
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   *iflag=0;
   PHIST_PERFCHECK_VERIFY_SMALL;
 PHIST_TASK_DECLARE(ComputeTask)
 PHIST_TASK_BEGIN_SMALLDETERMINISTIC(ComputeTask)
   PHIST_CAST_PTR_FROM_VOID(ghost_densemat,V,vV,*iflag);
-  ghost_densemat_init_val(V,(void*)&value);
+  // do not run on device if flag was given
+  if (V->traits.compute_at==GHOST_LOCATION_HOST || run_on_host==false)
+  {
+    ghost_densemat_init_val(V,(void*)&value);
+  }
+  // for GPU processes we call the kernel twice, once on the device
+  // and once on the host.
+  if (V->traits.compute_at==GHOST_LOCATION_DEVICE)
+  {
+    V->traits.compute_at=GHOST_LOCATION_HOST;
+    ghost_densemat_init_val(V,(void*)&value);
+    V->traits.compute_at=GHOST_LOCATION_DEVICE;
+  }
 PHIST_TASK_END(iflag);
 }
 
