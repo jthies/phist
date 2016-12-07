@@ -153,7 +153,11 @@ void SUBR(jadaCorrectionSolver_run)(TYPE(jadaCorrectionSolver_ptr) me,
   // all of the vectors in Q also from the preconditioner, but in practice this means
   // we have to store P\Q.
   TYPE(mvec_ptr) q=NULL, Bq=NULL;
-  if (me->preconSkewProject!=0)
+  // if we do a manual projection after the preconditioner (skew-projection) or
+  // are asked to update the preconditioner we set extra pointers q,Bq. In the 
+  // case of preconditioner updates it may or may not be that the preconditioner
+  // uses the projection space q,Bq.
+  if (me->preconSkewProject!=0 || preconUpdate)
   {
     q=(TYPE(mvec_ptr))Qtil; Bq=(TYPE(mvec_ptr))BQtil;
   }
