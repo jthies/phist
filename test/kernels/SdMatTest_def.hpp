@@ -75,6 +75,45 @@ public:
     }
   }
 
+  TEST_F(CLASSNAME, put_value_done_on_host_and_device)
+  {
+    if (typeImplemented_)
+    {
+      int stride=1;
+      _ST_ val=st::prand();
+      SUBR(sdMat_put_value)(mat1_,val,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      ASSERT_REAL_EQ(mt::one(),ArrayEqual(mat1_vp_,nrows_,ncols_,m_lda_,stride,val,mflag_));
+      SUBR(sdMat_from_device)(mat1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      ASSERT_REAL_EQ(mt::one(),ArrayEqual(mat1_vp_,nrows_,ncols_,m_lda_,stride,val,mflag_));
+    }
+  }
+
+#if _NROWS_==_NCOLS_
+  TEST_F(CLASSNAME, identity_done_on_host_and_device)
+  {
+    if (typeImplemented_)
+    {
+      int stride=1;
+      _ST_ val=st::prand();
+      SUBR(sdMat_identity)(mat1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(sdMat_identity)(mat2_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(sdMat_from_device)(mat2_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      for (int i=0; i<nrows_; i++)
+      {
+        mat1_vp_[i*m_lda_+i] -= st::one();
+        mat2_vp_[i*m_lda_+i] -= st::one();
+      }
+      ASSERT_REAL_EQ(mt::one(),ArrayEqual(mat1_vp_,nrows_,ncols_,m_lda_,stride,st::zero(),mflag_));
+      ASSERT_REAL_EQ(mt::one(),ArrayEqual(mat2_vp_,nrows_,ncols_,m_lda_,stride,st::zero(),mflag_));
+    }
+  }
+#endif /* square? */
+
   TEST_F(CLASSNAME, sync_values)
   {
     if (typeImplemented_)
