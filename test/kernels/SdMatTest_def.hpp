@@ -90,6 +90,37 @@ public:
     }
   }
 
+  TEST_F(CLASSNAME, random_same_on_host_and_device)
+  {
+    if (typeImplemented_)
+    {
+      int stride=1;
+      SUBR(sdMat_random)(mat1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      _ST_ sum1=st::zero();
+      for (int i=0; i<nrows_; i++)
+      {
+        for (int j=0; j<ncols_; j++)
+        {
+          sum1 += mat1_vp_[MIDX(i,j,m_lda_)];
+        }
+      }
+      SUBR(sdMat_from_device)(mat1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      _ST_ sum2=st::zero();
+      for (int i=0; i<nrows_; i++)
+      {
+        for (int j=0; j<ncols_; j++)
+        {
+          sum2 += mat1_vp_[MIDX(i,j,m_lda_)];
+        }
+      }
+      ASSERT_REAL_EQ(st::real(sum1),st::real(sum2));
+      ASSERT_REAL_EQ(st::imag(sum1),st::imag(sum2));
+      ASSERT_TRUE(sum1!=st::zero());
+    }
+  }
+
 #if _NROWS_==_NCOLS_
   TEST_F(CLASSNAME, identity_done_on_host_and_device)
   {
