@@ -22,7 +22,6 @@ void SUBR(svqb)(TYPE(mvec_ptr) V, TYPE(sdMat_ptr) B, _MT_* D, int* iflag)
     // S=V'V
     if( robust ) *iflag = PHIST_ROBUST_REDUCTIONS;
     PHIST_CHK_IERR(SUBR(mvecT_times_mvec)(st::one(),V,V,st::zero(),B,iflag),*iflag);
-    PHIST_CHK_IERR(SUBR(sdMat_from_device)(B,iflag),*iflag);
 
     // try to call high-precision variant
     if( robust )
@@ -32,9 +31,9 @@ void SUBR(svqb)(TYPE(mvec_ptr) V, TYPE(sdMat_ptr) B, _MT_* D, int* iflag)
       if (*iflag!=PHIST_NOT_IMPLEMENTED)
       {
         PHIST_CHK_IERR(PHIST_TOUCH(*iflag),*iflag);
+        PHIST_CHK_IERR(SUBR(sdMat_to_device)(B,iflag),*iflag);
         *iflag = PHIST_ROBUST_REDUCTIONS;
         PHIST_CHK_IERR(SUBR(mvec_times_sdMat_inplace)(V,B,iflag),*iflag);
-        PHIST_CHK_IERR(SUBR(sdMat_to_device)(B,iflag),*iflag);
         *iflag=m-rank;
         return;
       }
