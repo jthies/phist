@@ -315,7 +315,6 @@ static void PrintSdMat(int outlev, std::string label,
     *iflag = 0;
     // TODO: use correct communicator
     int n,m;
-    PHIST_CHK_IERR(SUBR(sdMat_from_device)((void*)mat,iflag),*iflag);
     PHIST_CHK_IERR(SUBR(sdMat_get_nrows)(mat, &m, iflag),*iflag);
     PHIST_CHK_IERR(SUBR(sdMat_get_ncols)(mat, &n, iflag),*iflag);
     _ST_* buff = new _ST_[m*n];
@@ -326,6 +325,16 @@ static void PrintSdMat(int outlev, std::string label,
     for(int j = 0; j < n; j++)
       for(int i = 0; i < m; i++)
         buff[j*m+i] = mat_raw[MIDX(i,j,lda)];
+
+    // download data from device, check if it is consistent
+    PHIST_CHK_IERR(SUBR(sdMat_from_device)((void*)mat,iflag),*iflag);
+
+    int device_error=0;
+    for(int j = 0; j < n; j++)
+      for(int i = 0; i < m; i++)
+        if( buff[j*m+i] != mat_raw[MIDX(i,j,lda)] )
+          device_error = 1;
+    
     // broadcast
     PHIST_CHK_IERR(*iflag = MPI_Bcast(buff,m*n,::phist::ScalarTraits<_ST_>::mpi_type(),0,MPI_COMM_WORLD),*iflag);
     // check
@@ -334,6 +343,7 @@ static void PrintSdMat(int outlev, std::string label,
       for(int i = 0; i < m; i++)
         if( buff[j*m+i] != mat_raw[MIDX(i,j,lda)] )
           error = 1;
+    error+=device_error;
     int globError = 0;
     PHIST_CHK_IERR(*iflag = MPI_Allreduce(&error,&globError,1,MPI_INT,MPI_MAX,MPI_COMM_WORLD),*iflag);
 
