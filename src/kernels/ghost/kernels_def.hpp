@@ -18,19 +18,27 @@ PHIST_CHK_IERR(phist_maps_compatible(map1,map2,_iflag),*_iflag); \
 #define TEST_MVEC_MAPS_SAME(_v1,_v2,_iflag)
 #endif
 
-/* helper macro to temporarily set the densemat's location to HOST and store the
+/* helper macro to temporarily set the densemat's compute location to HOST or DEVICE and store the
    original value of the flag.
  */
 #ifndef TMP_SET_DENSEMAT_LOCATION
 #define TMP_SET_DENSEMAT_LOCATION(_void_ptr,_densemat_ptr,_orig_location) \
 ghost_densemat* _densemat_ptr = (ghost_densemat*)(_void_ptr); \
 ghost_location _orig_location = _densemat_ptr->traits.compute_at; \
-if (*iflag&PHIST_SDMAT_RUN_ON_HOST) _densemat_ptr->traits.compute_at=GHOST_LOCATION_HOST;
+if      (iflag_in&PHIST_SDMAT_RUN_ON_HOST) _  densemat_ptr->traits.compute_at=GHOST_LOCATION_HOST; \
+else if (iflag_in&PHIST_SDMAT_RUN_ON_DEVICE) _densemat_ptr->traits.compute_at=GHOST_LOCATION_DEVICE;
 #endif
-
+// reset original compute location and upload host memory after kernel execution (the latter only if
+// RUN_ON_HOST|RUN_ON_DEVICE was given)
 #ifndef TMP_RESET_DENSEMAT_LOCATION
 #define TMP_RESET_DENSEMAT_LOCATION(_densemat_ptr,_orig_location) \
-(_densemat_ptr)->traits.compute_at=_orig_location;
+(_densemat_ptr)->traits.compute_at=_orig_location; \
+if (iflag_in&(PHIST_SDMAT_RUN_ON_HOST|PHIST_SDMAT_RUN_ON_DEVICE)) \
+{ \
+  int iflag2; \
+  SUBR(sdMat_to_device)((TYPE(sdMat_ptr))_densemat_ptr,&iflag2); \
+  if (iflag2) PHIST_CHK_IERR(*iflag=iflag2,*iflag); \
+}
 #endif
 #if defined(PHIST_HAVE_TEUCHOS)&&defined(PHIST_HAVE_KOKKOS)
 template<>
@@ -381,7 +389,7 @@ PHIST_TASK_BEGIN_SMALLDETERMINISTIC(ComputeTask)
   if (ghost_type == GHOST_TYPE_CUDA) 
   {
     dmtraits.location = (ghost_location)(GHOST_LOCATION_HOST|GHOST_LOCATION_DEVICE);
-    dmtraits.compute_at=GHOST_LOCATION_DEVICE;
+    dmtraits.compute_at=GHOST_LOCATION_HOST;
   } 
   else 
   {
@@ -510,8 +518,6 @@ extern "C" void SUBR(mvec_to_device)(TYPE(mvec_ptr) vV, int* iflag)
 {
   *iflag=0;
 #ifdef GHOST_HAVE_CUDA
-  PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
-  //PHIST_PERFCHECK_VERIFY_TO_DEVICE(vV,iflag);
   PHIST_CAST_PTR_FROM_VOID(ghost_densemat,V, vV, *iflag);
 /*
   PHIST_SOUT(PHIST_DEBUG,"ghost densemat upload\n"
@@ -523,7 +529,14 @@ extern "C" void SUBR(mvec_to_device)(TYPE(mvec_ptr) vV, int* iflag)
                          V->traits.nrowspadded, V->traits.ncolspadded);
   PHIST_SOUT(PHIST_DEBUG,"V flags: %d\n",(int)V->traits.flags);
 */
-  PHIST_CHK_GERR(ghost_densemat_upload(V),*iflag);
+  ghost_type ghost_type;
+  PHIST_CHK_GERR(ghost_type_get(&ghost_type),*iflag);
+  if (ghost_type == GHOST_TYPE_CUDA) 
+  {
+    PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
+  //PHIST_PERFCHECK_VERIFY_TO_DEVICE(vV,iflag);
+    PHIST_CHK_GERR(ghost_densemat_upload(V),*iflag);
+  }
 #endif
 }
 
@@ -531,13 +544,13 @@ extern "C" void SUBR(mvec_from_device)(TYPE(mvec_ptr) vV, int* iflag)
 {
   *iflag=0;
 #ifdef GHOST_HAVE_CUDA
-  PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
-  //PHIST_PERFCHECK_VERIFY_FROM_DEVICE(vV,iflag);
   PHIST_CAST_PTR_FROM_VOID(ghost_densemat,V, vV, *iflag);
   ghost_type ghost_type;
   PHIST_CHK_GERR(ghost_type_get(&ghost_type),*iflag);
   if (ghost_type == GHOST_TYPE_CUDA) 
   {
+    PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
+  //PHIST_PERFCHECK_VERIFY_FROM_DEVICE(vV,iflag);
     PHIST_CHK_GERR(ghost_densemat_download(V),*iflag);
   }
 #endif
@@ -547,13 +560,13 @@ extern "C" void SUBR(sdMat_to_device)(TYPE(sdMat_ptr) vM, int* iflag)
 {
   *iflag=0;
 #ifdef GHOST_HAVE_CUDA
-  PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   PHIST_PERFCHECK_VERIFY_SMALL;
   PHIST_CAST_PTR_FROM_VOID(ghost_densemat,M, vM, *iflag);
   ghost_type ghost_type;
   PHIST_CHK_GERR(ghost_type_get(&ghost_type),*iflag);
   if (ghost_type == GHOST_TYPE_CUDA) 
   {
+    PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
     PHIST_CHK_GERR(ghost_densemat_upload(M),*iflag);
   }
 #endif
@@ -566,7 +579,13 @@ extern "C" void SUBR(sdMat_from_device)(TYPE(sdMat_ptr) vM, int* iflag)
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   PHIST_PERFCHECK_VERIFY_SMALL;
   PHIST_CAST_PTR_FROM_VOID(ghost_densemat,M, vM, *iflag);
-  PHIST_CHK_GERR(ghost_densemat_download(M),*iflag);
+  ghost_type ghost_type;
+  PHIST_CHK_GERR(ghost_type_get(&ghost_type),*iflag);
+  if (ghost_type == GHOST_TYPE_CUDA) 
+  {
+    PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
+    PHIST_CHK_GERR(ghost_densemat_download(M),*iflag);
+  }
 #endif
 }
 
@@ -1285,10 +1304,10 @@ extern "C" void SUBR(sdMat_add_sdMat)(_ST_ alpha, TYPE(const_sdMat_ptr) vA,
 
 PHIST_TASK_DECLARE(ComputeTask)
 PHIST_TASK_BEGIN_SMALLDETERMINISTIC(ComputeTask)
-  PHIST_CAST_PTR_FROM_VOID(const ghost_densemat,A,vA,*iflag);
   // if the user specifies PHIST_SDMAT_RUN_ON_HOST, manually switch the compute_at setting
   // of the result densemat and reset it after the call.
   TMP_SET_DENSEMAT_LOCATION(vB,B,locB);
+  PHIST_CAST_PTR_FROM_VOID(const ghost_densemat,A,vA,*iflag);
   PHIST_CHK_GERR(ghost_axpby(B,(ghost_densemat*)A,(void*)&a,(void*)&b),*iflag);
   TMP_RESET_DENSEMAT_LOCATION(B,locB);
 PHIST_TASK_END(iflag);
@@ -1787,8 +1806,9 @@ PHIST_TASK_BEGIN_SMALLDETERMINISTIC(ComputeTask)
   PHIST_CAST_PTR_FROM_VOID(ghost_densemat,W,vW,*iflag);
   PHIST_CAST_PTR_FROM_VOID(ghost_densemat,C,vC,*iflag);
   char trans[]="N";  
-  PHIST_CHK_GERR(ghost_gemm(C,V,trans,W,trans,(void*)&alpha,(void*)&beta,GHOST_GEMM_NO_REDUCE,GHOST_GEMM_DEFAULT),*iflag);
+  ghost_error gerr=ghost_gemm(C,V,trans,W,trans,(void*)&alpha,(void*)&beta,GHOST_GEMM_NO_REDUCE,GHOST_GEMM_DEFAULT);
   TMP_RESET_DENSEMAT_LOCATION(C,locC);
+  PHIST_CHK_GERR(gerr,*iflag);
   PHIST_TASK_END(iflag);
 }
 
@@ -1800,21 +1820,21 @@ extern "C" void SUBR(sdMatT_times_sdMat)(_ST_ alpha, TYPE(const_sdMat_ptr) vV,
                                          int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
-  TMP_SET_DENSEMAT_LOCATION(vV,V,locV);
-  TMP_SET_DENSEMAT_LOCATION(vW,W,locW);
   TMP_SET_DENSEMAT_LOCATION(vC,C,locC);
   *iflag=0;
   PHIST_PERFCHECK_VERIFY_SMALL;
 PHIST_TASK_DECLARE(ComputeTask)
 PHIST_TASK_BEGIN_SMALLDETERMINISTIC(ComputeTask)
-  PHIST_CAST_PTR_FROM_VOID(ghost_densemat,C,vC,*iflag);
+  PHIST_CAST_PTR_FROM_VOID(ghost_densemat,V,vV,*iflag);
+  PHIST_CAST_PTR_FROM_VOID(ghost_densemat,W,vW,*iflag);
 #ifdef IS_COMPLEX
   char trans[]="C";
 #else
   char trans[]="T";
 #endif  
-  PHIST_CHK_GERR(ghost_gemm(C, V, trans,W, (char*)"N", (void*)&alpha, (void*)&beta, GHOST_GEMM_NO_REDUCE,GHOST_GEMM_DEFAULT),*iflag);
+  ghost_error gerr=ghost_gemm(C, V, trans,W, (char*)"N", (void*)&alpha, (void*)&beta, GHOST_GEMM_NO_REDUCE,GHOST_GEMM_DEFAULT);
   TMP_RESET_DENSEMAT_LOCATION(C,locC);
+  PHIST_CHK_GERR(gerr,*iflag);
   PHIST_TASK_END(iflag);
 }
 
@@ -1833,14 +1853,14 @@ PHIST_TASK_DECLARE(ComputeTask)
 PHIST_TASK_BEGIN_SMALLDETERMINISTIC(ComputeTask)
   PHIST_CAST_PTR_FROM_VOID(ghost_densemat,V,vV,*iflag);
   PHIST_CAST_PTR_FROM_VOID(ghost_densemat,W,vW,*iflag);
-  PHIST_CAST_PTR_FROM_VOID(ghost_densemat,C,vC,*iflag);
 #ifdef IS_COMPLEX
   char trans[]="C";
 #else
   char trans[]="T";
 #endif  
-  PHIST_CHK_GERR(ghost_gemm(C, V, (char*)"N", W, trans, (void*)&alpha, (void*)&beta, GHOST_GEMM_NO_REDUCE,GHOST_GEMM_DEFAULT),*iflag);
+  ghost_error gerr=ghost_gemm(C, V, (char*)"N", W, trans, (void*)&alpha, (void*)&beta, GHOST_GEMM_NO_REDUCE,GHOST_GEMM_DEFAULT);
   TMP_RESET_DENSEMAT_LOCATION(C,locC);
+  PHIST_CHK_GERR(gerr,*iflag);
 PHIST_TASK_END(iflag);
 }
 
