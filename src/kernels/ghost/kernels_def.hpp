@@ -33,7 +33,7 @@ else if (iflag_in&PHIST_SDMAT_RUN_ON_DEVICE) _densemat_ptr->traits.compute_at=GH
 #ifndef TMP_RESET_DENSEMAT_LOCATION
 #define TMP_RESET_DENSEMAT_LOCATION(_densemat_ptr,_orig_location) \
 (_densemat_ptr)->traits.compute_at=_orig_location; \
-if (iflag_in&(PHIST_SDMAT_RUN_ON_HOST|PHIST_SDMAT_RUN_ON_DEVICE)) \
+if (iflag_in&PHIST_SDMAT_RUN_ON_HOST_AND_DEVICE) \
 { \
   int iflag2; \
   SUBR(sdMat_to_device)((TYPE(sdMat_ptr))_densemat_ptr,&iflag2); \

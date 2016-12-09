@@ -93,5 +93,7 @@
 /* If PHIST_SDMAT_RUN_ON_HOST|PHIST_SDMAT_RUN_ON_DEVICE is speicified, the kernel is executed   */
 /* on the host and the sdMat data is uploaded afterwards.                                       */
 #define PHIST_SDMAT_RUN_ON_DEVICE 2048
+/* shortcut for PHIST_SDMAT_RUN_ON_HOST|PHIST_SDMAT_RUN_ON_DEVICE */
+#define PHIST_SDMAT_RUN_ON_HOST_AND_DEVICE (PHIST_SDMAT_RUN_ON_HOST|PHIST_SDMAT_RUN_ON_DEVICE)
 
 #endif
