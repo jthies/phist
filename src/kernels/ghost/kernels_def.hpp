@@ -25,7 +25,7 @@ PHIST_CHK_IERR(phist_maps_compatible(map1,map2,_iflag),*_iflag); \
 #define TMP_SET_DENSEMAT_LOCATION(_void_ptr,_densemat_ptr,_orig_location) \
 ghost_densemat* _densemat_ptr = (ghost_densemat*)(_void_ptr); \
 ghost_location _orig_location = _densemat_ptr->traits.compute_at; \
-if      (iflag_in&PHIST_SDMAT_RUN_ON_HOST) _  densemat_ptr->traits.compute_at=GHOST_LOCATION_HOST; \
+if      (iflag_in&PHIST_SDMAT_RUN_ON_HOST) _densemat_ptr->traits.compute_at=GHOST_LOCATION_HOST; \
 else if (iflag_in&PHIST_SDMAT_RUN_ON_DEVICE) _densemat_ptr->traits.compute_at=GHOST_LOCATION_DEVICE;
 #endif
 // reset original compute location and upload host memory after kernel execution (the latter only if
@@ -1298,6 +1298,7 @@ extern "C" void SUBR(sdMat_add_sdMat)(_ST_ alpha, TYPE(const_sdMat_ptr) vA,
                             _ST_ beta,  TYPE(sdMat_ptr)       vB,
                             int* iflag)
 {
+  int iflag_in=*iflag;
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   _ST_ a=alpha, b=beta;
   PHIST_PERFCHECK_VERIFY_SMALL;
@@ -1796,15 +1797,14 @@ extern "C" void SUBR(sdMat_times_sdMat)(_ST_ alpha, TYPE(const_sdMat_ptr) vV,
                               _ST_ beta, TYPE(sdMat_ptr) vC,
                                          int* iflag)
 {
+  int iflag_in=*iflag;
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
-  TMP_SET_DENSEMAT_LOCATION(vC,C,locC);
-  *iflag=0;
   PHIST_PERFCHECK_VERIFY_SMALL;
 PHIST_TASK_DECLARE(ComputeTask)
 PHIST_TASK_BEGIN_SMALLDETERMINISTIC(ComputeTask)
   PHIST_CAST_PTR_FROM_VOID(ghost_densemat,V,vV,*iflag);
   PHIST_CAST_PTR_FROM_VOID(ghost_densemat,W,vW,*iflag);
-  PHIST_CAST_PTR_FROM_VOID(ghost_densemat,C,vC,*iflag);
+  TMP_SET_DENSEMAT_LOCATION(vC,C,locC);
   char trans[]="N";  
   ghost_error gerr=ghost_gemm(C,V,trans,W,trans,(void*)&alpha,(void*)&beta,GHOST_GEMM_NO_REDUCE,GHOST_GEMM_DEFAULT);
   TMP_RESET_DENSEMAT_LOCATION(C,locC);
@@ -1819,14 +1819,14 @@ extern "C" void SUBR(sdMatT_times_sdMat)(_ST_ alpha, TYPE(const_sdMat_ptr) vV,
                               _ST_ beta, TYPE(sdMat_ptr) vC,
                                          int* iflag)
 {
+  int iflag_in=*iflag;
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
-  TMP_SET_DENSEMAT_LOCATION(vC,C,locC);
-  *iflag=0;
   PHIST_PERFCHECK_VERIFY_SMALL;
 PHIST_TASK_DECLARE(ComputeTask)
 PHIST_TASK_BEGIN_SMALLDETERMINISTIC(ComputeTask)
   PHIST_CAST_PTR_FROM_VOID(ghost_densemat,V,vV,*iflag);
   PHIST_CAST_PTR_FROM_VOID(ghost_densemat,W,vW,*iflag);
+  TMP_SET_DENSEMAT_LOCATION(vC,C,locC);
 #ifdef IS_COMPLEX
   char trans[]="C";
 #else
@@ -1845,14 +1845,14 @@ extern "C" void SUBR(sdMat_times_sdMatT)(_ST_ alpha, TYPE(const_sdMat_ptr) vV,
                               _ST_ beta, TYPE(sdMat_ptr) vC,
                                          int* iflag)
 {
+  int iflag_in=*iflag;
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
-  TMP_SET_DENSEMAT_LOCATION(vC,C,locC);
-  *iflag=0;
   PHIST_PERFCHECK_VERIFY_SMALL;
 PHIST_TASK_DECLARE(ComputeTask)
 PHIST_TASK_BEGIN_SMALLDETERMINISTIC(ComputeTask)
   PHIST_CAST_PTR_FROM_VOID(ghost_densemat,V,vV,*iflag);
   PHIST_CAST_PTR_FROM_VOID(ghost_densemat,W,vW,*iflag);
+  TMP_SET_DENSEMAT_LOCATION(vC,C,locC);
 #ifdef IS_COMPLEX
   char trans[]="C";
 #else
