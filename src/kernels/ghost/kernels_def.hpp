@@ -913,15 +913,12 @@ PHIST_TASK_BEGIN_SMALLDETERMINISTIC(ComputeTask)
     return;
   }
   //TODO: check for overlapping data regions?
-  // this copies the host side only:
+  // For CUDA processes this copies the device-side only (fromVec queries location, not compute_at,
+  // and stops if it finds location&DEVICE).
   PHIST_CHK_GERR(ghost_densemat_init_densemat(Mblock,M,imin,jmin),*iflag);
   if (Mblock->traits.location&GHOST_LOCATION_DEVICE)
   {
-    // run the same copy operation on the device-side
-    int iflag_in=PHIST_SDMAT_RUN_ON_DEVICE;
-    TMP_SET_DENSEMAT_LOCATION(vMblock,tmpMblock,locM);
-    PHIST_CHK_GERR(ghost_densemat_init_densemat(tmpMblock,M,imin,jmin),*iflag);
-    TMP_RESET_DENSEMAT_LOCATION(tmpMblock,locM);
+    ghost_densemat_download(Mblock);
   }
 PHIST_TASK_END(iflag);
 }
@@ -941,18 +938,13 @@ PHIST_TASK_BEGIN_SMALLDETERMINISTIC(ComputeTask)
 
   ghost_densemat* Mb_view=NULL;
   PHIST_CHK_IERR(SUBR(sdMat_view_block)(vM,(TYPE(sdMat_ptr)*)&Mb_view,imin,imax,jmin,jmax,iflag),*iflag);
-  // run on host-side:
+  // run on device-side, see comment in get_block above
   PHIST_CHK_GERR(ghost_densemat_init_densemat(Mb_view,Mblock,0,0),*iflag);
   if (Mb_view->traits.location&GHOST_LOCATION_DEVICE)
   {
-    // run the same copy operation on the device-side
-    int iflag_in=PHIST_SDMAT_RUN_ON_DEVICE;
-    TMP_SET_DENSEMAT_LOCATION((void*)Mb_view,tmpMb_view,locM);
-    PHIST_CHK_GERR(ghost_densemat_init_densemat(tmpMb_view,Mblock,imin,jmin),*iflag);
-    // not sure if a view shares the traits object in GHOST?
-    TMP_RESET_DENSEMAT_LOCATION(tmpMb_view,locM);
-    ghost_densemat_destroy(Mb_view);
+    ghost_densemat_download(Mblock);
   }
+  ghost_densemat_destroy(Mb_view);
 PHIST_TASK_END(iflag);
 }
 
