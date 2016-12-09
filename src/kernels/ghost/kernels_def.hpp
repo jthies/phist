@@ -25,15 +25,16 @@ PHIST_CHK_IERR(phist_maps_compatible(map1,map2,_iflag),*_iflag); \
 #define TMP_SET_DENSEMAT_LOCATION(_void_ptr,_densemat_ptr,_orig_location) \
 ghost_densemat* _densemat_ptr = (ghost_densemat*)(_void_ptr); \
 ghost_location _orig_location = _densemat_ptr->traits.compute_at; \
-if      (iflag_in&PHIST_SDMAT_RUN_ON_HOST) _densemat_ptr->traits.compute_at=GHOST_LOCATION_HOST; \
-else if (iflag_in&PHIST_SDMAT_RUN_ON_DEVICE) _densemat_ptr->traits.compute_at=GHOST_LOCATION_DEVICE;
+bool is_dev=(_densemat_ptr->traits.location&GHOST_LOCATION_DEVICE); \
+if      (is_dev && iflag_in&PHIST_SDMAT_RUN_ON_HOST) _densemat_ptr->traits.compute_at=GHOST_LOCATION_HOST; \
+else if (is_dev && iflag_in&PHIST_SDMAT_RUN_ON_DEVICE) _densemat_ptr->traits.compute_at=GHOST_LOCATION_DEVICE;
 #endif
 // reset original compute location and upload host memory after kernel execution (the latter only if
 // RUN_ON_HOST|RUN_ON_DEVICE was given)
 #ifndef TMP_RESET_DENSEMAT_LOCATION
 #define TMP_RESET_DENSEMAT_LOCATION(_densemat_ptr,_orig_location) \
 (_densemat_ptr)->traits.compute_at=_orig_location; \
-if (iflag_in&PHIST_SDMAT_RUN_ON_HOST_AND_DEVICE) \
+if (is_dev&& iflag_in&PHIST_SDMAT_RUN_ON_HOST_AND_DEVICE) \
 { \
   int iflag2; \
   SUBR(sdMat_to_device)((TYPE(sdMat_ptr))_densemat_ptr,&iflag2); \
@@ -912,7 +913,16 @@ PHIST_TASK_BEGIN_SMALLDETERMINISTIC(ComputeTask)
     return;
   }
   //TODO: check for overlapping data regions?
+  // this copies the host side only:
   PHIST_CHK_GERR(ghost_densemat_init_densemat(Mblock,M,imin,jmin),*iflag);
+  if (Mblock->traits.location&GHOST_LOCATION_DEVICE)
+  {
+    // run the same copy operation on the device-side
+    int iflag_in=PHIST_SDMAT_RUN_ON_DEVICE;
+    TMP_SET_DENSEMAT_LOCATION(vMblock,tmpMblock,locM);
+    PHIST_CHK_GERR(ghost_densemat_init_densemat(tmpMblock,M,imin,jmin),*iflag);
+    TMP_RESET_DENSEMAT_LOCATION(tmpMblock,locM);
+  }
 PHIST_TASK_END(iflag);
 }
 
@@ -931,8 +941,18 @@ PHIST_TASK_BEGIN_SMALLDETERMINISTIC(ComputeTask)
 
   ghost_densemat* Mb_view=NULL;
   PHIST_CHK_IERR(SUBR(sdMat_view_block)(vM,(TYPE(sdMat_ptr)*)&Mb_view,imin,imax,jmin,jmax,iflag),*iflag);
+  // run on host-side:
   PHIST_CHK_GERR(ghost_densemat_init_densemat(Mb_view,Mblock,0,0),*iflag);
-  ghost_densemat_destroy(Mb_view);
+  if (Mb_view->traits.location&GHOST_LOCATION_DEVICE)
+  {
+    // run the same copy operation on the device-side
+    int iflag_in=PHIST_SDMAT_RUN_ON_DEVICE;
+    TMP_SET_DENSEMAT_LOCATION((void*)Mb_view,tmpMb_view,locM);
+    PHIST_CHK_GERR(ghost_densemat_init_densemat(tmpMb_view,Mblock,imin,jmin),*iflag);
+    // not sure if a view shares the traits object in GHOST?
+    TMP_RESET_DENSEMAT_LOCATION(tmpMb_view,locM);
+    ghost_densemat_destroy(Mb_view);
+  }
 PHIST_TASK_END(iflag);
 }
 
@@ -1010,17 +1030,17 @@ PHIST_TASK_DECLARE(ComputeTask)
 //! put scalar value into all elements of a multi-vector
 extern "C" void SUBR(sdMat_put_value)(TYPE(sdMat_ptr) vV, _ST_ value, int* iflag)
 {
-  int run_on_host = *iflag&PHIST_SDMAT_RUN_ON_HOST;
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   *iflag=0;
   PHIST_PERFCHECK_VERIFY_SMALL;
 PHIST_TASK_DECLARE(ComputeTask)
 PHIST_TASK_BEGIN_SMALLDETERMINISTIC(ComputeTask)
   PHIST_CAST_PTR_FROM_VOID(ghost_densemat,V,vV,*iflag);
-  // do not run on device if flag was given
-  if (V->traits.compute_at==GHOST_LOCATION_HOST || run_on_host==false)
+  // run on host first
+  ghost_densemat_init_val(V,(void*)&value);
+  if (V->traits.location|GHOST_LOCATION_DEVICE)
   {
-    ghost_densemat_init_val(V,(void*)&value);
+    PHIST_CHK_GERR(ghost_densemat_upload(V),*iflag);
   }
   // for GPU processes we call the kernel twice, once on the device
   // and once on the host.
