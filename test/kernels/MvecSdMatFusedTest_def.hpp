@@ -193,8 +193,10 @@ public:
       ASSERT_EQ(0,iflag_);
       SUBR(mvec_add_mvec)(st::one(),V1_,st::zero(),V2_,&iflag_);
       ASSERT_EQ(0,iflag_);
+      iflag_=PHIST_SDMAT_RUN_ON_HOST_AND_DEVICE;
       SUBR(sdMat_add_sdMat)(st::one(),M1_,st::zero(),M2_,&iflag_);
       ASSERT_EQ(0,iflag_);
+      iflag_=PHIST_SDMAT_RUN_ON_HOST_AND_DEVICE;
       SUBR(sdMat_add_sdMat)(st::one(),N1_,st::zero(),N2_,&iflag_);
       ASSERT_EQ(0,iflag_);
 
@@ -211,6 +213,18 @@ public:
       // Compare results
       ASSERT_REAL_EQ(mt::one(), MvecsEqual(V1_,V2_));
       ASSERT_NEAR(mt::one(), MvecsEqual(W1_,W2_,mt::one()), sqrt(mt::eps()));
+      ASSERT_REAL_EQ(mt::one(), SdMatsEqual(N1_,N2_));
+      ASSERT_NEAR(mt::one(), SdMatsEqual(M1_,M2_), sqrt(mt::eps()));
+      
+      SUBR(sdMat_from_device)(N1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(sdMat_from_device)(N2_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(sdMat_from_device)(M1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(sdMat_from_device)(M2_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+
       ASSERT_REAL_EQ(mt::one(), SdMatsEqual(N1_,N2_));
       ASSERT_NEAR(mt::one(), SdMatsEqual(M1_,M2_), sqrt(mt::eps()));
     }
@@ -235,8 +249,10 @@ public:
       // copy data
       SUBR(mvec_add_mvec)(st::one(),V1_,st::zero(),V2_,&iflag_);
       ASSERT_EQ(0,iflag_);
+      iflag_=PHIST_SDMAT_RUN_ON_HOST_AND_DEVICE;
       SUBR(sdMat_add_sdMat)(st::one(),M1_,st::zero(),M2_,&iflag_);
       ASSERT_EQ(0,iflag_);
+      iflag_=PHIST_SDMAT_RUN_ON_HOST_AND_DEVICE;
       SUBR(sdMat_add_sdMat)(st::one(),N1_,st::zero(),N2_,&iflag_);
       ASSERT_EQ(0,iflag_);
 
@@ -252,6 +268,18 @@ public:
 
       // Compare results
       ASSERT_NEAR(mt::one(), MvecsEqual(V1_,V2_,mt::one()), 10000*mt::eps());
+      ASSERT_REAL_EQ(mt::one(), SdMatsEqual(N1_,N2_));
+      ASSERT_NEAR(mt::one(), SdMatsEqual(M1_,M2_), sqrt(mt::eps()));
+
+      SUBR(sdMat_from_device)(N1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(sdMat_from_device)(N2_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(sdMat_from_device)(M1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(sdMat_from_device)(M2_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+
       ASSERT_REAL_EQ(mt::one(), SdMatsEqual(N1_,N2_));
       ASSERT_NEAR(mt::one(), SdMatsEqual(M1_,M2_), sqrt(mt::eps()));
     }
@@ -276,12 +304,16 @@ public:
       _ST_ alpha = (ST)2*st::one()+st::prand(), beta = (ST)2*st::one()+st::prand();
 
       // copy data
+      iflag_=PHIST_SDMAT_RUN_ON_HOST_AND_DEVICE;
       SUBR(mvec_add_mvec)(st::one(),W1_,st::zero(),W2_,&iflag_);
       ASSERT_EQ(0,iflag_);
+      iflag_=PHIST_SDMAT_RUN_ON_HOST_AND_DEVICE;
       SUBR(mvec_add_mvec)(st::one(),V1_,st::zero(),V2_,&iflag_);
       ASSERT_EQ(0,iflag_);
+      iflag_=PHIST_SDMAT_RUN_ON_HOST_AND_DEVICE;
       SUBR(sdMat_add_sdMat)(st::one(),M1_,st::zero(),M2_,&iflag_);
       ASSERT_EQ(0,iflag_);
+      iflag_=PHIST_SDMAT_RUN_ON_HOST_AND_DEVICE;
       SUBR(sdMat_add_sdMat)(st::one(),N1_,st::zero(),N2_,&iflag_);
       ASSERT_EQ(0,iflag_);
 
@@ -300,6 +332,19 @@ public:
       ASSERT_NEAR(mt::one(), MvecsEqual(W1_,W2_,mt::one()), 1000*mt::eps());
       ASSERT_REAL_EQ(mt::one(), SdMatsEqual(M1_,M2_));
       ASSERT_NEAR(mt::one(), SdMatsEqual(N1_,N2_), sqrt(mt::eps()));
+
+        SUBR(sdMat_from_device)(N1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(sdMat_from_device)(N2_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(sdMat_from_device)(M1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(sdMat_from_device)(M2_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+
+      ASSERT_REAL_EQ(mt::one(), SdMatsEqual(M1_,M2_));
+      ASSERT_NEAR(mt::one(), SdMatsEqual(N1_,N2_), sqrt(mt::eps()));
+
     }
   }
 
@@ -325,8 +370,10 @@ public:
       ASSERT_EQ(0,iflag_);
       SUBR(mvec_add_mvec)(st::one(),V1_,st::zero(),V2_,&iflag_);
       ASSERT_EQ(0,iflag_);
+      iflag_=PHIST_SDMAT_RUN_ON_HOST_AND_DEVICE;
       SUBR(sdMat_add_sdMat)(st::one(),M1_,st::zero(),M2_,&iflag_);
       ASSERT_EQ(0,iflag_);
+      iflag_=PHIST_SDMAT_RUN_ON_HOST_AND_DEVICE;
       SUBR(sdMat_add_sdMat)(st::one(),N1_,st::zero(),N2_,&iflag_);
       ASSERT_EQ(0,iflag_);
 
@@ -369,8 +416,10 @@ public:
       ASSERT_EQ(0,iflag_);
       SUBR(mvec_add_mvec)(st::one(),V1_,st::zero(),V2_,&iflag_);
       ASSERT_EQ(0,iflag_);
+      iflag_=PHIST_SDMAT_RUN_ON_HOST_AND_DEVICE;
       SUBR(sdMat_add_sdMat)(st::one(),M1_,st::zero(),M2_,&iflag_);
       ASSERT_EQ(0,iflag_);
+      iflag_=PHIST_SDMAT_RUN_ON_HOST_AND_DEVICE;
       SUBR(sdMat_add_sdMat)(st::one(),N1_,st::zero(),N2_,&iflag_);
       ASSERT_EQ(0,iflag_);
 
@@ -419,8 +468,10 @@ public:
       ASSERT_EQ(0,iflag_);
       SUBR(mvec_add_mvec)(st::one(),V1_,st::zero(),V2_,&iflag_);
       ASSERT_EQ(0,iflag_);
+      iflag_=PHIST_SDMAT_RUN_ON_HOST_AND_DEVICE;
       SUBR(sdMat_add_sdMat)(st::one(),M1_,st::zero(),M2_,&iflag_);
       ASSERT_EQ(0,iflag_);
+      iflag_=PHIST_SDMAT_RUN_ON_HOST_AND_DEVICE;
       SUBR(sdMat_add_sdMat)(st::one(),N1_,st::zero(),N2_,&iflag_);
       ASSERT_EQ(0,iflag_);
 
@@ -469,8 +520,10 @@ public:
       // copy data
       SUBR(mvec_add_mvec)(st::one(),V1_,st::zero(),V2_,&iflag_);
       ASSERT_EQ(0,iflag_);
+      iflag_=PHIST_SDMAT_RUN_ON_HOST_AND_DEVICE;
       SUBR(sdMat_add_sdMat)(st::one(),M1_,st::zero(),M2_,&iflag_);
       ASSERT_EQ(0,iflag_);
+      iflag_=PHIST_SDMAT_RUN_ON_HOST_AND_DEVICE;
       SUBR(sdMat_add_sdMat)(st::one(),N1_,st::zero(),N2_,&iflag_);
       ASSERT_EQ(0,iflag_);
 
@@ -522,8 +575,10 @@ public:
       ASSERT_EQ(0,iflag_);
       SUBR(mvec_add_mvec)(st::one(),V1_,st::zero(),V2_,&iflag_);
       ASSERT_EQ(0,iflag_);
+      iflag_=PHIST_SDMAT_RUN_ON_HOST_AND_DEVICE;
       SUBR(sdMat_add_sdMat)(st::one(),M1_,st::zero(),M2_,&iflag_);
       ASSERT_EQ(0,iflag_);
+      iflag_=PHIST_SDMAT_RUN_ON_HOST_AND_DEVICE;
       SUBR(sdMat_add_sdMat)(st::one(),N1_,st::zero(),N2_,&iflag_);
       ASSERT_EQ(0,iflag_);
 
@@ -575,8 +630,10 @@ public:
       ASSERT_EQ(0,iflag_);
       SUBR(mvec_add_mvec)(st::one(),V1_,st::zero(),V2_,&iflag_);
       ASSERT_EQ(0,iflag_);
+      iflag_=PHIST_SDMAT_RUN_ON_HOST_AND_DEVICE;
       SUBR(sdMat_add_sdMat)(st::one(),M1_,st::zero(),M2_,&iflag_);
       ASSERT_EQ(0,iflag_);
+      iflag_=PHIST_SDMAT_RUN_ON_HOST_AND_DEVICE;
       SUBR(sdMat_add_sdMat)(st::one(),N1_,st::zero(),N2_,&iflag_);
       ASSERT_EQ(0,iflag_);
 
@@ -627,8 +684,10 @@ public:
       ASSERT_EQ(0,iflag_);
       SUBR(mvec_add_mvec)(st::one(),V1_,st::zero(),V2_,&iflag_);
       ASSERT_EQ(0,iflag_);
+      iflag_=PHIST_SDMAT_RUN_ON_HOST_AND_DEVICE;
       SUBR(sdMat_add_sdMat)(st::one(),M1_,st::zero(),M2_,&iflag_);
       ASSERT_EQ(0,iflag_);
+      iflag_=PHIST_SDMAT_RUN_ON_HOST_AND_DEVICE;
       SUBR(sdMat_add_sdMat)(st::one(),N1_,st::zero(),N2_,&iflag_);
       ASSERT_EQ(0,iflag_);
 
@@ -680,8 +739,10 @@ public:
       ASSERT_EQ(0,iflag_);
       SUBR(mvec_add_mvec)(st::one(),V1_,st::zero(),V2_,&iflag_);
       ASSERT_EQ(0,iflag_);
+      iflag_=PHIST_SDMAT_RUN_ON_HOST_AND_DEVICE;
       SUBR(sdMat_add_sdMat)(st::one(),M1_,st::zero(),M2_,&iflag_);
       ASSERT_EQ(0,iflag_);
+      iflag_=PHIST_SDMAT_RUN_ON_HOST_AND_DEVICE;
       SUBR(sdMat_add_sdMat)(st::one(),N1_,st::zero(),N2_,&iflag_);
       ASSERT_EQ(0,iflag_);
 
