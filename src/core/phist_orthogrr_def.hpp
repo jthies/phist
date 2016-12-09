@@ -26,7 +26,6 @@ static void SUBR(orthogrr_svqb)(TYPE(sdMat_ptr) RR, TYPE(sdMat_ptr) R_1, int* ra
   
   // we first copy the input matrix because B and B_1 are exchanged in the definition of
   // the kernel routine sdMat_qb:
-  *iflag=PHIST_SDMAT_RUN_ON_HOST;
   PHIST_CHK_IERR(SUBR(sdMat_add_sdMat)(st::one(),RR,st::zero(),R_1,iflag),*iflag);
   PHIST_CHK_IERR(SUBR(sdMat_qb)(R_1,RR,rank,iflag),*iflag);
   
@@ -95,7 +94,6 @@ void SUBR(orthogrrB)(TYPE(const_mvec_ptr) W, TYPE(mvec_ptr) V, TYPE(mvec_ptr) BV
       PHIST_CHK_IERR(SUBR(sdMat_create)(&EWtV,k,m,comm,iflag),*iflag);
       // construct cholesky factorization of WtW
       PHIST_CHK_IERR(SUBR(sdMat_identity)(WtW_inv,iflag),*iflag);
-      *iflag=PHIST_SDMAT_RUN_ON_HOST;
       PHIST_CHK_IERR(SUBR(sdMat_add_sdMat)(st::one(),WtW_I,st::one(),WtW_inv,iflag),*iflag);
       permWtW = new int[k];
       rankWtW = 0;
@@ -106,7 +104,6 @@ void SUBR(orthogrrB)(TYPE(const_mvec_ptr) W, TYPE(mvec_ptr) V, TYPE(mvec_ptr) BV
     MT VtV_err = mt::zero();
     MT WtV_err = mt::zero();
     PHIST_CHK_IERR(SUBR(sdMat_identity)(VtV_I,iflag),*iflag);
-      *iflag=PHIST_SDMAT_RUN_ON_HOST;
     PHIST_CHK_IERR(SUBR(sdMat_add_sdMat)(st::one(),VtV,-st::one(),VtV_I,iflag),*iflag);
     PHIST_CHK_IERR(SUBR(sdMat_normF)(VtV_I,&VtV_err,iflag),*iflag);
 
@@ -122,7 +119,6 @@ void SUBR(orthogrrB)(TYPE(const_mvec_ptr) W, TYPE(mvec_ptr) V, TYPE(mvec_ptr) BV
       // we already have the current VtV!
       // so calculate first "R" factor
       int Vrank = 0;
-      *iflag=PHIST_SDMAT_RUN_ON_HOST;
       PHIST_CHK_IERR(SUBR(sdMat_add_sdMat)(st::one(),VtV,st::zero(),R,iflag),*iflag);
 #ifdef ORTHOGRR_USE_SVQB
       PHIST_CHK_IERR(SUBR(orthogrr_svqb)(R,R_1,&Vrank,iflag),*iflag);
@@ -138,9 +134,9 @@ void SUBR(orthogrrB)(TYPE(const_mvec_ptr) W, TYPE(mvec_ptr) V, TYPE(mvec_ptr) BV
 
       // BV <- BV*R_1 and WtV <- W'*BV
       PHIST_CHK_IERR(SUBR(sdMat_to_device)(R_1,iflag),*iflag);
-      PHIST_CHK_IERR(SUBR(sdMat_to_device)(WtV,iflag),*iflag);
       if( robust ) *iflag = PHIST_ROBUST_REDUCTIONS;
       PHIST_CHK_IERR(SUBR(fused_mvsdi_mvTmv)(st::one(),W,BV,R_1,st::zero(),WtV,iflag),*iflag);
+      PHIST_CHK_IERR(SUBR(sdMat_from_device)(WtV,iflag),*iflag);
       if (B_op!=NULL)
       {
         if( robust ) *iflag = PHIST_ROBUST_REDUCTIONS;
@@ -156,12 +152,9 @@ void SUBR(orthogrrB)(TYPE(const_mvec_ptr) W, TYPE(mvec_ptr) V, TYPE(mvec_ptr) BV
         // So we obtain the correction
         // X = - WtW^(-1) WtW_I WtV
         PHIST_CHK_IERR(SUBR(sdMat_from_device)(WtW_inv,iflag),*iflag);
-        PHIST_CHK_IERR(SUBR(sdMat_from_device)(WtV,iflag),*iflag);
-        *iflag=PHIST_SDMAT_RUN_ON_HOST;
         PHIST_CHK_IERR(SUBR(sdMat_times_sdMat)(st::one(),WtW_I,WtV,st::zero(),EWtV,iflag),*iflag);
         PHIST_CHK_IERR(SUBR(sdMat_backwardSubst_sdMat)(WtW_inv,permWtW,rankWtW,EWtV,iflag),*iflag);
         PHIST_CHK_IERR(SUBR(sdMat_forwardSubst_sdMat)(WtW_inv,permWtW,rankWtW,EWtV,iflag),*iflag);
-        *iflag=PHIST_SDMAT_RUN_ON_HOST;
         PHIST_CHK_IERR(SUBR(sdMat_add_sdMat)(-st::one(),EWtV,st::one(),WtV,iflag),*iflag);
         PHIST_CHK_IERR(SUBR(sdMat_to_device)(WtV,iflag),*iflag);
       }
@@ -169,16 +162,18 @@ void SUBR(orthogrrB)(TYPE(const_mvec_ptr) W, TYPE(mvec_ptr) V, TYPE(mvec_ptr) BV
       // update R1 <- R * R1
       if( R1 != NULL )
       {
-        *iflag=PHIST_SDMAT_RUN_ON_HOST;
         PHIST_CHK_IERR(SUBR(sdMat_add_sdMat)(st::one(),R1,st::zero(),R1_tmp,iflag),*iflag);
-        *iflag=PHIST_SDMAT_RUN_ON_HOST;
         PHIST_CHK_IERR(SUBR(sdMat_times_sdMat)(st::one(),R,R1_tmp,st::zero(),R1,iflag),*iflag);
       }
       // check if we really need another orthogonalization step with W
       if( robust ) 
+      {
         VtV_err = std::max(VtV_err*mt::eps(),mt::eps());
+      }
       else
+      {
         VtV_err = std::max(VtV_err*mt::sqrt(mt::eps()),mt::eps());
+      }
       PHIST_CHK_IERR(SUBR(sdMat_normF)(WtV,&WtV_err,iflag),*iflag);
       VtV_err += WtV_err;
       PHIST_SOUT(PHIST_VERBOSE, "orthogRR: iter %d phase 1, desired eps %8.4e, WtV err. %8.4e, (est.) VtV err. %8.4e\n", iter, desiredEps, WtV_err, VtV_err);
@@ -191,7 +186,6 @@ void SUBR(orthogrrB)(TYPE(const_mvec_ptr) W, TYPE(mvec_ptr) V, TYPE(mvec_ptr) BV
       }
 
       // update R2 <- R2 + W'*V = R2 + WtV*R
-      *iflag=PHIST_SDMAT_RUN_ON_HOST;
       if( R2 != NULL ) {PHIST_CHK_IERR(SUBR(sdMat_times_sdMat)(st::one(),WtV,R,st::one(),R2,iflag),*iflag);}
 
       // V <- V - W*WtV, updating VtV. TODO: fused kernel with B
@@ -211,7 +205,6 @@ void SUBR(orthogrrB)(TYPE(const_mvec_ptr) W, TYPE(mvec_ptr) V, TYPE(mvec_ptr) BV
       // calculate new R factor
       int WVrank = 0;
       PHIST_CHK_IERR(SUBR(sdMat_from_device)(VtV,iflag),*iflag);
-      *iflag=PHIST_SDMAT_RUN_ON_HOST;
       PHIST_CHK_IERR(SUBR(sdMat_add_sdMat)(st::one(),VtV,st::zero(),R,iflag),*iflag);
 #ifdef ORTHOGRR_USE_SVQB
       PHIST_CHK_IERR(SUBR(orthogrr_svqb)(R,R_1,&WVrank,iflag),*iflag);
@@ -224,7 +217,6 @@ void SUBR(orthogrrB)(TYPE(const_mvec_ptr) W, TYPE(mvec_ptr) V, TYPE(mvec_ptr) BV
       PHIST_CHK_IERR(SUBR(sdMat_normF)(R_1,&WtV_err,iflag),*iflag);
       WtV_err *= mt::eps();
       PHIST_CHK_IERR(SUBR(sdMat_rank_identity)(VtV_I,rank,iflag),*iflag);
-      *iflag=PHIST_SDMAT_RUN_ON_HOST;
       PHIST_CHK_IERR(SUBR(sdMat_add_sdMat)(st::one(),VtV,-st::one(),VtV_I,iflag),*iflag);
       PHIST_CHK_IERR(SUBR(sdMat_normF)(VtV_I,&VtV_err,iflag),*iflag);
 
@@ -278,9 +270,7 @@ void SUBR(orthogrrB)(TYPE(const_mvec_ptr) W, TYPE(mvec_ptr) V, TYPE(mvec_ptr) BV
         // update R1 <- R * R1
         if( R1 != NULL )
         {
-          *iflag=PHIST_SDMAT_RUN_ON_HOST;
           PHIST_CHK_IERR(SUBR(sdMat_add_sdMat)(st::one(),R1,st::zero(),R1_tmp,iflag),*iflag);
-          *iflag=PHIST_SDMAT_RUN_ON_HOST;
           PHIST_CHK_IERR(SUBR(sdMat_times_sdMat)(st::one(),R,R1_tmp,st::zero(),R1,iflag),*iflag);
         }
         PHIST_CHK_IERR(SUBR(sdMat_from_device)(VtV,iflag),*iflag);
@@ -288,7 +278,6 @@ void SUBR(orthogrrB)(TYPE(const_mvec_ptr) W, TYPE(mvec_ptr) V, TYPE(mvec_ptr) BV
 
       // calculate new R factor
       int Vrank = 0;
-          *iflag=PHIST_SDMAT_RUN_ON_HOST;
       PHIST_CHK_IERR(SUBR(sdMat_add_sdMat)(st::one(),VtV,st::zero(),R,iflag),*iflag);
 #ifdef ORTHOGRR_USE_SVQB
       PHIST_CHK_IERR(SUBR(orthogrr_svqb)(R,R_1,&Vrank,iflag),*iflag);
@@ -299,7 +288,6 @@ void SUBR(orthogrrB)(TYPE(const_mvec_ptr) W, TYPE(mvec_ptr) V, TYPE(mvec_ptr) BV
 
       // calculate error
       PHIST_CHK_IERR(SUBR(sdMat_rank_identity)(VtV_I,rank,iflag),*iflag);
-      *iflag=PHIST_SDMAT_RUN_ON_HOST;
       PHIST_CHK_IERR(SUBR(sdMat_add_sdMat)(st::one(),VtV,-st::one(),VtV_I,iflag),*iflag);
       PHIST_CHK_IERR(SUBR(sdMat_normF)(VtV_I,&VtV_err,iflag),*iflag);
       PHIST_SOUT(PHIST_VERBOSE, "orthogRR: iter %d phase 3, desired eps %8.4e, VtV err. %8.4e\n", iter-1, desiredEps, VtV_err);

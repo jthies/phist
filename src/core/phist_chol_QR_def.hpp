@@ -73,7 +73,6 @@ SUBR(sdMat_print)(R,iflag);
 PHIST_SOUT(PHIST_INFO,"];\n");
 #endif
     // construct inv(R)
-    *iflag=PHIST_SDMAT_RUN_ON_HOST;
     PHIST_CHK_IERR(SUBR(sdMat_identity)(R_1,iflag),*iflag);
     if (robust) *iflag=PHIST_ROBUST_REDUCTIONS;
     PHIST_CHK_IERR(SUBR(sdMat_backwardSubst_sdMat)(R,perm,rank,R_1,iflag),*iflag);

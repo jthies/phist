@@ -62,7 +62,6 @@ extern "C" void SUBR(orthog)(TYPE(const_mvec_ptr) V,
     dim0=*iflag; // return value of orthog is rank of null space of [V W] on entry
     *rankVW=k-dim0;
   }
-
   int num_attempts=0;
   const int max_attempts=5;
   TYPE(sdMat_ptr) R1p=NULL,R1pp=NULL,R2p=NULL;
@@ -125,14 +124,11 @@ extern "C" void SUBR(orthog)(TYPE(const_mvec_ptr) V,
       PHIST_CHK_IERR(SUBR(sdMat_delete)(R2p_r,iflag),*iflag);
 
       //R2=R2+R2'*R1;
-      *iflag=PHIST_SDMAT_RUN_ON_HOST;
       PHIST_CHK_IERR(SUBR(sdMat_times_sdMat)(st::one(),R2p,R1,st::one(),R2,iflag),*iflag);
     }
     
     //R1=R1p*R1;
-      *iflag=PHIST_SDMAT_RUN_ON_HOST;
     PHIST_CHK_IERR(SUBR(sdMat_add_sdMat)(st::one(),R1,st::zero(),R1pp,iflag),*iflag);
-      *iflag=PHIST_SDMAT_RUN_ON_HOST;
     PHIST_CHK_IERR(SUBR(sdMat_times_sdMat)(st::one(),R1p,R1pp,st::zero(),R1,iflag),*iflag);
     
     // zero-out the last dim0 columns of R2
