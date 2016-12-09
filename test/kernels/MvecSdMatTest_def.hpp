@@ -140,7 +140,26 @@ public:
       ASSERT_EQ(0,iflag_);
       SUBR(mvec_put_value)(V2_,st::one(),&iflag_);
       ASSERT_EQ(0,iflag_);
+      if (isCuda_)
+      {
+        // destroy the host side of the vectors to make sure the result is actually obtained on the device
+        for (phist_lidx i=0; i<nloc_; i++)
+        {
+          for (int j=0; j<m_; j++)
+          {
+            V1_vp_[VIDX(i,j,ldaV1_)]=999.0*st::one()+333.0*st::cmplx_I();
+          }
+          for (int j=0; j<k_; j++)
+          {
+            V2_vp_[VIDX(i,j,ldaV2_)]=-111.0*st::one()+555.0*st::cmplx_I();
+          }
+        }
+      }
       SUBR(mvecT_times_mvec)(st::one(),V1_,V2_,st::zero(),M1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+
+      // check everyone has the same result and host+device are sync'd
+      MTest::sdMat_parallel_check(M1_,&iflag_);
       ASSERT_EQ(0,iflag_);
 
       // check the host memory first: on GPU processes both host nd
@@ -156,11 +175,6 @@ public:
       V2Test::PrintVector(PHIST_DEBUG,"ones",V2_vp_,nloc_,ldaV2_,stride_,mpi_comm_);
       MTest::PrintSdMat(PHIST_DEBUG,"ones'*ones",M1_vp_,ldaM1_,stride_,mpi_comm_);
 #endif
-      MTest::sdMat_parallel_check(M1_,&iflag_);
-      ASSERT_EQ(0,iflag_);
-      // checks the device memory in case of GPU process
-      ASSERT_REAL_EQ(mt::one(),SdMatEqual(M1_,(ST)nglob_));
-      ASSERT_EQ(0,iflag_);
 
       // fill rows with 1,2,3,4, ...
       for (int ii=0; ii< nloc_; ii++)
