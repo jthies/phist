@@ -125,6 +125,7 @@ static _MT_ MvecsEqual(TYPE(mvec_ptr) V1, TYPE(mvec_ptr) V2, _MT_ relTo = mt::ze
   return return_value;
 }
 
+// compare the *HOST SIDE* of an sdMat with a scalar constant
 static _MT_ SdMatEqual(TYPE(sdMat_ptr) M, _ST_ value)
 {
   int iflag;
@@ -132,8 +133,6 @@ static _MT_ SdMatEqual(TYPE(sdMat_ptr) M, _ST_ value)
   phist_lidx lda;
   int n,m;
   
-  SUBR(sdMat_from_device)(M,&iflag);
-  if (iflag!=PHIST_SUCCESS) return (_MT_)(-mt::one());
   SUBR(sdMat_extract_view)(M,&val,&lda,&iflag);
   if (iflag!=PHIST_SUCCESS) return (_MT_)(-2*mt::one());
   SUBR(sdMat_get_nrows)(M,&n,&iflag);
@@ -152,17 +151,13 @@ static _MT_ SdMatEqual(TYPE(sdMat_ptr) M, _ST_ value)
   return return_value;
 }
 
+// compare the *HOST SIDE* of two sdMats
 static _MT_ SdMatsEqual(TYPE(sdMat_ptr) M1, TYPE(sdMat_ptr) M2, _MT_ relTo = mt::zero())
 {
   int iflag;
   _ST_ *val, *val2;
   phist_lidx lda,lda2;
   int n,m,n2,m2;
-  
-  SUBR(sdMat_from_device)(M1,&iflag);
-  if (iflag!=PHIST_SUCCESS) return (_MT_)(-mt::one());
-  SUBR(sdMat_from_device)(M2,&iflag);
-  if (iflag!=PHIST_SUCCESS) return (_MT_)(-mt::one());
   
   SUBR(sdMat_extract_view)(M1,&val,&lda,&iflag);
   if (iflag!=PHIST_SUCCESS) return (_MT_)(-2*mt::one());

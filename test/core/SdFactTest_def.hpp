@@ -480,14 +480,7 @@ PrintSdMat(PHIST_DEBUG,"reconstructed X",mat2_vp_,m_lda_,1,mpi_comm_);
     ASSERT_EQ(0,iflag_);
     SUBR(sdMat_random)(Vt,&iflag_);
     ASSERT_EQ(0,iflag_);
-    
-    SUBR(sdMat_from_device)(Sigma,&iflag_);
-    ASSERT_EQ(0,iflag_);
-    SUBR(sdMat_from_device)(U,&iflag_);
-    ASSERT_EQ(0,iflag_);
-    SUBR(sdMat_from_device)(Vt,&iflag_);
-    ASSERT_EQ(0,iflag_);
-        
+            
     //save A
     SUBR(sdMat_add_sdMat)(st::one(),A,st::zero(),A_bak,&iflag_);
     ASSERT_EQ(0,iflag_);
@@ -496,18 +489,10 @@ PrintSdMat(PHIST_DEBUG,"reconstructed X",mat2_vp_,m_lda_,1,mpi_comm_);
     SUBR(sdMat_svd)(A,U,Sigma,Vt,&iflag_);
     ASSERT_EQ(0,iflag_);
 
-    SUBR(sdMat_to_device)(Sigma,&iflag_);
-    ASSERT_EQ(0,iflag_);
-    SUBR(sdMat_to_device)(U,&iflag_);
-    ASSERT_EQ(0,iflag_);
-    SUBR(sdMat_to_device)(Vt,&iflag_);
-    ASSERT_EQ(0,iflag_);
-    SUBR(sdMat_to_device)(A,&iflag_);
-    ASSERT_EQ(0,iflag_);
-
     // see if we can reconstruct A:
     triple_product(U,false,Sigma,false,Vt,false,A,&iflag_);
     ASSERT_EQ(0,iflag_);
+
     ASSERT_NEAR(mt::one(),SdMatsEqual(A,A_bak),nrows_*ncols_*tol);
     _ST_* Sigma_vp=NULL;
     phist_lidx ldSigma;
@@ -568,10 +553,6 @@ PrintSdMat(PHIST_DEBUG,"reconstructed X",mat2_vp_,m_lda_,1,mpi_comm_);
       // aliases for clarity: AplusT is A^{+,T}, the transpose of the Moore-Penrose Pseudo-Inverse
       TYPE(sdMat_ptr) A = mat2_, AplusT=mat1_, A_chk=mat3_;
 
-      // these kernels only work on the host, so we need to manually perform up/downloads
-      SUBR(sdMat_from_device)(AplusT,&iflag_);
-      ASSERT_EQ(0,iflag_);
-      
       int rank;
       SUBR(sdMat_pseudo_inverse)(AplusT,&rank,&iflag_);
       ASSERT_EQ(0,iflag_);
@@ -588,6 +569,7 @@ PrintSdMat(PHIST_DEBUG,"reconstructed X",mat2_vp_,m_lda_,1,mpi_comm_);
       // 2. A+ A A+ = A+ => A+^T A^T A+^T = A+^T
       MTest::triple_product(AplusT,false,A,true,AplusT,false,A_chk,&iflag_);
       ASSERT_EQ(0,iflag_);
+      
       EXPECT_NEAR(mt::one(),SdMatsEqual(AplusT,A_chk),ncols_*ncols_*tol);
 
       // 3. (AA+)^* = AA+
@@ -605,7 +587,7 @@ PrintSdMat(PHIST_DEBUG,"reconstructed X",mat2_vp_,m_lda_,1,mpi_comm_);
       SUBR(sdMat_create)(&mat_tmp, ncols_,ncols_,comm_,&iflag_);
       SUBR(sdMatT_times_sdMat)(st::one(),AplusT,A,st::zero(),mat_tmp,&iflag_);
       EXPECT_EQ(0,iflag_);
-      
+
       EXPECT_NEAR(mt::one(),mt::one()+MTest::symmetry_check(mat_tmp,&iflag_),100*mt::eps());
       SUBR(sdMat_delete)(mat_tmp,&iflag_);
       ASSERT_EQ(0,iflag_);

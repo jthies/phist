@@ -380,7 +380,8 @@ static void PrintSdMat(int outlev, std::string label,
     return max_err;
   }
 
-  // compute ABC = A*B*C, optionally using the transpose of either A,B and/or C
+  // compute ABC = A*B*C, optionally using the transpose of either A,B and/or C.
+  // This is always done on the host only.
   static void triple_product(TYPE(const_sdMat_ptr) A, bool transA, 
                              TYPE(const_sdMat_ptr) B, bool transB,
                              TYPE(const_sdMat_ptr) C, bool transC,

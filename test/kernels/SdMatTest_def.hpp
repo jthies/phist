@@ -212,6 +212,8 @@ public:
       ASSERT_EQ(0,iflag_);
       SUBR(sdMat_sync_values)(mat1v,comm_,&iflag_);
       ASSERT_EQ(0,iflag_);
+      SUBR(sdMat_from_device)(mat1v,&iflag_);
+      ASSERT_EQ(0,iflag_);
       SUBR(sdMat_delete)(mat1v,&iflag_);
       ASSERT_EQ(0,iflag_);
       // make sure everyone has the values set by rank 0
@@ -245,16 +247,12 @@ public:
       PHIST_OUT(9,"axpy, alpha=%f+%f i, beta=%f+%f i\n",st::real(alpha),
           st::imag(alpha),st::real(beta),st::imag(beta));
 #if PHIST_OUTLEV>=PHIST_DEBUG
-      SUBR(sdMat_from_device)(mat2_,&iflag_);
       MTest::PrintSdMat(PHIST_DEBUG,"before scale",mat2_vp_,m_lda_,stride,mpi_comm_);
 #endif
       SUBR(sdMat_add_sdMat)(alpha,mat1_,beta,mat2_,&iflag_);
 #if PHIST_OUTLEV>=PHIST_DEBUG
-      SUBR(sdMat_from_device)(mat2_,&iflag_);
       MTest::PrintSdMat(PHIST_DEBUG,"after scale",mat2_vp_,m_lda_,stride,mpi_comm_);
 #endif
-      ASSERT_EQ(0,iflag_);
-
       ASSERT_NEAR(mt::one(),SdMatEqual(mat2_,beta*((ST)42.0)),mt::sqrt(mt::eps()));
     }
   }
@@ -278,8 +276,6 @@ public:
           mat1_vp_[MIDX(i,j,m_lda_)] = alpha*mat1_vp_[MIDX(i,j,m_lda_)]+(ST)42.0*beta;
         }
       }
-      SUBR(sdMat_to_device)(mat1_,&iflag_);
-      ASSERT_EQ(0,iflag_);
       ASSERT_NEAR(mt::one(),SdMatsEqual(mat1_,mat2_),mt::sqrt(mt::eps()));
     }
   }
@@ -303,8 +299,6 @@ public:
           mat3_vp_[MIDX(i,j,m_lda_)] = alpha*st::conj(mat1_vp_[MIDX(j,i,m_lda_)])+(ST)42.0*beta;
         }
       }
-      SUBR(sdMat_to_device)(mat3_,&iflag_);
-      ASSERT_EQ(0,iflag_);
       ASSERT_NEAR(mt::one(),SdMatsEqual(mat3_,mat2_),mt::sqrt(mt::eps()));
     }
   }
@@ -325,9 +319,6 @@ public:
       SUBR(sdMat_view_block)(mat1_,&m1_view,imin,imax,jmin,jmax,&iflag_);
       ASSERT_EQ(0,iflag_);
 
-      SUBR(sdMat_from_device)(mat1_,&iflag_);
-      ASSERT_EQ(0,iflag_);
-      
       _ST_* val_ptr;
       phist_lidx lda;
       SUBR(sdMat_extract_view)(m1_view,&val_ptr,&lda,&iflag_);
@@ -340,8 +331,6 @@ public:
         ASSERT_EQ(lda,m_lda_);
       }
 
-      SUBR(sdMat_from_device)(mat1_,&iflag_);
-      ASSERT_EQ(0,iflag_);
       ASSERT_REAL_EQ(mt::one(),ArraysEqual(mat1_vp_+MIDX(imin,jmin,m_lda_),val_ptr,imax-imin+1,jmax-jmin+1,m_lda_,stride));
 
 #if PHIST_OUTLEV>=PHIST_DEBUG
@@ -366,8 +355,6 @@ public:
       SUBR(sdMat_put_value)(m1_view,val,&iflag_);
       ASSERT_EQ(0,iflag_);
 
-      SUBR(sdMat_from_device)(mat1_,&iflag_);
-      ASSERT_EQ(0,iflag_);
       ASSERT_REAL_EQ(mt::one(),ArraysEqual(mat1_vp_+MIDX(imin,jmin,m_lda_),val_ptr,imax-imin+1,jmax-jmin+1,m_lda_,stride));
       
 #if PHIST_OUTLEV>=PHIST_DEBUG
@@ -392,9 +379,6 @@ public:
       SUBR(sdMat_put_value)(mat1_,outer_val,&iflag_);
       ASSERT_EQ(0,iflag_);
       
-      SUBR(sdMat_from_device)(mat1_,&iflag_);
-      ASSERT_EQ(0,iflag_);
-
       // now create a view
       int imin=std::min(3,nrows_-1);
       int imax=std::min(7,nrows_-1);
@@ -407,9 +391,6 @@ public:
       // set the data in the view to some other value
       _ST_ view_val = st::prand();
       SUBR(sdMat_put_value)(view,view_val,&iflag_);
-      ASSERT_EQ(0,iflag_);
-
-      SUBR(sdMat_from_device)(mat1_,&iflag_);
       ASSERT_EQ(0,iflag_);
 
       // view part of view
@@ -428,8 +409,6 @@ public:
       _ST_ inner_val = st::prand();
       SUBR(sdMat_put_value)(view2, inner_val, &iflag_);
       ASSERT_EQ(0,iflag_);
-
-      SUBR(sdMat_from_device)(mat1_,&iflag_);
 
       // now use the raw data to verify results
       for(int i = 0; i < nrows_; i++)
@@ -464,8 +443,6 @@ public:
   {
     if(typeImplemented_)
     {
-      SUBR(sdMat_from_device)(mat1_,&iflag_);
-      ASSERT_EQ(0,iflag_);
       // check that the imaginary part is not zero everywhere!
       MT maxAbsIm = mt::zero();
       for(int i = 0; i < nrows_; i++)
@@ -513,11 +490,6 @@ public:
       SUBR(sdMat_extract_view)(m1_copy,&val_ptr,&lda,&iflag_);
       ASSERT_EQ(0,iflag_);
       
-      SUBR(sdMat_from_device)(mat1_,&iflag_);
-      ASSERT_EQ(0,iflag_);
-      SUBR(sdMat_from_device)(m1_copy,&iflag_);
-      ASSERT_EQ(0,iflag_);
-      
       //note: can't use ArraysEqual here because we (may) have different strides      
       _MT_ maxval=mt::zero();
       for (int i=imin;i<=imax;i++)
@@ -558,8 +530,6 @@ public:
 #endif      
       
       // check that the corresponding entries have changed
-      SUBR(sdMat_from_device)(mat1_,&iflag_);
-      ASSERT_EQ(0,iflag_);
       ASSERT_REAL_EQ(mt::one(),ArrayEqual(&mat1_vp_[MIDX(imin,jmin,m_lda_)],imax-imin+1,jmax-jmin+1,m_lda_,stride,val,mflag_));
 
       SUBR(sdMat_delete)(m1_copy,&iflag_);
@@ -578,10 +548,6 @@ public:
       SUBR(sdMat_print)(mat2_,&iflag_);
       ASSERT_EQ(0,iflag_);
 #endif
-
-      SUBR(sdMat_from_device)(mat1_,&iflag_);
-      SUBR(sdMat_from_device)(mat2_,&iflag_);
-      SUBR(sdMat_from_device)(mat3_,&iflag_);
 
       // subtract matrix product by hand
       for(int i = 0; i < nrows_; i++)
@@ -619,10 +585,6 @@ public:
       ASSERT_EQ(0,iflag_);
 */
 #endif
-
-      SUBR(sdMat_from_device)(mat1_,&iflag_);
-      SUBR(sdMat_from_device)(mat2_,&iflag_);
-      SUBR(sdMat_from_device)(mat3_,&iflag_);
 
       // subtract matrix product by hand
       for(int i = 0; i < nrows_; i++)
@@ -664,10 +626,6 @@ public:
       ASSERT_EQ(0,iflag_);
 */
 #endif
-
-      SUBR(sdMat_from_device)(mat1_,&iflag_);
-      SUBR(sdMat_from_device)(mat2_,&iflag_);
-      SUBR(sdMat_from_device)(mat3_,&iflag_);
 
       // subtract matrix product by hand
       for(int i = 0; i < nrows_; i++)
@@ -725,13 +683,6 @@ public:
       SUBR(sdMat_times_sdMat)(st::one(),matA,matB,st::one(),matC,&iflag_);
       ASSERT_EQ(0,iflag_);
 
-      SUBR(sdMat_from_device)(matA,&iflag_);
-      ASSERT_EQ(0,iflag_);
-      SUBR(sdMat_from_device)(matB,&iflag_);
-      ASSERT_EQ(0,iflag_);
-      SUBR(sdMat_from_device)(matC,&iflag_);
-      ASSERT_EQ(0,iflag_);
-
       // subtract matrix product by hand
       for(int i = 0; i < nrows_; i++)
         for(int j = 0; j < ncols2; j++)
@@ -741,8 +692,6 @@ public:
             matC_vp[MIDX(i,j,ldC)] -= matA_vp[MIDX(i,k,ldA)]*matB_vp[MIDX(k,j,ldB)];
           }
         }
-      SUBR(sdMat_to_device)(matC,&iflag_);
-      ASSERT_EQ(0,iflag_);
       // check result
       ASSERT_NEAR(mt::one(),SdMatEqual(matC,valC),mt::sqrt(mt::eps()));
 
@@ -761,13 +710,6 @@ public:
       SUBR(sdMatT_times_sdMat)(st::one(),matA,matC,st::one(),matB,&iflag_);
       ASSERT_EQ(0,iflag_);
 
-      SUBR(sdMat_from_device)(matA,&iflag_);
-      ASSERT_EQ(0,iflag_);
-      SUBR(sdMat_from_device)(matB,&iflag_);
-      ASSERT_EQ(0,iflag_);
-      SUBR(sdMat_from_device)(matC,&iflag_);
-      ASSERT_EQ(0,iflag_);
-
       // subtract matrix product by hand
       for(int i = 0; i < ncols_; i++)
         for(int j = 0; j < ncols2; j++)
@@ -777,8 +719,6 @@ public:
             matB_vp[MIDX(i,j,ldB)] -= st::conj(matA_vp[MIDX(k,i,ldA)])*matC_vp[MIDX(k,j,ldC)];
           }
         }
-      SUBR(sdMat_to_device)(matB,&iflag_);
-      ASSERT_EQ(0,iflag_);
       // check result
       ASSERT_NEAR(mt::one(),SdMatEqual(matB,valB),mt::sqrt(mt::eps()));
 
@@ -797,13 +737,6 @@ public:
       SUBR(sdMat_times_sdMatT)(st::one(),matC,matB,st::one(),matA,&iflag_);
       ASSERT_EQ(0,iflag_);
 
-      SUBR(sdMat_from_device)(matA,&iflag_);
-      ASSERT_EQ(0,iflag_);
-      SUBR(sdMat_from_device)(matB,&iflag_);
-      ASSERT_EQ(0,iflag_);
-      SUBR(sdMat_from_device)(matC,&iflag_);
-      ASSERT_EQ(0,iflag_);
-
       // subtract matrix product by hand
       for(int i = 0; i < nrows_; i++)
         for(int j = 0; j < ncols_; j++)
@@ -813,8 +746,6 @@ public:
             matA_vp[MIDX(i,j,ldA)] -= matC_vp[MIDX(i,k,ldC)]*st::conj(matB_vp[MIDX(j,k,ldB)]);
           }
         }
-      SUBR(sdMat_to_device)(matA,&iflag_);
-      ASSERT_EQ(0,iflag_);
       // check result
       ASSERT_NEAR(mt::one(),SdMatEqual(matA,valA),mt::sqrt(mt::eps()));
 
@@ -833,8 +764,6 @@ public:
     if( typeImplemented_ && nrows_ == ncols_ )
     {
       SUBR(sdMat_identity)(mat1_,&iflag_);
-      ASSERT_EQ(0,iflag_);
-      SUBR(sdMat_from_device)(mat1_,&iflag_);
       ASSERT_EQ(0,iflag_);
       for(int i = 0; i < nrows_; i++)
       {
@@ -971,9 +900,6 @@ public:
       SUBR(sdMat_add_sdMat)(alpha, vu, beta, vd, &iflag_);
       ASSERT_EQ(0,iflag_);
      
-      // download and check 
-      SUBR(sdMat_from_device)(mat1_,&iflag_);
-      SUBR(sdMat_from_device)(mat2_,&iflag_);
       ASSERT_NEAR   (mt::one(),ArraysEqual(mat1_vp_,mat2_vp_,nrows_,ncols_,m_lda_,stride),mt::sqrt(mt::eps()));
 
       // sdMat_add_sdMat left/right
@@ -982,9 +908,6 @@ public:
       SUBR(sdMat_add_sdMat)(alpha, vr, beta, vl, &iflag_);
       ASSERT_EQ(0,iflag_);
       
-      // download and check 
-      SUBR(sdMat_from_device)(mat1_,&iflag_);
-      SUBR(sdMat_from_device)(mat2_,&iflag_);
       ASSERT_NEAR   (mt::one(),ArraysEqual(mat1_vp_,mat2_vp_,nrows_,ncols_,m_lda_,stride),mt::sqrt(mt::eps()));
 
       // sdMat_times_sdMat 21,22->11
@@ -993,9 +916,6 @@ public:
       SUBR(sdMat_times_sdMat)(alpha, v21, v22, beta, v11, &iflag_);
       ASSERT_EQ(0,iflag_);
       
-      // download and check 
-      SUBR(sdMat_from_device)(mat1_,&iflag_);
-      SUBR(sdMat_from_device)(mat2_,&iflag_);
       ASSERT_NEAR   (mt::one(),ArraysEqual(mat1_vp_,mat2_vp_,nrows_,ncols_,m_lda_,stride),mt::sqrt(mt::eps()));
 
       // sdMat_times_sdMat 22,21->12
@@ -1004,9 +924,6 @@ public:
       SUBR(sdMat_times_sdMat)(alpha, v22, v21, beta, v12, &iflag_);
       ASSERT_EQ(0,iflag_);
       
-      // download and check 
-      SUBR(sdMat_from_device)(mat1_,&iflag_);
-      SUBR(sdMat_from_device)(mat2_,&iflag_);
       ASSERT_NEAR   (mt::one(),ArraysEqual(mat1_vp_,mat2_vp_,nrows_,ncols_,m_lda_,stride),mt::sqrt(mt::eps()));
 
 
@@ -1016,9 +933,6 @@ public:
       SUBR(sdMatT_times_sdMat)(alpha, v22, v22, beta, v11, &iflag_);
       ASSERT_EQ(0,iflag_);
       
-      // download and check 
-      SUBR(sdMat_from_device)(mat1_,&iflag_);
-      SUBR(sdMat_from_device)(mat2_,&iflag_);
       ASSERT_NEAR   (mt::one(),ArraysEqual(mat1_vp_,mat2_vp_,nrows_,ncols_,m_lda_,stride),mt::sqrt(mt::eps()));
 
       // sdMatT_times_sdMat 21,21->12
@@ -1027,9 +941,6 @@ public:
       SUBR(sdMatT_times_sdMat)(alpha, v21, v21, beta, v12, &iflag_);
       ASSERT_EQ(0,iflag_);
       
-      // download and check 
-      SUBR(sdMat_from_device)(mat1_,&iflag_);
-      SUBR(sdMat_from_device)(mat2_,&iflag_);
       ASSERT_NEAR   (mt::one(),ArraysEqual(mat1_vp_,mat2_vp_,nrows_,ncols_,m_lda_,stride),mt::sqrt(mt::eps()));
 
       // delete ref views
