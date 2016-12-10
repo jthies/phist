@@ -456,9 +456,9 @@ public:
   // copy certain rows and columns of a serial dense matrix,
   // manipulate them and check the original matrix has not changed.
   TEST_F(CLASSNAME, get_set_block)
-    {
+  {
     if (typeImplemented_)
-      {
+    {
       int stride=1;
       int imin=std::min(2,nrows_-1);
       int imax=std::min(4,nrows_-1);
@@ -526,7 +526,9 @@ public:
 #if PHIST_OUTLEV>=PHIST_DEBUG
       PHIST_SOUT(PHIST_DEBUG,"Changed block and copied it back in:\n");
       SUBR(sdMat_print)(mat1_,&iflag_);
+      EXPECT_EQ(0,iflag_);
       SUBR(sdMat_print)(m1_copy,&iflag_);
+      EXPECT_EQ(0,iflag_);
 #endif      
       
       // check that the corresponding entries have changed
@@ -534,8 +536,8 @@ public:
 
       SUBR(sdMat_delete)(m1_copy,&iflag_);
       ASSERT_EQ(0,iflag_);
-      }
     }
+  }
 
   TEST_F(CLASSNAME, sdMat_times_sdMat)
   {
