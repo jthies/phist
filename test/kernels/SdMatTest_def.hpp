@@ -83,10 +83,10 @@ public:
       _ST_ val=st::prand();
       SUBR(sdMat_put_value)(mat1_,val,&iflag_);
       ASSERT_EQ(0,iflag_);
-      ASSERT_REAL_EQ(mt::one(),ArrayEqual(mat1_vp_,nrows_,ncols_,m_lda_,stride,val,mflag_));
+      EXPECT_REAL_EQ(mt::one(),ArrayEqual(mat1_vp_,nrows_,ncols_,m_lda_,stride,val,mflag_));
       SUBR(sdMat_from_device)(mat1_,&iflag_);
       ASSERT_EQ(0,iflag_);
-      ASSERT_REAL_EQ(mt::one(),ArrayEqual(mat1_vp_,nrows_,ncols_,m_lda_,stride,val,mflag_));
+      EXPECT_REAL_EQ(mt::one(),ArrayEqual(mat1_vp_,nrows_,ncols_,m_lda_,stride,val,mflag_));
     }
   }
 

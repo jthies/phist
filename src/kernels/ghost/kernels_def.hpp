@@ -25,22 +25,24 @@ PHIST_CHK_IERR(phist_maps_compatible(map1,map2,_iflag),*_iflag); \
 #ifndef PHIST_SDMAT_OP_BEGIN
 #define PHIST_SDMAT_OP_BEGIN(_void_ptr,_densemat_ptr,_orig_location) \
 ghost_densemat* _densemat_ptr = (ghost_densemat*)(_void_ptr); \
-ghost_location _orig_location = _densemat_ptr->traits.compute_at; \
+ghost_location _orig_location[2];\
+_orig_location[0]=_densemat_ptr->traits.location;\
+_orig_location[1]=_densemat_ptr->traits.compute_at;\
 bool SDMAT_is_dev   = (_densemat_ptr->traits.location&GHOST_LOCATION_DEVICE); \
-bool SDMAT_sync_dev = (iflag_in&PHIST_SDMAT_RUN_ON_HOST_AND_DEVICE!=PHIST_SDMAT_RUN_ON_HOST) && SDMAT_is_dev; \
-if (SDMAT_is_dev && (iflag_in&PHIST_SDMAT_RUN_ON_HOST_AND_DEVICE==PHIST_SDMAT_RUN_ON_DEVICE)) \
-_densemat_ptr->traits.location=GHOST_LOCATION_DEVICE;
+if ((iflag_in&PHIST_SDMAT_RUN_ON_HOST_AND_DEVICE)==0) {iflag_in|=PHIST_SDMAT_RUN_ON_HOST_AND_DEVICE; }\
+bool SDMAT_sync_dev = SDMAT_is_dev && ((iflag_in&PHIST_SDMAT_RUN_ON_HOST_AND_DEVICE)==PHIST_SDMAT_RUN_ON_HOST_AND_DEVICE); \
+if (SDMAT_is_dev && !SDMAT_sync_dev) \
+_densemat_ptr->traits.compute_at=GHOST_LOCATION_DEVICE;
 #endif
 // reset original compute location and upload host memory after kernel execution (the latter only if
 // RUN_ON_DEVICE was given or no flag at all, the default)
 #ifndef PHIST_SDMAT_OP_END
 #define PHIST_SDMAT_OP_END(_densemat_ptr,_orig_location) \
-(_densemat_ptr)->traits.compute_at=_orig_location; \
-if (SDMAT_sync_dev) \
-{ \
-  int iflag2; \
-  SUBR(sdMat_to_device)((TYPE(sdMat_ptr))_densemat_ptr,&iflag2); \
-  if (iflag2) PHIST_CHK_IERR(*iflag=iflag2,*iflag); \
+(_densemat_ptr)->traits.location=_orig_location[0]; \
+(_densemat_ptr)->traits.compute_at=_orig_location[1]; \
+if (SDMAT_sync_dev) { \
+  ghost_error flag2=ghost_densemat_upload(_densemat_ptr); \
+  PHIST_CHK_GERR(flag2,*iflag); \
 }
 #endif
 #if defined(PHIST_HAVE_TEUCHOS)&&defined(PHIST_HAVE_KOKKOS)
@@ -1030,9 +1032,11 @@ extern "C" void SUBR(sdMat_put_value)(TYPE(sdMat_ptr) vM, _ST_ value, int* iflag
   PHIST_PERFCHECK_VERIFY_SMALL;
 PHIST_TASK_DECLARE(ComputeTask)
 PHIST_TASK_BEGIN_SMALLDETERMINISTIC(ComputeTask)
+
   PHIST_SDMAT_OP_BEGIN(vM,M,locM);
   ghost_densemat_init_val(M,(void*)&value);
   PHIST_SDMAT_OP_END(M,locM);
+  
 PHIST_TASK_END(iflag);
 }
 
