@@ -1705,7 +1705,10 @@ extern "C" void SUBR(mvecT_times_mvec)(_ST_ alpha, TYPE(const_mvec_ptr) vV, TYPE
   */
 PHIST_TASK_DECLARE(ComputeTask)
 PHIST_TASK_BEGIN(ComputeTask)
+  int iflag_in=PHIST_SDMAT_RUN_ON_DEVICE;
+  PHIST_SDMAT_OP_BEGIN(vC,CC,locC);
   ghost_error gemm_err = ghost_gemm(C,V,trans,W,(char*)"N",(void*)&alpha,(void*)&mybeta,GHOST_GEMM_NO_REDUCE,GHOST_GEMM_DEFAULT);
+  ghost_error other_err = GHOST_SUCCESS;
   if( gemm_err == GHOST_ERR_NOT_IMPLEMENTED )
   {
     // copy result
@@ -1716,15 +1719,19 @@ PHIST_TASK_BEGIN(ComputeTask)
     ghost_densemat_create(&Ccopy,C->map,vtraits);
 
     // this allocates the memory for the vector, copies and memTransposes the data
-    PHIST_CHK_GERR(ghost_densemat_init_densemat(Ccopy,C,0,0),*iflag);
+    other_err=ghost_densemat_init_densemat(Ccopy,C,0,0);
+    if (other_err==GHOST_SUCCESS)
+    {
+      gemm_err = ghost_gemm(Ccopy,V,trans,W,(char*)"N",(void*)&alpha,(void*)&mybeta,GHOST_GEMM_NO_REDUCE,GHOST_GEMM_DEFAULT);
 
-    PHIST_CHK_GERR(gemm_err = ghost_gemm(Ccopy,V,trans,W,(char*)"N",(void*)&alpha,(void*)&mybeta,GHOST_GEMM_NO_REDUCE,GHOST_GEMM_DEFAULT),*iflag);
-
-    // memtranspose data
-    PHIST_CHK_GERR(ghost_densemat_init_densemat(C,Ccopy,0,0),*iflag);
-    ghost_densemat_destroy(Ccopy);
+      // memtranspose data
+      other_err=ghost_densemat_init_densemat(C,Ccopy,0,0);
+      ghost_densemat_destroy(Ccopy);
+    }
   }
+  PHIST_SDMAT_OP_END(CC,locC);
   PHIST_CHK_GERR(gemm_err,*iflag);
+  PHIST_CHK_GERR(other_err,*iflag);
 PHIST_TASK_END(iflag);
 
 PHIST_TASK_POST_STEP(iflag);
