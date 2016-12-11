@@ -528,7 +528,7 @@ PrintSdMat(PHIST_DEBUG,"reconstructed X",mat2_vp_,m_lda_,1,mpi_comm_);
     ASSERT_EQ(0,iflag_);
     SUBR(sdMat_times_sdMatT)(-st::one(),Vt,Vt,st::one(),VtV,&iflag_);
     ASSERT_EQ(0,iflag_);
-    ASSERT_NEAR(mt::one(),SdMatEqual(VtV,mt::zero()),10*mt::eps());
+    ASSERT_NEAR(mt::one(),SdMatEqual(VtV,mt::zero()),100*mt::eps());
   }
 
   TEST_F(CLASSNAME, pseudo_inverse)
