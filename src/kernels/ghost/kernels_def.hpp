@@ -946,7 +946,7 @@ PHIST_TASK_BEGIN_SMALLDETERMINISTIC(ComputeTask)
   PHIST_CHK_GERR(ghost_densemat_init_densemat(Mb_view,Mblock,0,0),*iflag);
   if (Mb_view->traits.location&GHOST_LOCATION_DEVICE)
   {
-    ghost_densemat_download(Mblock);
+    ghost_densemat_download(Mb_view);
   }
   ghost_densemat_destroy(Mb_view);
 PHIST_TASK_END(iflag);
