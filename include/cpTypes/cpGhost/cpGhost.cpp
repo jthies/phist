@@ -23,7 +23,7 @@ int CpGhostDenseMat::update(){
 }
 
 int CpGhostDenseMat::write( const std::string * filename){
-  asynData->toFile(asynData, (char *) (*filename).c_str(), MPI_COMM_SELF);
+  asynData->toFile(asynData, (char *) (*filename).c_str(), MPI_COMM_SELF);  // TODO: if PFS or SCR. use different MPI_Comm
   return EXIT_SUCCESS;
 }
 

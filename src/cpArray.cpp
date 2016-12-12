@@ -98,7 +98,9 @@ int CpArray<T>::readParallel(const std::string * filename){
 	MPI_Status status;
 	int myrank=-1; 
 	MPI_Comm_rank(cpMpiComm, &myrank);
-	MPI_File_open( cpMpiComm, (*filename).c_str(), MPI_MODE_RDONLY, MPI_INFO_NULL, &fh);
+  char * fname = new char[256];
+  sprintf(fname, "%s",  (*filename).c_str());
+	MPI_File_open( cpMpiComm, fname, MPI_MODE_RDONLY, MPI_INFO_NULL, &fh);
 	MPI_Offset os;
 	os = myrank * sizeof (T) * nRows;
 	MPI_File_seek( fh , os, MPI_SEEK_SET);
@@ -129,7 +131,9 @@ int CpArray<T>::writeParallel(const std::string * filename){
 	MPI_Status status;
 	int myrank=-1; 
 	MPI_Comm_rank(cpMpiComm, &myrank);
-	MPI_File_open( cpMpiComm, (*filename).c_str(), MPI_MODE_CREATE | MPI_MODE_WRONLY, MPI_INFO_NULL, &fh);
+  char * fname = new char[256];
+  sprintf(fname, "%s",  (*filename).c_str());
+	MPI_File_open( cpMpiComm, fname, MPI_MODE_CREATE | MPI_MODE_WRONLY, MPI_INFO_NULL, &fh);
 	MPI_Offset os;
 	os = myrank * sizeof (T) * nRows;
 	MPI_File_seek( fh , os, MPI_SEEK_SET);
@@ -219,7 +223,9 @@ int CpMultiArray<T>::readParallel(const std::string * filename)
 	int myrank=-1; 
 
 	MPI_Comm_rank(cpMpiComm, &myrank);
-	MPI_File_open( cpMpiComm, (*filename).c_str(), MPI_MODE_RDONLY, MPI_INFO_NULL, &fh);
+  char * fname = new char[256];
+  sprintf(fname, "%s",  (*filename).c_str());
+	MPI_File_open( cpMpiComm, fname, MPI_MODE_RDONLY, MPI_INFO_NULL, &fh);
 	MPI_Offset os;
 	{
 		if(toCpCol == ALL){
@@ -320,7 +326,9 @@ int CpMultiArray<T>::writeParallel(const std::string * filename){
 	int myrank=-1; 
 
 	MPI_Comm_rank(cpMpiComm, &myrank);
-	MPI_File_open( cpMpiComm, (*filename).c_str(), MPI_MODE_CREATE | MPI_MODE_WRONLY, MPI_INFO_NULL, &fh);
+  char * fname = new char[256];
+  sprintf(fname, "%s",  (*filename).c_str());
+	MPI_File_open( cpMpiComm, fname, MPI_MODE_CREATE | MPI_MODE_WRONLY, MPI_INFO_NULL, &fh);
 	MPI_Offset os;
 	{
 		if(toCpCol == ALL){

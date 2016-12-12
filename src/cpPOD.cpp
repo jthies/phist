@@ -65,6 +65,7 @@ int CpPOD<T>::update()
   return EXIT_SUCCESS;
 }
 
+
 template <class T>
 int CpPOD<T>::readParallel(const std::string * filename){
 	craftDbg(2, "CpPOD::readParallel()");
@@ -72,7 +73,9 @@ int CpPOD<T>::readParallel(const std::string * filename){
 	MPI_Status status;
 	int myrank;
 	MPI_Comm_rank(cpMpiComm, &myrank);
-	MPI_File_open(cpMpiComm, (*filename).c_str(), MPI_MODE_RDONLY, MPI_INFO_NULL, &fh);
+  char * fname = new char[256];
+  sprintf(fname, "%s",  (*filename).c_str());
+	MPI_File_open(cpMpiComm, fname, MPI_MODE_RDONLY, MPI_INFO_NULL, &fh);
 	MPI_Offset os;
 	os = myrank * sizeof(T)*1;			// every POD is converted to char
 	MPI_File_seek(fh, os, MPI_SEEK_SET);
@@ -104,7 +107,9 @@ int CpPOD<T>::writeParallel(const std::string * filename){
 	MPI_Status status;
 	int myrank;
 	MPI_Comm_rank(cpMpiComm, &myrank);
-	MPI_File_open(cpMpiComm, (*filename).c_str(), MPI_MODE_CREATE | MPI_MODE_WRONLY, MPI_INFO_NULL, &fh);
+  char * fname = new char[256];
+  sprintf(fname, "%s",  (*filename).c_str());
+	MPI_File_open(cpMpiComm, fname, MPI_MODE_CREATE | MPI_MODE_WRONLY, MPI_INFO_NULL, &fh);
 	MPI_Offset os;
 	os = myrank * sizeof(T)*1;			// every POD is converted to char
 	MPI_File_seek(fh, os, MPI_SEEK_SET);
@@ -118,6 +123,7 @@ template <class T>
 int CpPOD<T>::writeSerial(const std::string * filename){
 	craftDbg(2, "CpPOD::writeSerial()");
 	std::ofstream fstr;
+   
 	fstr.open ((*filename).c_str(), std::ios::out | std::ios::binary );	
 	if(fstr.is_open()){
 		fstr.write( (char *)asynData, sizeof (T) );
