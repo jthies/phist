@@ -28,6 +28,7 @@ set (SOURCE
 		src/cpArray.cpp
 		src/cpPOD.cpp
 		src/cpHelperFuncs.cpp
+		src/craftConf.cpp
 		)
 
 set (HEADERS
@@ -39,6 +40,7 @@ set (HEADERS
 		include/cpEnum.h
 		include/cpOptions.h
 		include/dataType.h
+		include/craftConf.h
 		)
 
 include_directories(${HEADERS} ${PROJECT_DIR} ${PROJECT_INC_DIR})
@@ -74,6 +76,10 @@ endif()
 
 
 if(SCR)
+  if(MPIIO)
+   message( FATAL_ERROR "MPI_IO can not be used with SCR.")
+  endif()
+
 	find_library(SCR_PATH NAMES scr)
 
 	if(SCR_PATH-NOTFOUND)
@@ -92,6 +98,9 @@ if(SCR)
 endif()
 
 if(MPIIO)
+  if(SCR)
+   message( FATAL_ERROR "SCR can not be used with MPIIO" )
+  endif()
 				message (STATUS " MPIIO is defined")
 				add_definitions(-DMPIIO)
 endif()
