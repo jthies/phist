@@ -33,7 +33,6 @@ void printusage(){
     printf(" -restart : In case of a restart\n");
 	}
 }
-bool kill = false;
 int read_params(int argc, char* argv[] , CpOptions * myCpOpt){
   prgname = argv[0];
 	printf("====== argv[0] ====== %s\n", argv[0]);
@@ -41,24 +40,10 @@ int read_params(int argc, char* argv[] , CpOptions * myCpOpt){
 	std::string cpPathTemp ;
 	//=========== Reading commnad line arguments with flags ===============//
 	for (int i = 1; i < argc; ++i) {
-		if ((!strcmp(argv[i], "-cppath"))) {
-			sprintf(tmp, "%s" ,argv[++i]);
-			myCpOpt->setCpPath(tmp);
-			cpPathTemp = myCpOpt->getCpPath();
-			std::cout << "cpPath: " << cpPathTemp << std::endl;
-		}
-		if ((!strcmp(argv[i], "-restart"))) {
-			bool restart = true;
-			myCpOpt->setRestartStatus( restart );
-			std::cout << "Restart " << restart << std::endl;
-		}
 		if ((!strcmp(argv[i], "-niter"))) {
 			sprintf(tmp, "%s" ,argv[++i]);
 			myCpOpt->setnIter( atoi(tmp) );
 			std::cout << "nIter " << myCpOpt->getnIter() << std::endl;
-		}
-		if ((!strcmp(argv[i], "-kill"))) {
-			kill = true;
 		}
 		if ((!strcmp(argv[i], "-cpfreq"))) {
 			sprintf(tmp, "%s" ,argv[++i]);
@@ -77,8 +62,6 @@ int main(int argc, char* argv[])
 	MPI_Init(&argc, &argv);
   int myrank, numprocs;
 //	===== AFT BEGIN =====
-	int success = false;
-	int failed = false;
   MPI_Comm FT_Comm;
 	MPI_Comm_dup(MPI_COMM_WORLD, &FT_Comm);
 #ifdef AFT
@@ -100,14 +83,13 @@ int main(int argc, char* argv[])
 	int naIter = myCpOpt->getnIter();
 	int aIter=0;
 	
-//	Checkpoint  cpL1;
-	Checkpoint  cpL1(myCpOpt->getCpPath(), FT_Comm);
+	Checkpoint  cpL1("cpL1", FT_Comm);
 	cpL1.add("a", &a);
 	cpL1.add("aIter", &aIter);
 	cpL1.commit(); 
 
-	if( myCpOpt->getRestartStatus() ) {
-		printf("RESTART L1 ------> failed == true \n");
+	if( cpL1.needRestart() ) {
+		printf("RESTART L1 ------> true \n");
 		if (cpL1.read()==0){
 			aIter++;
 		}
@@ -117,23 +99,20 @@ int main(int argc, char* argv[])
   for(; aIter < naIter; aIter++)
   {
 			int nbIter = 10, bIter = 0;
-			static Checkpoint  cpL2(myCpOpt->getCpPath(), FT_Comm);
+			static Checkpoint  cpL2("cpL2", FT_Comm);
 			cpL2.add("b", b);
 			cpL2.add("bIter", &bIter);
 			cpL2.commit(); 
 	
 			bIter = 0;
-			if( myCpOpt->getRestartStatus() ) {
-				bool restartFlag = false;
-				myCpOpt->setRestartStatus( restartFlag );			// after successful restart on the inner most level, the restart flag has to be set false, so that restart routine do not repeat in the next outer iterations.
-				printf("RESTART L2 ------> failed == true \n");
+			if( cpL2.needRestart() ) {
+				printf("RESTART L2 ------> true \n");
 				cpL2.read();
 				bIter++;
 				printf("bIter to RESTART = %d \n", bIter);
 			}
   		for(double x=0.0; bIter < nbIter ; bIter++,x++)
   		{
-				if (aIter == 3 && bIter == 0 && kill == true){ exit(-1);}
 				for(size_t i = 0; i < n ; ++i){
 					b[i] += 0.001;
 				}

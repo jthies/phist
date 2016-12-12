@@ -17,7 +17,7 @@ extern "C"{
 	#include <aft.h>
 	#include <aft_macros.h>
 #endif
-#include <cpGhost.hpp>
+#include <cpTypes/cpGhost/cpGhost.hpp>
 #include <cpPOD.hpp>
 
 #include "ghostTest.h"
@@ -61,8 +61,6 @@ static void *mainTask(void *varg)
 	MPI_Comm_size(MPI_COMM_WORLD, &numprocs);
 	printf("%d/%d\n", myrank, numprocs);
 
-	int success = false;
-	int failed = false;
   MPI_Comm FT_Comm;
 	MPI_Comm_dup(MPI_COMM_WORLD, &FT_Comm);
 #ifdef AFT
@@ -72,7 +70,7 @@ static void *mainTask(void *varg)
     ghost_context *context;
 	
     matdt_t alpha = 0., alphaold = 0., lambda=0., lambdaold = 0., zero = 0., neg = -1., one = 1., tmp = 0.;
-    int iteration = 0, nIter = 1000, cp_freq = 99999, restart = -1;
+    int iteration = 0, nIter = 1000, cp_freq = 99999;
 	char * cpPath = new char[256];
     double start = 0.;
     matdt_t localdot[3];
@@ -88,14 +86,13 @@ static void *mainTask(void *varg)
     essexamples_get_iterations(&nIter);
 		essexamples_get_cp_freq(&cp_freq);
 		essexamples_get_cp_folder(&cpPath);
-		essexamples_get_restart(&restart);
 
     ghost_densemat_traits vtraits = GHOST_DENSEMAT_TRAITS_INITIALIZER;
     vtraits.datatype = vecdt;
     	
     ghost_sparsemat_traits mtraits = GHOST_SPARSEMAT_TRAITS_INITIALIZER;
 #ifdef AFT
-    essexamples_create_context_and_matrix_ft(&context,&A,&mtraits, FT_Comm);
+    essexamples_create_context_and_matrix_ft(&context,&A,&mtraits, FT_Comm);      // TODO: how to remove this call and have FT_Comm attached in the default case.
 #else 
     essexamples_create_context_and_matrix(&context,&A,&mtraits);
 #endif
@@ -126,7 +123,7 @@ static void *mainTask(void *varg)
 		if( myrank == printRank) {
 				printf("==== Defining CP ====\n");
 		}
-	Checkpoint  myCP( cpPath, FT_Comm);
+	Checkpoint  myCP( "a", FT_Comm);
 	myCP.disableSCR();
 	myCP.add("iteration", &iteration);	
 	myCP.add("lambda", &lambda);	
@@ -139,9 +136,8 @@ static void *mainTask(void *varg)
   myCP.commit();
     	
 	iteration = 0;
-	if(restart == true){
-		failed = false;
-		if(myrank== printRank) printf("RESTART ----> failed == true \n");
+	if( myCP.needRestart() ){
+		if(myrank== printRank) printf("RESTART ----> \n");
 		myCP.read();
 		iteration++;
 	}
@@ -188,10 +184,6 @@ static void *mainTask(void *varg)
 					myCP.write();
 				}
         		//fflush(stdout);
-	   		if ( iteration+1 == nIter || alpha <= EPS){
-					success = true;
-					printf("%d/%d: iterations finishied \n", myrank, numprocs);
-	   		}
     }
     
     // print norm of residual

@@ -15,25 +15,16 @@
 #include <checkpoint.hpp>
 
 static char *prgname = "a.out";
+int myrank;
 
 template < typename T>
 void printArray( T * ptr, const int nRows){
 	for(size_t i = 0; i < nRows; ++i){
-		std::cout << ptr[i] << std::endl;
+		if(myrank==0) std::cout << ptr[i] << std::endl;
 	}
 	return;
 }
 
-void printusage(){
-	int myrank;
-	MPI_Comm_rank(MPI_COMM_WORLD, &myrank);
-	if(myrank==0){	
-    printf("Usage: %s [OPTION]...\n",prgname);
-    printf("Valid options are:\n");
-    printf(" -cppath <PATH-TO-CHECKPOINT>\n");
-    printf(" -restart : In case of a restart\n");
-	}
-}
 
 int read_params(int argc, char* argv[] , CpOptions * myCpOpt){
   prgname = argv[0];
@@ -41,41 +32,24 @@ int read_params(int argc, char* argv[] , CpOptions * myCpOpt){
 	std::string cpPathTemp ;
 	//=========== Reading commnad line arguments with flags ===============//
 	for (int i = 1; i < argc; ++i) {
-		if ((!strcmp(argv[i], "-cppath"))) {
-			sprintf(tmp, "%s" ,argv[++i]);
-			myCpOpt->setCpPath(tmp);
-			cpPathTemp = myCpOpt->getCpPath();
-			std::cout << "cpPath: " << cpPathTemp << std::endl;
-		}
-		if ((!strcmp(argv[i], "-restart"))) {
-			bool restart = true;
-			myCpOpt->setRestartStatus( restart );
-			std::cout << "Restart " << restart << std::endl;
-		}
 		if ((!strcmp(argv[i], "-niter"))) {
 			sprintf(tmp, "%s" ,argv[++i]);
 			myCpOpt->setnIter( atoi(tmp) );
-			std::cout << "nIter " << myCpOpt->getnIter() << std::endl;
+			if(myrank==0) std::cout << "nIter " << myCpOpt->getnIter() << std::endl;
 		}
 		if ((!strcmp(argv[i], "-cpfreq"))) {
 			sprintf(tmp, "%s" ,argv[++i]);
 			myCpOpt->setCpFreq( atoi(tmp) );
-			std::cout << "cpfreq " << myCpOpt->getCpFreq() << std::endl;
+			if(myrank==0) std::cout << "cpfreq " << myCpOpt->getCpFreq() << std::endl;
 		}
-	}
-	if(cpPathTemp.empty()){
-		printusage();
-		exit(EXIT_FAILURE);
 	}
 }
 
 int main(int argc, char* argv[])
 {
 	MPI_Init(&argc, &argv);
-  int myrank, numprocs;
+  int numprocs;
 //	===== AFT BEGIN =====
-	int success = false;
-	int failed = false;
   MPI_Comm FT_Comm;
 	MPI_Comm_dup(MPI_COMM_WORLD, &FT_Comm);
 #ifdef AFT
@@ -95,62 +69,68 @@ int main(int argc, char* argv[])
 	}
 	
 	int naIter = myCpOpt->getnIter();
-	int nbIter = 10;
+	int nbIter = 50;
 	int aIter=0, bIter=0;
 	
-	Checkpoint  cpL1(myCpOpt->getCpPath(), FT_Comm);
-	Checkpoint  cpL2(myCpOpt->getCpPath(), FT_Comm);
+	Checkpoint  cpL1("cpL1", FT_Comm);
+	Checkpoint  cpL2("cpL2", FT_Comm);
+  cpL2.disableSCR();
+  cpL1.disableSCR();
 	cpL1.add("a", &a);
 	cpL1.add("aIter", &aIter);
 	cpL1.commit(); 
 	cpL2.add("b", b);
 	cpL2.add("bIter", &bIter);
 	cpL2.commit(); 
-	
-	if( myCpOpt->getRestartStatus() ) {
-		printf("RESTART L1 ------> failed == true \n");
-		cpL1.read();
-		aIter++;
-		printf("aIter = %d \n", aIter);
+	if( cpL1.needRestart() == true) {
+	  printf("RESTART L1------> failed == true \n");
+    if(cpL1.read()==EXIT_SUCCESS){
+		  aIter++;
+		  if(myrank==0) std::cout << "aIter =" << aIter << std::endl;
+    }
 	}
-  for(; aIter < naIter; aIter++)
+  printf("%d: before for loop\n", myrank );
+  for(; aIter < myCpOpt->getnIter(); aIter++)
   {
+			std::cout << "aIter:" << aIter << std::endl;
 			bIter = 0;
-			if( myCpOpt->getRestartStatus() ) {
-				bool restart = false;
-				myCpOpt->setRestartStatus( restart );
+			if( cpL2.needRestart() == true ) {
 				printf("RESTART L2------> failed == true \n");
-				cpL2.read();
-				bIter++;
-				printf("bIter = %d \n", bIter);
+				if(cpL2.read()==EXIT_SUCCESS){
+				  bIter++;
+				  printf("bIter = %d \n", bIter);
+        }
 			}
   		for(; bIter < nbIter ; bIter++)
   		{
 				for(size_t i = 0; i < n ; ++i){
 					b[i] += 0.1;
 				}
-				usleep(100000);
-				printf("=== bIter: %d, \tb[0]: %f \n", bIter, b[0] );
-				if(bIter % 5 == 0){
+				usleep(200000);
+        MPI_Barrier(FT_Comm);
+        printf("=== bIter: %d, \tb[0]: %f \n", bIter, b[0] );
+				if( (bIter % myCpOpt->getCpFreq()) == 0){
+          printf("Checkpointing b...\n");
 					cpL2.update();
 					cpL2.write();
 				}
 			}
-//			for(size_t i = 0; i < n ; ++i){
-				a = b[0];
-//			}
-			usleep(100000);
-			printf("============ aIter: %d, \ta: %f \n", aIter, a);
-			if(nbIter % 1 == 0){
+			a = b[0];
+			usleep(200000);
+      printf("============ aIter: %d, \ta: %f \n", aIter, a);
+			if(aIter % 1 == 0){
+          printf("Checkpointing a...\n");
 					cpL1.update();
 					cpL1.write();
 			}
-	}
 
+	}
+  if(myrank==0) std::cout <<("1before AFT_END\n");
 #ifdef AFT
 	AFT_END();
 #endif
 
+  if(myrank==0) std::cout <<"before MPI_Finalize\n";
 	MPI_Finalize();
 	return 0;
 }
