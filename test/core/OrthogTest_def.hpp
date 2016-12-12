@@ -384,8 +384,6 @@ SUBR(sdMat_print)(R2,&iflag_);
     iflag_=iflag_in;
     SUBR(mvecT_times_mvec)(st::one(),V_,BV_,st::zero(),R0_,&iflag_);
     ASSERT_EQ(0,iflag_);
-    SUBR(sdMat_from_device)(R0_,&iflag_);
-    ASSERT_EQ(0,iflag_);
     _MT_ sym_err=mt::zero();
     _MT_ min_diag=(_MT_)1.0e10;
     for (int i=0; i<m_; i++)

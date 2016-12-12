@@ -92,3 +92,7 @@
 #ifdef ASSERT_REAL_EQ
 #undef ASSERT_REAL_EQ
 #endif
+
+#ifdef EXPECT_REAL_EQ
+#undef EXPECT_REAL_EQ
+#endif

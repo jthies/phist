@@ -1189,7 +1189,6 @@ TEST_F(CLASSNAME,mvecT_times_mvec_after_spmvm)
 
   SUBR(mvecT_times_mvec)(st::one(),vec1_,vec2_,st::zero(),mat1_,&iflag_);
   ASSERT_EQ(0,iflag_);
-  SUBR(sdMat_from_device)(mat1_,&iflag_);
   // check result
   sdMat_parallel_check(mat1_,&iflag_);
   ASSERT_EQ(0,iflag_);

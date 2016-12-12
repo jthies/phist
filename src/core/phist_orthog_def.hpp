@@ -62,7 +62,6 @@ extern "C" void SUBR(orthog)(TYPE(const_mvec_ptr) V,
     dim0=*iflag; // return value of orthog is rank of null space of [V W] on entry
     *rankVW=k-dim0;
   }
-
   int num_attempts=0;
   const int max_attempts=5;
   TYPE(sdMat_ptr) R1p=NULL,R1pp=NULL,R2p=NULL;
