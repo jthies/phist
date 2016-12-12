@@ -89,13 +89,146 @@ void craftAbort(int rc, const char *fmt, ...)
 
 
 void getEnvVal(int &var, const char * str){
-  if(const char* env_p = std::getenv(str)){
-    var = stringToNumber<int>(env_p);
-    std::cout << str << " val is : " << var << '\n';
-  }else{
-    std::cout << "Env. val of " << str << " is not set.\n";
+  int myrank = -1;
+  MPI_Comm_rank(MPI_COMM_WORLD, &myrank);
+  if(myrank==0) 
+  {
+    if(const char* env_p = std::getenv(str)){
+      var = stringToNumber<int>(env_p);
+      std::cout << str << " val is : " << var << '\n';
+    }else{
+      std::cout << "Env. val of " << str << " is not set.\n";
+    }
   }
   return;
 }
 
+void checkDirectoryName(std::string* const s)
+{
+  std::string::iterator it;
+  for (it = s->begin() ; it < s->end() ; ++it){
+    switch(*it){
+      case '/':case '\\':case ':':case '?':case '"':case '<':case '>':case '|':
+      {
+		    craftDbg(0, "Invalid character in directroy name: %s", s );
+        craftAbort(0, "Invalid character in directroy name: %s", s );
+      }
+    }
+  }
+}
+void checkPathName(std::string* const s)
+{
+  std::string::iterator it;
+  for (it = s->begin() ; it < s->end() ; ++it){
+    switch(*it){
+      case '\\':case ':':case '?':case '"':case '<':case '>':case '|':
+      {
+		    craftDbg(0, "Invalid character in directroy name: %s", s );
+        craftAbort(0, "Invalid character in directroy name: %s", s );
+      }
+    }
+  }
+}
 
+
+/*#define MAX_PATH_LEN 256
+
+#define IN
+#define OUT
+
+typedef int Bool_T;
+
+static
+int GetCharsNumInPath( IN const char * path )
+{
+int cnt;
+
+int i;
+int n = strlen( path );
+
+for( i = 0; i < n; i++ )
+{
+if( ( path[i] < 0x80 ) || ( path[i] > 0xbf ) )
+cnt++;
+}
+
+return cnt;
+}
+
+Bool_T PathValid( IN const char * path )
+{
+  if( path != NULL )
+  {
+    if( GetCharsNumInPath( IN path ) <= MAX_PATH_LEN )
+    {
+      int i;
+      int n = strlen( path );
+
+      for( i = 0; i < n; i++ )
+      {
+        switch( path[i] )
+        {
+        // ? " / < > * |
+        // these characters can not be used in file or folder names
+        //
+          case '?':
+          case '\"':
+          case '/':
+          case '<':
+          case '>':
+          case '*':
+          case '|':
+              return false;
+          
+          // Can meet only between a local disk letter and full path
+          // for example D:\folder\file.txt
+          //
+          case ':':
+          {
+              if( i != 1 )
+              {
+                return false;
+              }
+              else{
+              break;
+              }
+          }
+// Space and point can not be the last character of a file or folder names
+//
+          case ' ':
+          case '.':
+          {
+            if( ( i + 1 == n ) || ( path[i+1] == PATH_SEPERATOR_CHAR ) )
+            {
+               return false;
+            }
+            else{
+              break;
+            }
+          }
+// two backslashes can not go straight
+//
+          case PATH_SEPERATOR_CHAR:
+          {
+            if( i > 0 && path[i - 1] == PATH_SEPERATOR_CHAR )
+            {
+              return false;
+            }else{
+              break;
+            }
+          }
+        }
+      }
+    return true;
+    }
+    else{ // if( GetCharsNumInPath( IN path ) <= MAX_PATH_LEN )
+      LOG_ERROR( "PathValid FAILURE --> path is too long" );
+      return false;
+    }
+  }else{ // if( path != NULL )
+// wrong argument
+//
+  return false;
+  }
+}  
+*/

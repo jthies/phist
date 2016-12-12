@@ -8,9 +8,6 @@
 
 #include <mpi.h>
 
-#include "gloVar.hpp"
-
-
 
 template <typename T>
 std::string numberToString ( T number );
@@ -26,6 +23,7 @@ void craftErr(const char *fmt, ...);
 void craftDbg(int level, const char *fmt, ...);
 void craftAbort(int rc, const char *fmt, ...);
 void getEnvVal(int &var, const char * str);
-
+void checkDirectoryName(std::string* const s);
+void checkPathName(std::string* const s);
 #endif
 
