@@ -6,6 +6,7 @@
 #include <fstream>
 #include <iostream>
 #include <map>
+#include <set>
 #include <stdio.h>
 #include <stdlib.h>
 #include <mpi.h>
@@ -14,6 +15,8 @@
 
 #include "cpOptions.h"
 #include "dataType.h"
+#include "cpHelperFuncs.hpp"
+#include "craftConf.h"
 // ====== CP TYPES HEADERS ===== //  
 #include "cpEnum.h"
 #include "cpBase.hpp"
@@ -70,28 +73,35 @@ protected:
 	std::string cpPath;
 	std::string cpBasePath;	
 	std::string cpPathVersion;
-	std::string name;
+	std::string cpName;
 	std::string cpVersionPrefix;
-	int cpIdx;
-	bool useSCR;
+	bool cpUseSCR;
 	bool cpCommitted;
 	size_t cpVersion; 	
 	size_t numBufferCps;
+  bool restartStatus;
 
-	int writeCpMetaData();
+	int writeCpMetaData(const std::string filename);
+//	int writeCpMetaDataSCR();
 	int mkCpDir(std::string path);
 	int readCpMetaData();
+  int SCRreadCpMetaData();
 	int deleteBackupCp();
 	int PFSwrite();
 	int SCRwrite();
 	int PFSread();
 	int SCRread();
+  int getCpVersion(); 
 
 public:
-	Checkpoint(const std::string cpBasePath_, const MPI_Comm cpMpiComm);
+	Checkpoint(const std::string name_, const MPI_Comm cpMpiComm);
 	~Checkpoint();  
 	void disableSCR();
 	void commit();
+//  int setRestartStatus(bool toSetStatus);
+//  bool getRestartStatus();
+//  int readSavedCpVersion();
+  bool needRestart();
 
 	typedef std::map<const std::string,CpBase *> cp_const_map;		// TODO: check if they can be privatly declared
   typedef std::map<const std::string,CpBase *> cp_copy_map;
@@ -148,6 +158,11 @@ public:
 // anything else will give an error message
 int Checkpoint::add(std::string label, CpBase * p)
 {
+  if( craftEnabled == 0){
+		craftDbg(3, "Checkpoint::add(): CRAFT_ENABLE: %d", craftEnabled);
+    return EXIT_FAILURE;
+  }
+
   if (cpCommitted == true ){
 //			printf("This checkpoint is already committed. No data can be added to checkpoint after commit() call of a checkpoint.\n");
     return EXIT_FAILURE;
