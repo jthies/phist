@@ -22,34 +22,25 @@ AFT-option can only be used if compliled with ULFM-MPI.
 
 
 ===== USAGE ===== 
-1) A Checkpoint object can be initialized by giving it a unique name, base-directory-path and an MPI-communicator.
+1) A Checkpoint object can be initialized by giving it a unique name, and an MPI-communicator.
 2) Various objects can be added to by called .add function and giving the appropriate parameters.
 3) Other Checkpoint objects can be added at different levels of the program.
 
 The directory-structure of the program looks like this.
 CPBASEPATH:
-		|	
-		|	
-		|	
-		|	
-		-----CP-level1			
-				 |	
-				 -----CP1/a.ckpt, b.ckpt	
-				 -----CP2/	
-				 -----CP3/	
-				 -----metadata.ckpt	
-		|	
-		|	
-		|	
-		|	
-		-----CP-level2			
-				 |	
-				 -----CP1/x.ckpt, y.ckpt	
-				 -----CP2/	
-				 -----CP3/	
-				 -----metadata.ckpt
 
-
+	|	
+	-----CP1			
+			 |	
+			 -----v-2/a.ckpt, b.ckpt	
+			 -----v-3/a.ckpt, b.ckpt	
+			 -----metadata.ckpt	
+	|	
+	-----CP2			
+			|	
+			 -----v-5/x.ckpt, y.ckpt	
+			 -----v-6/	
+			-----metadata.ckpt
 
 
 
