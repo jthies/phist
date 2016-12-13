@@ -1,3 +1,7 @@
+extern "C" void SUBR(sparseMat_delete)(TYPE(sparseMat_ptr) A, int* iflag);
+extern "C" void SUBR(mvec_delete)(TYPE(mvec_ptr) V, int* iflag);
+extern "C" void SUBR(sdMat_delete)(TYPE(sdMat_ptr) V, int* iflag);
+
 //! This file contains simple classes to wrap mvec, sdMat and sparseMat
 //! pointers in C++ objects which will take care of their deletion when
 //! destroyed themselves. There is no reference counting mechanism, but

@@ -1,20 +1,15 @@
 #include "phist_config.h"
-/* needs to be included before system headers for some intel compilers+mpi */
-#ifdef PHIST_HAVE_MPI
-#include <mpi.h>
-#endif
+
+#include "phist_core.h"
+#include "phist_kernels.h"
+
 #include <cstdlib>
 #include <cstring>
 #include <cmath>
 #include <vector>
 #include <iostream>
 
-#include "phist_macros.h"
 #include "phist_carp_cg.h"
-#include "phist_kernels.h"
-#include "phist_lapack.h"
-
-#include "phist_ScalarTraits.hpp"
 
 #ifdef PHIST_HAVE_SP
 #include "phist_gen_s.h"

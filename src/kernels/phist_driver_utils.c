@@ -1,8 +1,4 @@
-#ifdef __cplusplus
-#include <cstring>
-#else
 #include <string.h>
-#endif
 
 #include "phist_config.h"
 #include "phist_kernels.h"

@@ -3,12 +3,6 @@
 
 #include "phist_config.h"
 
-#ifdef PHIST_HAVE_MPI
-#include <mpi.h>
-#endif
-#include "phist_macros.h"
-
-
 /*! \def PHIST_TASK_DECLARE(taskName)
  *  Declare a tasks (e.g. a variable taskName of some type to be used later!)
  *  \taskName new identifier

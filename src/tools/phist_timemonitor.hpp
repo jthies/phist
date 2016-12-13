@@ -2,12 +2,7 @@
 #define PHIST_TIMEMONITOR_HPP
 
 #include "phist_config.h"
-
-/* needs to be included before system headers for some intel compilers+mpi */
-#ifdef PHIST_HAVE_MPI
-#include <mpi.h>
-#endif
-
+#include "phist_tools.h"
 #ifdef PHIST_HAVE_OPENMP
 #include <omp.h>
 #endif

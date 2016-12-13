@@ -19,20 +19,15 @@
 #include <string>
 #include <map>
 
-#include "phist_macros.h"
+#include "phist_tools.h"
 #include "phist_kernel_perfmodels.hpp"
 #include "../phist_kernels.h"
 
 #include "phist_typedefs.h"
 #include "typedefs.hpp"
-#include "phist_ScalarTraits.hpp"
 extern "C" {
 #include "phist_random.h"
 }
-
-#ifdef PHIST_HAVE_LIKWID
-#include <likwid.h>
-#endif
 
 #include <cstring>
 #include <sys/resource.h>

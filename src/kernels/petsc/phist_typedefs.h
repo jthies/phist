@@ -8,7 +8,6 @@
 #endif
 
 #include <petsc.h>
-#include "phist_macros.h"
 
 //! complex data types
 #ifdef __cplusplus

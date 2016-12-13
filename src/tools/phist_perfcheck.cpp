@@ -7,7 +7,7 @@
 #endif
 
 #include "phist_perfcheck.hpp"
-#include "phist_macros.h"
+#include "phist_tools.h"
 
 #include <algorithm>
 #include <sstream>

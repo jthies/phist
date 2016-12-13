@@ -5,18 +5,12 @@
 #include "phist_kernel_flags.h"
 
 #ifndef DOXYGEN
-/* needs to be included before system headers for some intel compilers+mpi */
-#ifdef PHIST_HAVE_MPI
-#include <mpi.h>
-#else
-typedef int MPI_Comm;
-#endif
-#include "phist_macros.h"
+
+#include "phist_tools.h"
 
 // note: the phist_typedefs.h file is provided in the subdirectory
 // where the interface is implemented (e.g. ghost/, tpetra/).
 #include "phist_typedefs.h"
-#include "phist_tasks.h"
 
 #ifdef PHIST_HAVE_GHOST
 #include <ghost/types.h>

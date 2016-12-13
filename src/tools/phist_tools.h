@@ -15,7 +15,23 @@
 #else
 # include <stdio.h>
 #endif
+
+#ifdef PHIST_HAVE_LIKWID
+#include <likwid.h>
+#endif
+
 #endif //DOXYGEN
+
+# include "phist_macros.h"
+# include "phist_tasks.h"
+
+#ifdef __cplusplus
+# ifndef DOXYGEN
+# include "phist_ScalarTraits.hpp"
+# include "phist_memOwner.hpp"
+# include "phist_lapack.h"
+# endif
+#endif
 
 #ifdef __cplusplus
 extern "C" {

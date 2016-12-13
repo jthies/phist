@@ -1,14 +1,9 @@
 #include "phist_config.h"
-/* needs to be included before system headers for some intel compilers+mpi */
-#ifdef PHIST_HAVE_MPI
-#include <mpi.h>
-#endif
-#include "phist_macros.h"
+#include "phist_tools.h"
 #include "phist_typedefs.h"
 #include "phist_tpetra_typedefs.hpp"
 #include "../phist_kernels.h"
 #include "phist_trilinos_macros.h"
-#include "phist_ScalarTraits.hpp"
 
 #include "Teuchos_StandardCatchMacros.hpp"
 #include "Teuchos_DefaultComm.hpp"
@@ -23,10 +18,6 @@
 #include "Teuchos_RCP.hpp"
 #include "MatrixMarket_Tpetra.hpp"
 #include "Tpetra_MatrixIO.hpp"
-
-#ifdef PHIST_HAVE_LIKWID
-#include <likwid.h>
-#endif
 
 #include <fstream>
 #include <sstream>

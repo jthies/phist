@@ -1,27 +1,18 @@
 #include "phist_config.h"
-/* needs to be included before system headers for some intel compilers+mpi */
-#ifdef PHIST_HAVE_MPI
-#include <mpi.h>
-#endif
 
 #include <cstdio>
 #include <cstdlib>
 
 #include <iostream>
-#include "phist_macros.h"
+#include "phist_tools.h"
 #include "../phist_kernels.h"
 #include "phist_kernel_perfmodels.hpp"
 
 #include "phist_typedefs.h"
 #include "typedefs.hpp"
-#include "phist_ScalarTraits.hpp"
 
 #include "phist_ghost_internal.h"
 #include "phist_GhostMV.hpp"
-
-#ifdef PHIST_HAVE_LIKWID
-#include <likwid.h>
-#endif
 
 #include <ghost.h>
 #include <ghost/machine.h>
