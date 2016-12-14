@@ -22,6 +22,7 @@
 
 #endif //DOXYGEN
 
+# include "phist_macros.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -46,7 +47,6 @@ int phist_ordered_fprintf(FILE* stream, MPI_Comm comm, const char* fmt, ...);
 }
 #endif
 
-# include "phist_macros.h"
 # include "phist_tasks.h"
 
 #ifdef __cplusplus

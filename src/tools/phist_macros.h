@@ -12,6 +12,8 @@
 
 #ifdef __cplusplus
 #include <cstdio>
+#include <exception>
+#include <string>
 #else
 #include <stdio.h>
 #endif
