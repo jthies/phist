@@ -11,6 +11,10 @@
 #endif
 
 #ifdef __cplusplus
+#include "phist_ScalarTraits.hpp"
+#endif
+
+#ifdef __cplusplus
 # include <cstdio>
 #else
 # include <stdio.h>
@@ -50,9 +54,6 @@ int phist_ordered_fprintf(FILE* stream, MPI_Comm comm, const char* fmt, ...);
 #include "phist_tasks.h"
 
 #ifndef DOXYGEN
-# ifdef __cplusplus
-# include "phist_MemOwner.hpp"
-# endif
 #include "phist_lapack.h"
 #endif
 

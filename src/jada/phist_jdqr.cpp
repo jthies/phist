@@ -2,12 +2,8 @@
 
 #include "phist_tools.h"
 #include "phist_kernels.h"
-
-#include <iostream>
-#include <iomanip>
-
+#include "phist_core.h"
 #include "phist_jdqr.h"
-#include "phist_orthog.h"
 
 #include "phist_schur_decomp.h"
 #include "phist_simple_arnoldi.h"
@@ -16,10 +12,9 @@
 #include "phist_core_flags.h"
 
 #include "phist_jadaCorrectionSolver.h"
-// for testing CARP-CG, we use Belos BlockCG for now.
-// If it turns out to work well, we could include CG
-// as an option in the jadaCorrectionSolver.
-#include "phist_belos.h"
+
+#include <iostream>
+#include <iomanip>
 
 #ifdef PHIST_HAVE_SP
 #include "phist_gen_s.h"

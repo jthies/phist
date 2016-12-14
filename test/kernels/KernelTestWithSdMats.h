@@ -8,13 +8,13 @@
 
 #include "gtest/phist_gtest.h"
 
-#include "phist_typedefs.h"
+#include "phist_tools.h"
 #include "phist_kernels.h"
 // for sync'ing sdMats
 #include "phist_mpi_kernels.h"
 #include "TestWithType.h"
 
-#include "phist_memOwner.hpp"
+#include "phist_MemOwner.hpp"
 
 using namespace testing;
 

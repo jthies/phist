@@ -6,6 +6,10 @@
 #include "MatrixIO.h"
 #include <iostream>
 
+#include "phist_tools.h"
+#include "phist_kernels.h"
+#include "phist_ScalarTraits.hpp"
+
 namespace phist
 {
   namespace testing

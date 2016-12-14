@@ -7,11 +7,8 @@
 
 #include "phist_tools.h"
 #include "phist_kernels.h"
-
-#include <cstdlib>
-#include <cstring>
-#include <cmath>
-
+#include "phist_operator.h"
+#include "phist_ScalarTraits.hpp"
 #include "phist_anasazi.h"
 
 #ifdef PHIST_HAVE_ANASAZI
