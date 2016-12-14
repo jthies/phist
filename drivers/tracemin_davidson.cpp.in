@@ -1,17 +1,11 @@
 #include "phist_config.h"
 
-#ifdef PHIST_HAVE_MPI
-#include <mpi.h>
-#endif
+#include "phist_tools.h"
+#include "phist_kernels.h"
+#include "phist_core.h"
+#include "phist_anasazi.h"
 
 #include <cstring>
-
-#include "phist_macros.h"
-#include "phist_get_arg.hpp"
-#include "phist_kernels.h"
-#include "phist_operator.h"
-#include "phist_anasazi.h"
-#include "phist_ScalarTraits.hpp"
 
 // wrap iterative linear solver as operator
 #include "phist_iter_op.h"
