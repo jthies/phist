@@ -328,18 +328,6 @@ symmetric=symmetric||(opts.symmetry==phist_COMPLEX_SYMMETRIC);
     {
       PHIST_CHK_IERR(B_op->apply(st::one(),B_op->A,V,st::zero(),BV,iflag),*iflag);
     }
-    // check input block is "orthogonal enough"
-    PHIST_CHK_IERR(SUBR(sdMat_identity)(H,iflag),*iflag);
-    PHIST_CHK_IERR(SUBR(mvecT_times_mvec)(st::one(),V,BV,-st::one(),H,iflag),*iflag);
-    _MT_ v0ortho[minBase];
-    PHIST_CHK_IERR(SUBR(sdMat_normF)(H,v0ortho,iflag),*iflag);
-    _MT_ max_ortho_err=mt::zero();
-    for (int i=0; i<minBase; i++) max_ortho_err=std::max(max_ortho_err, v0ortho[i]);
-    if (max_ortho_err>sqrt(mt::eps()))
-    {
-      *iflag=PHIST_INVALID_INPUT;
-      PHIST_SOUT(PHIST_ERROR,"input space v0 is not orthogonal!\n");
-    }
     PHIST_CHK_IERR(SUBR(mvecT_times_mvec)(st::one(),V,AV,st::zero(),H,iflag),*iflag);
   }
   else if (nv0<=1)
