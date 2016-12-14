@@ -1,8 +1,18 @@
 #include "phist_config.h"
 
-#include "phist_tools.h"
+#ifdef PHIST_HAVE_MPI
+#include <mpi.h>
+#endif
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdbool.h>
+#include <string.h>
+
+#include "phist_macros.h"
+#include "phist_enums.h"
 #include "phist_kernels.h"
-#include "phist_core.h"
+#include "phist_operator.h"
 
 #ifdef PHIST_CP
 #include "phist_simple_lanczos_ft.h"
@@ -10,11 +20,6 @@
 #else 
 #include "phist_simple_lanczos.h"
 #endif
-
-#include <stdio.h>
-#include <stdlib.h>
-#include <stdbool.h>
-#include <string.h>
 
 #include ${PHIST_TG_HFILE}
 #include "phist_driver_utils.h"

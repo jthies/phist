@@ -47,12 +47,13 @@ int phist_ordered_fprintf(FILE* stream, MPI_Comm comm, const char* fmt, ...);
 }
 #endif
 
-# ifndef DOXYGEN
-# include "phist_tasks.h"
-# include "phist_lapack.h"
-#  ifdef __cplusplus
-#  include "phist_get_arg.hpp"
-#  endif
+#include "phist_tasks.h"
+
+#ifndef DOXYGEN
+# ifdef __cplusplus
+# include "phist_MemOwner.hpp"
 # endif
+#include "phist_lapack.h"
+#endif
 
 #endif
