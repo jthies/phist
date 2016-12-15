@@ -3,6 +3,7 @@ project (CRAFTLIB)
 set (PROJECT_DIR ${CMAKE_SOURCE_DIR})
 set (PROJECT_SRC_DIR ${PROJECT_DIR}/src/)
 set (PROJECT_INC_DIR ${PROJECT_DIR}/include/)
+set (PROJECT_TOOLS_DIR ${PROJECT_DIR}/tools/)
 
 ###### OPTIONS ######
 option(PHIST_CP
@@ -42,6 +43,12 @@ set (HEADERS
 		include/dataType.h
 		include/craftConf.h
 		)
+
+set(TOOLS
+    tools/rm-cache-ckpts.sh
+    tools/do-rm-cache-ckpts.sh
+)
+
 
 include_directories(${HEADERS} ${PROJECT_DIR} ${PROJECT_INC_DIR})
 
@@ -174,8 +181,10 @@ install ( TARGETS craft EXPORT craftLibrary LIBRARY DESTINATION ${LIBRARY_INSTAL
 install ( FILES ${PROJECT_DIR}/craft-config.cmake DESTINATION ${LIBRARY_INSTALL_DIR} )
 	
 set(INCLUDE_INSTALL_DIR include)
+set(TOOLS_INSTALL_DIR tools)
 #install ( FILES ${HEADERS} DESTINATION ${INCLUDE_INSTALL_DIR} )
 install ( DIRECTORY ${PROJECT_INC_DIR} DESTINATION ${INCLUDE_INSTALL_DIR} )
+install ( DIRECTORY ${PROJECT_TOOLS_DIR} DESTINATION ${TOOLS_INSTALL_DIR} USE_SOURCE_PERMISSIONS )
 
 ##### UNINSTALL TARGET #####
 configure_file(
