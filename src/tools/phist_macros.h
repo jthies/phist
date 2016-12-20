@@ -18,9 +18,6 @@
 #include "phist_defs.h"
 #endif
 
-/* required for phist_retcode2str */
-#include "phist_tools.h"
-
 /* print a warning that an untested / experimental function is called */
 #define PHIST_MARK_AS_EXPERIMENTAL(s) PHIST_SOUT(PHIST_WARNING, "Called experimental (untested) %s\n", s);
 
