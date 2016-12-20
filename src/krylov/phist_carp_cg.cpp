@@ -1,7 +1,8 @@
 #include "phist_config.h"
 
-#include "phist_core.h"
+#include "phist_tools.h"
 #include "phist_kernels.h"
+#include "phist_core.h"
 
 #include <cstdlib>
 #include <cstring>

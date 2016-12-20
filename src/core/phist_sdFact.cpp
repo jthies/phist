@@ -6,24 +6,18 @@
 */
 
 #include "phist_config.h"
-/* needs to be included before system headers for some intel compilers+mpi */
-#ifdef PHIST_HAVE_MPI
-#include <mpi.h>
-#endif
 
+#include "phist_tools.h"
+#include "phist_kernels.h"
 #include <cstdlib>
 #include <cstdio>
 #include <iostream>
 
-#include "phist_macros.h"
 #include "phist_kernel_perfmodels.hpp"
 //#ifdef PHIST_HAVE_TEUCHOS
 //#include "phist_trilinos_macros.h"
 //#endif
-#include "phist_kernels.h"
 
-#include "phist_typedefs.h"
-#include "phist_ScalarTraits.hpp"
 #include "phist_memOwner.hpp"
 #include "phist_sdFact.h"
 

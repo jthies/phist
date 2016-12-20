@@ -2,18 +2,14 @@
 
 #ifdef PHIST_HAVE_SP
 
-/* needs to be included before system headers for some intel compilers+mpi */
-#ifdef PHIST_HAVE_MPI
-#include <mpi.h>
-#endif
+#include "phist_tools.h"
+#include "phist_kernels.h"
 
 #include <cstdlib>
 #include <cstring>
 #include <cmath>
 
 #include "phist_belos.h"
-#include "phist_kernels.h"
-#include "phist_ScalarTraits.hpp"
 
 #ifdef PHIST_HAVE_BELOS
 

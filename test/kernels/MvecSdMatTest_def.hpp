@@ -147,11 +147,11 @@ public:
         {
           for (int j=0; j<m_; j++)
           {
-            V1_vp_[VIDX(i,j,ldaV1_)]=999.0*st::one()+333.0*st::cmplx_I();
+            V1_vp_[VIDX(i,j,ldaV1_)]=((MT)999.0)*st::one()+((MT)333.0)*st::cmplx_I();
           }
           for (int j=0; j<k_; j++)
           {
-            V2_vp_[VIDX(i,j,ldaV2_)]=-111.0*st::one()+555.0*st::cmplx_I();
+            V2_vp_[VIDX(i,j,ldaV2_)]=((MT)-111.0)*st::one()+((MT)555.0)*st::cmplx_I();
           }
         }
       }

@@ -2,13 +2,13 @@
 #define KERNEL_TEST_WITHTYPEH
 
 #include "phist_config.h"
-#ifdef PHIST_HAVE_MPI
-#include <mpi.h>
-#endif
+
+#include "phist_tools.h"
+#include "phist_kernels.h"
 
 #include "gtest/phist_gtest.h"
+
 #include "KernelTest.h"
-#include "phist_ScalarTraits.hpp"
 #include "phist_random.h"
 #include <cstdlib>
 #include <limits>
@@ -29,7 +29,6 @@ typeImplemented_=false;
 
 };
 
-#include "phist_kernels.h"
 
 #ifdef PHIST_HAVE_SP
 

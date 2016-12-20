@@ -2,6 +2,9 @@
 #define PHIST_KERNEL_TEST_H
 
 #include "phist_config.h"
+
+#include "phist_tools.h"
+#include "phist_kernels.h"
 #ifdef PHIST_HAVE_MPI
 #include <mpi.h>
 #else
@@ -9,9 +12,6 @@ typedef int MPI_Comm;
 #endif
 
 #include "gtest/phist_gtest.h"
-
-#include "phist_typedefs.h"
-#include "phist_kernels.h"
 
 
 #ifdef PHIST_HAVE_GHOST

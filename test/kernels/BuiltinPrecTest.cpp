@@ -1,14 +1,11 @@
 #include "phist_config.h"
-#ifdef PHIST_HAVE_MPI
-#include <mpi.h>
-#endif
+
 #if !defined(PHIST_HIGH_PRECISION_KERNELS) && defined(PHIST_HIGH_PRECISION_KERNELS_FORCE)
 #define PHIST_HIGH_PRECISION_KERNELS
 #endif
-
+#include "phist_tools.h"
 #include "gtest/phist_gtest.h"
 
-#include "phist_macros.h"
 #include <cmath>
 
 
