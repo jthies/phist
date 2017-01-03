@@ -78,7 +78,7 @@ class PhistSolversTest(unittest.TestCase):
         jadaOpts.which = eigSort_SR
         jadaOpts.how = eigExtr_STANDARD
         jadaOpts.convTol = 1.e-8
-        jadaOpts.maxIters = 20
+        jadaOpts.maxIters = 25
         jadaOpts.innerSolvType=linSolv_MINRES
         nIter = c_int()
         nConv = c_int()
