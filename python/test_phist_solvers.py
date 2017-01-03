@@ -36,7 +36,7 @@ class PhistSolversTest(unittest.TestCase):
         nv     =      12
         
         minBas=c_int(20)
-        maxBas=c_int(30)
+        maxBas=c_int(40)
         
         blockSize1=c_int(1)
         blockSize2=c_int(4)
@@ -92,7 +92,7 @@ class PhistSolversTest(unittest.TestCase):
         # We need to do a few iteration because of the limited 'look ahead' strategy in the
         # solver, it only checks the residuals of the next2*blockSize eigenpairs or so. So to
         # speed things up a little we increase the block size to 4 for this experiment. 
-        jadaOpts.maxIters=4
+        jadaOpts.maxIters=8
         jadaOpts.blockSize=blockSize2
         jadaOpts.innerSolvBlockSize=blockSize2
         jadaOpts.v0=vecQ
