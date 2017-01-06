@@ -127,7 +127,6 @@ public:
     if (typeImplemented_)
     {
       int stride=1;
-      _ST_ val=st::prand();
       SUBR(sdMat_identity)(mat1_,&iflag_);
       ASSERT_EQ(0,iflag_);
       SUBR(sdMat_identity)(mat2_,&iflag_);
