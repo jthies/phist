@@ -7,6 +7,7 @@
 #include "phist_ScalarTraits.hpp"
 
 #include "phist_PreconTraits.hpp"
+#include <cstring>
 
 #include "phist_gen_z.h"
 #include "phist_precon_def.hpp"

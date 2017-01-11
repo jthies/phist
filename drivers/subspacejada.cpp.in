@@ -21,6 +21,8 @@
 #include "phist_MemOwner.hpp"
 #include "phist_std_typedefs.hpp"
 
+#include <cstring>
+
 void SUBR(print_usage)(const char* progname)
 {
     int iflag;
