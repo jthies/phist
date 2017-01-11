@@ -4,8 +4,7 @@
 #include "phist_kernels.h"
 #include "phist_transform_searchspace.h"
 #include "phist_mpi_kernels.h"
-
-#include <stdlib.h>
+#include "phist_ScalarTraits.hpp"
 
 #ifdef PHIST_HAVE_SP
 #include "phist_gen_s.h"

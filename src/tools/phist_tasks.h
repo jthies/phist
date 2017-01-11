@@ -3,6 +3,10 @@
 
 #include "phist_config.h"
 
+#ifndef DOXYGEN
+#include "phist_macros.h"
+#endif
+
 /*! \def PHIST_TASK_DECLARE(taskName)
  *  Declare a tasks (e.g. a variable taskName of some type to be used later!)
  *  \taskName new identifier

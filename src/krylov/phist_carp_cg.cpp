@@ -3,12 +3,9 @@
 #include "phist_tools.h"
 #include "phist_kernels.h"
 #include "phist_core.h"
+#include "phist_ScalarTraits.hpp"
 
-#include <cstdlib>
-#include <cstring>
-#include <cmath>
 #include <vector>
-#include <iostream>
 
 #include "phist_carp_cg.h"
 

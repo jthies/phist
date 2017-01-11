@@ -3,6 +3,7 @@
 #include "phist_tools.h"
 #include "phist_kernels.h"
 #include "phist_normF.h"
+
 #include <cstdlib>
 
 #ifdef PHIST_HAVE_SP

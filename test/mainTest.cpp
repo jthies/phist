@@ -12,6 +12,7 @@
 #endif
 
 #include "gtest/phist_gtest.h"
+#include "tools/phist_tools.h"
 #include "kernels/phist_kernels.h"
 
 GTEST_API_ int main(int argc, char **argv) {

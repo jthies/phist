@@ -1,6 +1,7 @@
 
 #include "phist_tools.h"
 #include "phist_kernels.h"
+#include "phist_ScalarTraits.hpp"
 #include "phist_mpi_kernels.h"
 
 #ifdef PHIST_HAVE_SP

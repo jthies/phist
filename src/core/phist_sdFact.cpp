@@ -8,17 +8,13 @@
 #include "phist_config.h"
 
 #include "phist_tools.h"
-#include "phist_kernels.h"
-#include <cstdlib>
-#include <cstdio>
-#include <iostream>
-
 #include "phist_kernel_perfmodels.hpp"
 //#ifdef PHIST_HAVE_TEUCHOS
 //#include "phist_trilinos_macros.h"
 //#endif
 
-#include "phist_memOwner.hpp"
+#include "phist_typedefs.h"
+#include "phist_MemOwner.hpp"
 #include "phist_sdFact.h"
 
 #ifdef PHIST_HAVE_SP

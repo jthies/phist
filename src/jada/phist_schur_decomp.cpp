@@ -1,15 +1,11 @@
 #include "phist_config.h"
 
 #include "phist_tools.h"
-#include "phist_kernels.h"
-
-#include <cstdlib>
-#include <cstring>
-#include <cmath>
-
 #include "phist_schur_decomp.h"
 #include "jada_helpers.hpp"
-#include "phist_memOwner.hpp"
+#include "phist_kernels.h"
+#include "phist_lapack.h"
+#include "phist_MemOwner.hpp"
 
 #ifdef __cplusplus
 extern "C" {

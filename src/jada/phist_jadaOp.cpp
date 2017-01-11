@@ -2,10 +2,11 @@
 
 #include "phist_tools.h"
 #include "phist_kernels.h"
-
-#include "phist_jadaOp.h"
+#include "phist_operator.h"
+#include "phist_ScalarTraits.hpp"
 #include "phist_sdFact.h"
-#include "phist_memOwner.hpp"
+#include "phist_jadaOp.h"
+#include "phist_MemOwner.hpp"
 
 #ifdef PHIST_HAVE_SP
 #include "phist_gen_s.h"

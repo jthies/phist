@@ -4,6 +4,8 @@
 #include "phist_tools.h"
 #include "phist_kernels.h"
 #include "phist_core.h"
+#include "phist_ScalarTraits.hpp"
+#include "phist_MemOwner.hpp"
 
 #include "phist_subspacejada.h"
 
