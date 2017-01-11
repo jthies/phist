@@ -6,4 +6,6 @@ enum CpCol{
 	CYCLIC = -2
 };
 
+
+
 #endif

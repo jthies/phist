@@ -7,12 +7,10 @@
 
 #include "include/checkpoint.hpp"
 
-
 Checkpoint::Checkpoint( const std::string name_,
                         const MPI_Comm cpMpiComm_=MPI_COMM_WORLD
                        )
 {
-  getEnvParam();      // gets/sets all parameters from environment. 
   static std::set<std::string> nameKeys;    // to determine the uniqueness of different checkpoint names.
   std::pair<std::set<std::string>::iterator,bool> ret;
   ret         =  nameKeys.insert( name_);
@@ -67,6 +65,7 @@ void Checkpoint::commit(){
   }
   else{
     mkCpDir(cpPath);	
+	  MPI_Barrier(cpMpiComm);			// makes sure that cp-directory is created before any other process tries to write in it.
   }
 	cpCommitted = true;	
 }
@@ -74,6 +73,7 @@ void Checkpoint::commit(){
 int Checkpoint::mkCpDir(std::string path){
 	std::string cmd = "mkdir -p " + path;
 	system (cmd.c_str());
+  sync();
 	return EXIT_SUCCESS;
 }
 
@@ -242,6 +242,7 @@ int Checkpoint::PFSwrite(){
 	std::string filename;
 	cpPathVersion = cpPath + "/" + cpVersionPrefix + SSTR(cpVersion);
 	mkCpDir(cpPathVersion);	
+	MPI_Barrier(cpMpiComm);			// makes sure that cpVersion directory is created before any process tries to write in it.
   for (cp_const_map::iterator it=objects.begin(); it!=objects.end(); it++)
  	{
 #ifdef MPIIO																										// Parallel PFS IO
@@ -257,6 +258,7 @@ int Checkpoint::PFSwrite(){
 				return EXIT_FAILURE;
     }
 	}
+  craftDbg(2, "all PFSserial writes are done." );
 	MPI_Barrier(cpMpiComm);			// TODO: do MPI_Gather here 
   // === writeMetaData file === // 
 	if(myrank_ == 0){
@@ -347,8 +349,8 @@ int Checkpoint::SCRread(){
 }
 
 bool Checkpoint::needRestart(){
-  if( craftCpReadOnRestart == 0 ){    // in case, that checkpoints exist but user wants to restart from the beginning. This flag is set by ENV variables.
-    craftDbg(3, "Environment variable CRAFT_CP_READ_ON_RESTART is disabled(0) => Not restarting from last checkpoint");
+  if( craftReadCpOnRestart == 0 ){    // in case, that checkpoints exist but user wants to restart from the beginning. This flag is set by ENV variables.
+    craftDbg(3, "Environment variable CRAFT_READ_CP_ON_RESTART is disabled(0) => Not restarting from last checkpoint");
     return false;   
   }
 

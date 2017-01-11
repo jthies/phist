@@ -8,6 +8,8 @@
 
 #include <mpi.h>
 
+#include "craftConf.h"
+
 
 template <typename T>
 std::string numberToString ( T number );
@@ -25,5 +27,7 @@ void craftAbort(int rc, const char *fmt, ...);
 void getEnvVal(int &var, const char * str);
 void checkDirectoryName(std::string* const s);
 void checkPathName(std::string* const s);
+int craftLog(MPI_Comm const * comm, const char *fmt, ...);
+
 #endif
 

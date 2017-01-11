@@ -8,6 +8,8 @@
 
 #include "include/cpHelperFuncs.hpp"
 
+char * craftLogFile = "craftLog";
+
 template std::string numberToString<int>(int number);
 template std::string numberToString<double>(double number);
 template std::string numberToString<float>(float number);
@@ -57,14 +59,7 @@ void craftErr(const char *fmt, ...)
 void craftDbg(int level, const char *fmt, ...)
 {
   va_list argp;
-  static int craftDebug, craftDebugProc;
-  static int t=true;
-  if(t==true){
-    getEnvVal(craftDebug    , "CRAFT_DEBUG");
-    getEnvVal(craftDebugProc, "CRAFT_DEBUG_PROC");
-    t = false;
-  }
-  if (level == 0 || (craftDebug > 0 && craftDebug >= level)) {
+  if ((craftDebug > 0 && craftDebug >= level)) {
     if(mpiCommWorldRank() == craftDebugProc){
       fprintf(stdout, "%d: CRAFT_DEBUG :", mpiCommWorldRank());
       va_start(argp, fmt);
@@ -87,6 +82,24 @@ void craftAbort(int rc, const char *fmt, ...)
   MPI_Abort(MPI_COMM_WORLD, 0);
 }
 
+int craftLog(MPI_Comm const * comm, const char *fmt, ...)
+{
+  int myrank=-1;
+  MPI_Comm_rank(*comm, &myrank);
+  if(myrank == craftDebugProc){
+    if (( craftDebug > 0 )) {
+      FILE * fstrL;
+      fstrL = fopen(craftLogFile, "a");
+      // ===== WRITE RESCUE LIST ===== // 
+      va_list argp;
+      va_start(argp, fmt);
+      vfprintf(fstrL, fmt, argp);
+      va_end(argp);
+      fclose(fstrL); 
+    }
+  }
+  return EXIT_SUCCESS;
+}
 
 void getEnvVal(int &var, const char * str){
   int myrank = -1;
