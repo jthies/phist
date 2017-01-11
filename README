@@ -30,17 +30,17 @@ The directory-structure of the program looks like this.
 CPBASEPATH:
 
 	|	
-	-----CP1			
-			 |	
-			 -----v-2/a.ckpt, b.ckpt	
-			 -----v-3/a.ckpt, b.ckpt	
-			 -----metadata.ckpt	
-	|	
-	-----CP2			
+	-----Checkpoint-CP1			
 			|	
-			 -----v-5/x.ckpt, y.ckpt	
-			 -----v-6/	
-			-----metadata.ckpt
+			-----v-2/a.ckpt, b.ckpt	
+			-----v-3/a.ckpt, b.ckpt	
+			-----metadata.ckpt	
+	|	
+	-----Checkpoint-CP2
+			|	
+			-----v-5/x.ckpt, y.ckpt	
+			-----v-6/	
+			----metadata.ckpt
 
 
 
