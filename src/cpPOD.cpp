@@ -1,4 +1,5 @@
 #include <cstdlib>
+#include <unistd.h>
 #include <iostream>
 #include <complex>
 #include <iostream>
@@ -51,8 +52,11 @@ int CpPOD<T>::write(const std::string * filename)				// filename is same if MPII
 {
 #ifdef MPIIO																			// PFS checkpoints
   writeParallel(filename);
+  sync(); 
 #else																							// either in case of SCR or individual PFS checkpoints
+  sync(); 
   writeSerial(filename);
+  sync(); 
 #endif
   return EXIT_SUCCESS;
 }
@@ -116,6 +120,7 @@ int CpPOD<T>::writeParallel(const std::string * filename){
   MPI_File_write(fh, asynData, 1, getMpiDataType(T), &status);
 	MPI_File_close(&fh);
 //	MPI_Barrier(cpMpiComm);
+  sync();
 	return EXIT_SUCCESS;
 }
 
@@ -124,13 +129,16 @@ int CpPOD<T>::writeSerial(const std::string * filename){
 	craftDbg(2, "CpPOD::writeSerial()");
 	std::ofstream fstr;
    
-	fstr.open ((*filename).c_str(), std::ios::out | std::ios::binary );	
+	fstr.open ((*filename).c_str(), std::ofstream::binary );	
 	if(fstr.is_open()){
 		fstr.write( (char *)asynData, sizeof (T) );
 		fstr.close();
+    sync();
 	}
 	else{
-		std::cerr << "Can't open file " << *filename << std::endl;			
+	  int myrank;
+	  MPI_Comm_rank(cpMpiComm, &myrank);
+		std::cerr << myrank << "Can't open file -- " << *filename << std::endl;			
 		return EXIT_FAILURE;
 	}
 	return EXIT_SUCCESS;

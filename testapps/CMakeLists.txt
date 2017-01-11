@@ -68,6 +68,8 @@ if(GHOST_TEST)
 endif()
 
 add_subdirectory(minimal)
+add_subdirectory(minimalWithoutLoop)
+add_subdirectory(multiAftZones)
 add_subdirectory(multilevelCP)
 add_subdirectory(multilevelCP2)
 add_subdirectory(arrayTest)
