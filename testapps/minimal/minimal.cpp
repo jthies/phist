@@ -43,12 +43,12 @@ int read_params(int argc, char* argv[] , CpOptions * myCpOpt){
 int main(int argc, char* argv[])
 {
 	MPI_Init(&argc, &argv);
-  int myrankTest, numprocs;
+  int myrank, numprocs;
 //	===== AFT BEGIN =====
   MPI_Comm FT_Comm;
 	MPI_Comm_dup(MPI_COMM_WORLD, &FT_Comm);
 #ifdef AFT
-  AFT_BEGIN(FT_Comm, &myrankTest, argv);	
+  AFT_BEGIN(FT_Comm, &myrank, argv);	
 #endif 
 	CpOptions * myCpOpt = new CpOptions[1];
   read_params(argc, argv, myCpOpt); 
@@ -63,21 +63,20 @@ int main(int argc, char* argv[])
 
 	int iteration = 0;
 	
-	Checkpoint myCP( "a", FT_Comm);
-	myCP.disableSCR();
+	Checkpoint myCP( "aa", FT_Comm);
+//	myCP.disableSCR();
 	myCP.add("myint", &myint);
 	myCP.add("mydouble", &mydouble);
 	myCP.add("iteration", &iteration);
-	myCP.add("myarray", myarray, n);
+  myCP.add("myarray", myarray, n);
 	myCP.commit(); 
 	
-//	if( myCP.getRestartStatus() == true) 
   if( myCP.needRestart() == true) 
   {
-    printf("%d:RESTART ------>  true \n", myrankTest);
+    printf("%d:RESTART ------>  true \n", myrank);
     if(myCP.read()==EXIT_SUCCESS){
 		  iteration++;
-		  printf("%d:iteration = %d \n", myrankTest, iteration);
+		  printf("%d:iteration = %d \n", myrank, iteration);
     }
 	}
   for(; iteration <= myCpOpt->getnIter() ; iteration++)
@@ -86,10 +85,10 @@ int main(int argc, char* argv[])
 		for(size_t i = 0; i < n ; ++i){
 			myarray[i] += 1;
 		}
-		usleep(300000);
-		{ printf("=== iter: %d , myint: %d \t\n", iteration, myint-1);}
+		usleep(200000);
+		{ printf("%d:=== iter: %d , myint: %d \t\n", myrank, iteration, myint-1);}
 		if(iteration % myCpOpt->getCpFreq() == 0){
-		  if(myrankTest==0){ printf("Checkpointing...\n");}
+		  if(myrank==0){ printf("Checkpointing...\n");}
 			myCP.update();
 			myCP.write();
 		}
