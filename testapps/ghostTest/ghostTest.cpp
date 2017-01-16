@@ -67,8 +67,6 @@ static void *mainTask(void *varg)
   AFT_BEGIN(FT_Comm, &myrank, argv);	
 #endif 
 
-    ghost_context *context;
-	
     matdt_t alpha = 0., alphaold = 0., lambda=0., lambdaold = 0., zero = 0., neg = -1., one = 1., tmp = 0.;
     int iteration = 0, nIter = 1000, cp_freq = 99999;
 	char * cpPath = new char[256];
@@ -92,22 +90,22 @@ static void *mainTask(void *varg)
     	
     ghost_sparsemat_traits mtraits = GHOST_SPARSEMAT_TRAITS_INITIALIZER;
 #ifdef AFT
-    essexamples_create_context_and_matrix_ft(&context,&A,&mtraits, FT_Comm);      // TODO: how to remove this call and have FT_Comm attached in the default case.
+//    essexamples_create_context_and_matrix_ft(&context,&A,&mtraits, FT_Comm);      // TODO: how to remove this call and have FT_Comm attached in the default case.
 #else 
-    essexamples_create_context_and_matrix(&context,&A,&mtraits);
+    essexamples_create_matrix(&A,NULL,&mtraits);
 #endif
     ghost_spmv_flags spmvmOpt = GHOST_SPMV_DOT;
     ghost_spmv_opts spmvtraits = GHOST_SPMV_OPTS_INITIALIZER;
     spmvtraits.dot = localdot;
     spmvtraits.flags = GHOST_SPMV_DOT;
 
-		ghost_rank(&myrank, context->mpicomm);
+		ghost_rank(&myrank, A->context->mpicomm);
 
-    essexamples_create_densemat(&x,&vtraits,context);
-    essexamples_create_densemat(&b,&vtraits,context);
-    essexamples_create_densemat(&r,&vtraits,context);
-    essexamples_create_densemat(&v,&vtraits,context);
-    essexamples_create_densemat(&p,&vtraits,context);
+    essexamples_create_densemat(&x,&vtraits,ghost_context_max_map(A->context));
+    essexamples_create_densemat(&b,&vtraits,ghost_context_max_map(A->context));
+    essexamples_create_densemat(&r,&vtraits,ghost_context_max_map(A->context));
+    essexamples_create_densemat(&v,&vtraits,ghost_context_max_map(A->context));
+    essexamples_create_densemat(&p,&vtraits,ghost_context_max_map(A->context));
 	
     ghost_densemat_init_val(x,&one);  // x = 1, start with defined value
     ghost_densemat_init_val(r,&zero); // r = 0
@@ -116,7 +114,7 @@ static void *mainTask(void *varg)
 
     ghost_spmv(r,A,x,spmvtraits); // r = A * x
     ghost_axpby(r,b,&one, &neg);  // r = -1*r + b
-    ghost_dot(&alpha,r,r,A->context->mpicomm);        // alpha = ||r||
+    ghost_dot(&alpha,r,r);        // alpha = ||r||
 
     ghost_densemat_init_densemat(p,r,0,0); // p = r
 
@@ -166,7 +164,7 @@ static void *mainTask(void *varg)
         ghost_instr_prefix_set("");
         lambda *= -1.;
 
-        ghost_dot(&alpha,r,r,A->context->mpicomm); // alpha = ||r||
+        ghost_dot(&alpha,r,r); // alpha = ||r||
 
         tmp = alpha/alphaold;
 
@@ -187,11 +185,12 @@ static void *mainTask(void *varg)
     }
     
     // print norm of residual
-    r->fromScalar(r,&zero);
-    ghost_spmv(r,A,x,GHOST_SPMV_OPTS_INITIALIZER);
-    r->axpy(r,b,&neg);
+    ghost_densemat_init_val(r, &zero);
+    spmvtraits.flags = GHOST_SPMV_DEFAULT;
+    ghost_spmv(r,A,x,spmvtraits);
+    ghost_axpy(r,b,&neg);
     vecdt_t rnorm;
-    ghost_dot(&rnorm,r,r,A->context->mpicomm);
+    ghost_dot(&rnorm,r,r);
     rnorm = sqrt(rnorm);
     if(myrank==printRank) 
 		{
@@ -207,7 +206,6 @@ static void *mainTask(void *varg)
     ghost_densemat_destroy(b);
     ghost_sparsemat_destroy(A);
 
-    ghost_context_destroy(context);
 #ifdef AFT	
 	AFT_END();
 #endif

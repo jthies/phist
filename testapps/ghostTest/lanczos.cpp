@@ -63,10 +63,10 @@ static void lanczosStep(ghost_context *context, ghost_sparsemat *mat, ghost_dens
     matdt_t minusbeta = -*beta;
     ghost_scale(vnew,&minusbeta);
     ghost_spmv(vnew, mat, vold, spmvtraits);
-    ghost_dot(alpha,vnew,vold,mat->context->mpicomm);
+    ghost_dot(alpha,vnew,vold);
     matdt_t minusalpha = -*alpha;
     ghost_axpy(vnew,vold,&minusalpha);
-    ghost_dot(beta,vnew,vnew,mat->context->mpicomm);
+    ghost_dot(beta,vnew,vnew);
     *beta=SQRT(*beta);
     matdt_t recbeta = (matdt_t)1./(*beta);
     ghost_scale(vnew,&recbeta);
@@ -119,8 +119,8 @@ static void *mainTask(void *varg)
 
     ghost_rank(&myrank, context->mpicomm);
 
-    ghost_densemat_create(&vnew,context,vtraits);
-    ghost_densemat_create(&vold,context,vtraits);
+    ghost_densemat_create(&vnew,ghost_context_max_map(context),vtraits);
+    ghost_densemat_create(&vold,ghost_context_max_map(context),vtraits);
 
     ghost_densemat_init_val(vnew,&zero); // vnew = 0
     ghost_densemat_init_rand(vold); // vold = random
