@@ -48,8 +48,7 @@ endif()
 
 
 if(GHOST_TEST)
-
-		find_package(ESSEX-PHYSICS REQUIRED)
+#		find_package(ESSEX-PHYSICS REQUIRED)
 		if (ESSEX-PHYSICS_FOUND)
     		message(STATUS "Found ESSEX-Physics ${ESSEX-PHYSICS_VERSION}")
 				set(LIBS ${LIBS} ${ESSEX-PHYSICS_LIBRARIES})
@@ -61,7 +60,7 @@ if(GHOST_TEST)
 				link_libraries(${ESSEX-PHYSICS_LIBRARIES})
     		add_definitions(-DHAVE_ESSEX_PHYSICS)
 		else()
-    		message(STATUS "Could not find ESSEX-Physics! Some examples will be skipped!")
+#    		message(STATUS "Could not find ESSEX-Physics! Some examples will be skipped!")
 		endif()
 
 	find_path(ESSEXAMPLES_INC REQURIED)
@@ -69,6 +68,7 @@ if(GHOST_TEST)
 	message (STATUS "ESSEXAMPLES_LIB is found ${ESSEXAMPLES_LIB}")
 	include_directories(${ESSEXAMPLES_INC})
 	link_directories("${ESSEXAMPLES_LIB}")
+	set(LIBS ${LIBS} ${ESSEXAMPLES_LIB})
 	link_libraries (essexamples)
 endif()
 
