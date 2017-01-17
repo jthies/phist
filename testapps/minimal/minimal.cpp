@@ -22,7 +22,6 @@ static char *prgname = "a.out";
 int read_params(int argc, char* argv[] , CpOptions * myCpOpt){
   prgname = argv[0];
 	char * tmp = new char[256];
-	std::string cpPathTemp ;
   int myrank=-1;
   MPI_Comm_rank(MPI_COMM_WORLD, &myrank);
 	//=========== Reading commnad line arguments with flags ===============//
