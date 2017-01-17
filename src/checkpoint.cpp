@@ -11,6 +11,9 @@ Checkpoint::Checkpoint( const std::string name_,
                         const MPI_Comm cpMpiComm_=MPI_COMM_WORLD
                        )
 {
+#ifndef AFT
+  getEnvParam();
+#endif  
   static std::set<std::string> nameKeys;    // to determine the uniqueness of different checkpoint names.
   std::pair<std::set<std::string>::iterator,bool> ret;
   ret         =  nameKeys.insert( name_);
