@@ -186,6 +186,7 @@ int Checkpoint::write()				// TODO: make two version of write. 1) PFS 2) SCR. an
 		craftDbg(3, "Checkpoint::write(): CRAFT_ENABLE: %d", craftEnabled);
     return EXIT_FAILURE;
   }				
+		craftDbg(1, "writing: %s", (it->first).c_str() );
 if( cpUseSCR ) {
 #ifdef SCR
 		SCRwrite();
@@ -280,6 +281,7 @@ int Checkpoint::read()				// TODO: make two version of read. 1) PFS 2) SCR
 		craftDbg(3, "Checkpoint::read(): CRAFT_ENABLE: %d", craftEnabled);
     return EXIT_FAILURE;
   }
+	craftDbg(1, "read: %s", (it->first).c_str() );
   int ret=EXIT_FAILURE;
 if( cpUseSCR ) {
 #ifdef SCR
