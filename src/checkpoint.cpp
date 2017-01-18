@@ -172,9 +172,9 @@ int Checkpoint::update(){
 		craftDbg(3, "Checkpoint::update(): CRAFT_ENABLE: %d", craftEnabled);
     return EXIT_FAILURE;
   }
+  craftDbg(1, "updating Checkpoint...");
 	for(cp_const_map:: iterator it = objects.begin(); it != objects.end(); ++it)
 	{
-		craftDbg(1, "updating: %s", (it->first).c_str() );
 		it->second->update();
 	}	
 	return EXIT_SUCCESS;
@@ -186,14 +186,16 @@ int Checkpoint::write()				// TODO: make two version of write. 1) PFS 2) SCR. an
 		craftDbg(3, "Checkpoint::write(): CRAFT_ENABLE: %d", craftEnabled);
     return EXIT_FAILURE;
   }				
-		craftDbg(1, "writing: %s", (it->first).c_str() );
-if( cpUseSCR ) {
+	craftDbg(1, "writing Checkpoint...");
+  int ret=EXIT_FAILURE;
+  if( cpUseSCR ) {
 #ifdef SCR
-		SCRwrite();
+		ret = SCRwrite();
 #endif
-}
-else
-		PFSwrite();
+  }
+  else{
+		ret = PFSwrite();
+  }
 	return EXIT_SUCCESS;
 }
 
@@ -262,7 +264,6 @@ int Checkpoint::PFSwrite(){
 				return EXIT_FAILURE;
     }
 	}
-  craftDbg(2, "all PFSserial writes are done." );
 	MPI_Barrier(cpMpiComm);			// TODO: do MPI_Gather here 
   // === writeMetaData file === // 
 	if(myrank_ == 0){
@@ -281,16 +282,17 @@ int Checkpoint::read()				// TODO: make two version of read. 1) PFS 2) SCR
 		craftDbg(3, "Checkpoint::read(): CRAFT_ENABLE: %d", craftEnabled);
     return EXIT_FAILURE;
   }
-	craftDbg(1, "read: %s", (it->first).c_str() );
+	craftDbg(1, "reading Checkpoint...");
   int ret=EXIT_FAILURE;
-if( cpUseSCR ) {
+  if( cpUseSCR ) {
 #ifdef SCR
 		ret = SCRread();
 #endif
-}
-else
+  }
+  else{
 		ret = PFSread();
-return ret;
+  }
+  return ret;
 }
 
 int Checkpoint::PFSread(){
