@@ -849,7 +849,7 @@ if (ESSEX-PHYSICS_FOUND)
 endif()
 
 if(PHIST_KERNEL_LIB STREQUAL "ghost")
-  find_package(GHOST 1.1.0 REQUIRED CONFIG)
+  find_package(GHOST 1.1.1 REQUIRED CONFIG)
 elseif(PHIST_USE_GHOST)
   find_package(GHOST CONFIG QUIET)
 endif()
