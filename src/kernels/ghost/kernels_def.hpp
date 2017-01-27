@@ -1095,8 +1095,9 @@ extern "C" void SUBR(mvec_print)(TYPE(const_mvec_ptr) vV, int* iflag)
   // if this is a GPU process, do not print the vector values.
   // the vec->string function will download the vector elements,
   // which allocates memory on the CPU. Also, the download changes
-  // the semantic of the program. If the user wants to print vector
-  // elements, we should add an input flag like PHIST_FORCE.
+  // the semantics of the program. If the user wants to print vector
+  // elements, we should add an input flag like PHIST_FORCE or manually
+  // print the host-side if allocated (cf. sdMat_print).
   if (V->traits.location == GHOST_LOCATION_HOST)
   {
     char *str=NULL;
@@ -1120,17 +1121,30 @@ extern "C" void SUBR(sdMat_print)(TYPE(const_sdMat_ptr) vM, int* iflag)
   std::cout << "# cols:       "<<M->traits.ncols<<std::endl;
   std::cout << "# row major:  "<<(M->traits.storage & GHOST_DENSEMAT_ROWMAJOR)<<std::endl;
   std::cout << "# stride:     "<<M->stride<<std::endl;
-  // always print the host side of the sdMat, if we don't replace the location by HOST in the traits
-  // temporarily, GHOST will download the memory and allocate the host side.
-  // REMARK: M being const, we can't change a field in M->traits, which is a non-pointer member.
+  // always print the host side of the sdMat. To prevent GHOST from downloading the device
+  // memory, we do so manually instead of calling ghost_densemat_string.
   {
-    char *str=NULL;
-//    ghost_location locM=M->traits.location;
-//    M->traits.location=GHOST_LOCATION_HOST;
-    if (M->traits.location==GHOST_LOCATION_HOST) ghost_densemat_string(&str,M);
-//    M->traits.location=locM;
-    std::cout << str <<std::endl;
-    free(str); str = NULL;
+  /*
+    if (M->traits.location==GHOST_LOCATION_HOST) 
+    {
+      char *str=NULL;
+      ghost_densemat_string(&str,M);
+      std::cout << str <<std::endl;
+      free(str); str = NULL;
+    }
+    else
+    */
+    {
+      _ST_* val = (_ST_*)(M->val);
+      for (int i=0; i<M->map->dim; i++)
+      {
+        for (int j=0; j<M->traits.ncols; j++)
+        {
+          std::cout << val[M->stride*j+i] << "  ";
+        }
+        std::cout << std::endl;
+      }
+    }
   }
 }
 #ifndef PHIST_BUILTIN_RNG
