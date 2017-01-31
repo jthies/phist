@@ -400,7 +400,8 @@ static int global_msum(MT* value, int count, MPI_Comm mpi_comm)
   {
     MT res=1.0;
     // see if all columns in vec2 have B-norm 1
-    ST norms[nvec_],errs[nvec_];
+    ST *norms = new ST[nvec_];
+    ST *errs = new ST[nvec_];
     for (int j=0;j<nvec_;j++)
     {
 #if defined(PHIST_HIGH_PRECISION_KERNELS) && defined(IS_DOUBLE) && !defined(IS_COMPLEX)
@@ -437,6 +438,8 @@ static int global_msum(MT* value, int count, MPI_Comm mpi_comm)
     for (int j=0;j<nvec_;j++) norms[j]=st::sqrt(norms[j]);
 #endif
     res=ArrayEqual(norms,nvec_,1,nvec_,1,st::one());
+    delete [] norms;
+    delete [] errs;
     return res;
   }
 
