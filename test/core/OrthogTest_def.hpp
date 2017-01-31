@@ -217,6 +217,10 @@ public:
         ASSERT_EQ(expect_iflagV,iflag_);
       }
       ASSERT_EQ(expectedRankV,rankVW);
+      
+      // check for occurences of Inf or NaN
+      ASSERT_EQ(0,MvecContainsInfOrNaN(V));
+      ASSERT_EQ(0,SdMatContainsInfOrNaN(R0));
 
 #ifdef ORTHOG_WITH_HPD_B
       ASSERT_TRUE(W!=BW);
@@ -279,6 +283,12 @@ public:
       iflag_=iflag_in;
       SUBR(orthog)(V,Q,B_op,R1,R2,nsteps,&rankVW,&iflag_);
       ASSERT_EQ(expect_iflagVW,iflag_);
+
+      // check for occurences of Inf or NaN
+      ASSERT_EQ(0,MvecContainsInfOrNaN(V));
+      ASSERT_EQ(0,MvecContainsInfOrNaN(Q));
+      ASSERT_EQ(0,SdMatContainsInfOrNaN(R1));
+      ASSERT_EQ(0,SdMatContainsInfOrNaN(R2));
 
 /*
 std::cout<<"V=\n";
