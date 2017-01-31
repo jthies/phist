@@ -345,6 +345,21 @@ extern "C" void phist_map_create(phist_map_ptr* vmap, phist_const_comm_ptr vcomm
   double weight=::phist::ghost_internal::get_proc_weight();
   int pad=std::max(32,PHIST_SELL_C);
   PHIST_CHK_GERR(ghost_map_create_distribution(map,NULL,weight,GHOST_MAP_DIST_NROWS,NULL),*iflag);
+  
+  // try to avoid empty partitions if the number of elements is small and the weights are unequal
+  bool me_empty=(map->dim==0),any_empty;
+  PHIST_CHK_IERR(*iflag=MPI_Allreduce(&me_empty,&any_empty,1,MPI_LOGICAL,MPI_LOR,*comm),*iflag);
+  
+  if (any_empty)
+  {
+    weight=1.0;
+    ghost_map_destroy(map);
+    map=NULL;
+    PHIST_CHK_GERR(ghost_map_create(&map,nglob,*comm,GHOST_MAP_ROW,GHOST_MAP_DEFAULT),*iflag);
+    int pad=std::max(32,PHIST_SELL_C);
+    PHIST_CHK_GERR(ghost_map_create_distribution(map,NULL,weight,GHOST_MAP_DIST_NROWS,NULL),*iflag);
+  }
+
   map->dimpad=PAD(map->dimpad,pad);
   
   // in ghost terminology, we look at LHS=A*RHS, the LHS is based on the
