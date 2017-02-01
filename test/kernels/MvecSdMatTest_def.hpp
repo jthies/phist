@@ -237,6 +237,72 @@ public:
     }
   }
 
+  TEST_F(CLASSNAME, mvecT_times_mvec_rand_repeated) 
+  {
+    if (typeImplemented_ && !problemTooSmall_)
+    {
+      // fill V and W with ones
+      SUBR(mvec_random)(V1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(mvec_random)(V2_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+
+      // use this as the reference solution:
+      SUBR(mvecT_times_mvec)(st::one(),V1_,V2_,st::zero(),M1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      
+      // make sure the result does not contain NaN or inf
+      ASSERT_EQ(0,SdMatContainsInfOrNaN(M1_));
+      
+      // make sure the result is not 0
+      MT maxval=mt::zero();
+      for (int i=0; i<m_; i++)
+      {
+        for (int j=0; j<k_; j++)
+        {
+          maxval=std::max(maxval,st::abs(M1_vp_[MIDX(i,j,ldaM1_)]));
+        }
+      }
+      
+      ASSERT_TRUE(maxval>mt::zero());
+
+      // check everyone has the same result and host+device are sync'd
+      MTest::sdMat_parallel_check(M1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      
+      for (int run=0; run<3; run++)
+      {
+
+        if (isCuda_)
+        {
+          // destroy the host side of the vectors to make sure the result is actually obtained on the device
+          for (phist_lidx i=0; i<nloc_; i++)
+          {
+            for (int j=0; j<m_; j++)
+            {
+              V1_vp_[VIDX(i,j,ldaV1_)]=(MT)(run*999.0)*st::one()+(MT)(333.0/(run+1))*st::cmplx_I();
+            }
+            for (int j=0; j<k_; j++)
+            {
+              V2_vp_[VIDX(i,j,ldaV2_)]=(MT)(-111.0*run)*st::one()+(MT)(555.0/(run+1))*st::cmplx_I();
+            }
+          }
+        }
+      
+        TYPE(sdMat_ptr) M=NULL;
+        SUBR(sdMat_create)(&M,m_,k_,comm_,&iflag_);
+        ASSERT_EQ(0,iflag_);
+      
+        SUBR(mvecT_times_mvec)(st::one(),V1_,V2_,st::zero(),M,&iflag_);
+        ASSERT_EQ(0,iflag_);
+      
+        ASSERT_NEAR(mt::one(),SdMatsEqual(M1_,M),_N_*10*mt::eps());
+        SUBR(sdMat_delete)(M,&iflag_);
+        ASSERT_EQ(0,iflag_);
+      }
+    }
+  }
+  
 #if ( _M_ == _K_ )
   // check ones(n,m)'*ones(n,m)=n*ones(m,m), and columns with 1, 2, 3...
   TEST_F(CLASSNAME, mvecT_times_mvec_self) 
