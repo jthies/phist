@@ -1023,7 +1023,7 @@ PHIST_TASK_DECLARE(ComputeTask)
   PHIST_TASK_END(iflag);
 }
 
-//! put scalar value into all elements of a multi-vector
+//! put scalar value into all elements of a small, dense matrix
 extern "C" void SUBR(sdMat_put_value)(TYPE(sdMat_ptr) vM, _ST_ value, int* iflag)
 {
   int iflag_in=*iflag;
