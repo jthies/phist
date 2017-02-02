@@ -349,8 +349,8 @@ extern "C" void phist_map_create(phist_map_ptr* vmap, phist_const_comm_ptr vcomm
   PHIST_CHK_GERR(ghost_map_create_distribution(map,NULL,weight,GHOST_MAP_DIST_NROWS,NULL),*iflag);
   
   // try to avoid empty partitions if the number of elements is small and the weights are unequal
-  bool me_empty=(map->dim==0),any_empty;
-  PHIST_CHK_IERR(*iflag=MPI_Allreduce(&me_empty,&any_empty,1,MPI_LOGICAL,MPI_LOR,*comm),*iflag);
+  int me_empty=(map->dim==0)?1:0,any_empty;
+  PHIST_CHK_IERR(*iflag=MPI_Allreduce(&me_empty,&any_empty,1,MPI_INT,MPI_SUM,*comm),*iflag);
   
   if (any_empty)
   {
