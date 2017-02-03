@@ -369,7 +369,7 @@ public:
       ASSERT_EQ(0,iflag_);
       MTest::sdMat_parallel_check(M2_,&iflag_);
       ASSERT_EQ(0,iflag_);
-      ASSERT_NEAR(mt::one(),SdMatsEqual(M1_,M2_),200*(_MT_)n_*mt::eps());
+      ASSERT_NEAR(mt::one(),SdMatsEqual(M1_,M2_),220*(_MT_)n_*mt::eps());
       ASSERT_EQ(0,iflag_);
 
     }
