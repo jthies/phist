@@ -253,7 +253,7 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,_N_,MATNAME>,
 
         // check orthogonality of V_
         ASSERT_NEAR(mt::one(),VTest::ColsAreBNormalized(V_vp_,BV_vp_,nloc_,ldaV_,ldaBV_,stride_,mpi_comm_),(MT)200.*releps(V_));
-        ASSERT_NEAR(mt::one(),VTest::ColsAreBOrthogonal(V_vp_,BV_vp_,nloc_,ldaV_,ldaBV_,stride_,mpi_comm_),(MT)200.*releps(V_));
+        ASSERT_NEAR(mt::one(),VTest::ColsAreBOrthogonal(V_vp_,BV_vp_,nloc_,ldaV_,ldaBV_,stride_,mpi_comm_),(MT)300.*releps(V_));
 
         // calculate A*V(:,1:m)
         opA->apply(st::one(),opA->A,Vm_,st::zero(),AV_,&iflag_);
@@ -302,7 +302,7 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,_N_,MATNAME>,
         ASSERT_EQ(0,iflag_);
         SUBR(mvecT_times_mvec)(-st::one(),Vm_,AVm_,st::one(),Hm_, &iflag_);
         ASSERT_EQ(0,iflag_);
-        ASSERT_NEAR(mt::one(),ArrayEqual(mat2_vp_,m_-1,m_-1,m_lda_,stride_,st::zero()), (MT)250.*releps(V_));
+        ASSERT_NEAR(mt::one(),ArrayEqual(mat2_vp_,m_-1,m_-1,m_lda_,stride_,st::zero()), (MT)300.*releps(V_));
 
         // check A*Vm = AVm
         opA->apply(-st::one(),opA->A,Vm_,st::one(),AVm_,&iflag_);

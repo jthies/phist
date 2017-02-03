@@ -296,7 +296,7 @@ public:
         SUBR(mvecT_times_mvec)(st::one(),V1_,V2_,st::zero(),M,&iflag_);
         ASSERT_EQ(0,iflag_);
       
-        ASSERT_NEAR(mt::one(),SdMatsEqual(M1_,M),_N_*10*mt::eps());
+        ASSERT_NEAR(mt::one(),SdMatsEqual(M1_,M),_N_*20*mt::eps());
         SUBR(sdMat_delete)(M,&iflag_);
         ASSERT_EQ(0,iflag_);
       }
