@@ -409,6 +409,7 @@ PHIST_TASK_BEGIN_SMALLDETERMINISTIC(ComputeTask)
   ghost_densemat_create(&result,map,dmtraits);
   ST zero = st::zero();
   PHIST_CHK_GERR(ghost_densemat_init_val(result,&zero),*iflag);
+  PHIST_CHK_GERR(ghost_densemat_upload(result),*iflag);
   *vM=(TYPE(sdMat_ptr))result;
 PHIST_TASK_END(iflag);
 }
