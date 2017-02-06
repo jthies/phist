@@ -296,7 +296,7 @@ public:
         SUBR(mvecT_times_mvec)(st::one(),V1_,V2_,st::zero(),M,&iflag_);
         ASSERT_EQ(0,iflag_);
       
-        ASSERT_NEAR(mt::one(),SdMatsEqual(M1_,M),_N_*10*mt::eps());
+        ASSERT_NEAR(mt::one(),SdMatsEqual(M1_,M),_N_*20*mt::eps());
         SUBR(sdMat_delete)(M,&iflag_);
         ASSERT_EQ(0,iflag_);
       }
@@ -369,7 +369,7 @@ public:
       ASSERT_EQ(0,iflag_);
       MTest::sdMat_parallel_check(M2_,&iflag_);
       ASSERT_EQ(0,iflag_);
-      ASSERT_NEAR(mt::one(),SdMatsEqual(M1_,M2_),220*(_MT_)n_*mt::eps());
+      ASSERT_NEAR(mt::one(),SdMatsEqual(M1_,M2_),500*(_MT_)n_*mt::eps());
       ASSERT_EQ(0,iflag_);
 
     }
