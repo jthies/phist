@@ -24,8 +24,8 @@ SET(CMAKE_SKIP_INSTALL_ALL_DEPENDENCY TRUE)
 # still under development, whereas the next development version may or may not do what
 # the function claims to do, depending on the status of the repository.
 set(PHIST_VERSION_MAJOR 1)
-set(PHIST_VERSION_MINOR 1)
-set(PHIST_VERSION_PATCH 99)
+set(PHIST_VERSION_MINOR 2)
+set(PHIST_VERSION_PATCH 0)
 set(PHIST_VERSION ${PHIST_VERSION_MAJOR}.${PHIST_VERSION_MINOR}.${PHIST_VERSION_PATCH})
 set(PRODUCT_NAME phist-${PHIST_VERSION})
 
