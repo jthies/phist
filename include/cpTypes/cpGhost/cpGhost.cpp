@@ -7,11 +7,10 @@
 #include "cpHelperFuncs.hpp"
 
 CpGhostDenseMat::CpGhostDenseMat(ghost_densemat *  dataPtr_, const MPI_Comm cpMpiComm_){
-		dataPtr = dataPtr_;
-		ghost_densemat_create(&asynData, dataPtr->map, dataPtr->traits); 
-		ghost_densemat_init_densemat(asynData, dataPtr, 0, 0);
-
-
+	dataPtr = dataPtr_;
+	ghost_densemat_create(&asynData, dataPtr->map, dataPtr->traits); 
+	ghost_densemat_init_densemat(asynData, dataPtr, 0, 0);
+  cpMpiComm = cpMpiComm_;
 }
 
 int CpGhostDenseMat::update(){
@@ -20,12 +19,20 @@ int CpGhostDenseMat::update(){
 }
 
 int CpGhostDenseMat::write( const std::string * filename){
+#ifdef MPIIO																										// Parallel PFS IO 
+  ghost_densemat_to_file(asynData,(char *) (*filename).c_str(), cpMpiComm);
+#else 
   ghost_densemat_to_file(asynData,(char *) (*filename).c_str(), MPI_COMM_SELF);
+#endif
   return EXIT_SUCCESS;
 }
 
 int CpGhostDenseMat::read(const std::string * filename){
+#ifdef MPIIO																										// Parallel PFS IO 
+  ghost_densemat_init_file(dataPtr,(char *) (*filename).c_str(), cpMpiComm);
+#else 
   ghost_densemat_init_file(dataPtr,(char *) (*filename).c_str(), MPI_COMM_SELF);
+#endif
   return EXIT_SUCCESS;
 }
 
@@ -36,6 +43,7 @@ CpGhostDenseMatArray::CpGhostDenseMatArray(ghost_densemat **  dataPtr_, const si
   nDenseMat = nDenseMat_;
   toCpDenseMat = toCpDenseMat_;
   cyclicCpCounter = 0;
+  cpMpiComm = cpMpiComm_;
   
   asynData = new ghost_densemat*[nDenseMat];
   for(size_t i = 0; i < nDenseMat ; ++i)

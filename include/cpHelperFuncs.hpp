@@ -24,6 +24,8 @@ inline int mpiCommWorldNumProcs();
 void craftErr(const char *fmt, ...);
 void craftDbg(int level, const char *fmt, ...);
 void craftAbort(int rc, const char *fmt, ...);
+void craftTime(const std::string str);
+void craftTime(const std::string str, const MPI_Comm * const comm);
 void getEnvVal(int &var, const char * str);
 void checkDirectoryName(std::string* const s);
 void checkPathName(std::string* const s);

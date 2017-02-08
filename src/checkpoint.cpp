@@ -74,8 +74,20 @@ void Checkpoint::commit(){
 }
 
 int Checkpoint::mkCpDir(std::string path){
-	std::string cmd = "mkdir -p " + path;
-	system (cmd.c_str());
+//	std::string cmd = "mkdir -p " + path;
+//	system (cmd.c_str());
+	int myrank_ = -1;
+	MPI_Comm_rank(cpMpiComm, &myrank_);
+  int ret=-99;
+  if(myrank_==0){
+    for(int rep = 0; ret != 0 && rep < 10; ++rep ){
+      ret = mkdir(path.c_str(), S_IRWXU);
+      if( ret != 0){
+        craftDbg(1, "mkCpDir x failed for %s. ret_val:%d, rep: %d", path.c_str(), ret, rep);
+      }
+    }
+  } 
+  MPI_Barrier(cpMpiComm); 
   sync();
 	return EXIT_SUCCESS;
 }
@@ -85,16 +97,25 @@ int Checkpoint::writeCpMetaData(const std::string filename){			// writes a tmp f
 	filenameTmp = filename + ".tmp"; 
 	std::ofstream fstr;
 	fstr.open ((filenameTmp).c_str(), std::ios::out );	
+  
 	if(fstr.is_open()){
 		fstr << cpVersion << std::endl;
 		fstr.close();
 	}
-   else{
-		std::cerr << "Can't open file " << filenameTmp << std::endl;			
+  else{
+    craftErr("Can't open file @ %s:%d",
+              __FILE__, __LINE__
+      );
+	  craftDbg(1, "Can't open file %s", (filename).c_str());
 		return EXIT_FAILURE;
-	 }
-	std::string cmd = "mv " + filenameTmp + " " + filename;
-	system (cmd.c_str());
+	}
+//	std::string cmd = "mv " + filenameTmp + " " + filename;
+  int ret=-99;
+  ret = rename(filenameTmp.c_str(), filename.c_str());
+  if( ret != 0){
+    craftDbg(1, "rename failed for %s. ret_val:%d", filenameTmp.c_str(), ret);
+  }
+//	system (cmd.c_str());
   return EXIT_SUCCESS;
 }
 
@@ -114,7 +135,10 @@ int Checkpoint::readCpMetaData(){
     return EXIT_SUCCESS;
 	}
   else{
-	  std::cerr << "Can't open file " << filename << std::endl;			
+    craftErr("Can't open file @ %s:%d",
+              __FILE__, __LINE__
+      );
+	  craftDbg(1, "Can't open file %s", (filename).c_str());
 	  return EXIT_FAILURE;
   }
 }
@@ -145,7 +169,10 @@ int Checkpoint::SCRreadCpMetaData(){
 	  return EXIT_SUCCESS;
 	}
   else{
-	  std::cerr << "Can't open file " << filename << std::endl;			
+    craftErr("Can't open file @ %s:%d",
+              __FILE__, __LINE__
+      );
+	  craftDbg(1, "Can't open file %s", (filename).c_str());
 	  return EXIT_FAILURE;
   }
 #endif
@@ -158,8 +185,10 @@ int Checkpoint::deleteBackupCp(){
 		std::string toRmDir = cpPath + "/" + cpVersionPrefix + SSTR(cpVersion-numBufferCps-1);
 		std::string cmd = "rm -r " + toRmDir;	
 		struct stat sb;
+    int ret = -99;
 		if (stat(toRmDir.c_str(), &sb) == 0 && S_ISDIR(sb.st_mode))
 		{
+      craftDbg(1, "removing directory command is  %s ", cmd.c_str());
 			system ( cmd.c_str());
  		}
 	}
@@ -263,6 +292,7 @@ int Checkpoint::PFSwrite(){
         );
 				return EXIT_FAILURE;
     }
+	    MPI_Barrier(cpMpiComm);
 	}
 	MPI_Barrier(cpMpiComm);			// TODO: do MPI_Gather here 
   // === writeMetaData file === // 
@@ -270,6 +300,7 @@ int Checkpoint::PFSwrite(){
 		filename = cpPath + "/" + "metadata.ckpt"; 
 	  writeCpMetaData(filename);
 	}
+	MPI_Barrier(cpMpiComm);
 	++cpVersion;
 	deleteBackupCp();
 	return EXIT_SUCCESS;
@@ -292,6 +323,7 @@ int Checkpoint::read()				// TODO: make two version of read. 1) PFS 2) SCR
   else{
 		ret = PFSread();
   }
+  craftDbg(1, "All Checkpoint files are read");
   return ret;
 }
 
@@ -311,6 +343,7 @@ int Checkpoint::PFSread(){
 #else																														// Serial PFS IO 
 		filename = cpPathVersion + "/" + (it->first) + myrank + ".ckpt"; 
 #endif
+	  MPI_Barrier(cpMpiComm);
     craftDbg(2, "PFSread(): reading file: %s", filename.c_str());
 		if(EXIT_SUCCESS != it->second->read(&filename))	{
       craftErr("PFSread not successful @ %s:%d",

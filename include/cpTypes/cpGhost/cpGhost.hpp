@@ -18,6 +18,7 @@ public:
 private:
 	ghost_densemat *  dataPtr;
 	ghost_densemat * asynData;
+  MPI_Comm cpMpiComm ;
 };
 
 
@@ -38,6 +39,7 @@ private:
 	size_t nDenseMat;
 	int toCpDenseMat; 
 	size_t cyclicCpCounter;
+  MPI_Comm cpMpiComm ;
 };
 
 

@@ -1,4 +1,5 @@
 #include <vector>
+#include <numeric>
 #include <string>
 #include <cstring>
 #include <typeinfo>
@@ -6,13 +7,11 @@
 #include <stdio.h>
 #include <math.h>
 
+#include <essexamples.h>
 #include <checkpoint.hpp>
 #include <cpOptions.h>
 #include <ghost.h>
 #include <ghost/types.h>
-extern "C"{
-#include "essexamples.h"
-}
 #ifdef AFT
 	#include <aft.h>
 	#include <aft_macros.h>
@@ -121,7 +120,7 @@ static void *mainTask(void *varg)
 		if( myrank == printRank) {
 				printf("==== Defining CP ====\n");
 		}
-	Checkpoint  myCP( "a", FT_Comm);
+	Checkpoint  myCP( "ghosttest", FT_Comm);
 	myCP.disableSCR();
 	myCP.add("iteration", &iteration);	
 	myCP.add("lambda", &lambda);	
@@ -172,6 +171,7 @@ static void *mainTask(void *varg)
 		
 				usleep(1000);				// TODO: just for testing, in order to see the progress of program
         if (myrank == printRank){
+					printf("===");
 					printf("iter=%d, ", iteration);
           printf("alpha[%4d] = %g\n",iteration+1, alpha);
 	   		}

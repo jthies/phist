@@ -113,7 +113,9 @@ void errhandler_respawn(MPI_Comm* pcomm, int* errcode, ...) {
     MPI_Comm_rank(*pcomm, &myrank);
         
     MPI_Error_string(*errcode, estr, &strl);
-    fprintf(stderr, "%04d: errhandler invoked with error %s\n", myrank, estr);
+    craftDbg(1, "%04d: errhandler invoked with error %s\n", myrank, estr);
+
+//    fprintf(stderr, "%04d: errhandler invoked with error %s\n", myrank, estr);
 	
     if( MPIX_ERR_PROC_FAILED != eclass &&
         MPIX_ERR_REVOKED != eclass ) {
@@ -153,7 +155,9 @@ int app_needs_repair(MPI_Comm *comm, char ** argv) {
 
   if(craftCommRecoveryPolicy == "SHRINKING") {
   	craftDbg(3, "Initiating SHRINKING recovery.");
+    craftTime("before shrink");
 		MPIX_Comm_shrink(*comm, tempcomm);
+    craftTime("after shrink");
   	craftDbg(3, "SHRINKING recovery done.");
   }
   if(craftCommRecoveryPolicy == "NON-SHRINKING") {
@@ -161,13 +165,12 @@ int app_needs_repair(MPI_Comm *comm, char ** argv) {
   	MPIX_Comm_replace(*comm, tempcomm , argv);
   	craftDbg(3, "NON-SHRINKING recovery done.");
   }
-
 	MPI_Barrier(*tempcomm);
-//	*comm = *tempcomm;
-	MPI_Comm_dup(*tempcomm, comm);
+  *comm = *tempcomm;
+//	MPI_Comm_dup(*tempcomm, comm);
 	MPI_Comm_rank(*comm, &myrank);	
 	craftDbg(1, "appNeedsRepair done");
-    return 0; /* we have repaired the world, we need to reexecute */
+  return 0; /* we have repaired the world, we need to reexecute */
 }
 
 int MPIX_Comm_replace(MPI_Comm comm, MPI_Comm *newcomm, char** argv) {
@@ -181,7 +184,6 @@ redo:
   if (comm == MPI_COMM_NULL){ // am I a newly spawned process?
     // I am a new spawnee, waiting for my new rank assignment
     // it will be sent by rank 0 in the old world 
-    printf("I am the spawned process \n");
 		MPI_Comm_get_parent(&icomm);
 		scomm = MPI_COMM_WORLD;
 		MPI_Recv(&crank, 1, MPI_INT, 0, 1, icomm, MPI_STATUS_IGNORE);
@@ -192,7 +194,10 @@ redo:
     // of replacement processes (we check that this operation worked
     // before we procees further) 
     // First: remove dead processes 
+    craftTime("before shrink");
 		MPIX_Comm_shrink(comm, &scomm);
+    craftTime("after shrink");
+    
 	  MPI_Comm_rank(scomm, &srank );
 	  MPI_Comm_set_errhandler(scomm, MPI_ERRORS_RETURN);
     MPI_Barrier(scomm);
@@ -208,7 +213,9 @@ redo:
    // ====== TODO: Determine the spawnHosts list based on 'spawn policy' here =====
 	 //We handle failures during this fuction execution ourseves//
     std::string spawnHostsTmp; 
-    makeSpawnList(nd, failedRanks, &scomm, &spawnHostsTmp);     // This function makes list where to spawn, depending on the spawn policy (REUSE, NOREUSE)
+    craftTime("before makeSpawnList");
+    makeSpawnList(nd, failedRanks, &scomm, &spawnHostsTmp);     // This function makes list where to spawn, depending on the spawn policy (REUSE, NO-REUSE)
+    craftTime("after makeSpawnList");
 	  char * scr_copy_location = new char[256];
 	  sprintf(scr_copy_location, "PARTNER");
     // ======= Spawn Processes ====== // 
@@ -222,9 +229,13 @@ redo:
     sprintf(spawnHosts, "%s", spawnHostsTmp.c_str());
     MPI_Info_set(spawn_info, "host", spawnHosts);
     MPI_Info_set(spawn_info, "SCR_COPY_TYPE", scr_copy_location);
+    craftTime("before spawning");
 	  rc = MPI_Comm_spawn(argv[0], argv+1, nd, spawn_info, 0, scomm, &icomm, MPI_ERRCODES_IGNORE);
+    craftTime("after spawning");
 	  flag = (MPI_SUCCESS == rc);
+    craftTime("before agree");
 	  MPIX_Comm_agree(scomm, &flag);
+    craftTime("after agree");
 	  if (!flag) {	// spawed has failed
 		  if ( MPI_SUCCESS == rc ) {
 			  MPIX_Comm_revoke(icomm);
@@ -238,6 +249,7 @@ redo:
    // ======= Spawn Processes ====== // 
  
 //	  remembering the former rank: we will reassign the same ranks in the new world 
+    craftTime("before MPI_Send");
     MPI_Comm_rank (comm, &crank);
 	  MPI_Comm_rank (scomm, &srank);
 	  // the rank 0 in the scomm comm is going to determine the ranks at which the spares need to be inserted. 
@@ -249,15 +261,20 @@ redo:
 			  MPI_Send(&drank, 1, MPI_INT, i, 1, icomm);
 		  }
 	  }	
+    craftTime("after MPI_Send");
 	  }
  //   Merge the intercomm, to reconstruct an intracomm ( we check 
  //	 that this operation worked before we proceeed further 
-	 
 	  rc = MPI_Intercomm_merge(icomm, 1 , &mcomm);
+    craftTime("after merge", &mcomm);
 	  rflag = flag = (MPI_SUCCESS == rc);
+    craftTime("before AGREE 1", &mcomm);
 	  MPIX_Comm_agree(scomm, &flag);
+    craftTime("after AGREE 1", &mcomm);
 	  if( MPI_COMM_WORLD != scomm) MPI_Comm_free(&scomm);
+    craftTime("before AGREE 2", &mcomm);
 	  MPIX_Comm_agree(icomm, &rflag);
+    craftTime("after AGREE 2", &mcomm);
 	  MPI_Comm_free(&icomm);
 	  if(!(flag && rflag) ){
 		  if(MPI_SUCCESS == rc){
@@ -266,6 +283,7 @@ redo:
 		  craftDbg(1, "%04d: Intercomm_merge failed, redo", crank);
 		  goto redo;
 	  }
+    craftTime("after 2 agrees", &mcomm);
 	  int myrank_mcomm= -1;
 	  MPI_Comm_rank(mcomm, &myrank_mcomm);
 	  MPI_Barrier(mcomm);
@@ -273,7 +291,9 @@ redo:
  //   Merge is done. Now, reorder the mcomm according to the original rank ordering in comm
  //	 * Split does the magic. removing spare processes and reordering ranks so that all 
  //	 * surviving processes remain at their former places
+    craftTime("before split", &mcomm);
  	  rc = MPI_Comm_split(mcomm, 1, crank, newcomm);
+    craftTime("after split", newcomm );
  //   Split or some of the communications above may have failed if 
 //	 new failures have disrupted the process, we need to make sure 
  //	 we succeeded at all the ranks, or retry until it works. 
@@ -288,10 +308,11 @@ redo:
 		  goto redo;
 	  }	
     std::vector<std::string> activeNodeList;
+    craftTime("before write active machine list", newcomm );
     writeActiveMachineList(&activeNodeList, newcomm); 
+    craftTime("after write active machine list", newcomm );
 	  MPI_Barrier(*newcomm);
 	  craftDbg(3, "%d_Split is done", myrank_mcomm);
-	  sleep(1);
   
 //	 restore the error handler 
 	  if (MPI_COMM_NULL != comm){
@@ -299,7 +320,8 @@ redo:
 		  MPI_Comm_get_errhandler (comm, &errh);
 		  MPI_Comm_set_errhandler (*newcomm, errh);
 	  }
-    printNodeName(newcomm);
+    craftTime("replace function finished", newcomm);
+//    printNodeName(newcomm);
     return MPI_SUCCESS;
  }
 
@@ -356,8 +378,8 @@ int makeSpawnList(const int nd, const int * const failedRanks, MPI_Comm * const 
   if(craftCommSpawnPolicy == "REUSE"){
     makeSpawnListReuse(nd, failedRanks, comm, spawnList);
   }
-  if(craftCommSpawnPolicy == "NOREUSE"){
-    writeFailedList(nd, failedRanks, comm);         // This writing is not necessary for functionality but just for keeping record of the failed nodes.
+  if(craftCommSpawnPolicy == "NO-REUSE"){
+//    writeFailedList(nd, failedRanks, comm);         // This writing is not necessary for functionality but just for keeping record of the failed nodes.
     makeSpawnListNoReuse(nd, failedRanks, comm, spawnList);   // also updates/writes the list of Rescue Processes
   }
   MPI_Barrier(*comm); 
@@ -392,10 +414,11 @@ int makeSpawnListReuse(const int nd, const int * const failedRanks, MPI_Comm * c
 		fstri.close();
     tempStr.erase(tempStr.end()-1);
     *spawnList = tempStr;
-    std::cout << "spawnList reuse= " << *spawnList << '\n';
+    craftDbg(1, "spawnList reuse %s", spawnList->c_str());
+//    if(myrank == getFirstRank(comm)) std::cout << "spawnList reuse= " << *spawnList << '\n';
   }
   else{
-		std::cerr << "Can't open file " << filenamei << std::endl;			
+		if(myrank == getFirstRank(comm)) std::cerr << "Can't open file " << filenamei << std::endl;			
 		return EXIT_FAILURE;
 	}
   return 0;
@@ -423,7 +446,7 @@ int makeSpawnListNoReuse(const int nd, const int * const failedRanks, MPI_Comm *
       rescueNodeList.insert(line);
     }
   }else{
-		  std::cerr << "Can't open file " << filenameR << std::endl;			
+		  if(myrank == getFirstRank(comm)) std::cerr << "Can't open file " << filenameR << std::endl;			
 		  return EXIT_FAILURE;
 	}
   if(rescueNodeList.empty()){
@@ -439,7 +462,7 @@ int makeSpawnListNoReuse(const int nd, const int * const failedRanks, MPI_Comm *
       *spawnList = *it + ",";
       rescueNodeList.erase(it);      // updating the rescue Node list for future.
     }
-    printSet("== NEW RESCUE SET NO REUSE ==", rescueNodeList); 
+    printSet("== NEW RESCUE SET NO-REUSE ==", rescueNodeList); 
     writeSetList(machinefileRescueProcs, rescueNodeList, comm);
   }
     
@@ -448,7 +471,7 @@ int makeSpawnListNoReuse(const int nd, const int * const failedRanks, MPI_Comm *
 }
 
 int writeFailedList(const int nd, const int * const failedRanks, MPI_Comm * const comm){
-  craftDbg(3, "craftCommSpawnPolicy == NOREUSE");   
+  craftDbg(3, "craftCommSpawnPolicy == NO-REUSE");   
   int myrank=-1;
   MPI_Comm_rank(*comm, &myrank);
   if(myrank == getFirstRank(comm))
@@ -587,6 +610,52 @@ int copyVecToSet(std::vector<std::string> * vecSrc, std::set<std::string> *setDs
   std::vector<std::string>::iterator it;
   for (it = vecSrc->begin(); it != vecSrc->end() ; ++it){
     setDst->insert(*it);    
+  }
+  return EXIT_SUCCESS;
+}
+
+
+
+int craftTimeToFile(const std::string fileName, MPI_Comm * const comm){
+  double t=0.0;
+  int myrank=-1;
+  MPI_Comm_rank(*comm, &myrank);
+  get_walltime_ (&t);
+  if(myrank == getFirstRank(comm))
+  {
+    std::ofstream fstr;
+    fstr.open ((fileName).c_str(), std::ios::out );	
+    if(fstr.is_open()){
+      fstr.precision(16);
+      fstr << t << std::endl;
+      fstr.close(); 
+      sync();
+    }else{
+		  std::cerr << "Can't open file " << fileName << std::endl;			
+		  return EXIT_FAILURE;
+	  } 
+  }
+  return EXIT_SUCCESS;
+}
+
+int craftTimeToFile(const std::string fileName){
+ double t=0.0;
+ int myrank=-1;
+  MPI_Comm_rank(MPI_COMM_WORLD, &myrank);
+  get_walltime_ (&t);
+  if(myrank == 0)
+  {
+    std::ofstream fstr;
+    fstr.open ((fileName).c_str(), std::ios::out );	
+    if(fstr.is_open()){
+      fstr.precision(16);
+      fstr << t << std::endl;
+      fstr.close(); 
+      sync();
+    }else{
+		  std::cerr << "Can't open file " << fileName << std::endl;			
+		  return EXIT_FAILURE;
+	  } 
   }
   return EXIT_SUCCESS;
 }

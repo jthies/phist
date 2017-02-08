@@ -1,7 +1,5 @@
 // USAGE
-// ./minimalWithoutLoop.bin -cppath <CHECKPOINT-PATH> -cpfreq 10 -niter 40
-// In case a failure happens before 40 iterations, the restart flag needs to be provided 
-// ./minimalWithoutLoop.bin -cppath <CHECKPOINT-PATH> -cpfreq 10 -niter 40 -restart 
+// mpirun -am ft-enable-mpi --mca btl openib,sm,self -np 2 -npernode 1 ./minimalWithoutLoop.bin
 //
 
 #ifdef AFT
@@ -14,6 +12,8 @@
 #include <cpOptions.h>
 #include <cstring>
 #include <unistd.h>
+#include <stdlib.h>
+#include <math.h>
 
 
 static char *prgname = "a.out";
@@ -43,6 +43,8 @@ int printflag(int val){
 }
 int main(int argc, char* argv[])
 {
+	int n = 5;
+  int restartedRun = false;
 	MPI_Init(&argc, &argv);
 //	===== AFT BEGIN =====
   MPI_Comm FT_Comm;
@@ -50,51 +52,45 @@ int main(int argc, char* argv[])
 #ifdef AFT
    	AFT_BEGIN(FT_Comm, &myrank, argv);	
 #endif 
-	CpOptions * myCpOpt = new CpOptions[1];
 	MPI_Comm_rank(FT_Comm, &myrank);
-  read_params(argc, argv, myCpOpt); 
+  Checkpoint CP1("miniWLoop", FT_Comm);
+  CP1.add("n", &n);
+  CP1.commit(); 
 
-	int n = 5;
-	int myint = 0;
-  int iter1 = 0;
-	
-	Checkpoint myCP( "minimalWithoutloop", FT_Comm);
-	myCP.add("myint", &myint);
-	myCP.commit(); 
-	
-	if( myCP.needRestart()) 
-  {
-		printf("%d:RESTART ------>  true \n", myrank);
-		myCP.read();
-	}
-  sleep(5);
-  MPI_Barrier(FT_Comm);
-  printf("%d_F1 \n", myrank);
+  if(CP1.needRestart()){
+    restartedRun = true;
+  }
+
+  if(restartedRun == false){
+    CP1.update(); CP1.write();
+    if(myrank==0) printf("=== 1st run:Start ===\n");
+    MPI_Barrier(FT_Comm);
+    for(int i=0; i<10000000; i++) {
+      double res=0.0, res1=0.0; 
+      if ( i == 15) {
+        char * cmd=new char[256];
+        sprintf(cmd, "$HOME/killproc.sh 2 mini");
+        if (myrank == 0) {
+          system(cmd); 
+        }
+      }
+      for(int j=0;j<10000000;j++){
+        int rand1= rand();
+        int rand2= rand();
+        res += (double)rand1/(double)rand2 + 2.00;
+      }
+      if (res < 2.00) break; 
+      if(myrank==0) printf("i:%d _ %f\n", i, res);
+      MPI_Barrier(FT_Comm);
+    }
+  }
+  if(restartedRun == true ){
+    if(myrank==0) printf("=== 2st run ===\n");
+    MPI_Barrier(FT_Comm);
+    sleep(5);
+    MPI_Barrier(FT_Comm);
+  }
   
-  sleep(5);
-
-  MPI_Barrier(FT_Comm);
-  printf("%d_F2 \n", myrank);
-  sleep(5);
-  MPI_Barrier(FT_Comm);
-  printflag(3);
- /* 
-  for(; iter1 <= myCpOpt->getnIter() ; iter1++)
-  {
-		myint++;
-		for(size_t i = 0; i < n ; ++i){
-			myarray[i] += 1;
-		}
-		usleep(300000);
-		{ printf("=== iter: %d , myint: %d \t\n", iter1, myint-1);}
-		if(iter1 % myCpOpt->getCpFreq() == 0){
-		  if(myrank==0){ printf("Checkpointing...\n");}
-			myCP.update();
-			myCP.write();
-		}
-		MPI_Barrier(FT_Comm);
-	}
-*/
 #ifdef AFT
 	AFT_END();
 #endif

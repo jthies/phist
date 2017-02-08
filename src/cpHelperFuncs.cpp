@@ -7,6 +7,7 @@
 #include <mpi.h>
 
 #include "include/cpHelperFuncs.hpp"
+#include "include/timing.h"
 
 char * craftLogFile = "craftLog";
 
@@ -49,11 +50,15 @@ inline int mpiCommWorldNumProcs(){
 void craftErr(const char *fmt, ...)
 {
   va_list argp;
-  fprintf(stderr, "%d: CRAFT_ERROR: ", mpiCommWorldRank());
-  va_start(argp, fmt);
-  vfprintf(stderr, fmt, argp);
-  va_end(argp);
-  fprintf(stderr, "\n");
+  if ((craftDebug > 0 )) {
+    if(mpiCommWorldRank() == craftDebugProc){
+      fprintf(stderr, "%d: CRAFT_ERROR: ", mpiCommWorldRank());
+      va_start(argp, fmt);
+      vfprintf(stderr, fmt, argp);
+      va_end(argp);
+      fprintf(stderr, "\n");
+    }
+  }
 }
 
 void craftDbg(int level, const char *fmt, ...)
@@ -100,6 +105,40 @@ int craftLog(MPI_Comm const * comm, const char *fmt, ...)
   }
   return EXIT_SUCCESS;
 }
+
+void craftTime(const std::string str)
+{ 
+//  if(craftTiming){
+  if(1){
+    double t=0.0;
+    get_walltime_ (&t);
+    va_list argp;
+    MPI_Comm parent;
+	  MPI_Comm_get_parent( &parent );
+    if(mpiCommWorldRank() == craftDebugProc ){ 
+      printf("craftTime:: %s: %f\n", str.c_str(), t);
+    }
+  }
+}
+
+void craftTime(const std::string str, const MPI_Comm * const comm)
+{ 
+//  if(craftTiming){
+  if(1){
+    int myrank = -1;
+    MPI_Comm_rank(*comm, &myrank);
+    double t=0.0;
+    get_walltime_ (&t);
+    va_list argp;
+    MPI_Comm parent;
+	  MPI_Comm_get_parent( &parent );
+    if(myrank == craftDebugProc ){      // only processes of original MPI_COMM_WORLD can do craft Time. This is to avoid having multiple entries after spawning
+      printf("craftTime:: %s: %f\n", str.c_str(), t);
+    }
+  }
+}
+
+
 
 void getEnvVal(int &var, const char * str){
   int myrank = -1;

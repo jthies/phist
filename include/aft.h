@@ -12,6 +12,7 @@
 #include "craftConf.h"
 #include "cpHelperFuncs.hpp"
 #include "cpEnum.h"
+#include "timing.h"
 
 int app_needs_repair(MPI_Comm *comm, char ** argv);
 void errhandler_respawn(MPI_Comm* pcomm, int* errcode, ...);
@@ -48,7 +49,8 @@ const char * machinefileFailedProcs = "machinefileFailedProcs";
 const char * machinefileSpawnProcs  = "machinefileSpawnProcs";
 const char * machinefileRescueProcs  = "machinefileRescueProcs";
 
-
+int craftTimeToFile(const std::string fileName, MPI_Comm * const comm);
+int craftTimeToFile(const std::string fileName);
 #endif
 
 // TODO: kill_all_procs_on_failed_processhosts

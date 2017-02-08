@@ -72,10 +72,10 @@ int main(int argc, char* argv[])
 	
   if( myCP.needRestart() == true) 
   {
-    printf("%d:RESTART ------>  true \n", myrank);
+    { if (myrank == 0) printf("%d:RESTART ------>  true \n", myrank); }
     if(myCP.read()==EXIT_SUCCESS){
 		  iteration++;
-		  printf("%d:iteration = %d \n", myrank, iteration);
+		  { if (myrank == 0) printf("%d:iteration = %d \n", myrank, iteration); }
     }
 	}
   for(; iteration <= myCpOpt->getnIter() ; iteration++)
@@ -84,8 +84,15 @@ int main(int argc, char* argv[])
 		for(size_t i = 0; i < n ; ++i){
 			myarray[i] += 1;
 		}
-		usleep(200000);
-		{ printf("%d:=== iter: %d , myint: %d \t\n", myrank, iteration, myint-1);}
+//    if ( iteration == 15) {
+//      char * cmd=new char[256];
+//      sprintf(cmd, "$HOME/killproc.sh 2 mini");
+//      if (myrank == 0) {
+//        system(cmd); 
+//      }
+//    }
+		usleep(500000);
+		{ if(myrank==0) printf("%d:=== iter: %d , myint: %d \t\n", myrank, iteration, myint-1);}
 		if(iteration % myCpOpt->getCpFreq() == 0){
 		  if(myrank==0){ printf("Checkpointing...\n");}
 			myCP.update();
