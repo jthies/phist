@@ -106,6 +106,8 @@ fi
 if [ "${VECT_EXT}" = "CUDA" ]; then
   module load cuda
   SANITIZER=""
+  nvidia-smi
+  export CUDA_VISIBLE_DEVICES=0
 fi
 module list
 
