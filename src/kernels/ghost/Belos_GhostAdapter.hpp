@@ -76,24 +76,29 @@ using ::phist::GhostMV;
     PHIST_ENTER_FCN(__FUNCTION__);    
       ghost_densemat* _mv = const_cast<GhostMV&>(mv).get();
 
+      phist_const_map_ptr map=NULL;
       ghost_densemat* mv_clone=NULL;
       int iflag=0;
       // dispatch to correct data type here, just to be sure
       if (st::type_char()=='S')
       {
-        phist_Smvec_clone_shape((void**)&mv_clone,(const void*)_mv,&iflag);
+        phist_Smvec_get_map((const void*)_mv,&map,&iflag);
+        phist_Smvec_create((void**)&mv_clone,map,numvecs,&iflag);
       }
       else if (st::type_char()=='D')
       {
-        phist_Dmvec_clone_shape((void**)&mv_clone,(const void*)_mv,&iflag);
+        phist_Dmvec_get_map((const void*)_mv,&map,&iflag);
+        phist_Dmvec_create((void**)&mv_clone,map,numvecs,&iflag);
       }
       else if (st::type_char()=='C')
       {
-        phist_Cmvec_clone_shape((void**)&mv_clone,(const void*)_mv,&iflag);
+        phist_Cmvec_get_map((const void*)_mv,&map,&iflag);
+        phist_Cmvec_create((void**)&mv_clone,map,numvecs,&iflag);
       }
       else if (st::type_char()=='Z')
       {
-        phist_Zmvec_clone_shape((void**)&mv_clone,(const void*)_mv,&iflag);
+        phist_Zmvec_get_map((const void*)_mv,&map,&iflag);
+        phist_Zmvec_create((void**)&mv_clone,map,numvecs,&iflag);
       }
       if (iflag!=0) return Teuchos::null;
       return phist::rcp(mv_clone,true);
