@@ -30,6 +30,7 @@ set (SOURCE
 		src/cpPOD.cpp
 		src/cpHelperFuncs.cpp
 		src/craftConf.cpp
+		src/timing.cpp
 		)
 
 set (HEADERS
@@ -42,6 +43,7 @@ set (HEADERS
 		include/cpOptions.h
 		include/dataType.h
 		include/craftConf.h
+		include/timing.h
 		)
 
 set(TOOLS

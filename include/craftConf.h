@@ -56,6 +56,11 @@
 #define PBS_NODEFILE "PBS_NODEFILE"
 #endif
 
+#ifndef CRAFT_TIMING
+#define CRAFT_TIMING (0)
+#endif
+
+
 void getEnvParam();
 
 extern int craftDebug;
@@ -68,6 +73,7 @@ extern int craftUseSCR;
 extern std::string craftCommRecoveryPolicy;
 extern std::string craftCommSpawnPolicy;
 extern std::string pbsNodeFile;
+extern int craftTiming;
 
 extern char * craftLogFile;
 

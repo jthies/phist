@@ -8,6 +8,7 @@ int craftReadCpOnRestart  = CRAFT_READ_CP_ON_RESTART;
 std::string craftCpPath   = CRAFT_CP_PATH;
 int craftEnabled          = CRAFT_ENABLE;
 int craftUseSCR           = CRAFT_USE_SCR;
+int craftTiming           = CRAFT_TIMING;
 std::string craftCommSpawnPolicy    = CRAFT_COMM_SPAWN_POLICY;
 std::string craftCommRecoveryPolicy = CRAFT_COMM_RECOVERY_POLICY;
 std::string pbsNodeFile    = PBS_NODEFILE;
@@ -66,21 +67,33 @@ void getEnvParam(){
 #endif
     }
   }
+
   envIn = getenv ("CRAFT_COMM_RECOVERY_POLICY");
   if (envIn!=NULL){
     craftCommRecoveryPolicy = envIn; 
     craftDbg(4, "CRAFT_COMM_RECOVERY_POLICY: %s", (craftCommRecoveryPolicy).c_str());
   }
+
   envIn = getenv ("CRAFT_COMM_SPAWN_POLICY");
   if (envIn!=NULL){
     craftCommSpawnPolicy= envIn; 
     craftDbg(4, "CRAFT_COMM_SPAWN_POLICY: %s", (craftCommSpawnPolicy).c_str());
   }
+
   envIn = getenv ("PBS_NODEFILE");
   if (envIn!=NULL){
     pbsNodeFile = envIn; 
     craftDbg(4, "pbsNodeFile: %s", (pbsNodeFile).c_str());
   }
+
+  envIn = getenv ("CRAFT_TIMING");
+  if (envIn!=NULL){
+    std::string envInStr;
+    envInStr = envIn; 
+    craftTiming= stringToNumber<int>(envInStr);
+    craftDbg(4, "CRAFT_TIMING: %d", craftTiming);
+  }
+
 }
 
 
