@@ -719,7 +719,11 @@ using ::phist::GhostMV;
       {
         phist_ZsdMat_create_view((void**)&Mghost,comm,(phist_d_complex*)M.values(),stride,nrows,ncols,&iflag);
       }
-
+    if (iflag!=PHIST_SUCCESS)
+    {
+      PHIST_SOUT(PHIST_ERROR,"phist_XsdMat_create_view returned non-zero error code %d\n"
+                             "(file %s, line %d)\n",iflag,__FILE__,__LINE__);
+    }
     return Mghost;
   }
 
