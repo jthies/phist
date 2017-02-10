@@ -283,21 +283,6 @@ phist_const_map_ptr vmap, int nvec, int* iflag)
   *vV=(TYPE(mvec_ptr))(result);
 }
 
-//! create a block-vector as view of raw data. The map tells the object
-//! how many rows it should 'see' in the data (at most lda, the leading
-//! dimension of the 2D array values).
-extern "C" void SUBR(mvec_create_view)(TYPE(mvec_ptr)* vV, phist_const_map_ptr vmap, 
-        _ST_* values, phist_lidx lda, int nvec,
-        int* iflag)
-{
-  PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
-  *iflag=0;
-  PHIST_CAST_PTR_FROM_VOID(const Epetra_BlockMap, map,vmap,*iflag);
-  Epetra_MultiVector* V = new Epetra_MultiVector(View, *map, values, lda, nvec);
-  *vV=(TYPE(mvec_ptr))(V);
-  return;
-}
-
 //! create a serial dense n x m matrix on all procs, with column major
 //! ordering.
 extern "C" void SUBR(sdMat_create)(TYPE(sdMat_ptr)* vM, int nrows, int ncols, 
@@ -316,14 +301,6 @@ extern "C" void SUBR(sdMat_create)(TYPE(sdMat_ptr)* vM, int nrows, int ncols,
   if (mv==NULL) *iflag=-1;
   *vM=(TYPE(sdMat_ptr))mv;
 }
-
-void SUBR(sdMat_create_view)(TYPE(sdMat_ptr)* M, phist_const_comm_ptr comm,
-        _ST_* values, phist_lidx lda, int nrows, int ncols,
-        int* iflag)
-{
-  *iflag=PHIST_NOT_IMPLEMENTED;
-}
-
 
 //@}
 

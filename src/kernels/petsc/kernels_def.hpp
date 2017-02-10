@@ -230,49 +230,6 @@ extern "C" void SUBR(mvec_create)(TYPE(mvec_ptr)* vV,
   *iflag = PHIST_SUCCESS;
 }
 
-extern "C" void SUBR(mvec_create_view)(TYPE(mvec_ptr)* vV, phist_const_map_ptr map, 
-    _ST_* values, phist_lidx lda, int nvec,
-    int* iflag)
-{
-  PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
-  PHIST_CAST_PTR_FROM_VOID(Traits<_ST_>::mvec_t*,V,vV,*iflag);
-
-  phist_lidx nlocal;
-  phist_gidx nglob;
-  phist_const_comm_ptr comm;
-  PHIST_CHK_IERR(phist_map_get_local_length(map,&nlocal,iflag),*iflag);
-  PHIST_CHK_IERR(phist_map_get_global_length(map,&nglob,iflag),*iflag);
-  PHIST_CHK_IERR(phist_map_get_comm(map,&comm,iflag),*iflag);
-  PHIST_CHK_IERR( *iflag = (lda==nlocal) ? PHIST_SUCCESS : PHIST_NOT_IMPLEMENTED, *iflag);
-  PHIST_CHK_IERR( *iflag = PetscNew(V), *iflag);
-  (*V)->map = map;
-  (*V)->rawData = values;
-  PHIST_CHK_IERR( *iflag = MatCreate(*(MPI_Comm*)comm, &((*V)->v)), *iflag);
-  PHIST_CHK_IERR( *iflag = MatSetType((*V)->v, MATDENSE), *iflag);
-  PHIST_CHK_IERR( *iflag = MatSetSizes((*V)->v, nlocal, PETSC_DECIDE, nglob, nvec), *iflag);
-  MatType matType;
-  PHIST_CHK_IERR( *iflag = MatGetType((*V)->v, &matType), *iflag);
-  if( std::string(matType) == std::string(MATMPIDENSE) )
-  {
-    PHIST_CHK_IERR( *iflag = MatMPIDenseSetPreallocation((*V)->v, (PetscScalar*)(*V)->rawData), *iflag);
-  }
-  else if( std::string(matType) == std::string(MATSEQDENSE) )
-  {
-    PHIST_CHK_IERR( *iflag = MatSeqDenseSetPreallocation((*V)->v, (PetscScalar*)(*V)->rawData), *iflag);
-  }
-  else
-  {
-    PHIST_SOUT(PHIST_ERROR, "strange PETSc matrix type %s\n", matType);
-    *iflag = PHIST_NOT_IMPLEMENTED;
-    return;
-  }
-
-  PHIST_CHK_IERR( *iflag = MatAssemblyBegin((*V)->v, MAT_FINAL_ASSEMBLY), *iflag);
-  PHIST_CHK_IERR( *iflag = MatAssemblyEnd((*V)->v, MAT_FINAL_ASSEMBLY), *iflag);
-  (*V)->is_view = true;
-  *iflag = PHIST_SUCCESS;
-}
-
 extern "C" void SUBR(sdMat_create)(TYPE(sdMat_ptr)* vM, 
     int nrows, int ncols, phist_const_comm_ptr comm, int* iflag)
 {
@@ -293,29 +250,6 @@ extern "C" void SUBR(sdMat_create)(TYPE(sdMat_ptr)* vM,
   (*M)->is_view = false;
   *iflag = PHIST_SUCCESS;
 }
-
-extern "C" void SUBR(sdMat_create_view)(TYPE(sdMat_ptr)* vM, phist_const_comm_ptr comm,
-        _ST_* values, phist_lidx lda, int nrows, int ncols,
-        int* iflag)
-{
-  PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
-  PHIST_CAST_PTR_FROM_VOID(Traits<_ST_>::sdMat_t*,M,vM,*iflag);
-
-  PHIST_CHK_IERR( *iflag = PetscNew(M), *iflag);
-  (*M)->comm = comm;
-  (*M)->rawData = values;
-  (*M)->lda = lda;
-  PHIST_CHK_IERR( *iflag = MatCreate(PETSC_COMM_SELF, &((*M)->m)), *iflag);
-  PHIST_CHK_IERR( *iflag = MatSetType((*M)->m, MATSEQDENSE), *iflag);
-  PHIST_CHK_IERR( *iflag = MatSetSizes((*M)->m, nrows, ncols, nrows, ncols), *iflag);
-  PHIST_CHK_IERR( *iflag = MatSeqDenseSetLDA((*M)->m, (*M)->lda), *iflag);
-  PHIST_CHK_IERR( *iflag = MatSeqDenseSetPreallocation((*M)->m, (PetscScalar*)(*M)->rawData), *iflag);
-  PHIST_CHK_IERR( *iflag = MatAssemblyBegin((*M)->m, MAT_FINAL_ASSEMBLY), *iflag);
-  PHIST_CHK_IERR( *iflag = MatAssemblyEnd((*M)->m, MAT_FINAL_ASSEMBLY), *iflag);
-  (*M)->is_view = true;
-  *iflag = PHIST_SUCCESS;
-}
-                  
 
 extern "C" void SUBR(mvec_get_map)(TYPE(const_mvec_ptr) vV, phist_const_map_ptr* map, int* iflag)
 {

@@ -132,14 +132,6 @@ void SUBR(sparseMat_get_context)(TYPE(const_sparseMat_ptr) A,
 void SUBR(mvec_create)(TYPE(mvec_ptr)* V, phist_const_map_ptr map, int nvec, 
         int* iflag);
 
-//! create a block-vector as view of raw data. \ingroup mvec
-
-//! The map tells the object how many rows it should 'see' in the 
-//! data (at most lda, the leading dimension of the 2D array values).
-void SUBR(mvec_create_view)(TYPE(mvec_ptr)* V, phist_const_map_ptr map, 
-        _ST_* values, phist_lidx lda, int nvec, 
-        int* iflag);
-
 //! construct small dense matrix \ingroup sdmat
 
 //! create a small dense n x m matrix on all procs in comm,   
@@ -150,14 +142,6 @@ void SUBR(mvec_create_view)(TYPE(mvec_ptr)* V, phist_const_map_ptr map,
 //! cal object (MPI_COMM_SELF is assumed).
 void SUBR(sdMat_create)(TYPE(sdMat_ptr)* M, 
         int nrows, int ncols, phist_const_comm_ptr comm, int* iflag);
-
-//! create a small dense matrix as view of raw data. \ingroup sdmat
-
-//! obviously it depends on the data viewed wether the matrix is actually
-//! "replicated" on all nodes.
-void SUBR(sdMat_create_view)(TYPE(sdMat_ptr)* M, phist_const_comm_ptr comm, 
-        _ST_* values, phist_lidx lda, int nrows, int ncols,
-        int* iflag);
 
 //@}
 

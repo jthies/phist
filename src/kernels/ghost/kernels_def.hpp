@@ -321,52 +321,6 @@ PHIST_TASK_BEGIN(ComputeTask)
 PHIST_TASK_END(iflag);
 }
 
-//! create a block-vector as view of raw data. The map tells the object
-//! how many rows it should 'see' in the data (at most lda, the leading
-//! dimension of the 2D array values). CAVEAT: This function only works
-//! if nrowshalo==nrowspadded in the map, which is in general only the case for
-//! if there is only 1 MPI process or the matrix is trivially parallel.
-extern "C" void SUBR(mvec_create_view)(TYPE(mvec_ptr)* vV, phist_const_map_ptr vmap, 
-        _ST_* values, phist_lidx lda, int nvec,
-        int* iflag)
-{
-#include "phist_std_typedefs.hpp"
-  PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
-
-  PHIST_CAST_PTR_FROM_VOID(const ghost_map, map,vmap,*iflag);
-  ghost_densemat* result;
-  ghost_densemat_traits vtraits = phist::ghost_internal::default_vtraits();
-        vtraits.flags|=GHOST_DENSEMAT_VIEW;
-        vtraits.ncols=nvec;
-        vtraits.datatype = st::ghost_dt;
-
-  PHIST_CHK_GERR(ghost_densemat_create(&result,(ghost_map*)map,vtraits),*iflag);
-
-#ifdef PHIST_MVECS_ROW_MAJOR
-  if (result->map->nhalo)
-  {
-    PHIST_OUT(PHIST_ERROR,"viewing plain data as row-major ghost_densemat only works \n"
-                          "for vectors without communciation buffers (for spMVM)\n");
-    *iflag=-1;
-    return;
-  }
-#else
-  if ((result->map->nhalo>lda))
-  {
-    PHIST_OUT(PHIST_ERROR,"viewing plain data as ghost_densemat only works \n"
-                          "if the given lda can accomodate the required comm buffer of the vector!\n"
-                          "nrows=%" PRlidx ", nrowshalopadded=%" PRlidx ", lda=%" PRlidx "\n",
-        result->map->dim,result->map->dimpad,lda);
-    *iflag=-1;
-    return;
-  }
-#endif
-  PHIST_CHK_GERR(ghost_densemat_view_plain(result,(void*)values,lda),*iflag);
-  *vV=(TYPE(mvec_ptr))(result);
-  return;
-}
-
-
 //! create a serial dense n x m matrix on all procs, with column major
 //! ordering.
 extern "C" void SUBR(sdMat_create)(TYPE(sdMat_ptr)* vM, int nrows, int ncols, 
@@ -412,13 +366,6 @@ PHIST_TASK_BEGIN_SMALLDETERMINISTIC(ComputeTask)
   PHIST_CHK_GERR(ghost_densemat_upload(result),*iflag);
   *vM=(TYPE(sdMat_ptr))result;
 PHIST_TASK_END(iflag);
-}
-
-void SUBR(sdMat_create_view)(TYPE(sdMat_ptr)* M, phist_const_comm_ptr comm,
-        _ST_* values, phist_lidx lda, int nrows, int ncols,
-        int* iflag)
-{
-  *iflag=PHIST_NOT_IMPLEMENTED;
 }
 
 //@}
