@@ -382,13 +382,7 @@ using ::phist::GhostMV;
       // create view of Teuchos matrix as GhostMV
       ghost_densemat* _A = (ghost_densemat*)A.get();
       ghost_densemat* _mv = (ghost_densemat*)mv.get();
-      ghost_densemat* Bghost=createGhostViewOfTeuchosSDM(B);
-#ifdef GHOST_HAVE_CUDA
-      if (_A->traits.location&GHOST_LOCATION_DEVICE)
-      {
-        ghost_densemat_upload(Bghost);
-      }
-#endif      
+      ghost_densemat* Bghost=createGhostCopyOfTeuchosSDM(B);
       // multiply
       const char* trans="N";
       ghost_gemm(_mv,_A,(char*)trans,Bghost,(char*)"N",&alpha,&beta,
@@ -476,15 +470,7 @@ using ::phist::GhostMV;
     static void MvTransMv( Scalar alpha, const GhostMV& A, const GhostMV& B, Teuchos_sdMat_t& C)
     {
       PHIST_ENTER_FCN(__FUNCTION__);
-      ghost_densemat* Cghost=createGhostViewOfTeuchosSDM(C);
-
-#ifdef GHOST_HAVE_CUDA
-      if (A.get()->traits.location&GHOST_LOCATION_DEVICE)
-      {
-        // upload data (even though we don't need it) to allocate device memory for B
-        ghost_densemat_upload(Cghost);
-      }
-#endif      
+      ghost_densemat* Cghost=createGhostCopyOfTeuchosSDM(C);
 
       Scalar beta = st::zero();
       const char* trans=phist::ScalarTraits<Scalar>::is_complex()? "C": "T";
@@ -495,13 +481,19 @@ using ::phist::GhostMV;
                    (void*)&alpha, (void*)&beta,
                    GHOST_GEMM_ALL_REDUCE,
                    GHOST_GEMM_DEFAULT);
-#ifdef GHOST_HAVE_CUDA
-      if (A.get()->traits.location&GHOST_LOCATION_DEVICE)
-      {
-        ghost_densemat_download(Cghost);
-      }
-#endif      
 
+      // copy data to Teuchos matrix
+      if (Cghost->traits.storage!=GHOST_DENSEMAT_COLMAJOR)
+      {
+         throw "sdMat not col-major!";
+      }
+      Scalar* C_raw=(Scalar*)Cghost->val;
+      ghost_lidx lda=Cghost->stride;
+      for (int j=0; j<C.numCols(); j++)
+        for (int i=0; i<C.numRows(); i++)
+        {
+          C(i,j)=C_raw[j*lda+i];
+        }
       ghost_densemat_destroy(Cghost);
     }
 
@@ -687,43 +679,48 @@ using ::phist::GhostMV;
     }
 
   // private helper function
-  static ghost_densemat* createGhostViewOfTeuchosSDM
+  static ghost_densemat* createGhostCopyOfTeuchosSDM
         (const Teuchos_sdMat_t& M)
   {
     PHIST_ENTER_FCN(__FUNCTION__);
       int nrows=M.numRows();
       int ncols=M.numCols();
-      phist_lidx stride=M.stride();
 
-      // The context and communicator are supposed to be irrelevant in an sdMat,
-      // but it is not clear wether this is handled correctly everywhere i ghost.
-      // For the moment we can afford to just put in MPI_COMM_WORLD at this point.
-      MPI_Comm comm = MPI_COMM_WORLD;
-
-      //TODO - check return values everywhere
       ghost_densemat* Mghost=NULL;
       int iflag=0;
       if (st::type_char()=='S')
       {
-        phist_SsdMat_create_view((void**)&Mghost,comm,(float*)M.values(),stride,nrows,ncols,&iflag);
+        phist_SsdMat_create((void**)&Mghost,nrows,ncols,NULL,&iflag);
       }
       else if (st::type_char()=='C')
       {
-        phist_CsdMat_create_view((void**)&Mghost,comm,(phist_s_complex*)M.values(),stride,nrows,ncols,&iflag);
+        phist_CsdMat_create((void**)&Mghost,nrows,ncols,NULL,&iflag);
       }
       else if (st::type_char()=='D')
       {
-        phist_DsdMat_create_view((void**)&Mghost,comm,(double*)M.values(),stride,nrows,ncols,&iflag);
+        phist_DsdMat_create((void**)&Mghost,nrows,ncols,NULL,&iflag);
       }
       else if (st::type_char()=='Z')
       {
-        phist_ZsdMat_create_view((void**)&Mghost,comm,(phist_d_complex*)M.values(),stride,nrows,ncols,&iflag);
+        phist_ZsdMat_create((void**)&Mghost,nrows,ncols,NULL,&iflag);
       }
     if (iflag!=PHIST_SUCCESS)
     {
       PHIST_SOUT(PHIST_ERROR,"phist_XsdMat_create_view returned non-zero error code %d\n"
                              "(file %s, line %d)\n",iflag,__FILE__,__LINE__);
     }
+    // copy data from Teuchos matrix
+    if (Mghost->traits.storage!=GHOST_DENSEMAT_COLMAJOR)
+    {
+       throw "sdMat not col-major!";
+    }
+    Scalar* M_raw=(Scalar*)Mghost->val;
+    ghost_lidx lda=Mghost->stride;
+    for (int j=0; j<M.numCols(); j++)
+        for (int i=0; i<M.numRows(); i++)
+        {
+          M_raw[j*lda+i]=M(i,j);
+        }
     return Mghost;
   }
 
