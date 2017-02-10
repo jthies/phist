@@ -993,7 +993,7 @@ extern "C" void SUBR(sdMat_identity)(TYPE(sdMat_ptr) vM, int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
 #include "phist_std_typedefs.hpp"
-  bool host_only = (*iflag&PHIST_SDMAT_RUN_ON_HOST_AND_DEVICE==PHIST_SDMAT_RUN_ON_HOST);
+  bool host_only = (((*iflag)&PHIST_SDMAT_RUN_ON_HOST_AND_DEVICE)==PHIST_SDMAT_RUN_ON_HOST);
   *iflag = 0;
   PHIST_PERFCHECK_VERIFY_SMALL;
 
