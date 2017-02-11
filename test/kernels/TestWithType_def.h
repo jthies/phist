@@ -58,6 +58,21 @@ static _MT_ MvecEqual(TYPE(mvec_ptr) V, _ST_ value)
   return return_value;
 }
 
+static int MvecContainsInfOrNaN(TYPE(mvec_ptr) V)
+{
+  int iflag;
+  _ST_* val;
+  phist_lidx lda,n;
+  int m;
+  
+  PHIST_ICHK_IERR(SUBR(mvec_from_device)(V,&iflag),iflag);
+  PHIST_ICHK_IERR(SUBR(mvec_extract_view)(V,&val,&lda,&iflag),iflag);
+  PHIST_ICHK_IERR(SUBR(mvec_my_length)(V,&n,&iflag),iflag);
+  PHIST_ICHK_IERR(SUBR(mvec_num_vectors)(V,&m,&iflag),iflag);
+  
+  return ArrayContainsInfOrNaN(val,n,m,lda,1,KernelTest::vflag_);
+}
+
 static _MT_ MvecsEqual(TYPE(mvec_ptr) V1, TYPE(mvec_ptr) V2, _MT_ relTo = mt::zero())
 {
   int iflag;
@@ -125,6 +140,7 @@ static _MT_ MvecsEqual(TYPE(mvec_ptr) V1, TYPE(mvec_ptr) V2, _MT_ relTo = mt::ze
   return return_value;
 }
 
+// compare the *HOST SIDE* of an sdMat with a scalar constant
 static _MT_ SdMatEqual(TYPE(sdMat_ptr) M, _ST_ value)
 {
   int iflag;
@@ -132,8 +148,6 @@ static _MT_ SdMatEqual(TYPE(sdMat_ptr) M, _ST_ value)
   phist_lidx lda;
   int n,m;
   
-  SUBR(sdMat_from_device)(M,&iflag);
-  if (iflag!=PHIST_SUCCESS) return (_MT_)(-mt::one());
   SUBR(sdMat_extract_view)(M,&val,&lda,&iflag);
   if (iflag!=PHIST_SUCCESS) return (_MT_)(-2*mt::one());
   SUBR(sdMat_get_nrows)(M,&n,&iflag);
@@ -152,17 +166,27 @@ static _MT_ SdMatEqual(TYPE(sdMat_ptr) M, _ST_ value)
   return return_value;
 }
 
+static int SdMatContainsInfOrNaN(TYPE(sdMat_ptr) M)
+{
+  int iflag;
+  _ST_* val;
+  phist_lidx lda;
+  int n,m;
+  
+  PHIST_ICHK_IERR(SUBR(sdMat_extract_view)(M,&val,&lda,&iflag),iflag);
+  PHIST_ICHK_IERR(SUBR(sdMat_get_nrows)(M,&n,&iflag),iflag);
+  PHIST_ICHK_IERR(SUBR(sdMat_get_ncols)(M,&m,&iflag),iflag);
+  
+  return ArrayContainsInfOrNaN(val,n,m,lda,1,KernelTest::mflag_);
+}
+
+// compare the *HOST SIDE* of two sdMats
 static _MT_ SdMatsEqual(TYPE(sdMat_ptr) M1, TYPE(sdMat_ptr) M2, _MT_ relTo = mt::zero())
 {
   int iflag;
   _ST_ *val, *val2;
   phist_lidx lda,lda2;
   int n,m,n2,m2;
-  
-  SUBR(sdMat_from_device)(M1,&iflag);
-  if (iflag!=PHIST_SUCCESS) return (_MT_)(-mt::one());
-  SUBR(sdMat_from_device)(M2,&iflag);
-  if (iflag!=PHIST_SUCCESS) return (_MT_)(-mt::one());
   
   SUBR(sdMat_extract_view)(M1,&val,&lda,&iflag);
   if (iflag!=PHIST_SUCCESS) return (_MT_)(-2*mt::one());
@@ -181,8 +205,17 @@ static _MT_ SdMatsEqual(TYPE(sdMat_ptr) M1, TYPE(sdMat_ptr) M2, _MT_ relTo = mt:
  
   // vectors not equal: dimensions mismatch
   if (n!=n2||m!=m2) return (_MT_)(-mt::one());
-  if (lda!=lda2) return (_MT_)(-99*mt::one()); // test not implemented
-  MT return_value=ArraysEqual(val,val2,n,m,lda,1,KernelTest::mflag_,relTo);
+
+  MT return_value;
+
+  if (lda!=lda2)
+  {
+    return_value=ArraysEqualWithDifferentLDA(val,val2,n,m,lda,lda2,1,KernelTest::mflag_,relTo);
+  }
+  else
+  {
+    return_value=ArraysEqual(val,val2,n,m,lda,1,KernelTest::mflag_,relTo);
+  }
 #if PHIST_OUTLEV>=PHIST_DEBUG
   if (std::abs(return_value-mt::one())>std::sqrt(mt::eps()))
   {
@@ -194,6 +227,26 @@ static _MT_ SdMatsEqual(TYPE(sdMat_ptr) M1, TYPE(sdMat_ptr) M2, _MT_ relTo = mt:
 #endif
 
   return return_value;
+}
+
+static int ArrayContainsInfOrNaN(const _ST_* array, int n, int m, phist_lidx lda, phist_lidx stride, bool swap_nm=false)
+{
+  MT *A=(MT*)array;
+  int N = swap_nm? m: n;
+  int M = swap_nm? n: m;
+  int dt_size = (int)(sizeof(ST)/sizeof(MT));
+  for (int i=0;i<N*stride;i+=stride)
+  {
+    for (int j=0; j<M;j++)
+    {
+      for (int k=0; k<dt_size; k++)
+      {
+        if (std::isnan(A[(j*lda+i)*dt_size+k])) return 1;
+        if (std::isinf(A[(j*lda+i)*dt_size+k])) return 2;
+      }
+    }
+  }
+  return 0;
 }
 
 static _MT_ ArrayEqual(const _ST_* array, int n, int m, phist_lidx lda, phist_lidx stride, _ST_ value, bool swap_nm=false)

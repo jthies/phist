@@ -1,6 +1,10 @@
 #ifndef PHIST_FCN_TRACE_HPP
 #define PHIST_FCN_TRACE_HPP
 
+#ifndef __cplusplus
+#error "this is a C++ header"
+#endif
+
 #ifndef DOXYGEN
 #include "phist_config.h"
 

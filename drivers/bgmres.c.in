@@ -57,7 +57,7 @@ int main(int argc, char** argv)
   {
     if (verbose) fprintf(stdout,"Usage: %s <matrix> [<max iters> [<tol> [<num rhs> [<max blocks> [<precon> [<prec_opts>]>]]]]]\n",argv[0]);
     SUBR(create_matrix)(NULL,NULL,"usage",&iflag);
-    SUBR(precon_create)(NULL,NULL,ZERO,NULL,NULL,NULL,"usage",NULL,&iflag);
+    SUBR(precon_create)(NULL,NULL,ZERO,NULL,NULL,NULL,"usage",NULL,NULL,&iflag);
     return 1;
   }
 
@@ -154,7 +154,7 @@ int main(int argc, char** argv)
   if (strcasecmp(prec_type,"None")!=0)
   {
     P_op = (linearOp_ptr)malloc(sizeof(TYPE(linearOp)));
-    PHIST_ICHK_IERR(SUBR(precon_create)(P_op,A,ZERO,NULL,NULL,NULL,prec_type,prec_opts,&iflag),iflag);
+    PHIST_ICHK_IERR(SUBR(precon_create)(P_op,A,ZERO,NULL,NULL,NULL,prec_type,prec_opts,NULL,&iflag),iflag);
   }
   num_iters=max_iters;
   

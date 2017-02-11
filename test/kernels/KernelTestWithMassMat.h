@@ -11,6 +11,7 @@
 
 #include "phist_typedefs.h"
 #include "TestWithType.h"
+#include "KernelTestWithMap.h"
 
 #include "../tools/MatrixIO.h"
 
@@ -22,6 +23,7 @@ using namespace testing;
  */
 template<typename T, phist_gidx _Nglob>
 class KernelTestWithMassMat: public virtual TestWithType<T>,
+                             public virtual KernelTestWithMap<_Nglob>,
                              public virtual KernelTest
   {
 

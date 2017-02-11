@@ -53,8 +53,7 @@ ${CHANGES, showDependencies=true, format="[%a] %r %m\\n"}
 
 Failed tests:
 ${FAILED_TESTS, showStack=false,showMessage=false,maxTests=200}
- ''', subject: '$DEFAULT_SUBJECT',  attachLog: true, attachmentsPattern: 'build_*/test.log.gz', compressLog: true, 
- replyTo: '$DEFAULT_REPLYTO', to: 'Jonas.Thies@DLR.de', attachLog: true, attachmentsPattern:  'build_*/test.log.gz'
+ ''', subject: '$DEFAULT_SUBJECT',  attachLog: true, attachmentsPattern: 'build_*/test.log.gz', compressLog: true, replyTo: 'Jonas.Thies@DLR.de', to: 'Jonas.Thies@DLR.de'
  }
 }
 

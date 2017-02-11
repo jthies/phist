@@ -11,11 +11,22 @@
 #endif
 
 #ifdef __cplusplus
+#include "phist_ScalarTraits.hpp"
+#endif
+
+#ifdef __cplusplus
 # include <cstdio>
 #else
 # include <stdio.h>
 #endif
+
+#ifdef PHIST_HAVE_LIKWID
+#include <likwid.h>
+#endif
+
 #endif //DOXYGEN
+
+# include "phist_macros.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -38,6 +49,12 @@ int phist_ordered_fprintf(FILE* stream, MPI_Comm comm, const char* fmt, ...);
 
 #ifdef __cplusplus
 }
+#endif
+
+#include "phist_tasks.h"
+
+#ifndef DOXYGEN
+#include "phist_lapack.h"
 #endif
 
 #endif

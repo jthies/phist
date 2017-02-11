@@ -79,9 +79,6 @@ protected:
 #endif
       ASSERT_EQ(0,iflag_);
 
-      SUBR(sdMat_from_device)(VtAV,&iflag_);
-      ASSERT_EQ(0,iflag_);
-
       _ST_* C_raw=NULL;
       int lda;
       SUBR(sdMat_extract_view)(VtAV,&C_raw,&lda,&iflag_);

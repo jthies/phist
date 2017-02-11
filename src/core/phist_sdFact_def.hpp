@@ -230,6 +230,7 @@ void SUBR(sdMat_pseudo_inverse)(TYPE(sdMat_ptr) A_gen, int* rank, int* iflag)
   // make tiny singular values exactly 0, invert the others
   _ST_ *Sigma_raw=NULL, *Sigma_err=NULL;
   phist_lidx ldS;
+
   PHIST_CHK_IERR(SUBR(sdMat_extract_view)(Sigma,&Sigma_raw,&ldS,iflag),*iflag);
   _MT_ sval_max = st::abs(Sigma_raw[0]), sval_max_err=mt::zero();
   *rank=std::min(m,n);
@@ -384,7 +385,7 @@ void SUBR(sdMat_svd)(TYPE(sdMat_ptr) A, TYPE(sdMat_ptr) U, TYPE(sdMat_ptr) Sigma
         (mt::blas_scalar_t*)RS_val,
         (st::blas_scalar_t*)U_val,&ldU,
         (st::blas_scalar_t*)Vt_val,&ldVt,
-        (st::blas_scalar_t*)&work,&lwork,
+        (st::blas_scalar_t*)work,&lwork,
         (mt::blas_scalar_t*)rwork,iflag);
 #else
     PHIST_TG_PREFIX(GESVD)((phist_blas_char*)(&jobu),(phist_blas_char*)(&jobvt),&m,&n,A_val,&ldA,RS_val,U_val,&ldU,Vt_val,&ldVt,work,&lwork,iflag);

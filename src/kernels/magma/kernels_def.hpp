@@ -102,14 +102,6 @@ extern "C" void SUBR(mvec_create)(TYPE(mvec_ptr)* vV,
   *iflag = PHIST_SUCCESS;
 }
 
-extern "C" void SUBR(mvec_create_view)(TYPE(mvec_ptr)* vV, phist_const_map_ptr map, 
-    _ST_* values, phist_lidx lda, int nvec,
-    int* iflag)
-{
-  PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
-  *iflag=PHIST_NOT_IMPLEMENTED;
-}
-
 extern "C" void SUBR(sdMat_create)(TYPE(sdMat_ptr)* vM, 
     int nrows, int ncols, phist_const_comm_ptr comm, int* iflag)
 {
@@ -128,23 +120,6 @@ extern "C" void SUBR(sdMat_create)(TYPE(sdMat_ptr)* vM,
   *iflag = PHIST_SUCCESS;
 }
 
-extern "C" void SUBR(sdMat_create_view)(TYPE(sdMat_ptr)* vM, phist_const_comm_ptr comm,
-        _ST_* values, phist_lidx lda, int nrows, int ncols,
-        int* iflag)
-{
-  PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
-  *iflag=PHIST_NOT_IMPLEMENTED;
-  /*
-  PHIST_CAST_PTR_FROM_VOID(Traits<_ST_>::sdMat_t*,M,vM,*iflag);
-
-  (*M)->nrows = nrows;
-  (*M)->ncols = ncols;
-  (*M)->stride = lda;
-  (*M)->is_view = true;
-  (*M)->data = values;
-  */
-}
-                  
 
 extern "C" void SUBR(mvec_get_map)(TYPE(const_mvec_ptr) vV, phist_const_map_ptr* map, int* iflag)
 {

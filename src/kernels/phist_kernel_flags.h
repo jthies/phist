@@ -81,16 +81,19 @@
 #define PHIST_SPMVM_OVERLAP 4096
 #define PHIST_SPMVM_TASK 8192
 
-/* explicitly perform sdMat operation on the host CPU (by default GPU processes will execute */
-/* functions like sdMat_add_sdMat only on the GPU)                                           */
+/* explicitly perform sdMat operation on the host CPU (the default). This flag affects kernels */
+/* like sdMat_add_sdMat, sdMat_times_sdMat etc.                                                */
 #define PHIST_SDMAT_RUN_ON_HOST 1024
-/* execute sdMat function on device if this is a GPU process (the default). By specifying    */
-/* PHIST_SDMAT_RUN_ON_HOST|PHIST_SDMAT_RUN_ON_DEVICE the operation is executed both on the   */
-/* host and device side. No memory is transferred, so the user has to sync the memory expli- */
-/* citly using sdMat_to/from_device                                                          */
-/*                                                                                           */
-/* this flag is disabled for now, not sure wether we want to implement this complexity.      */
-/*                                                                                           */
-/*#define PHIST_SDMAT_RUN_ON_DEVICE 2048*/
+/* execute sdMat function on device if this is a GPU process. This flag can e used to overrule  */
+/* the default behavior of executing sdMat_add/times_sdMat and similar functions on the host.   */
+/* The rationale behind not running sdMat operations on the GPU by default is that they usually */
+/* involve few operations so the latency of launching a GPU kernel will be larger than doing    */
+/* the computation on the host and uploading the result if it is needed afterwards on the GPU.  */
+/*                                                                                              */
+/* If PHIST_SDMAT_RUN_ON_HOST|PHIST_SDMAT_RUN_ON_DEVICE is speicified, the kernel is executed   */
+/* on the host and the sdMat data is uploaded afterwards.                                       */
+#define PHIST_SDMAT_RUN_ON_DEVICE 2048
+/* shortcut for PHIST_SDMAT_RUN_ON_HOST|PHIST_SDMAT_RUN_ON_DEVICE */
+#define PHIST_SDMAT_RUN_ON_HOST_AND_DEVICE (PHIST_SDMAT_RUN_ON_HOST|PHIST_SDMAT_RUN_ON_DEVICE)
 
 #endif

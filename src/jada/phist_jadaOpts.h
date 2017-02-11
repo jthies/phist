@@ -36,7 +36,11 @@ int maxBas; //! maximum number of vectors allowed in the basis
 
 // how should JaDa start up?
 void* v0; //! can be used to pass in a start-up vector(-space) (can have any number of 
-          //! columns). v0 is assumed to be orthonormal.
+          //! columns). v0 is assumed to be orthonormal. Our current implementation of 
+          //! subspacejada will use only the first column of v0 and perform Arnoldi iterations
+          //! unless v0 has exactly minBas columns. In this case v0 is used instead of
+          //! running Arnoldi iterations. A suitable input basis can be obtained from a previous
+          //! run of subspacejada by pre-allocating Q with minBas vectors.
 int arno; //! 0: no Arnoldi steps. 1: minBas Arnoldi steps to start up.
 double initialShift_r; //! can be used to start with an initial shift
                        //! (ignored if arno!=0)

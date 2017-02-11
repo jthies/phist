@@ -1,30 +1,27 @@
 #include "phist_config.h"
 
-#ifdef PHIST_HAVE_MPI
-#include <mpi.h>
-#endif
-
-#include <cstring>
-#include <string>
-#include <sstream>
-#include <iostream>
-
-#include "phist_macros.h"
-#include "phist_get_arg.hpp"
-#include "phist_enums.h"
+#include "phist_tools.h"
 #include "phist_kernels.h"
-#include "phist_operator.h"
+#include "phist_core.h"
+#include "phist_MemOwner.hpp"
+#include "phist_get_arg.hpp"
+
 #include "phist_jadaOpts.h"
 #include "phist_subspacejada.h"
 #include "phist_harmonicjada.h"
 #include "phist_precon.h"
+// needed for ComputeEigenvectors
+#include "phist_schur_decomp.h"
 
 #include ${PHIST_TG_HFILE}
 #include "phist_driver_utils.h"
 
 
 #include "phist_ScalarTraits.hpp"
+#include "phist_MemOwner.hpp"
 #include "phist_std_typedefs.hpp"
+
+#include <cstring>
 
 void SUBR(print_usage)(const char* progname)
 {
@@ -203,9 +200,11 @@ else
   
   if (strcmp(problemB, "I") && strcasecmp(problemB, "none"))
   {
+    phist_const_context_ptr ctx = NULL;
+    PHIST_ICHK_IERR(SUBR(sparseMat_get_context)(A,&ctx,&iflag),iflag);
     iflag=0;
-    PHIST_SOUT(PHIST_VERBOSE,"genralized eigenproblem...\n");
-    PHIST_ICHK_IERR(SUBR(create_matrix_with_map)(&B,map,problemB,&iflag), iflag);
+    PHIST_SOUT(PHIST_VERBOSE,"generalized eigenproblem...\n");
+    PHIST_ICHK_IERR(SUBR(create_matrix_with_context)(&B,ctx,problemB,&iflag), iflag);
     opB=new TYPE(linearOp);
     PHIST_ICHK_IERR(SUBR(linearOp_wrap_sparseMat)(opB,B,&iflag),iflag);
     PHIST_ICHK_IERR(SUBR(linearOp_wrap_sparseMat_pair)(opA,A,B,&iflag),iflag);
@@ -219,8 +218,10 @@ else
   // setup necessary vectors and matrices for the schur form
   mvec_ptr Q = NULL;
   PHIST_ICHK_IERR(SUBR(mvec_create)(&Q,map,nEig+opts.blockSize-1,&iflag),iflag);
+  MvecOwner<_ST_> _Q(Q);
   sdMat_ptr R = NULL;
   PHIST_ICHK_IERR(SUBR(sdMat_create)(&R,nEig+blockDim-1,nEig+blockDim-1,comm,&iflag),iflag);
+  SdMatOwner<_ST_> _R(R);
   _MT_ *resNorm = new _MT_[nEig+blockDim-1];
   _MT_ *resNormExp = new _MT_[nEig+blockDim-1];
   CT *ev = new CT[nEig+blockDim-1];
@@ -228,6 +229,8 @@ else
   // setup start vector (currently to (1 0 1 0 .. ) )
   mvec_ptr v0 = NULL;
   PHIST_ICHK_IERR(SUBR(mvec_create)(&v0,map,1,&iflag),iflag);
+  MvecOwner<_ST_> _v0(v0);
+  
 //  PHIST_ICHK_IERR(SUBR(mvec_random)(v0,&iflag),iflag);
   PHIST_ICHK_IERR(SUBR(mvec_put_value)(v0,st::one(),&iflag),iflag);
   // initialize random number generator in parallel
@@ -251,6 +254,7 @@ else
   // used to calculate explicit residuals
   mvec_ptr res;
   PHIST_ICHK_IERR(SUBR(mvec_create)(&res,map,nEig+blockDim-1,&iflag),iflag);
+  MvecOwner<_ST_> _res(res);
 
   opts.v0=v0;
   
@@ -261,7 +265,7 @@ else
   {
     precon = new TYPE(linearOp);
     PHIST_ICHK_IERR(SUBR(precon_create)(precon,A,st::zero(),NULL,NULL,NULL,
-                        precon2str(opts.preconType), opts.preconOpts, &iflag),iflag);
+                        precon2str(opts.preconType), opts.preconOpts, NULL, &iflag),iflag);
     opts.preconOp=precon;
   }
   
@@ -281,20 +285,37 @@ else
           Q, R, ev, resNorm, &nEig, &nIter, &iflag), iflag);
   }
 
+  int nvQ;
+  PHIST_ICHK_IERR(SUBR(mvec_num_vectors)(Q,&nvQ,&iflag),iflag);
+
   // calculate real residual, res = AQ - BQR
   mvec_ptr BQ = Q;
   if (B!=NULL)
   {
-    int nvQ;
-    PHIST_ICHK_IERR(SUBR(mvec_num_vectors)(Q,&nvQ,&iflag),iflag);
     PHIST_ICHK_IERR(SUBR(mvec_create)(&BQ,map,nvQ,&iflag),iflag);
     PHIST_ICHK_IERR(SUBR(sparseMat_times_mvec)(st::one(),B,Q,st::zero(),BQ,&iflag),iflag);
   }
-  
+  MvecOwner<_ST_> _BQ(BQ!=Q?BQ:NULL);  
   PHIST_ICHK_IERR(SUBR(sparseMat_times_mvec)(st::one(),A,Q,st::zero(),res,&iflag),iflag);
     PHIST_ICHK_IERR(SUBR(mvec_times_sdMat)(-st::one(),BQ,R,st::one(),res,&iflag),iflag);
 
-  if (BQ!=Q) PHIST_ICHK_IERR(SUBR(mvec_delete)(BQ,&iflag),iflag);
+  TYPE(sdMat_ptr) QtQ=NULL;
+  PHIST_ICHK_IERR(SUBR(sdMat_create)(&QtQ,nvQ,nvQ,comm,&iflag),iflag);
+  SdMatOwner<_ST_> _QtQ(QtQ);
+  PHIST_ICHK_IERR(SUBR(sdMat_identity)(QtQ,&iflag),iflag);
+  PHIST_ICHK_IERR(SUBR(mvecT_times_mvec)(st::one(),Q,BQ,-st::one(),QtQ,&iflag),iflag);
+  _MT_ ortho_err=mt::zero();
+  //_MT_ normQtQ[nvQ];
+  //PHIST_ICHK_IERR(SUBR(sdMat_normF)(QtQ,normQtQ,&iflag),iflag);
+  //for (int i=0; i<nvQ; i++) ortho_err=std::max(ortho_err,normQtQ[i]);
+  _ST_* val=NULL;
+  phist_lidx lda;
+  PHIST_ICHK_IERR(SUBR(sdMat_extract_view)(QtQ,&val,&lda,&iflag),iflag);
+  for (int i=0; i<nvQ; i++)
+    for (int j=0; j<nvQ; j++)
+    {
+      ortho_err=std::max(ortho_err,std::abs(val[i*lda+j]));
+    }
 
   PHIST_ICHK_IERR(SUBR(mvec_norm2)(res,resNormExp,&iflag),iflag);
   int nConvergedEig = 0;
@@ -302,13 +323,15 @@ else
     if(resNorm[i] <= opts.convTol)
       nConvergedEig++;
 
-  PHIST_SOUT(PHIST_INFO, "subspacejada terminated after %d iterations and calculated %d eigenvalues.", nIter, nConvergedEig);
+  PHIST_SOUT(PHIST_INFO, "subspacejada terminated after %d iterations and calculated %d eigenvalues (%s).", 
+        nIter, nConvergedEig, (nIter<=opts.maxIters && nConvergedEig>=opts.numEigs)?"SUCCESS":"FAILURE");
+  PHIST_SOUT(PHIST_INFO, "\n deviation from (B-)orthogonality in Q: %8.4e\t(%s)\n",ortho_err,ortho_err<100*mt::eps()?"SUCCESS":"FAILURE");
   PHIST_SOUT(PHIST_INFO, "\n eigenvalues:              ");
 
   if( opts.symmetry==phist_HERMITIAN )
   {
     for(int i = 0; i < nEig; i++)
-      PHIST_SOUT(PHIST_INFO, "\t%8.4e", ct::real(ev[i]));
+      PHIST_SOUT(PHIST_INFO, "\t%25.16e\n", ct::real(ev[i]));
     PHIST_SOUT(PHIST_INFO, "\n (est.) ritz residual norm:");
     for(int i = 0; i < nEig; i++)
       PHIST_SOUT(PHIST_INFO, "\t%8.4e", resNorm[i]);
@@ -319,7 +342,7 @@ else
   else
   {
     for(int i = 0; i < nEig; i++)
-      PHIST_SOUT(PHIST_INFO, "\t( %8.4e + i%8.4e )", ct::real(ev[i]), ct::imag(ev[i]));
+      PHIST_SOUT(PHIST_INFO, "\t%25.16e%+25.16ei\n", ct::real(ev[i]), ct::imag(ev[i]));
     PHIST_SOUT(PHIST_INFO, "\n (est.) ritz residual norm:");
     for(int i = 0; i < nEig; i++)
       PHIST_SOUT(PHIST_INFO, "\t%8.4e                  ", resNorm[i]);
@@ -329,20 +352,56 @@ else
   }
   PHIST_SOUT(PHIST_INFO, "\n");
 
+  // compute eigenvectors X: A*X=X*D and diagonal matrix D with eigenvalues 
+  // (for checking the sorting only).
+  sdMat_ptr D=NULL;
+  mvec_ptr X=NULL, AX=NULL;
+  PHIST_ICHK_IERR(SUBR(mvec_create)(&X,map,nEig,&iflag),iflag);
+  PHIST_ICHK_IERR(SUBR(mvec_create)(&AX,map,nEig,&iflag),iflag);
+  PHIST_ICHK_IERR(SUBR(sdMat_create)(&D,nEig,nEig,comm,&iflag),iflag);
+  
+  MvecOwner<_ST_> _X(X),_AX(AX);
+  SdMatOwner<_ST_> _D(D);
+  
+  PHIST_ICHK_IERR(SUBR(ComputeEigenvectors)(Q,R,X,&iflag),iflag);
+  PHIST_ICHK_IERR(SUBR(sparseMat_times_mvec)(st::one(),A,X,st::zero(),AX,&iflag),iflag);
+  PHIST_ICHK_IERR(SUBR(sdMat_put_value)(D,st::zero(),&iflag),iflag);
+  _ST_* D_raw=NULL;
+  phist_lidx ldD;
+  PHIST_ICHK_IERR(SUBR(sdMat_extract_view)(D,&D_raw,&ldD,&iflag),iflag);
+  for (int i=0; i<nEig; i++)
+  {
+#ifdef IS_COMPLEX
+    D_raw[i*ldD+i] = ev[i];
+#else
+    _MT_ evr=ct::real(ev[i]), evi=ct::imag(ev[i]);
+    D_raw[i*ldD+i] = evr;
+    if (mt::abs(evi)>opts.convTol)
+    {
+      if (evi>mt::zero() && i<nEig-1)
+      {
+        D_raw[(i+1)*ldD+i] = evi;
+      }
+      else if (evi<mt::zero() && i>0)
+      {
+        D_raw[(i-1)*ldD+i] = evi;
+      }
+    }
+#endif
+  }
+  PHIST_ICHK_IERR(SUBR(sdMat_to_device)(D,&iflag),iflag);
+  
+  PHIST_ICHK_IERR(SUBR(mvec_times_sdMat)(-st::one(),X,D,st::one(),AX,&iflag),iflag);
+  _MT_ eVecResNorm[nEig];
+  PHIST_ICHK_IERR(SUBR(mvec_norm2)(AX,eVecResNorm,&iflag),iflag);
+  _MT_ max_evres = mt::zero();
+  for (int i=0; i<nEig; i++) max_evres=std::max(max_evres,eVecResNorm[i]);
+  PHIST_SOUT(PHIST_INFO,"max eigenvector residual: %8.4e\t(%s)\n",max_evres,(max_evres<100*opts.convTol)?"SUCCESS":"FAILURE");
 
-
-
-
-  //------------------------------- clear matrices and vectors --------------------- 
-  // delete vectors and sdMats
-  PHIST_ICHK_IERR(SUBR(mvec_delete)(res,&iflag),iflag);
+  // clean up
   delete[] ev;
   delete[] resNorm;
   delete[] resNormExp;
-  PHIST_ICHK_IERR(SUBR(mvec_delete)(v0,&iflag),iflag);
-  PHIST_ICHK_IERR(SUBR(sdMat_delete)(R,&iflag),iflag);
-  PHIST_ICHK_IERR(SUBR(mvec_delete)(Q,&iflag),iflag);
-  // clean up operators
   PHIST_ICHK_IERR(opA->destroy(opA,&iflag),iflag);
   delete opA;
   if (opB)

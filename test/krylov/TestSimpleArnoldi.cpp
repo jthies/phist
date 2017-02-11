@@ -1,15 +1,13 @@
 #include "phist_config.h"
-#ifdef PHIST_HAVE_MPI
-#include <mpi.h>
-#endif
+
+#include "phist_tools.h"
+#include "phist_kernels.h"
 
 #include "gtest/phist_gtest.h"
 
-
-#include "phist_macros.h"
-#include "phist_kernels.h"
-#include "phist_enums.h"
+#include "phist_kernel_flags.h"
 #include "phist_simple_arnoldi.h"
+
 #include "../kernels/KernelTestWithSparseMat.h"
 #include "../kernels/KernelTestWithMassMat.h"
 #include "../kernels/KernelTestWithSdMats.h"

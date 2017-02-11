@@ -1,12 +1,16 @@
 #include "phist_config.h"
+
+#include "phist_tools.h"
+#include "phist_kernels.h"
+#include "phist_core.h"
+#include "phist_ScalarTraits.hpp"
+
 #include "phist_iter_op.h"
 
 // todo: rename feastCorrectionSolver,
 // it is in fact a kind of general wrapper
 // for our linear solvers.
 #include "phist_feastCorrectionSolver.h"
-#include "phist_kernels.h"
-#include "phist_ScalarTraits.hpp"
 
 #ifdef PHIST_HAVE_SP
 #include "phist_gen_s.h"

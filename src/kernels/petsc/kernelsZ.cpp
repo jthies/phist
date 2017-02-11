@@ -11,6 +11,7 @@
 #include <mpi.h>
 #endif
 
+#include <petscconf.h>
 #include <petscsys.h>
 #include <petsc/private/petscimpl.h>
 
@@ -22,6 +23,8 @@
 #include "../phist_kernels.h"
 #include "phist_lapack.h"
 
+#include "../common/default_context.h"
+
 #include "phist_typedefs.h"
 #include "typedefs.hpp"
 #include "phist_ScalarTraits.hpp"
@@ -30,6 +33,7 @@
 #include "phist_gen_z.h"
 #if defined(PETSC_USE_REAL_DOUBLE) && defined(PETSC_USE_COMPLEX)
 #include "kernels_def.hpp"
+#include "../common/default_context_def.hpp"
 #include "../common/kernels_no_gpu.cpp"
 #include "../common/kernels_no_carp.cpp"
 #include "../common/kernels_no_inplace_VC.cpp"

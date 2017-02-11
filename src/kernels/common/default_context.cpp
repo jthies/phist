@@ -6,10 +6,12 @@ namespace phist
   {
 
     default_context::default_context(phist_const_map_ptr row_map_in,
+                                             phist_const_map_ptr col_map_in,
                                              phist_const_map_ptr range_map_in,
                                              phist_const_map_ptr domain_map_in)
     {
       row_map=row_map_in;
+      col_map=col_map_in;
       domain_map=domain_map_in;
       range_map=range_map_in;
     }
@@ -56,13 +58,15 @@ namespace phist
 // balancing when creating a new matrix.
 extern "C" void phist_context_create(phist_context_ptr* vctx, 
                           phist_const_map_ptr row_map, 
+                          phist_const_map_ptr col_map,
                           phist_const_map_ptr range_map,
                           phist_const_map_ptr domain_map, 
                           int* iflag)
 {
   PHIST_ENTER_FCN(__FUNCTION__);
   *iflag=0;
-  *vctx=(phist_context_ptr)(new phist::internal::default_context(row_map,range_map,domain_map));
+  *vctx=(phist_context_ptr)(new phist::internal::default_context
+        (row_map,col_map, range_map,domain_map));
 }
 
 // delete a context created by context_create

@@ -93,6 +93,7 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,_N_,MATNAME>,
         ASSERT_EQ(0,iflag_);
         SUBR(mvec_view_block)(vec3_,&VH_,BLOCK_SIZE1,m_+BLOCK_SIZE1-1,&iflag_);
         ASSERT_EQ(0,iflag_);
+        iflag_ = PHIST_MVEC_REPLICATE_DEVICE_MEM;
         SUBR(mvec_create)(&BV_,map_,m_+BLOCK_SIZE1,&iflag_);
         ASSERT_EQ(0,iflag_);
         SUBR(mvec_view_block)(BV_,&BVm_,0,m_-1,&iflag_);
@@ -192,7 +193,7 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,_N_,MATNAME>,
 
         // check orthogonality of V_
         ASSERT_NEAR(mt::one(),VTest::ColsAreNormalized(V_vp_,nloc_,ldaV_,stride_,mpi_comm_),(MT)200.*releps(V_));
-        ASSERT_NEAR(mt::one(),VTest::ColsAreOrthogonal(V_vp_,nloc_,ldaV_,stride_,mpi_comm_),(MT)200.*releps(V_));
+        ASSERT_NEAR(mt::one(),VTest::ColsAreOrthogonal(V_vp_,nloc_,ldaV_,stride_,mpi_comm_),(MT)300.*releps(V_));
 
         // calculate A*V(:,1:m)
         opA->apply(st::one(),opA->A,Vm_,st::zero(),AV_,&iflag_);
@@ -237,6 +238,8 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,_N_,MATNAME>,
           SUBR(simple_arnoldi)(opA,opB_,v0_,V_,AV_,BV_,H_,m_,&iflag_);
           ASSERT_EQ(0,iflag_);
         }
+        SUBR(sdMat_from_device)(H_,&iflag_);
+        ASSERT_EQ(0,iflag_);
         // check if AV and BV are returned correctly
         PHIST_CHK_IERR(SUBR(sparseMat_times_mvec)(-st::one(),A_,Vm_,st::one(),AV_,&iflag_),iflag_);
         PHIST_CHK_IERR(SUBR(sparseMat_times_mvec)(-st::one(),B_,V_,st::one(),BV_,&iflag_),iflag_);
@@ -250,7 +253,7 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,_N_,MATNAME>,
 
         // check orthogonality of V_
         ASSERT_NEAR(mt::one(),VTest::ColsAreBNormalized(V_vp_,BV_vp_,nloc_,ldaV_,ldaBV_,stride_,mpi_comm_),(MT)200.*releps(V_));
-        ASSERT_NEAR(mt::one(),VTest::ColsAreBOrthogonal(V_vp_,BV_vp_,nloc_,ldaV_,ldaBV_,stride_,mpi_comm_),(MT)200.*releps(V_));
+        ASSERT_NEAR(mt::one(),VTest::ColsAreBOrthogonal(V_vp_,BV_vp_,nloc_,ldaV_,ldaBV_,stride_,mpi_comm_),(MT)300.*releps(V_));
 
         // calculate A*V(:,1:m)
         opA->apply(st::one(),opA->A,Vm_,st::zero(),AV_,&iflag_);
@@ -258,6 +261,8 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,_N_,MATNAME>,
 
         // calculate H_' = H_ - V(:,1:m+BLOCK_SIZE1)^T AV(:,1:m)
         SUBR(mvecT_times_mvec)(-st::one(),V_,AV_,st::one(),H_,&iflag_);
+        ASSERT_EQ(0,iflag_);
+        PHIST_CHK_IERR(SUBR(sdMat_from_device)(H_,&iflag_),iflag_);
         ASSERT_EQ(0,iflag_);
         ASSERT_NEAR(mt::one(),ArrayEqual(mat2_vp_,m_,m_-1,m_lda_,stride_,st::zero()), (MT)200.*releps(V_));
       }
@@ -287,8 +292,8 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,_N_,MATNAME>,
 //          vec1_vp_, nloc_, lda_, stride_,mpi_comm_);
 
         // check orthogonality of V_
-        ASSERT_NEAR(mt::one(),VTest::ColsAreNormalized(V_vp_,nloc_,ldaV_,stride_,mpi_comm_),(MT)200.*releps(V_));
-        ASSERT_NEAR(mt::one(),VTest::ColsAreOrthogonal(V_vp_,nloc_,ldaV_,stride_,mpi_comm_),(MT)200.*releps(V_));
+        ASSERT_NEAR(mt::one(),VTest::ColsAreNormalized(V_vp_,nloc_,ldaV_,stride_,mpi_comm_),(MT)250.*releps(V_));
+        ASSERT_NEAR(mt::one(),VTest::ColsAreOrthogonal(V_vp_,nloc_,ldaV_,stride_,mpi_comm_),(MT)300.*releps(V_));
 
         // check H = Vm'*AVm
         SUBR(sdMat_put_value)(mat2_, st::zero(), &iflag_);
@@ -297,7 +302,7 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,_N_,MATNAME>,
         ASSERT_EQ(0,iflag_);
         SUBR(mvecT_times_mvec)(-st::one(),Vm_,AVm_,st::one(),Hm_, &iflag_);
         ASSERT_EQ(0,iflag_);
-        ASSERT_NEAR(mt::one(),ArrayEqual(mat2_vp_,m_-1,m_-1,m_lda_,stride_,st::zero()), (MT)200.*releps(V_));
+        ASSERT_NEAR(mt::one(),ArrayEqual(mat2_vp_,m_-1,m_-1,m_lda_,stride_,st::zero()), (MT)350.*releps(V_));
 
         // check A*Vm = AVm
         opA->apply(-st::one(),opA->A,Vm_,st::one(),AVm_,&iflag_);

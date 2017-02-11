@@ -365,7 +365,7 @@ namespace ghost {
       typedef TSQR::MessengerBase<scalar_type> base_mess_type;
       // TODO - we only use the default comm here
       RCP<const Teuchos::Comm<int> > comm = Teuchos::rcp(new 
-        Teuchos::MpiComm<int>(mv.get()->context->mpicomm));
+        Teuchos::MpiComm<int>(mv.get()->map->mpicomm));
       RCP<mess_type> mess (new mess_type (comm));
       RCP<base_mess_type> messBase = rcp_implicit_cast<base_mess_type> (mess);
       distTsqr_->init (messBase);
@@ -398,11 +398,11 @@ namespace ghost {
     Teuchos::ArrayRCP<ST> values(valptr,0,A_len,false);
     createNode();
     Kokkos::MultiVector<scalar_type, node_type> KMV(node_);
-    KMV.initializeValues ((size_t)_A->traits.nrows,
+    KMV.initializeValues ((size_t)_A->map->dim,
                       (size_t)_A->traits.ncols,
                       values,
                       (size_t)_A->stride,
-                      (size_t)_A->traits.nrows,
+                      (size_t)_A->map->dim,
                       (size_t)_A->traits.ncols);
     
       return KMV;

@@ -3,11 +3,9 @@
 
 #include "phist_config.h"
 
-#ifdef PHIST_HAVE_MPI
-#include <mpi.h>
-#endif
+#ifndef DOXYGEN
 #include "phist_macros.h"
-
+#endif
 
 /*! \def PHIST_TASK_DECLARE(taskName)
  *  Declare a tasks (e.g. a variable taskName of some type to be used later!)
@@ -270,8 +268,8 @@ static inline void phist_wait_ghost_task(ghost_task** task, int* iflag)
 #define PHIST_TASK_POST_STEP(task_ierr)
 #define PHIST_TASK_WAIT_STEP(taskName,task_ierr)
 
-#define PHIST_MAIN_TASK_BEGIN
-#define PHIST_MAIN_TASK_END
+#define PHIST_MAIN_TASK_BEGIN {
+#define PHIST_MAIN_TASK_END }
 
 #endif /* PHIST_HAVE_CXX11_LAMBDAS */
 

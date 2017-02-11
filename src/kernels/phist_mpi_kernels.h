@@ -14,10 +14,6 @@ typedef int MPI_Request;
 typedef int MPI_Status;
 #endif
 
-
-#include "phist_macros.h"
-#include "phist_kernels.h"
-
 /* note: the phist_typedefs.h file is provided in the subdirectory
  where the interface is implemented (e.g. ghost/, tpetra/).
  */

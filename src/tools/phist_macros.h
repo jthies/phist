@@ -10,15 +10,23 @@
 #include <mpi.h>
 #endif
 
-#include "phist_tools.h"
 #ifdef __cplusplus
 #include <cstdio>
+#include <exception>
+#include <string>
 #else
 #include <stdio.h>
 #endif
 #include "phist_defs.h"
 #endif
 
+/* print a warning that an untested / experimental function is called */
+#define PHIST_MARK_AS_EXPERIMENTAL(s) PHIST_SOUT(PHIST_WARNING, "Called experimental (untested) %s\n", s);
+
+/* this macro can be used to avoid compiler warnings about unused variables */
+#ifndef PHIST_TOUCH
+#define PHIST_TOUCH(x) (void)(x);
+#endif
 
 #ifdef PHIST_HAVE_MPI
 #define PHIST_OUT(level,msg, ...) {\
@@ -128,9 +136,9 @@ PHIST_OUT(PHIST_ERROR,"Error code %d (%s) returned from call %s\n(file %s, line 
 # endif
 // check return value from GHOST
 #define PHIST_CHK_GERR(func,FLAG) { PHIST_TIMEMONITOR_PERLINE_MACRO \
-ghost_error gerr=func; FLAG=PHIST_SUCCESS; if (gerr!=GHOST_SUCCESS) { FLAG=PHIST_FUNCTIONAL_ERROR;\
+ghost_error PHIST_CHK_gerr=func; FLAG=PHIST_SUCCESS; if (PHIST_CHK_gerr!=GHOST_SUCCESS) { FLAG=PHIST_FUNCTIONAL_ERROR;\
 PHIST_OUT(PHIST_ERROR,"Error code %d (%s) returned from call %s\n(file %s, line %d)\n",\
-(FLAG),(phist_ghost_error2str(gerr)),(#func),(__FILE__),(__LINE__)); return;}\
+(FLAG),(phist_ghost_error2str(PHIST_CHK_gerr)),(#func),(__FILE__),(__LINE__)); return;}\
 }
 #endif
 //! checks an iflag flag passed to a void function for negative value, assigns it to FLAG,
@@ -235,14 +243,6 @@ PHIST_OUT(PHIST_WARNING,"Warning, function %s is DEPRECATED.\n(file %s, line %d)
 # define PHIST_ENTER_KERNEL_FCN(s) phist_CheckKernelFcnNesting s_(s); PHIST_ENTER_FCN(s_.str());
 #else
 # define PHIST_ENTER_KERNEL_FCN(s)
-#endif
-
-/* print a warning that an untested / experimental function is called */
-#define PHIST_MARK_AS_EXPERIMENTAL(s) PHIST_SOUT(PHIST_WARNING, "Called experimental (untested) %s\n", s);
-
-/* this macro can be used to avoid compiler warnings about unused variables */
-#ifndef PHIST_TOUCH
-#define PHIST_TOUCH(x) (void)(x);
 #endif
 
 #ifndef PHIST_CAST_PTR_FROM_VOID

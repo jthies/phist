@@ -35,19 +35,19 @@ extern "C" void SUBR(sparseMat_read_hb)(TYPE(sparseMat_ptr)* A, phist_const_comm
   *iflag=PHIST_NOT_IMPLEMENTED;
 }
 
-extern "C" void SUBR(sparseMat_read_mm_with_map)(TYPE(sparseMat_ptr)* A, phist_const_map_ptr map,
+extern "C" void SUBR(sparseMat_read_mm_with_context)(TYPE(sparseMat_ptr)* A, phist_const_context_ptr ctx,
         const char* filename,int* iflag)
 {
   *iflag=PHIST_NOT_IMPLEMENTED;
 }
 
-extern "C" void SUBR(sparseMat_read_bin_with_map)(TYPE(sparseMat_ptr)* A, phist_const_map_ptr map,
+extern "C" void SUBR(sparseMat_read_bin_with_context)(TYPE(sparseMat_ptr)* A, phist_const_context_ptr ctx,
         const char* filename,int* iflag)
 {
   *iflag=PHIST_NOT_IMPLEMENTED;
 }
 
-extern "C" void SUBR(sparseMat_read_hb_with_map)(TYPE(sparseMat_ptr)* A, phist_const_map_ptr map,
+extern "C" void SUBR(sparseMat_read_hb_with_context)(TYPE(sparseMat_ptr)* A, phist_const_context_ptr ctx,
         const char* filename,int* iflag)
 {
   *iflag=PHIST_NOT_IMPLEMENTED;
@@ -94,22 +94,8 @@ extern "C" void SUBR(mvec_create)(TYPE(mvec_ptr)* V,
   *iflag=PHIST_NOT_IMPLEMENTED;
 }
 
-extern "C" void SUBR(mvec_create_view)(TYPE(mvec_ptr)* V, phist_const_map_ptr map, 
-    _ST_* values, phist_lidx lda, int nvec,
-    int* iflag)
-{
-  *iflag=PHIST_NOT_IMPLEMENTED;
-}
-
 extern "C" void SUBR(sdMat_create)(TYPE(sdMat_ptr)* M, 
     int nrows, int ncols, phist_const_comm_ptr comm, int* iflag)
-{
-  *iflag=PHIST_NOT_IMPLEMENTED;
-}
-
-extern "C" void SUBR(sdMat_create_view)(TYPE(sdMat_ptr)* M, phist_const_comm_ptr comm,
-        _ST_* values, phist_lidx lda, int nrows, int ncols,
-        int* iflag)
 {
   *iflag=PHIST_NOT_IMPLEMENTED;
 }

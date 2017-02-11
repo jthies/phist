@@ -2,6 +2,9 @@
 #define PHIST_KERNEL_TEST_H
 
 #include "phist_config.h"
+
+#include "phist_tools.h"
+#include "phist_kernels.h"
 #ifdef PHIST_HAVE_MPI
 #include <mpi.h>
 #else
@@ -10,11 +13,9 @@ typedef int MPI_Comm;
 
 #include "gtest/phist_gtest.h"
 
-#include "phist_typedefs.h"
-#include "phist_kernels.h"
-
 
 #ifdef PHIST_HAVE_GHOST
+#include "ghost/util.h"
 #include "ghost/taskq.h"
 #endif
 #ifdef PHIST_MVECS_ROW_MAJOR
@@ -40,6 +41,7 @@ public:
  static MPI_Comm mpi_comm_;
  static unsigned int rseed_;//random number seed
  static int iflag_, mpi_rank_, mpi_size_;
+ static bool isCuda_;
  KernelTest() : kernelTestSetupCounter_(0) {}
 
  //! these flags determine how to traverse arrays
@@ -87,6 +89,13 @@ public:
       // with a different seed on each MPI process)
       rseed_ = (unsigned int)(mpi_rank_*77+42);
       srand(rseed_);
+      isCuda_=false;
+#ifdef PHIST_KERNEL_LIB_GHOST
+      ghost_type type;
+      ghost_error gerr=ghost_type_get(&type);
+      EXPECT_EQ(GHOST_SUCCESS,gerr);
+      isCuda_ = (type==GHOST_TYPE_CUDA);
+#endif
     }
 	}
 

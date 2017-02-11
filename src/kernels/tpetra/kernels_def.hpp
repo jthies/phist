@@ -109,6 +109,10 @@ extern "C" void SUBR(sparseMat_create_fromRowFuncAndContext)(TYPE(sparseMat_ptr)
   phist_gidx cols[maxnne];
   _ST_ vals[maxnne];
 
+  // note: if the context contains a col_map, we do not force it onto the matrix anyway.
+  //       this is because we don't have a fused_spmv_pair kernel for Tpetra, so restricting
+  //       the sparsity pattern of subsequently created matrices doesn't help.
+
   //TODO: this can't be the way, what about the Kokkos node?
   for (phist_lidx i=0; i<A->getNodeNumRows(); i++)
   {
@@ -226,21 +230,6 @@ extern "C" void SUBR(mvec_create)(TYPE(mvec_ptr)* vV, phist_const_map_ptr vmap, 
   *vV=(TYPE(mvec_ptr))(V);
 }
 
-//! create a block-vector as view of raw data. The map tells the object
-//! how many rows it should 'see' in the data (at most lda, the leading
-//! dimension of the 2D array values).
-extern "C" void SUBR(mvec_create_view)(TYPE(mvec_ptr)* vV, phist_const_map_ptr vmap, 
-        _ST_* values, phist_lidx lda, int nvec,
-        int* iflag)
-{
-  PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
-  PHIST_CAST_PTR_FROM_VOID(const map_type, map, vmap, *iflag);
-  Teuchos::RCP<const map_type> map_ptr = Teuchos::rcp(map,false);
-  Teuchos::ArrayView<_ST_> val_ptr(values,lda*nvec);
-  Traits<_ST_>::mvec_t* V = new Traits<_ST_>::mvec_t(map_ptr,val_ptr,lda,nvec);
-  *vV=(TYPE(mvec_ptr))(V);  
-}
-
 //! create a serial dense n x m matrix on all procs, with column major
 //! ordering.
 extern "C" void SUBR(sdMat_create)(TYPE(sdMat_ptr)* vM, int nrows, int ncols, 
@@ -268,14 +257,6 @@ extern "C" void SUBR(sdMat_create)(TYPE(sdMat_ptr)* vM, int nrows, int ncols,
   Traits<_ST_>::sdMat_t* M = new Traits<_ST_>::mvec_t(localMap,ncols);
   *vM=(TYPE(sdMat_ptr))(M);
 }
-
-void SUBR(sdMat_create_view)(TYPE(sdMat_ptr)* M, phist_const_comm_ptr comm,
-        _ST_* values, phist_lidx lda, int nrows, int ncols,
-        int* iflag)
-{
-  *iflag=PHIST_NOT_IMPLEMENTED;
-}
-
 
 //@}
 

@@ -51,11 +51,7 @@
 #include "phist_config.h"
 
 #include "phist_trilinos_macros.h"
-#include "phist_macros.h"
-
-#ifdef PHIST_HAVE_MPI
-#include <mpi.h>
-#endif
+#include "phist_tools.h"
 
 #include "Teuchos_StandardCatchMacros.hpp"
 

@@ -1,16 +1,13 @@
 #include "phist_config.h"
-#ifdef PHIST_HAVE_MPI
-#include <mpi.h>
-#endif
 
+#include "phist_tools.h"
+#include "phist_kernels.h"
 
 #include "gtest/phist_gtest.h"
-
 
 #include "../kernels/KernelTestWithVectors.h"
 #include "../kernels/KernelTestWithSdMats.h"
 
-#include "phist_kernels.h"
 #include "phist_svqb.h"
 
 using namespace testing;

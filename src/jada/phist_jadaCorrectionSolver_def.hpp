@@ -15,16 +15,17 @@ void SUBR(jadaCorrectionSolver_create)(TYPE(jadaCorrectionSolver_ptr) *me, phist
 
     (*me)->gmresBlockDim_ = opts.innerSolvBlockSize;
     (*me)->blockedGMRESstates_  = new TYPE(blockedGMRESstate_ptr)[(*me)->gmresBlockDim_];
-    PHIST_CHK_IERR(SUBR(blockedGMRESstates_create)((*me)->blockedGMRESstates_, opts.innerSolvBlockSize, map, opts.innerSolvMaxBas, iflag), *iflag);
+    int maxBas = opts.innerSolvMaxBas;
+    if (maxBas<0) maxBas=std::min(20,opts.innerSolvMaxIters);
+    PHIST_CHK_IERR(SUBR(blockedGMRESstates_create)((*me)->blockedGMRESstates_, opts.innerSolvBlockSize, map, opts.maxBas, iflag), *iflag);
     (*me)->leftPrecon=(TYPE(linearOp_ptr))opts.preconOp;
     (*me)->preconSkewProject=opts.preconSkewProject;
-    (*me)->preconUpdate=opts.preconUpdate;
   }
   else if ((*me)->method_==phist_CARP_CG)
   {
     *iflag=PHIST_NOT_IMPLEMENTED;
   }
-  else if ((*me)->method_==phist_USER_DEFINED)
+  else if ((*me)->method_==phist_USER_LINSOLV)
   {
     if (opts.customSolver_run==NULL && opts.customSolver_run1==NULL)
     {
@@ -62,7 +63,7 @@ void SUBR(jadaCorrectionSolver_delete)(TYPE(jadaCorrectionSolver_ptr) me, int *i
   {
     *iflag=PHIST_NOT_IMPLEMENTED;
   }
-  else if (me->method_==phist_USER_DEFINED)
+  else if (me->method_==phist_USER_LINSOLV)
   {
   }
   delete me;
@@ -90,8 +91,8 @@ void SUBR(jadaCorrectionSolver_run)(TYPE(jadaCorrectionSolver_ptr) me,
                                     const _ST_            sigma[],  TYPE(const_mvec_ptr)  res,      const int resIndex[], 
                                     const _MT_            tol[],    int                   maxIter,
                                     TYPE(mvec_ptr)        t,
-                                    int useIMGS,                   int abortAfterFirstConvergedInBlock,
-                                    int *                 iflag)
+                                    int useIMGS,                    int abortAfterFirstConvergedInBlock,
+                                    int preconUpdate,               int *iflag)
 {
 #include "phist_std_typedefs.hpp"
   PHIST_ENTER_FCN(__FUNCTION__);
@@ -106,12 +107,19 @@ void SUBR(jadaCorrectionSolver_run)(TYPE(jadaCorrectionSolver_ptr) me,
   // this check may fail: subspacejada expects us to grab the RHS's needed from res(:,resIndex[0:totalNumSys-1])
   //PHIST_CHK_IERR(*iflag=totalNumSys==totalNumRHS?0:PHIST_INVALID_INPUT,*iflag);
 
-  if (me->method_==phist_USER_DEFINED)
+  if (me->method_==phist_USER_LINSOLV)
   {
     if (totalNumSys==1 && me->customSolver_run1!=NULL)
     {
+      TYPE(mvec_ptr) res0=(TYPE(mvec_ptr))res;
+      if (resIndex)
+      {
+        res0=NULL;
+        PHIST_CHK_IERR(SUBR(mvec_view_block)((TYPE(mvec_ptr))res,&res0,resIndex[0],resIndex[0],iflag),*iflag);
+      }
+      MvecOwner<_ST_> _res0(res0!=res?res0:NULL);
       PHIST_CHK_IERR(me->customSolver_run1(me->customSolver_,AB_op,B_op,Qtil,BQtil,(double)st::real(sigma[0]),
-        (double)st::imag(sigma[0]), res,
+        (double)st::imag(sigma[0]), res0,
         (double)tol[0],maxIter,t,useIMGS,iflag),*iflag);
     }
     else if (me->customSolver_run!=NULL)
@@ -145,7 +153,11 @@ void SUBR(jadaCorrectionSolver_run)(TYPE(jadaCorrectionSolver_ptr) me,
   // all of the vectors in Q also from the preconditioner, but in practice this means
   // we have to store P\Q.
   TYPE(mvec_ptr) q=NULL, Bq=NULL;
-  if (me->preconSkewProject!=0)
+  // if we do a manual projection after the preconditioner (skew-projection) or
+  // are asked to update the preconditioner we set extra pointers q,Bq. In the 
+  // case of preconditioner updates it may or may not be that the preconditioner
+  // uses the projection space q,Bq.
+  if (me->preconSkewProject!=0 || preconUpdate)
   {
     q=(TYPE(mvec_ptr))Qtil; Bq=(TYPE(mvec_ptr))BQtil;
   }
@@ -154,7 +166,9 @@ void SUBR(jadaCorrectionSolver_run)(TYPE(jadaCorrectionSolver_ptr) me,
   {
     q=NULL; Bq=NULL;
     phist_const_map_ptr map;
-    int nqp=totalNumSys, nq=numProj;
+    //int nqp=totalNumSys;
+    int nqp=numProj;
+    int nq=numProj;
     int nq0=std::max(0,nq-nqp);
     PHIST_CHK_IERR(SUBR(mvec_get_map)(Qtil,&map,iflag),*iflag);
     PHIST_CHK_IERR(SUBR(mvec_create)(&q,map,nqp,iflag),*iflag);
@@ -173,7 +187,7 @@ void SUBR(jadaCorrectionSolver_run)(TYPE(jadaCorrectionSolver_ptr) me,
   // make sure these vectors get deleted at the end of the scope
   MvecOwner<_ST_> _q(q!=Qtil?q:NULL),_Bq(( (Bq!=q)&&(Bq!=BQtil) )?Bq:NULL);
   
-  if (me->preconUpdate!=0)
+  if (preconUpdate!=0)
   {
     // select a single shift for the preconditioner (various strategies could be used)
     _ST_ prec_sigma=sigma[0];
@@ -183,7 +197,7 @@ void SUBR(jadaCorrectionSolver_run)(TYPE(jadaCorrectionSolver_ptr) me,
       SUBR(precon_update)(me->leftPrecon,prec_sigma,q,Bq,iflag);
       if (*iflag) PHIST_SOUT(PHIST_WARNING,"precon_update returned non-zero code %d\n"
                                            "(file %s, line %d). Ignoring return value.\n",
-                                           __FILE__,__LINE__);
+                                           *iflag,__FILE__,__LINE__);
     }
     if (me->rightPrecon!=NULL)
     {
@@ -191,7 +205,7 @@ void SUBR(jadaCorrectionSolver_run)(TYPE(jadaCorrectionSolver_ptr) me,
       SUBR(precon_update)(me->rightPrecon,prec_sigma,q,Bq,iflag);
       if (*iflag) PHIST_SOUT(PHIST_WARNING,"precon_update returned non-zero code %d\n"
                                            "(file %s, line %d). Ignoring return value.\n",
-                                           __FILE__,__LINE__);
+                                           *iflag,__FILE__,__LINE__);
     }
   }
  

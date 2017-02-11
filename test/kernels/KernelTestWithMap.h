@@ -27,7 +27,7 @@ static void SetUpTestCase()
     map_ = map;
     phist_map_get_local_length(map_,&nloc_,&iflag_);
     EXPECT_EQ(0,iflag_);
-    phist_context_create(&defaultContext_,defaultMap_,defaultMap_,defaultMap_,&iflag_);
+    phist_context_create(&defaultContext_,defaultMap_,NULL,defaultMap_,defaultMap_,&iflag_);
     EXPECT_EQ(0,iflag_);
   }
 }

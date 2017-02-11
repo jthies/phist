@@ -1,24 +1,15 @@
 #include "phist_config.h"
 
-#ifdef PHIST_HAVE_MPI
-#include <mpi.h>
-#endif
-
-#ifdef PHIST_HAVE_OPENMP
-#include <omp.h>
-#endif
+#include "phist_tools.h"
+#include "phist_kernels.h"
+#include "phist_operator.h"
+#include "phist_carp_cg.h"
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <strings.h>
 #include <stdbool.h>
 #include <math.h>
-
-#include "phist_macros.h"
-#include "phist_enums.h"
-#include "phist_kernels.h"
-#include "phist_operator.h"
-#include "phist_carp_cg.h"
 
 // ghost/physics
 #ifdef PHIST_KERNEL_LIB_GHOST

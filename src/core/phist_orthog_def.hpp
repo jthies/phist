@@ -14,7 +14,7 @@ extern "C" void SUBR(orthog)(TYPE(const_mvec_ptr) V,
   int randomize =(*iflag&PHIST_ORTHOG_RANDOMIZE_NULLSPACE);
   int m=0,k;
   
-  _MT_ orthoEps = mt::eps();
+  _MT_ orthoEps = (_MT_)10.0*mt::eps();
   
   PHIST_CHK_IERR(SUBR(mvec_num_vectors)(W,&k,iflag),*iflag);
   if (V!=NULL) PHIST_CHK_IERR(SUBR(mvec_num_vectors)(V,&m,iflag),*iflag);
@@ -62,7 +62,6 @@ extern "C" void SUBR(orthog)(TYPE(const_mvec_ptr) V,
     dim0=*iflag; // return value of orthog is rank of null space of [V W] on entry
     *rankVW=k-dim0;
   }
-
   int num_attempts=0;
   const int max_attempts=5;
   TYPE(sdMat_ptr) R1p=NULL,R1pp=NULL,R2p=NULL;

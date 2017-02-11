@@ -140,24 +140,41 @@ public:
       ASSERT_EQ(0,iflag_);
       SUBR(mvec_put_value)(V2_,st::one(),&iflag_);
       ASSERT_EQ(0,iflag_);
+      if (isCuda_)
+      {
+        // destroy the host side of the vectors to make sure the result is actually obtained on the device
+        for (phist_lidx i=0; i<nloc_; i++)
+        {
+          for (int j=0; j<m_; j++)
+          {
+            V1_vp_[VIDX(i,j,ldaV1_)]=((MT)999.0)*st::one()+((MT)333.0)*st::cmplx_I();
+          }
+          for (int j=0; j<k_; j++)
+          {
+            V2_vp_[VIDX(i,j,ldaV2_)]=((MT)-111.0)*st::one()+((MT)555.0)*st::cmplx_I();
+          }
+        }
+      }
       SUBR(mvecT_times_mvec)(st::one(),V1_,V2_,st::zero(),M1_,&iflag_);
       ASSERT_EQ(0,iflag_);
+
+      // check everyone has the same result and host+device are sync'd
+      MTest::sdMat_parallel_check(M1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+
+      // check the host memory first: on GPU processes both host nd
+      // device memory must be correct in the resulting sdMat
+      ASSERT_REAL_EQ(mt::one(),ArrayEqual(M1_vp_,m_,k_,ldaM1_,1,(ST)nglob_,KernelTest::mflag_));
 
 #if PHIST_OUTLEV>=PHIST_DEBUG
       SUBR(mvec_from_device)(V1_,&iflag_);
       ASSERT_EQ(0,iflag_);
       SUBR(mvec_from_device)(V2_,&iflag_);
       ASSERT_EQ(0,iflag_);
-      SUBR(sdMat_from_device)(M1_,&iflag_);
-      ASSERT_EQ(0,iflag_);
       V1Test::PrintVector(PHIST_DEBUG,"ones",V1_vp_,nloc_,ldaV1_,stride_,mpi_comm_);
       V2Test::PrintVector(PHIST_DEBUG,"ones",V2_vp_,nloc_,ldaV2_,stride_,mpi_comm_);
       MTest::PrintSdMat(PHIST_DEBUG,"ones'*ones",M1_vp_,ldaM1_,stride_,mpi_comm_);
 #endif
-      MTest::sdMat_parallel_check(M1_,&iflag_);
-      ASSERT_EQ(0,iflag_);
-      ASSERT_REAL_EQ(mt::one(),SdMatEqual(M1_,(ST)nglob_));
-      ASSERT_EQ(0,iflag_);
 
       // fill rows with 1,2,3,4, ...
       for (int ii=0; ii< nloc_; ii++)
@@ -172,8 +189,6 @@ public:
       SUBR(mvec_to_device)(V2_,&iflag_);
       ASSERT_EQ(0,iflag_);
       SUBR(mvecT_times_mvec)(st::one(),V1_,V2_,st::zero(),M1_,&iflag_);
-      ASSERT_EQ(0,iflag_);
-      SUBR(sdMat_from_device)(M1_,&iflag_);
       ASSERT_EQ(0,iflag_);
       // check result
       MTest::sdMat_parallel_check(M1_,&iflag_);
@@ -205,8 +220,6 @@ public:
       ASSERT_EQ(0,iflag_);
       SUBR(mvecT_times_mvec)(st::one(),V1_,V2_,st::zero(),M1_,&iflag_);
       ASSERT_EQ(0,iflag_);
-      SUBR(sdMat_from_device)(M1_,&iflag_);
-      ASSERT_EQ(0,iflag_);
       // check result
       MTest::sdMat_parallel_check(M1_,&iflag_);
       ASSERT_EQ(0,iflag_);
@@ -224,6 +237,72 @@ public:
     }
   }
 
+  TEST_F(CLASSNAME, mvecT_times_mvec_rand_repeated) 
+  {
+    if (typeImplemented_ && !problemTooSmall_)
+    {
+      // fill V and W with ones
+      SUBR(mvec_random)(V1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(mvec_random)(V2_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+
+      // use this as the reference solution:
+      SUBR(mvecT_times_mvec)(st::one(),V1_,V2_,st::zero(),M1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      
+      // make sure the result does not contain NaN or inf
+      ASSERT_EQ(0,SdMatContainsInfOrNaN(M1_));
+      
+      // make sure the result is not 0
+      MT maxval=mt::zero();
+      for (int i=0; i<m_; i++)
+      {
+        for (int j=0; j<k_; j++)
+        {
+          maxval=std::max(maxval,st::abs(M1_vp_[MIDX(i,j,ldaM1_)]));
+        }
+      }
+      
+      ASSERT_TRUE(maxval>mt::zero());
+
+      // check everyone has the same result and host+device are sync'd
+      MTest::sdMat_parallel_check(M1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      
+      for (int run=0; run<3; run++)
+      {
+
+        if (isCuda_)
+        {
+          // destroy the host side of the vectors to make sure the result is actually obtained on the device
+          for (phist_lidx i=0; i<nloc_; i++)
+          {
+            for (int j=0; j<m_; j++)
+            {
+              V1_vp_[VIDX(i,j,ldaV1_)]=(MT)(run*999.0)*st::one()+(MT)(333.0/(run+1))*st::cmplx_I();
+            }
+            for (int j=0; j<k_; j++)
+            {
+              V2_vp_[VIDX(i,j,ldaV2_)]=(MT)(-111.0*run)*st::one()+(MT)(555.0/(run+1))*st::cmplx_I();
+            }
+          }
+        }
+      
+        TYPE(sdMat_ptr) M=NULL;
+        SUBR(sdMat_create)(&M,m_,k_,comm_,&iflag_);
+        ASSERT_EQ(0,iflag_);
+      
+        SUBR(mvecT_times_mvec)(st::one(),V1_,V2_,st::zero(),M,&iflag_);
+        ASSERT_EQ(0,iflag_);
+      
+        ASSERT_NEAR(mt::one(),SdMatsEqual(M1_,M),_N_*20*mt::eps());
+        SUBR(sdMat_delete)(M,&iflag_);
+        ASSERT_EQ(0,iflag_);
+      }
+    }
+  }
+  
 #if ( _M_ == _K_ )
   // check ones(n,m)'*ones(n,m)=n*ones(m,m), and columns with 1, 2, 3...
   TEST_F(CLASSNAME, mvecT_times_mvec_self) 
@@ -238,8 +317,6 @@ public:
 
 #if PHIST_OUTLEV>=PHIST_DEBUG
       SUBR(mvec_from_device)(V1_,&iflag_);
-      ASSERT_EQ(0,iflag_);
-      SUBR(sdMat_from_device)(M1_,&iflag_);
       ASSERT_EQ(0,iflag_);
       V1Test::PrintVector(PHIST_DEBUG,"ones",V1_vp_,nloc_,ldaV1_,stride_,mpi_comm_);
       MTest::PrintSdMat(PHIST_DEBUG,"ones'*ones",M1_vp_,ldaM1_,stride_,mpi_comm_);
@@ -257,8 +334,6 @@ public:
       SUBR(mvec_to_device)(V1_,&iflag_);
       ASSERT_EQ(0,iflag_);
       SUBR(mvecT_times_mvec)(st::one(),V1_,V1_,st::zero(),M1_,&iflag_);
-      ASSERT_EQ(0,iflag_);
-      SUBR(sdMat_from_device)(M1_,&iflag_);
       ASSERT_EQ(0,iflag_);
       // check result
       MTest::sdMat_parallel_check(M1_,&iflag_);
@@ -290,16 +365,11 @@ public:
       SUBR(mvecT_times_mvec)(st::one(),V1_,V2_,st::zero(),M2_,&iflag_);
       ASSERT_EQ(0,iflag_);
 
-      SUBR(sdMat_from_device)(M1_,&iflag_);
-      ASSERT_EQ(0,iflag_);
-      SUBR(sdMat_from_device)(M2_,&iflag_);
-      ASSERT_EQ(0,iflag_);
-
       MTest::sdMat_parallel_check(M1_,&iflag_);
       ASSERT_EQ(0,iflag_);
       MTest::sdMat_parallel_check(M2_,&iflag_);
       ASSERT_EQ(0,iflag_);
-      ASSERT_NEAR(mt::one(),SdMatsEqual(M1_,M2_),100*sqrt((_MT_)n_)*mt::eps());
+      ASSERT_NEAR(mt::one(),SdMatsEqual(M1_,M2_),500*(_MT_)n_*mt::eps());
       ASSERT_EQ(0,iflag_);
 
     }
@@ -340,8 +410,6 @@ public:
       iflag_ = PHIST_ROBUST_REDUCTIONS;
       SUBR(mvecT_times_mvec)(st::one(),V1_,V2_,st::zero(),M1_,&iflag_);
       ASSERT_EQ(0,iflag_);
-      SUBR(sdMat_from_device)(M1_,&iflag_);
-      ASSERT_EQ(0,iflag_);
       // check result
       MTest::sdMat_parallel_check(M1_,&iflag_);
       ASSERT_EQ(0,iflag_);
@@ -372,8 +440,6 @@ public:
       ASSERT_EQ(0,iflag_);
       iflag_ = PHIST_ROBUST_REDUCTIONS;
       SUBR(mvecT_times_mvec)(st::one(),V1_,V2_,st::zero(),M1_,&iflag_);
-      ASSERT_EQ(0,iflag_);
-      SUBR(sdMat_from_device)(M1_,&iflag_);
       ASSERT_EQ(0,iflag_);
       // check result
       MTest::sdMat_parallel_check(M1_,&iflag_);
@@ -423,8 +489,6 @@ public:
       iflag_ = PHIST_ROBUST_REDUCTIONS;
       SUBR(mvecT_times_mvec)(st::one(),V1_,V1_,st::zero(),M1_,&iflag_);
       ASSERT_EQ(0,iflag_);
-      SUBR(sdMat_from_device)(M1_,&iflag_);
-      ASSERT_EQ(0,iflag_);
       // check result
       MTest::sdMat_parallel_check(M1_,&iflag_);
       ASSERT_EQ(0,iflag_);
@@ -458,8 +522,6 @@ public:
       SUBR(mvec_from_device)(V1_,&iflag_);
       ASSERT_EQ(0,iflag_);
       SUBR(mvec_from_device)(V2_,&iflag_);
-      ASSERT_EQ(0,iflag_);
-      SUBR(sdMat_from_device)(M1_,&iflag_);
       ASSERT_EQ(0,iflag_);
 
       MTest::sdMat_parallel_check(M1_,&iflag_);
@@ -530,8 +592,6 @@ public:
       ASSERT_EQ(0,iflag_);
       SUBR(mvec_from_device)(V2_,&iflag_);
       ASSERT_EQ(0,iflag_);
-      SUBR(sdMat_from_device)(M1_,&iflag_);
-      ASSERT_EQ(0,iflag_);
 
       MTest::sdMat_parallel_check(M1_,&iflag_);
       ASSERT_EQ(0,iflag_);
@@ -599,8 +659,6 @@ public:
       ASSERT_EQ(0,iflag_);
       SUBR(mvec_from_device)(V2_,&iflag_);
       ASSERT_EQ(0,iflag_);
-      SUBR(sdMat_from_device)(M1_,&iflag_);
-      ASSERT_EQ(0,iflag_);
       V1Test::PrintVector(PHIST_DEBUG,"ones",V1_vp_,nloc_,ldaV1_,stride_,mpi_comm_);
       MTest::PrintSdMat(PHIST_DEBUG,"ones",M1_vp_,ldaM1_,stride_,mpi_comm_);
       V2Test::PrintVector(PHIST_DEBUG,"ones*ones",V2_vp_,nloc_,ldaV2_,stride_,mpi_comm_);
@@ -647,8 +705,6 @@ public:
 
       // check result error
       SUBR(mvec_from_device)(V1_,&iflag_);
-        ASSERT_EQ(0,iflag_);
-      SUBR(sdMat_from_device)(M1_,&iflag_);
         ASSERT_EQ(0,iflag_);
       SUBR(mvec_from_device)(V2_,&iflag_);
         ASSERT_EQ(0,iflag_);
@@ -723,8 +779,6 @@ public:
       ASSERT_EQ(0,iflag_);
       SUBR(mvec_from_device)(V2_,&iflag_);
       ASSERT_EQ(0,iflag_);
-      SUBR(sdMat_from_device)(M1_,&iflag_);
-      ASSERT_EQ(0,iflag_);
       V1Test::PrintVector(PHIST_DEBUG,"ones",V1_vp_,nloc_,ldaV1_,stride_,mpi_comm_);
       MTest::PrintSdMat(PHIST_DEBUG,"ones",M1_vp_,ldaM1_,stride_,mpi_comm_);
       V2Test::PrintVector(PHIST_DEBUG,"ones*ones",V2_vp_,nloc_,ldaV2_,stride_,mpi_comm_);
@@ -768,8 +822,6 @@ public:
 #if PHIST_OUTLEV>=PHIST_DEBUG
       SUBR(mvec_from_device)(V1_,&iflag_);
       ASSERT_EQ(0,iflag_);
-      SUBR(sdMat_from_device)(M1_,&iflag_);
-      ASSERT_EQ(0,iflag_);
       MTest::PrintSdMat(PHIST_DEBUG,"ones",M1_vp_,ldaM1_,stride_,mpi_comm_);
       V1Test::PrintVector(PHIST_DEBUG,"ones*ones",V1_vp_,nloc_,ldaV2_,stride_,mpi_comm_);
 #endif
@@ -812,8 +864,6 @@ public:
       SUBR(mvec_from_device)(V1_,&iflag_);
       ASSERT_EQ(0,iflag_);
       SUBR(mvec_from_device)(V2_,&iflag_);
-      ASSERT_EQ(0,iflag_);
-      SUBR(sdMat_from_device)(M1_,&iflag_);
       ASSERT_EQ(0,iflag_);
       V1Test::PrintVector(PHIST_DEBUG,"result_inplace",V1_vp_,nloc_,ldaV2_,stride_,mpi_comm_);
       V2Test::PrintVector(PHIST_DEBUG,"result_out_of_place",V2_vp_,nloc_,ldaV2_,stride_,mpi_comm_);
@@ -950,8 +1000,6 @@ public:
 #if PHIST_OUTLEV>=PHIST_DEBUG
       SUBR(mvec_from_device)(V1_,&iflag_);
       ASSERT_EQ(0,iflag_);
-      SUBR(sdMat_from_device)(M1_,&iflag_);
-      ASSERT_EQ(0,iflag_);
       PHIST_SOUT(PHIST_DEBUG,"range of zero M-block: (%d:%d,%d:%d)",imin,imax,jmin,jmax);
       V1Test::PrintVector(PHIST_DEBUG,"1-vec",V1_vp_,nloc_,ldaV1_,stride_,mpi_comm_);
       MTest::PrintSdMat(PHIST_DEBUG,"1-mat with hole",M1_vp_,ldaM1_,stride_,mpi_comm_);
@@ -966,8 +1014,6 @@ public:
 
 #if PHIST_OUTLEV>=PHIST_DEBUG
       SUBR(mvec_from_device)(V1_,&iflag_);
-      ASSERT_EQ(0,iflag_);
-      SUBR(sdMat_from_device)(M1_,&iflag_);
       ASSERT_EQ(0,iflag_);
       PHIST_SOUT(PHIST_DEBUG,"range of zero M-block: (%d:%d,%d:%d)",imin,imax,jmin,jmax);
       V1Test::PrintVector(PHIST_DEBUG,"1-vec with hole",V1_vp_,nloc_,ldaV1_,stride_,mpi_comm_);
@@ -1014,8 +1060,6 @@ public:
       SUBR(mvec_from_device)(V1_,&iflag_);
       ASSERT_EQ(0,iflag_);
       SUBR(mvec_from_device)(V2_,&iflag_);
-      ASSERT_EQ(0,iflag_);
-      SUBR(sdMat_from_device)(M1_,&iflag_);
       ASSERT_EQ(0,iflag_);
       V1Test::PrintVector(PHIST_DEBUG,"random",V1_vp_,nloc_,ldaV1_,stride_,mpi_comm_);
       V2Test::PrintVector(PHIST_DEBUG,"random",V2_vp_,nloc_,ldaV2_,stride_,mpi_comm_);
@@ -1177,21 +1221,12 @@ public:
         SUBR(mvecT_times_mvec)(st::one(),V1_,V2_,st::zero(),M2_,&iflag_);
         ASSERT_EQ(0,iflag_);
 
-        SUBR(sdMat_from_device)(M2_,&iflag_);
-        ASSERT_EQ(0,iflag_);
-
         // viewed vectors into regular sdMat
         SUBR(mvecT_times_mvec)(st::one(),V1,V2,st::zero(),M3,&iflag_);
         ASSERT_EQ(0,iflag_);
 
-        SUBR(sdMat_from_device)(M3,&iflag_);
-        ASSERT_EQ(0,iflag_);
-        
         // now the version with views
         SUBR(mvecT_times_mvec)(st::one(),V1,V2,st::zero(),M1,&iflag_);
-        ASSERT_EQ(0,iflag_);
-
-        SUBR(sdMat_from_device)(M1_,&iflag_);
         ASSERT_EQ(0,iflag_);
 
 #if PHIST_OUTLEV>=PHIST_DEBUG
@@ -1233,8 +1268,6 @@ public:
         ASSERT_EQ(0,iflag_);
 
         // the result should be zero!
-        SUBR(sdMat_from_device)(M3,&iflag_);
-        ASSERT_EQ(0,iflag_);
         ASSERT_NEAR(mt::one(),ArrayEqual(M3_vp,m1[i],m2[i],lda_M3,stride_,st::zero(),mflag_),_N_*maxNorm12*10*mt::eps());
 
         // subtract the two viewed blocks in the result sdMats
@@ -1242,8 +1275,6 @@ public:
         ASSERT_EQ(0,iflag_);
 
         // the result should be zero!
-        SUBR(sdMat_from_device)(M2_,&iflag_);
-        ASSERT_EQ(0,iflag_);
         ASSERT_NEAR(mt::one(),ArrayEqual(M2_vp_,m_,k_,ldaM2_,stride_,st::zero(),mflag_),_N_*maxNorm12*10*mt::eps());
 
         // clean up at the end of the loop

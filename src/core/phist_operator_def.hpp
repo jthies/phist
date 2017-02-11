@@ -30,12 +30,14 @@ void SUBR(linearOp_wrap_sparseMat)(TYPE(linearOp_ptr) op, TYPE(const_sparseMat_p
 {
   *iflag=0;
   op->A = A;
+  op->aux=NULL;
   PHIST_CHK_IERR(SUBR(sparseMat_get_range_map)(A,&op->range_map,iflag),*iflag);
   PHIST_CHK_IERR(SUBR(sparseMat_get_domain_map)(A,&op->domain_map,iflag),*iflag);
   op->apply = &SUBR(sparseMat_times_mvec);
   op->applyT = &SUBR(sparseMatT_times_mvec);
   op->apply_shifted = &SUBR(sparseMat_times_mvec_vadd_mvec);
   op->fused_apply_mvTmv = &SUBR(fused_spmv_mvTmv);
+  op->update=NULL;
   op->destroy=&SUBR(private_linearOp_destroy_nothing);
   return;
 }
@@ -82,8 +84,10 @@ void SUBR(linearOp_wrap_sparseMat_pair)(TYPE(linearOp_ptr) op,
   pair->A=A;
   pair->B=B;
   op->A=(void*)(pair);
+  op->aux=NULL;
   op->apply=&SUBR(private_linearOp_apply_sparseMat_pair_only_A);
   op->apply_shifted=&SUBR(private_linearOp_apply_sparseMat_pair_shifted);
+  op->update=NULL;
   op->destroy=&SUBR(private_linearOp_destroy_sparseMat_pair_wrapper);
 }
 
@@ -131,10 +135,12 @@ void SUBR(linearOp_identity)(TYPE(linearOp_ptr) op,
 {
   *iflag=0;
   op->A=NULL;
+  op->aux=NULL;
   op->apply = &SUBR(private_idOp_apply);
   op->applyT = &SUBR(private_idOp_apply);
   op->apply_shifted = &SUBR(private_idOp_apply_shifted);
   op->fused_apply_mvTmv = &SUBR(private_idOp_fused_apply_mvTmv);
+  op->update=NULL;
   op->destroy=&SUBR(private_linearOp_destroy_nothing);
   op->range_map=range_map;
   op->domain_map=domain_map;
@@ -144,21 +150,21 @@ void SUBR(linearOp_identity)(TYPE(linearOp_ptr) op,
  void SUBR(linearOp_apply)(_ST_ alpha, TYPE(const_linearOp_ptr) A_op, 
         TYPE(const_mvec_ptr) X, _ST_ beta,  TYPE(mvec_ptr) Y, int* iflag)
   {
-    PHIST_CHK_IERR(A_op->apply==NULL? PHIST_BAD_CAST:0,*iflag);
+    PHIST_CHK_IERR(*iflag=(A_op->apply==NULL)? PHIST_BAD_CAST:0,*iflag);
     PHIST_CHK_IERR(A_op->apply(alpha,A_op->A,X,beta,Y,iflag),*iflag);
   }
 //! apply transpose
  void SUBR(linearOp_applyT)(_ST_ alpha, TYPE(const_linearOp_ptr) A_op, 
         TYPE(const_mvec_ptr) X, _ST_ beta,  TYPE(mvec_ptr) Y, int* iflag)
   {
-    PHIST_CHK_IERR(A_op->applyT==NULL? PHIST_BAD_CAST:0,*iflag);
+    PHIST_CHK_IERR(*iflag=(A_op->applyT==NULL)? PHIST_BAD_CAST:0,*iflag);
     PHIST_CHK_IERR(A_op->applyT(alpha,A_op->A,X,beta,Y,iflag),*iflag);
   }
  //! pointer to function for computing Y=(A-sigma[j]B)*X[j]+beta*Y[j]
  void SUBR(linearOp_apply_shifted)(_ST_ alpha, TYPE(const_linearOp_ptr) A_op, _ST_ const * sigma,
         TYPE(const_mvec_ptr) X, _ST_ beta,  TYPE(mvec_ptr) Y, int* iflag)
     {
-    PHIST_CHK_IERR(A_op->apply_shifted==NULL? PHIST_BAD_CAST:0,*iflag);
+    PHIST_CHK_IERR(*iflag=(A_op->apply_shifted==NULL)? PHIST_BAD_CAST:0,*iflag);
     PHIST_CHK_IERR(A_op->apply_shifted(alpha,A_op->A,sigma,X,beta,Y,iflag),*iflag);
   }
 //! apply operator and compute inner products with in- and output vector
@@ -167,8 +173,17 @@ void SUBR(linearOp_identity)(TYPE(linearOp_ptr) op,
                             TYPE(sdMat_ptr) WtW, TYPE(sdMat_ptr) VtW,
                             int* iflag)
   {
-    PHIST_CHK_IERR(A_op->fused_apply_mvTmv==NULL? PHIST_BAD_CAST:0,*iflag);
+    PHIST_CHK_IERR(*iflag=(A_op->fused_apply_mvTmv==NULL)? PHIST_BAD_CAST:0,*iflag);
     PHIST_CHK_IERR(A_op->fused_apply_mvTmv(alpha,A_op->A,V,beta,W,WtW,VtW,iflag),*iflag);
+  }
+
+  
+  void SUBR(linearOp_update)(TYPE(linearOp_ptr) A_op, _ST_ sigma,
+                        TYPE(const_mvec_ptr) Vkern,
+                        TYPE(const_mvec_ptr) BVkern,
+                        int *iflag)
+  {
+    PHIST_CHK_IERR(A_op->update(A_op->A,A_op->aux,sigma,Vkern,BVkern,iflag),*iflag);
   }
   
   //! this function can be used to clean up any data the operator may *own*,

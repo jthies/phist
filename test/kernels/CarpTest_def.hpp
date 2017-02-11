@@ -79,8 +79,12 @@ public:
     if (typeImplemented_ && !problemTooSmall_)
     {
       iflag_=PHIST_SPARSEMAT_OPT_CARP | getSparseMatCreateFlag(_N_,_NV_);
+      phist_gidx ini_dim[2];
+      ini_dim[0]=_N_; ini_dim[1]=_N_;
+      PHIST_TG_PREFIX(idfunc)(-1,NULL,ini_dim,NULL,NULL);
       SUBR(sparseMat_create_fromRowFunc)(&I_,comm_,_N_,_N_,1,&PHIST_TG_PREFIX(idfunc),NULL,&iflag_);
       ASSERT_EQ(0,iflag_);
+      PHIST_TG_PREFIX(idfunc)(-2,NULL,NULL,NULL,NULL);
       
       SUBR(mvec_random)(vec1_,&iflag_);
       ASSERT_EQ(0,iflag_);
@@ -442,7 +446,7 @@ protected:
     ASSERT_EQ(0,iflag_);
     
     ASSERT_REAL_EQ(1.0,MvecsEqualZD(z_vec1_, x_vec1_->v_, x_vec1_->vi_));
-    ASSERT_NEAR(1.0,MvecsEqualZD(z_vec2_, x_vec2_->v_, x_vec2_->vi_),10000*VTest::releps());
+    ASSERT_NEAR(1.0,MvecsEqualZD(z_vec2_, x_vec2_->v_, x_vec2_->vi_),mt::sqrt(VTest::releps()));
   }
   
   void do_spmv_test_single(double alpha, double beta, phist_d_complex sigma, phist_ZsparseMat_ptr z_A_shift)

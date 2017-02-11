@@ -79,7 +79,6 @@ extern "C" void SUBR(subspacejada)( TYPE(const_linearOp_ptr) AB_op,  TYPE(const_
   *iflag = 0;
 
   // copy options
-  TYPE(const_mvec_ptr) v0=opts.v0;
   phist_EeigSort which=opts.which;
   _MT_ tol=opts.convTol;
   int nEig=opts.numEigs;
@@ -89,7 +88,7 @@ extern "C" void SUBR(subspacejada)( TYPE(const_linearOp_ptr) AB_op,  TYPE(const_
 int minBase=opts.minBas;
 int maxBase=opts.maxBas;
 int innerBlockDim=opts.innerSolvBlockSize;        
-int innerMaxBase=opts.innerSolvMaxBas;
+int innerMaxIters=opts.innerSolvMaxIters;
 int initialShiftIter=opts.initialShiftIters;   
 _ST_ initialShift   =(_ST_)opts.initialShift_r
                     +(_ST_)opts.initialShift_i*st::cmplx_I();
@@ -241,7 +240,7 @@ symmetric=symmetric||(opts.symmetry==phist_COMPLEX_SYMMETRIC);
   CT* ev_H = new CT[maxBase];
 
   // create views on mvecs and sdMats with current dimensions
-  int nV  = minBase;          //< current subspace dimension
+  int nV=0; //< current subspace dimension
 
   mvec_ptr  V   = NULL;     //< B-orthogonal basis of the search space
   mvec_ptr  Vful= NULL;     //< B-orthogonal basis of the search space + already locked Schur vectors
@@ -283,31 +282,65 @@ symmetric=symmetric||(opts.symmetry==phist_COMPLEX_SYMMETRIC);
   PHIST_CHK_IERR(SUBR(jadaCorrectionSolver_create)(&innerSolv, opts, AB_op->domain_map, iflag), *iflag);
   std::vector<_MT_> innerTol(nEig_,0.1);
   std::vector<_MT_> lastOuterRes(nEig_,mt::zero());
-
-  //------------------------------- initialize subspace etc ------------------------
-  // run arnoldi
-  nV = minBase;
-  // calculates A*V(:,1:m) = V(:,1:m+1)*H(1:m+1,1:m)
-  // also outputs A*V (DON'T recalculate it from V*H, because this may not be accurate enough!)
-/* // seems numerically less useful than unblocked arnoldi!
-  if( blockDim > 0 && nV % innerBlockDim == 0 )
+  
+  int nv0=0;
+  if (opts.v0!=NULL)
   {
-    int bs = innerBlockDim;
-    PHIST_CHK_IERR(SUBR( mvec_view_block  ) (V_,      &V,                       0,     nV+bs-1,   iflag), *iflag);
-    PHIST_CHK_IERR(SUBR( mvec_view_block  ) (AV_,     &AV,                      0,     nV+bs-1,   iflag), *iflag);
-    PHIST_CHK_IERR(SUBR( mvec_view_block  ) (BV_,     &BV,                      0,     nV+bs-1,   iflag), *iflag);
-    PHIST_CHK_IERR(SUBR( sdMat_view_block ) (H_,      &H,     0,      nV+bs-1,  0,     nV-1,      iflag), *iflag);
-
-    PHIST_CHK_IERR(SUBR( simple_blockArnoldi ) (AB_op, B_op, V, AV, BV, H, nV, innerBlockDim, iflag), *iflag);
+    PHIST_CHK_IERR(SUBR(mvec_num_vectors)(opts.v0,&nv0,iflag),*iflag);
   }
-  else
-*/
+  if (nv0>1 && nv0<minBase)
   {
+    PHIST_SOUT(PHIST_WARNING,"subspacejada currently only accepts either\n"
+                             "one or 'opts.minBas'(=%d here) vectors, but you provided %d.\n"
+                             "Will only use the first column of v0.",
+                             opts.minBas, nv0);
+    nv0=1;
+  }
+  else if (nv0>minBase)
+  {
+    PHIST_SOUT(PHIST_WARNING,"subspacejada currently only accepts either\n"
+                             "one or 'opts.minBas'(=%d here) vectors, but you provided %d.\n"
+                             "Will only use the first %d columns of v0.",
+                             opts.minBas, nv0,minBase);
+    nv0=minBase;
+  }
+  TYPE(mvec_ptr) v0=NULL;
+  if (nv0>0)
+  {
+    PHIST_CHK_IERR(SUBR(mvec_view_block)((TYPE(mvec_ptr))opts.v0,&v0,0,nv0-1,iflag),*iflag);
+  }
+  MvecOwner<_ST_> _v0(v0);
+
+  nV = minBase;
+
+  if (nv0==minBase)
+  {
+    PHIST_SOUT(PHIST_VERBOSE,"start Jacobi-Davidson with given vector space.\n"
+                             "Assuming (B-)orthonormality of input v0!\n");
+    PHIST_CHK_IERR(SUBR( mvec_view_block  ) (V_,      &V,                       0,     nV-1,        iflag), *iflag);
+    PHIST_CHK_IERR(SUBR( mvec_view_block  ) (AV_,     &AV,                      0,     nV-1,        iflag), *iflag);
+    PHIST_CHK_IERR(SUBR( mvec_view_block  ) (BV_,     &BV,                      0,     nV-1,        iflag), *iflag);
+    PHIST_CHK_IERR(SUBR( sdMat_view_block ) (H_,      &H,     0,      nV-1,     0,     nV-1,      iflag), *iflag);
+
+    PHIST_CHK_IERR(SUBR(mvec_set_block)(V,v0,0,minBase-1,iflag),*iflag);
+    PHIST_CHK_IERR(AB_op->apply(st::one(),AB_op->A,V,st::zero(),AV,iflag),*iflag);
+    if (B_op!=NULL)
+    {
+      PHIST_CHK_IERR(B_op->apply(st::one(),B_op->A,V,st::zero(),BV,iflag),*iflag);
+    }
+    PHIST_CHK_IERR(SUBR(mvecT_times_mvec)(st::one(),V,AV,st::zero(),H,iflag),*iflag);
+  }
+  else if (nv0<=1)
+  {
+    PHIST_SOUT(PHIST_VERBOSE,"start Jacobi-Davidson with Arnoldi iterations\n");
     PHIST_CHK_IERR(SUBR( mvec_view_block  ) (V_,      &V,                       0,     nV,        iflag), *iflag);
     PHIST_CHK_IERR(SUBR( mvec_view_block  ) (AV_,     &AV,                      0,     nV,        iflag), *iflag);
     PHIST_CHK_IERR(SUBR( mvec_view_block  ) (BV_,     &BV,                      0,     nV,        iflag), *iflag);
     PHIST_CHK_IERR(SUBR( sdMat_view_block ) (H_,      &H,     0,      minBase,  0,     nV-1,      iflag), *iflag);
-
+    // calculates A*V(:,1:m) = V(:,1:m+1)*H(1:m+1,1:m)
+    // also outputs A*V (DON'T recalculate it from V*H, because this may not be accurate enough!)
+    // block Arnoldi seems numerically less useful than single-vector, so we accept these first few
+    // steps to be less computationally efficient.
     PHIST_CHK_IERR(SUBR( simple_arnoldi ) (AB_op, B_op, v0, V, AV, B_op ? BV : NULL, H, nV, iflag), *iflag);
   }
 
@@ -839,9 +872,17 @@ PHIST_SOUT(PHIST_VERBOSE,"\n");
 
 
       for(int i = 0; i < blockDim; i++)
+      {
         selectedRes[i] -= nConvEig-nNewConvEig;
+      }
+      // update preconditioner before solve if the corresponding option is set and
+      // at least one eigenvalue converged in this iteration (meaning that we're solving
+      // a new system primarily)
+//      int updatePrecon=(opts.preconUpdate!=0) && (nNewConvEig>0);
+      int updatePrecon=(opts.preconUpdate!=0);
       PHIST_CHK_NEG_IERR(SUBR(jadaCorrectionSolver_run)(innerSolv, AB_op, B_op, Qtil, BQtil, sigma, res, &selectedRes[0],
-                                                    &innerTol[nConvEig], innerMaxBase, t, innerIMGS, innerGMRESabortAfterFirstConverged, iflag), *iflag);
+                                                    &innerTol[nConvEig], innerMaxIters, t, innerIMGS, 
+                                                    innerGMRESabortAfterFirstConverged, updatePrecon, iflag), *iflag);
 
       // get solution and reuse res for At
       PHIST_CHK_IERR(SUBR( mvec_view_block  ) (t_, &Vv,  0, k-1, iflag), *iflag);
@@ -890,8 +931,27 @@ PHIST_SOUT(PHIST_VERBOSE,"\n");
 PHIST_TESTING_CHECK_SUBSPACE_INVARIANTS;
   }
 
-  // copy result to Q_
-  PHIST_CHK_IERR(SUBR(mvec_set_block)(Q__, Q, 0, nEig_-1, iflag), *iflag);
+  // copy result to Q__. If the user provided more space, copy a larger block from V and
+  // update H=V'AV
+  int nQ_out;
+  PHIST_CHK_IERR(SUBR(mvec_num_vectors)(Q__,&nQ_out,iflag),*iflag);
+  if (nQ_out<=nEig_)
+  {
+    PHIST_CHK_IERR(SUBR(mvec_set_block)(Q__, Q, 0, nQ_out-1, iflag), *iflag);
+  }
+  else
+  {
+    if (nQ_out>minBase)
+    {
+      // we could also return up to nV (current basis size) vectors, but then we'ld have to communicate how many columns exactly are set.
+      // This way the usere knows: nEig, or minBase if I allowed for more space.
+      PHIST_SOUT(PHIST_WARNING,"only setting the first opts.minBas(=%d) columns of Q (rows and cols of R)\n",minBase);
+      nQ_out=minBase;
+    }
+    nConvEig=0; nV=nQ_out;
+    UPDATE_SUBSPACE_VIEWS
+    PHIST_CHK_IERR(SUBR(mvec_set_block)(Q__, V, 0, nV-1, iflag), *iflag);
+  }
   // copy resulting eigenvalues to ev
   for(int i = 0; i < nEig_; i++)
     ev[i] = ev_H[i];

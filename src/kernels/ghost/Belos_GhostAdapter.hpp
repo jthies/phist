@@ -75,19 +75,32 @@ using ::phist::GhostMV;
     {
     PHIST_ENTER_FCN(__FUNCTION__);    
       ghost_densemat* _mv = const_cast<GhostMV&>(mv).get();
-      ghost_densemat_traits vtraits = _mv->traits;
-      // copy the data even if the input vector is itself a view
-      // (bitwise NAND operation to unset the view flag if set)
-      vtraits.flags = (ghost_densemat_flags)((int)vtraits.flags & ~(int)GHOST_DENSEMAT_VIEW);
-      vtraits.ncols=numvecs;
-      vtraits.ncolsorig=numvecs;
-      vtraits.nrowsorig=vtraits.nrows;
-      ghost_densemat* mv_clone;
-      ghost_densemat_create(&mv_clone,_mv->context,vtraits);
-      
-      Scalar zero = st::zero();
-      mv_clone->fromScalar(mv_clone,&zero);
 
+      phist_const_map_ptr map=NULL;
+      ghost_densemat* mv_clone=NULL;
+      int iflag=0;
+      // dispatch to correct data type here, just to be sure
+      if (st::type_char()=='S')
+      {
+        phist_Smvec_get_map((const void*)_mv,&map,&iflag);
+        phist_Smvec_create((void**)&mv_clone,map,numvecs,&iflag);
+      }
+      else if (st::type_char()=='D')
+      {
+        phist_Dmvec_get_map((const void*)_mv,&map,&iflag);
+        phist_Dmvec_create((void**)&mv_clone,map,numvecs,&iflag);
+      }
+      else if (st::type_char()=='C')
+      {
+        phist_Cmvec_get_map((const void*)_mv,&map,&iflag);
+        phist_Cmvec_create((void**)&mv_clone,map,numvecs,&iflag);
+      }
+      else if (st::type_char()=='Z')
+      {
+        phist_Zmvec_get_map((const void*)_mv,&map,&iflag);
+        phist_Zmvec_create((void**)&mv_clone,map,numvecs,&iflag);
+      }
+      if (iflag!=0) return Teuchos::null;
       return phist::rcp(mv_clone,true);
     }
 
@@ -95,14 +108,34 @@ using ::phist::GhostMV;
     {
     PHIST_ENTER_FCN(__FUNCTION__);    
       ghost_densemat* _mv = const_cast<GhostMV&>(mv).get();
-      ghost_densemat_traits vtraits = _mv->traits;
-      // copy the data even if the input vector is itself a view
-      // (bitwise NAND operation to unset the view flag if set)
-      vtraits.flags = (ghost_densemat_flags)((int)vtraits.flags & ~(int)GHOST_DENSEMAT_VIEW);
-      ghost_densemat* mv_clone;
-      ghost_densemat_create(&mv_clone,_mv->context,vtraits);
-      mv_clone->fromVec(mv_clone,_mv,0,0);
-      return phist::rcp(mv_clone,true); 
+
+      ghost_densemat* mv_clone=NULL;
+      int iflag=0;
+      int ncols;
+      phist_Dmvec_num_vectors(_mv,&ncols,&iflag);
+      // dispatch to correct data type here, just to be sure
+      if (st::type_char()=='S')
+      {
+        phist_Smvec_clone_shape((void**)&mv_clone,(const void*)_mv,&iflag);
+        phist_Smvec_get_block((const void*)_mv,(void*)mv_clone,0,ncols-1,&iflag);
+      }
+      else if (st::type_char()=='D')
+      {
+        phist_Dmvec_clone_shape((void**)&mv_clone,(const void*)_mv,&iflag);
+        phist_Dmvec_get_block((const void*)_mv,(void*)mv_clone,0,ncols-1,&iflag);
+      }
+      else if (st::type_char()=='C')
+      {
+        phist_Cmvec_clone_shape((void**)&mv_clone,(const void*)_mv,&iflag);
+        phist_Cmvec_get_block((const void*)_mv,(void*)mv_clone,0,ncols-1,&iflag);
+      }
+      else if (st::type_char()=='Z')
+      {
+        phist_Zmvec_clone_shape((void**)(void**)&mv_clone,(const void*)_mv,&iflag);
+        phist_Zmvec_get_block((const void*)_mv,(void*)mv_clone,0,ncols-1,&iflag);
+      }
+      if (iflag!=0) return Teuchos::null;
+      return phist::rcp(mv_clone,true);
     }
 
     static Teuchos::RCP<GhostMV > CloneCopy( const GhostMV& mv, const std::vector<int>& index )
@@ -119,7 +152,7 @@ using ::phist::GhostMV;
           "Belos::MultiVecTraits<Scalar,GhostMV>::CloneCopy(mv,index): indices must be < mv.traits.ncols.");
 
       ghost_lidx imin=0;
-      ghost_lidx ilen=_mv->traits.nrows;
+      ghost_lidx ilen=_mv->map->dim;
 
       bool contig=true;
       for (typename std::vector<int>::size_type j=1; j<index.size(); ++j) {
@@ -133,9 +166,7 @@ using ::phist::GhostMV;
       if (contig)
       {
         ghost_densemat *result = NULL;
-        ghost_lidx ilen=_mv->traits.nrows;
-        ghost_lidx imin=0;
-        _mv->clone(_mv,&result,ilen,imin,index.size(),index[0]);
+        ghost_densemat_clone(&result,_mv,index.size(),index[0]);
 
 #if PHIST_OUTLEV>=PHIST_DEBUG
       std::cout << "CloneCopy: input vector"<<std::endl;
@@ -150,20 +181,20 @@ using ::phist::GhostMV;
         ghost_densemat* result;
         ghost_densemat_traits vtraits = _mv->traits;
                 vtraits.ncols=index.size();
-                vtraits.ncolsorig=index.size();
         // copy the data even if the input vector is itself a view
         // (bitwise NAND operation to unset the view flag if set)
         vtraits.flags = (ghost_densemat_flags)((int)vtraits.flags & ~(int)GHOST_DENSEMAT_VIEW);
-        ghost_densemat_create(&result,_mv->context,vtraits);
+        ghost_densemat_create(&result,_mv->map,vtraits);
         // allocates memory
         Scalar zero=Teuchos::ScalarTraits<Scalar>::zero();
-        result->fromScalar(result, &zero);
+        ghost_densemat_init_val(result, (void*)&zero);
         // copy columns one by one
         for (int j=0;j<index.size();j++)
         {
           ghost_densemat *result_j;
-          result->viewCols(result, &result_j,1, j);
-          result_j->fromVec(result_j,_mv,0,index[j]);
+          ghost_densemat_create_and_view_densemat_cols(&result_j, result,1, j);
+          ghost_densemat_init_densemat(result_j,_mv,0,index[j]);
+          ghost_densemat_destroy(result_j);
         }
 #if PHIST_OUTLEV>=PHIST_DEBUG
       std::cout << "CloneCopy: input vector"<<std::endl;
@@ -209,8 +240,10 @@ using ::phist::GhostMV;
         TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, 
             os.str() << "Should never get here!");
       }
-      return phist::rcp(_mv->clone(_mv,index.ubound()-index.lbound()+1,index.lbound),true);
-    }
+      ghost_densemat *result=NULL;
+      ghost_densemat_clone(&result,_mv,index.ubound()-index.lbound()+1,index.lbound());
+      return phist::rcp(result,true);
+            }
 
 
     static Teuchos::RCP<GhostMV > CloneViewNonConst( GhostMV& mv, const std::vector<int>& index )
@@ -256,14 +289,15 @@ using ::phist::GhostMV;
 #else
       const std::vector<ghost_lidx>& clone_index=index;
 #endif
-      _mv->viewScatteredCols(_mv,&result,(ghost_lidx)index.size(),(ghost_lidx*)&clone_index[0]);
+      
+      ghost_densemat_create_and_view_densemat_cols_scattered(&result,_mv,(ghost_lidx)index.size(),(ghost_lidx*)&clone_index[0]);
     }
     else
     {
       // constant stride
       
       // stride k: first simply view the vector, then manually set pointers and stride
-      _mv->viewCols(_mv,&result,index.size(),index[0]);
+      ghost_densemat_create_and_view_densemat_cols(&result,_mv,index.size(),index[0]);
     }
     return phist::rcp(result,true);
   }
@@ -303,7 +337,7 @@ using ::phist::GhostMV;
       ghost_densemat* result=NULL;
       ghost_lidx offs=index.lbound();
       ghost_lidx nc=(ghost_lidx)(index.ubound()-index.lbound()+1);
-      CHK_GERR(_mv->viewCols(_mv,&result,nc,offs),Teuchos::null);
+      CHK_GERR(ghost_densemat_create_and_view_densemat_cols(&result,_mv,nc,offs),Teuchos::null);
 
 
       return phist::rcp(result,true);
@@ -328,12 +362,7 @@ using ::phist::GhostMV;
 
     static int GetVecLength( const GhostMV& mv )
     {
-// TOOD - this is not available in ghost,
-// but as it is only used for confirming 
-// that vectors are compatible for certain
-// operations in Belos, I think we can
-// cheat here and simply return the local vec length instead.
-    return mv.get()->traits.nrows;
+    return mv.get()->map->gdim;
   }
 
   static int GetNumberVecs( const GhostMV& mv )
@@ -353,17 +382,11 @@ using ::phist::GhostMV;
       // create view of Teuchos matrix as GhostMV
       ghost_densemat* _A = (ghost_densemat*)A.get();
       ghost_densemat* _mv = (ghost_densemat*)mv.get();
-      ghost_densemat* Bghost=createGhostViewOfTeuchosSDM(B);
-#ifdef GHOST_HAVE_CUDA
-      if (_A->traits.location&GHOST_LOCATION_DEVICE)
-      {
-        Bghost->upload(Bghost);
-      }
-#endif      
+      ghost_densemat* Bghost=createGhostCopyOfTeuchosSDM(B);
       // multiply
       const char* trans="N";
       ghost_gemm(_mv,_A,(char*)trans,Bghost,(char*)"N",&alpha,&beta,
-      GHOST_GEMM_NO_REDUCE, _mv->context, GHOST_GEMM_DEFAULT);
+      GHOST_GEMM_NO_REDUCE,  GHOST_GEMM_DEFAULT);
       
       ghost_densemat_destroy(Bghost);
     }
@@ -386,48 +409,44 @@ using ::phist::GhostMV;
       {
         if (beta==zero)
         {
-          _mv->fromScalar(_mv,(void*)&zero);
+          ghost_densemat_init_val(_mv,(void*)&zero);
         }
         else
         {
           // Belos allows aliasing here, putting views of A as MV etc. (cf. MVOPTester).
           // This is a problem because fromVec uses memcpy, which does not allow aliasing.
-          bool mv_is_B = (_B->val[0] == _mv->val[0]) &&
-                         (_B->val[_B->traits.ncols-1]==_mv->val[_mv->traits.ncols-1]) &&
-                         (_B->traits.nrowspadded == _mv->traits.nrowspadded);
+          bool mv_is_B = (_B->val == _mv->val);
           // NOTE: we do not check for partial overlap, or if one of the two is a 'scattered 
           // view' or something of the kind. So this function may cause problems if used in
           // unexpected ways because of the memcpy here. 
           if (mv_is_B==false)
           {
-            _mv->fromVec(_mv,_B,0,0);
+            ghost_densemat_init_densemat(_mv,_B,0,0);
           }
           if (beta!=one)
           {
-            _mv->scale(_mv,&beta);
+            ghost_scale(_mv,&beta);
           }
         }
       }
       else // alpha!=0
       {
       // cf. comment on aliasing above.
-        bool mv_is_A = (_A->val[0] == _mv->val[0]) &&
-                         (_A->val[_A->traits.ncols-1]==_mv->val[_mv->traits.ncols-1]) &&
-                         (_A->traits.nrowspadded == _mv->traits.nrowspadded);
+        bool mv_is_A = (_A->val == _mv->val);
           if (mv_is_A==false)
           {
-            _mv->fromVec(_mv,_A,0,0);
+            ghost_densemat_init_densemat(_mv,_A,0,0);
           }
         if (alpha!=one)
         {
-          _mv->scale(_mv,&alpha);
+          ghost_scale(_mv,&alpha);
         }
         // now we have mv=alpha*A
         
         // mv = alpha*A + beta*B
         if (beta!=zero)
         {
-          _mv->axpy(_mv,_B,(void*)&beta);
+          ghost_axpy(_mv,_B,(void*)&beta);
         }
       }
     }
@@ -436,7 +455,7 @@ using ::phist::GhostMV;
     {
       PHIST_ENTER_FCN(__FUNCTION__);    
       ghost_densemat* _mv = const_cast<GhostMV&>(mv).get();
-      _mv->scale(_mv,(void*)&alpha); 
+      ghost_scale(_mv,(void*)&alpha); 
     }
 
     static void MvScale ( GhostMV& mv, const std::vector<Scalar>& alphas )
@@ -444,22 +463,14 @@ using ::phist::GhostMV;
       PHIST_ENTER_FCN(__FUNCTION__);    
       ghost_densemat* _mv = const_cast<GhostMV&>(mv).get();
       void* val = (void*)(&alphas[0]);
-      _mv->vscale(_mv,val);
+      ghost_vscale(_mv,(void*)val);
     }
 
     // C=alpha*A*B
     static void MvTransMv( Scalar alpha, const GhostMV& A, const GhostMV& B, Teuchos_sdMat_t& C)
     {
       PHIST_ENTER_FCN(__FUNCTION__);
-      ghost_densemat* Cghost=createGhostViewOfTeuchosSDM(C);
-
-#ifdef GHOST_HAVE_CUDA
-      if (A.get()->traits.location&GHOST_LOCATION_DEVICE)
-      {
-        // upload data (even though we don't need it) to allocate device memory for B
-        Cghost->upload(Cghost);
-      }
-#endif      
+      ghost_densemat* Cghost=createGhostCopyOfTeuchosSDM(C);
 
       Scalar beta = st::zero();
       const char* trans=phist::ScalarTraits<Scalar>::is_complex()? "C": "T";
@@ -469,15 +480,20 @@ using ::phist::GhostMV;
                    (char*)"N",
                    (void*)&alpha, (void*)&beta,
                    GHOST_GEMM_ALL_REDUCE,
-                   A.get()->context,
                    GHOST_GEMM_DEFAULT);
-#ifdef GHOST_HAVE_CUDA
-      if (A.get()->traits.location&GHOST_LOCATION_DEVICE)
-      {
-        Cghost->download(Cghost);
-      }
-#endif      
 
+      // copy data to Teuchos matrix
+      if (Cghost->traits.storage!=GHOST_DENSEMAT_COLMAJOR)
+      {
+         throw "sdMat not col-major!";
+      }
+      Scalar* C_raw=(Scalar*)Cghost->val;
+      ghost_lidx lda=Cghost->stride;
+      for (int j=0; j<C.numCols(); j++)
+        for (int i=0; i<C.numRows(); i++)
+        {
+          C(i,j)=C_raw[j*lda+i];
+        }
       ghost_densemat_destroy(Cghost);
     }
 
@@ -491,7 +507,7 @@ using ::phist::GhostMV;
           "Belos::MultiVecTraits<Scalar,GhostMV>::MvDot(A,B,dots): dots must have room for all dot products.");
 
       Teuchos::ArrayView<Scalar> av(dots);
-      ghost_dot((void*)&dots[0],const_cast<ghost_densemat*>(A.get()),const_cast<ghost_densemat*>(B.get()),A.get()->context->mpicomm);
+      ghost_dot((void*)&dots[0],const_cast<ghost_densemat*>(A.get()),const_cast<ghost_densemat*>(B.get()));
     }
 
     static void MvNorm(const GhostMV& mv, std::vector<magn_t> &normvec, NormType type=TwoNorm)
@@ -507,7 +523,7 @@ using ::phist::GhostMV;
         case OneNorm:
           break;
         case TwoNorm:
-          ghost_dot(av.getRawPtr(), _mv, _mv, _mv->context->mpicomm);
+          ghost_dot(av.getRawPtr(), _mv, _mv);
           for (int i=0;i<av.size();i++)
           {
             nv[i]=st::real(st::sqrt(av[i]));
@@ -547,7 +563,7 @@ using ::phist::GhostMV;
         Asub = CloneViewNonConst(const_cast<GhostMV&>(A),Teuchos::Range1D(0,index.size()-1));
         _Asub= Asub->get();
       }
-    _mvsub->fromVec(_mvsub,_Asub,0,0);
+    ghost_densemat_init_densemat(_mvsub,_Asub,0,0);
     return;
     }
 
@@ -604,7 +620,7 @@ using ::phist::GhostMV;
       else
         A_view = CloneView (A, Teuchos::Range1D(0, index.size()-1));
 
-      mv_view->get()->fromVec(mv_view->get(),A_view->get(),0,0);
+      ghost_densemat_init_densemat(mv_view->get(),A_view->get(),0,0);
     }
 
     static void
@@ -630,26 +646,26 @@ using ::phist::GhostMV;
       }
       if (numColsA == numColsMv)
       {
-        mv.get()->fromVec(mv.get(),(ghost_densemat*)A.get(),0,0);
+        ghost_densemat_init_densemat(mv.get(),(ghost_densemat*)A.get(),0,0);
       }
       else
       {
           ghost_densemat* mv_view = 
             CloneViewNonConst (mv, Teuchos::Range1D(0, numColsA-1))->get();
           // copy mv(:,1:numColsA)=A
-          mv_view->fromVec(mv_view,(ghost_densemat*)A.get(),0,0);
+          ghost_densemat_init_densemat(mv_view,(ghost_densemat*)A.get(),0,0);
       }
     }
 
 
     static void MvRandom( GhostMV& mv )
     { 
-      mv.get()->fromRand(mv.get());
+      ghost_densemat_init_rand(mv.get());
     }
 
     static void MvInit( GhostMV& mv, Scalar alpha = st::zero() )
     {
-      mv.get()->fromScalar(mv.get(),(void*)&alpha);
+      ghost_densemat_init_val(mv.get(),(void*)&alpha);
     }
 
     static void MvPrint( const GhostMV& mv, std::ostream& os )
@@ -657,42 +673,54 @@ using ::phist::GhostMV;
       // TODO - the stream argument is ignored, ghost always prints to stdout
       ghost_densemat* _mv = const_cast<ghost_densemat*>(mv.get());
       char* the_string=NULL;
-      _mv->string(_mv,&the_string);
+      ghost_densemat_string(&the_string,_mv);
       os << the_string << std::endl;
       delete [] the_string;
     }
 
   // private helper function
-  static ghost_densemat* createGhostViewOfTeuchosSDM
+  static ghost_densemat* createGhostCopyOfTeuchosSDM
         (const Teuchos_sdMat_t& M)
   {
     PHIST_ENTER_FCN(__FUNCTION__);
-      ghost_densemat_traits dmtraits=GHOST_DENSEMAT_TRAITS_INITIALIZER;
-                dmtraits.flags = GHOST_DENSEMAT_NO_HALO|GHOST_DENSEMAT_VIEW;
-                dmtraits.nrows=M.numRows();
-                //dmtraits.nrowshalo=M.numRows();
-//                dmtraits.nrowspadded=M.numRows();
-//                dmtraits.nrowsorig=M.numRows();
-                dmtraits.ncols=M.numCols();
-//                dmtraits.ncolspadded=M.numCols();
-                dmtraits.ncolsorig=M.numCols();
-                // Teuchos sdMats are always column major
-                dmtraits.storage=GHOST_DENSEMAT_COLMAJOR;
-                dmtraits.datatype=st::ghost_dt;
-                
-                // always view host memory
-                dmtraits.location=GHOST_LOCATION_HOST;
+      int nrows=M.numRows();
+      int ncols=M.numCols();
 
-      // The context and communicator are supposed to be irrelevant in an sdMat,
-      // but it is not clear wether this is handled correctly everywhere i ghost.
-      // For the moment we can afford to just put in MPI_COMM_WORLD at this point.
-      MPI_Comm comm = MPI_COMM_WORLD;
-
-      //TODO - check return values everywhere
-      ghost_densemat* Mghost;
-      ghost_densemat_create(&Mghost,NULL,dmtraits);
-      Mghost->viewPlain(Mghost, (void*)M.values(),M.stride());
-
+      ghost_densemat* Mghost=NULL;
+      int iflag=0;
+      if (st::type_char()=='S')
+      {
+        phist_SsdMat_create((void**)&Mghost,nrows,ncols,NULL,&iflag);
+      }
+      else if (st::type_char()=='C')
+      {
+        phist_CsdMat_create((void**)&Mghost,nrows,ncols,NULL,&iflag);
+      }
+      else if (st::type_char()=='D')
+      {
+        phist_DsdMat_create((void**)&Mghost,nrows,ncols,NULL,&iflag);
+      }
+      else if (st::type_char()=='Z')
+      {
+        phist_ZsdMat_create((void**)&Mghost,nrows,ncols,NULL,&iflag);
+      }
+    if (iflag!=PHIST_SUCCESS)
+    {
+      PHIST_SOUT(PHIST_ERROR,"phist_XsdMat_create_view returned non-zero error code %d\n"
+                             "(file %s, line %d)\n",iflag,__FILE__,__LINE__);
+    }
+    // copy data from Teuchos matrix
+    if (Mghost->traits.storage!=GHOST_DENSEMAT_COLMAJOR)
+    {
+       throw "sdMat not col-major!";
+    }
+    Scalar* M_raw=(Scalar*)Mghost->val;
+    ghost_lidx lda=Mghost->stride;
+    for (int j=0; j<M.numCols(); j++)
+        for (int i=0; i<M.numRows(); i++)
+        {
+          M_raw[j*lda+i]=M(i,j);
+        }
     return Mghost;
   }
 

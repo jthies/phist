@@ -213,6 +213,18 @@ public:
       ASSERT_NEAR(mt::one(), MvecsEqual(W1_,W2_,mt::one()), sqrt(mt::eps()));
       ASSERT_REAL_EQ(mt::one(), SdMatsEqual(N1_,N2_));
       ASSERT_NEAR(mt::one(), SdMatsEqual(M1_,M2_), sqrt(mt::eps()));
+      
+      SUBR(sdMat_from_device)(N1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(sdMat_from_device)(N2_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(sdMat_from_device)(M1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(sdMat_from_device)(M2_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+
+      ASSERT_REAL_EQ(mt::one(), SdMatsEqual(N1_,N2_));
+      ASSERT_NEAR(mt::one(), SdMatsEqual(M1_,M2_), sqrt(mt::eps()));
     }
   }
 
@@ -252,6 +264,18 @@ public:
 
       // Compare results
       ASSERT_NEAR(mt::one(), MvecsEqual(V1_,V2_,mt::one()), 10000*mt::eps());
+      ASSERT_REAL_EQ(mt::one(), SdMatsEqual(N1_,N2_));
+      ASSERT_NEAR(mt::one(), SdMatsEqual(M1_,M2_), sqrt(mt::eps()));
+
+      SUBR(sdMat_from_device)(N1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(sdMat_from_device)(N2_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(sdMat_from_device)(M1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(sdMat_from_device)(M2_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+
       ASSERT_REAL_EQ(mt::one(), SdMatsEqual(N1_,N2_));
       ASSERT_NEAR(mt::one(), SdMatsEqual(M1_,M2_), sqrt(mt::eps()));
     }
@@ -300,6 +324,19 @@ public:
       ASSERT_NEAR(mt::one(), MvecsEqual(W1_,W2_,mt::one()), 1000*mt::eps());
       ASSERT_REAL_EQ(mt::one(), SdMatsEqual(M1_,M2_));
       ASSERT_NEAR(mt::one(), SdMatsEqual(N1_,N2_), sqrt(mt::eps()));
+
+        SUBR(sdMat_from_device)(N1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(sdMat_from_device)(N2_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(sdMat_from_device)(M1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(sdMat_from_device)(M2_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+
+      ASSERT_REAL_EQ(mt::one(), SdMatsEqual(M1_,M2_));
+      ASSERT_NEAR(mt::one(), SdMatsEqual(N1_,N2_), sqrt(mt::eps()));
+
     }
   }
 

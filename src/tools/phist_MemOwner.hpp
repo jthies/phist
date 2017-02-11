@@ -19,6 +19,8 @@
 //! the user having to call SUBR(mvec_delete)
 //! }
 
+#include "phist_kernels.h"
+
 //! mvec owner object
 template<typename T> class MvecOwner
 {
@@ -38,17 +40,17 @@ template<typename T> class SparseMatOwner
 };
 
 #include "phist_gen_d.h"
-#include "phist_memOwner_decl.hpp"
+#include "phist_MemOwner_decl.hpp"
 
 #include "phist_gen_z.h"
-#include "phist_memOwner_decl.hpp"
+#include "phist_MemOwner_decl.hpp"
 
 #ifdef PHIST_HAVE_SP
 #include "phist_gen_s.h"
-#include "phist_memOwner_decl.hpp"
+#include "phist_MemOwner_decl.hpp"
 
 # include "phist_gen_c.h"
-# include "phist_memOwner_decl.hpp"
+# include "phist_MemOwner_decl.hpp"
 #endif
 
 #include "phist_gen_clean.h"

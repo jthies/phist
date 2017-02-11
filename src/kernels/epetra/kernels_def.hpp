@@ -51,12 +51,13 @@ if (repart)
 }
 
 //! read a matrix from a MatrixMarket (ASCII) file
-extern "C" void SUBR(sparseMat_read_mm_with_map)(TYPE(sparseMat_ptr)* vA, phist_const_map_ptr vmap,
+extern "C" void SUBR(sparseMat_read_mm_with_context)(TYPE(sparseMat_ptr)* vA, phist_const_context_ptr vctx,
         const char* filename,int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   *iflag=0;
-  PHIST_CAST_PTR_FROM_VOID(const Epetra_Map,map,vmap,*iflag);
+  PHIST_CAST_PTR_FROM_VOID(const phist::internal::default_context,ctx,vctx,*iflag);
+  PHIST_CAST_PTR_FROM_VOID(const Epetra_Map,map,ctx->row_map,*iflag);
   if (filename==NULL)
   {
     *iflag=PHIST_INVALID_INPUT;
@@ -82,7 +83,7 @@ const char* filename,int* iflag)
 }
 
 //! read a matrix from a Ghost CRS (binary) file.
-extern "C" void SUBR(sparseMat_read_bin_with_map)(TYPE(sparseMat_ptr)* vA, phist_const_map_ptr vmap,
+extern "C" void SUBR(sparseMat_read_bin_with_context)(TYPE(sparseMat_ptr)* vA, phist_const_context_ptr vctx,
 const char* filename,int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
@@ -99,7 +100,7 @@ const char* filename,int* iflag)
 }
 
 //! read a matrix from a Harwell-Boeing (HB) file
-extern "C" void SUBR(sparseMat_read_hb_with_map)(TYPE(sparseMat_ptr)* vA, phist_const_map_ptr vmap,
+extern "C" void SUBR(sparseMat_read_hb_with_context)(TYPE(sparseMat_ptr)* vA, phist_const_context_ptr vctx,
 const char* filename,int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
@@ -120,6 +121,10 @@ extern "C" void SUBR(sparseMat_create_fromRowFuncAndContext)(TYPE(sparseMat_ptr)
   PHIST_SOUT(PHIST_DEBUG,"sparseMat_create_fromRowFuncAndContext with iflag=%d\n",iflag_in);
   phist_gidx cols[maxnne];
   double vals[maxnne];
+
+  // note: if the context contains a col_map, we do not force it onto the matrix anyway.
+  //       this is because we don't have a fused_spmv_pair kernel for Epetra, so restricting
+  //       the sparsity pattern of subsequently created matrices doesn't help.
  
   Epetra_CrsMatrix* A=NULL;
   PHIST_TRY_CATCH(A   = new Epetra_CrsMatrix(Copy,*map,maxnne),*iflag);
@@ -145,7 +150,8 @@ extern "C" void SUBR(sparseMat_create_fromRowFuncAndContext)(TYPE(sparseMat_ptr)
     const Epetra_Map* range_map=(const Epetra_Map*)(ctx->range_map);
     PHIST_TRY_CATCH(A->FillComplete(*domain_map,*range_map),*iflag);
   }
-  
+
+  *vA = (TYPE(sparseMat_ptr))(A);  
 
   if (repart)
   {
@@ -158,12 +164,18 @@ extern "C" void SUBR(sparseMat_create_fromRowFuncAndContext)(TYPE(sparseMat_ptr)
       *iflag=PHIST_BAD_CAST;
       return;
     }
-    phist::internal::default_context *ctx=new phist::internal::default_context(newRowMap.release().get());
+    if (ownMaps)
+    {
+      delete (phist::internal::default_context*)ctx;
+    }
+    phist::internal::default_context *new_ctx=new 
+        phist::internal::default_context(newRowMap.get(),NULL,NULL);
     // create the matrix again and use this new map instead
     delete A;
     *iflag=iflag_in & ~PHIST_SPARSEMAT_PERM_GLOBAL;
-    *iflag=*iflag & PHIST_SPARSEMAT_OWN_MAPS;
-    PHIST_CHK_IERR(SUBR(sparseMat_create_fromRowFuncAndContext)(vA,ctx,maxnne,rowFunPtr,last_arg,iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(sparseMat_create_fromRowFuncAndContext)(vA,new_ctx,maxnne,rowFunPtr,last_arg,iflag),*iflag);
+    A=(Epetra_CrsMatrix*)(*vA);
+    delete new_ctx;
 
     // TODO: print statistics on the partitioning? Isorropia has nice tools for this in examples/
 
@@ -171,13 +183,10 @@ extern "C" void SUBR(sparseMat_create_fromRowFuncAndContext)(TYPE(sparseMat_ptr)
     PHIST_SOUT(PHIST_WARNING,"matrix repartitioning with Epetra requires Isorropia (and Zoltan)\n");
 #endif
   }
-
-  *vA = (TYPE(sparseMat_ptr))(A);
-  if (ownMaps||(ctx!=vctx))
+  else if (ownMaps)
   {
-    phist::internal::contextCollection[*vA]=ctx;
+    ::phist::internal::contextCollection[*vA]=ctx;
   }
-
   return;
 }
 
@@ -200,21 +209,20 @@ extern "C" void SUBR(sparseMat_create_fromRowFunc)(TYPE(sparseMat_ptr) *vA, phis
   phist::internal::default_context *ctx=NULL;
   if (domain_map!=row_and_range_map)
   {
-    ctx=new phist::internal::default_context(row_and_range_map,row_and_range_map,domain_map);
+    ctx=new phist::internal::default_context(row_and_range_map,NULL,row_and_range_map,domain_map);
   }
   else
   {
     ctx=new phist::internal::default_context(row_and_range_map,NULL,NULL);
   }
-  *iflag=iflag_in|PHIST_SPARSEMAT_OWN_MAPS;
   PHIST_CHK_IERR(SUBR(sparseMat_create_fromRowFuncAndContext)(vA,ctx,
         maxnne,rowFunPtr,last_arg,iflag),*iflag);
-  // we're responsible for deleting this map object, Epetra is responsibible for keeping it in the created matrix
-  if (domain_map!=row_and_range_map && domain_map!=NULL)
+  if (domain_map!=row_and_range_map)
   {
     PHIST_CHK_IERR(phist_map_delete(domain_map,iflag),*iflag);
   }
   PHIST_CHK_IERR(phist_map_delete(row_and_range_map,iflag),*iflag);
+  delete ctx;
   return;
 }
 
@@ -275,21 +283,6 @@ phist_const_map_ptr vmap, int nvec, int* iflag)
   *vV=(TYPE(mvec_ptr))(result);
 }
 
-//! create a block-vector as view of raw data. The map tells the object
-//! how many rows it should 'see' in the data (at most lda, the leading
-//! dimension of the 2D array values).
-extern "C" void SUBR(mvec_create_view)(TYPE(mvec_ptr)* vV, phist_const_map_ptr vmap, 
-        _ST_* values, phist_lidx lda, int nvec,
-        int* iflag)
-{
-  PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
-  *iflag=0;
-  PHIST_CAST_PTR_FROM_VOID(const Epetra_BlockMap, map,vmap,*iflag);
-  Epetra_MultiVector* V = new Epetra_MultiVector(View, *map, values, lda, nvec);
-  *vV=(TYPE(mvec_ptr))(V);
-  return;
-}
-
 //! create a serial dense n x m matrix on all procs, with column major
 //! ordering.
 extern "C" void SUBR(sdMat_create)(TYPE(sdMat_ptr)* vM, int nrows, int ncols, 
@@ -308,14 +301,6 @@ extern "C" void SUBR(sdMat_create)(TYPE(sdMat_ptr)* vM, int nrows, int ncols,
   if (mv==NULL) *iflag=-1;
   *vM=(TYPE(sdMat_ptr))mv;
 }
-
-void SUBR(sdMat_create_view)(TYPE(sdMat_ptr)* M, phist_const_comm_ptr comm,
-        _ST_* values, phist_lidx lda, int nrows, int ncols,
-        int* iflag)
-{
-  *iflag=PHIST_NOT_IMPLEMENTED;
-}
-
 
 //@}
 
@@ -506,7 +491,7 @@ extern "C" void SUBR(sparseMat_delete)(TYPE(sparseMat_ptr) vA, int* iflag)
   // this is to avoid memory leaks, the function sparseMat_get_context will create
   // a small wrapper object and store it in a map, associated with this pointer to
   // a sparseMat.
-  phist::internal::delete_default_context(vA);        
+  phist::internal::delete_default_context(vA);
   delete A;
 }
 

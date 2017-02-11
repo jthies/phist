@@ -1,9 +1,5 @@
 #include "phist_config.h"
-#include "phist_macros.h"
-/* needs to be included before system headers for some intel compilers+mpi */
-#ifdef PHIST_HAVE_MPI
-#include <mpi.h>
-#endif
+#include "phist_tools.h"
 #include "phist_jadaOpts.h"
 #include <iostream>
 #include <fstream>
@@ -31,7 +27,7 @@ extern "C" void phist_jadaOpts_setDefaults(phist_jadaOpts *opts)
   opts->initialShiftIters=0;
 
   opts->innerSolvType=phist_GMRES;
-  opts->innerSolvMaxBas=20;
+  opts->innerSolvMaxBas=-1;
   opts->innerSolvMaxIters=20;
   opts->innerSolvBlockSize=1;
   opts->innerSolvStopAfterFirstConverged=0;

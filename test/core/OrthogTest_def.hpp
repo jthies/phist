@@ -9,11 +9,11 @@
 #endif
 
 /*! Test fixure. */
-class CLASSNAME: public virtual TestWithType< _ST_ >,
-                 public virtual KernelTestWithMap<_N_>
+class CLASSNAME: public virtual TestWithType< _ST_ >
 #ifdef ORTHOG_WITH_HPD_B
                  , public virtual KernelTestWithMassMat<_ST_,_N_>
 #endif
+                 , public virtual KernelTestWithMap<_N_>
 {
 
 public:
@@ -50,12 +50,13 @@ public:
 
   static void SetUpTestCase()
   {
-    KernelTestWithMap<_N_>::SetUpTestCase();
     TestWithType<_ST_>::SetUpTestCase();
 #ifdef ORTHOG_WITH_HPD_B
-    EXPECT_EQ(map_, defaultMap_); // this means we can use the defaultContext_, too
-    phist_const_context_ptr ctx=defaultContext_;
-    BTest::SetUpTestCase(ctx);
+    // creates mass matrix B_ without a given context, and
+    // re-initializes the KernelTestWithMap by calling SetUpTestCaseWithMap
+    BTest::SetUpTestCase(NULL);
+#else
+    KernelTestWithMap<_N_>::SetUpTestCase();
 #endif
 }
   
@@ -68,9 +69,10 @@ public:
   virtual void SetUp()
   {
     TestWithType<_ST_>::SetUp();
-    KernelTestWithMap<_N_>::SetUp();
 #ifdef ORTHOG_WITH_HPD_B
     BTest::SetUp();
+#else
+    KernelTestWithMap<_N_>::SetUp();
 #endif
       if(typeImplemented_ && !problemTooSmall_)
       {
@@ -90,7 +92,6 @@ public:
 
     if (typeImplemented_ && !problemTooSmall_)
     {
-      EXPECT_EQ(this->map_, this->defaultMap_);
       phist_const_map_ptr map=this->map_;
 
       // create vectors V, W and vector views for setting/checking entries
@@ -105,7 +106,7 @@ public:
       SUBR(mvec_extract_view)(W2_,&W2_vp_,&this->ldaW2_,&this->iflag_);
       ASSERT_EQ(0,this->iflag_);
       
-      B_op=NULL; BV_=BV_; BW_=W_; BQ_=Q_;
+      B_op=NULL; BV_=V_; BW_=W_; BQ_=Q_;
 
 #ifdef ORTHOG_WITH_HPD_B
       B_op=new TYPE(linearOp);
@@ -165,6 +166,8 @@ public:
   {
 #ifdef ORTHOG_WITH_HPD_B
     BTest::TearDownTestCase();
+#else
+    KernelTestWithMap<_N_>::TearDownTestCase();
 #endif
   }
 
@@ -214,6 +217,10 @@ public:
         ASSERT_EQ(expect_iflagV,iflag_);
       }
       ASSERT_EQ(expectedRankV,rankVW);
+      
+      // check for occurences of Inf or NaN
+      ASSERT_EQ(0,MvecContainsInfOrNaN(V));
+      ASSERT_EQ(0,SdMatContainsInfOrNaN(R0));
 
 #ifdef ORTHOG_WITH_HPD_B
       ASSERT_TRUE(W!=BW);
@@ -276,6 +283,12 @@ public:
       iflag_=iflag_in;
       SUBR(orthog)(V,Q,B_op,R1,R2,nsteps,&rankVW,&iflag_);
       ASSERT_EQ(expect_iflagVW,iflag_);
+
+      // check for occurences of Inf or NaN
+      ASSERT_EQ(0,MvecContainsInfOrNaN(V));
+      ASSERT_EQ(0,MvecContainsInfOrNaN(Q));
+      ASSERT_EQ(0,SdMatContainsInfOrNaN(R1));
+      ASSERT_EQ(0,SdMatContainsInfOrNaN(R2));
 
 /*
 std::cout<<"V=\n";
@@ -380,8 +393,6 @@ SUBR(sdMat_print)(R2,&iflag_);
     ASSERT_EQ(0,iflag_);
     iflag_=iflag_in;
     SUBR(mvecT_times_mvec)(st::one(),V_,BV_,st::zero(),R0_,&iflag_);
-    ASSERT_EQ(0,iflag_);
-    SUBR(sdMat_from_device)(R0_,&iflag_);
     ASSERT_EQ(0,iflag_);
     _MT_ sym_err=mt::zero();
     _MT_ min_diag=(_MT_)1.0e10;

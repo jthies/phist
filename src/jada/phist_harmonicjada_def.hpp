@@ -966,7 +966,8 @@ PHIST_SOUT(PHIST_INFO,"\n");
       for(int i = 0; i < blockDim; i++)
         selectedRes[i] -= nConvEig-nNewConvEig;
       PHIST_CHK_NEG_IERR(SUBR(jadaCorrectionSolver_run)(innerSolv, A_op, B_op, Qtil, BQtil, sigma, res, &selectedRes[0],
-                                                    &innerTol[nConvEig], innerMaxBase, t, innerIMGS, innerGMRESabortAfterFirstConverged, iflag), *iflag);
+                                                    &innerTol[nConvEig], innerMaxBase, t, innerIMGS, 
+                                                    innerGMRESabortAfterFirstConverged, 0, iflag), *iflag);
 
       // get solution and reuse res for At
       PHIST_CHK_IERR(SUBR( mvec_view_block  ) (t_, &Vv,  0, k-1, iflag), *iflag);

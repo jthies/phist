@@ -1,13 +1,12 @@
 // auto-detects the file type by looking at the file extension. Either comm or map must be non-NULL
 void SUBR(sparseMat_read)(TYPE(sparseMat_ptr)* A, phist_const_comm_ptr comm,
-        phist_const_map_ptr map, char* filename, int* iflag)
+        phist_const_context_ptr ctx, char* filename, int* iflag)
 {
   if (phist_filename_isMM(filename))
   {
-    if (map)
+    if (ctx)
     {
-      //PHIST_CHK_IERR(SUBR(sparseMat_read_mm_with_map)(A,map,filename,iflag),*iflag);
-      *iflag=PHIST_NOT_IMPLEMENTED;
+      PHIST_CHK_IERR(SUBR(sparseMat_read_mm_with_context)(A,ctx,filename,iflag),*iflag);
     }
     else
     {
@@ -16,10 +15,9 @@ void SUBR(sparseMat_read)(TYPE(sparseMat_ptr)* A, phist_const_comm_ptr comm,
   }
   else if (phist_filename_isHB(filename))
   {
-    if (map)
+    if (ctx)
     {
-      //PHIST_CHK_IERR(SUBR(sparseMat_read_hb_with_map)(A,map,filename,iflag),*iflag);
-      *iflag=PHIST_NOT_IMPLEMENTED;
+      PHIST_CHK_IERR(SUBR(sparseMat_read_hb_with_context)(A,ctx,filename,iflag),*iflag);
     }
     else
     {
@@ -28,10 +26,9 @@ void SUBR(sparseMat_read)(TYPE(sparseMat_ptr)* A, phist_const_comm_ptr comm,
   }
   else if (phist_filename_isCRS(filename))
   {
-    if (map)
+    if (ctx)
     {
-      //PHIST_CHK_IERR(SUBR(sparseMat_read_bin_with_map)(A,map,filename,iflag),*iflag);
-      *iflag=PHIST_NOT_IMPLEMENTED;
+      PHIST_CHK_IERR(SUBR(sparseMat_read_bin_with_context)(A,ctx,filename,iflag),*iflag);
     }
     else
     {
@@ -407,11 +404,11 @@ void SUBR(create_matrix)(TYPE(sparseMat_ptr)* mat, phist_const_comm_ptr comm,
 }
 #endif
 
-void SUBR(create_matrix_with_map)(TYPE(sparseMat_ptr)* mat, phist_const_map_ptr map,
+void SUBR(create_matrix_with_context)(TYPE(sparseMat_ptr)* mat, phist_const_context_ptr ctx,
         const char* problem, int* iflag)
 {
   // try interpreting the string as filename
-  SUBR(sparseMat_read)(mat,NULL,map,(char*)problem,iflag);
+  SUBR(sparseMat_read)(mat,NULL,ctx,(char*)problem,iflag);
   // if that fails, return NOT_IMPLEMENTED (input from a function can be added later if we need it).
   // Note that we do have a kernel function sparseMat_create_fromRowFuncAndMap, but interpreting the
   // string to select and initialize the rowFunc is currently done in the create_matrix function.
