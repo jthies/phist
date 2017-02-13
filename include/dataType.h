@@ -1,3 +1,7 @@
+// Depending on the type 'T' in the getMpiDataType(T), this function will return back the correct MPI-data-type 
+// This piece of code is mostly same as the following solution, with very few modifications.
+// https://chuckaknight.wordpress.com/2013/03/13/intrinsic-type-conversion-using-template-specialization/
+
 #ifndef __DATATYPE_H__
 #define __DATATYPE_H__
 
@@ -22,9 +26,11 @@ typedef enum
 		type_unsigned_long,
 		type_float,
 		type_double
+//		type_c_complex,     
+//    type_c_double_complex
 	}DataType;
 }
-
+  
 template <class T>
 Abstraction::DataType getAbstractionDataType()
 { throw std::runtime_error("Intrinsic type not supported by the abstraction."); }
@@ -70,6 +76,15 @@ template <>
 inline Abstraction::DataType getAbstractionDataType<double>()
 { return Abstraction::type_double; }
 
+//template <>
+//inline Abstraction::DataType getAbstractionDataType<std::complex<int> >()
+//{ return Abstraction::type_c_complex; }
+
+//template <>
+//inline Abstraction::DataType getAbstractionDataType<std::complex<double> >()
+//{ return Abstraction::type_c_double_complex; }
+
+
 template<class T>
 void PrintTypeEnumerationValue()
 {
@@ -91,8 +106,10 @@ static MPI_Datatype ConvertType(Abstraction::DataType type)
     case Abstraction::type_unsigned_long: return MPI_UNSIGNED_LONG;
     case Abstraction::type_float: return MPI_FLOAT;
     case Abstraction::type_double: return MPI_DOUBLE;
+//    case Abstraction::type_c_complex: return MPI_C_COMPLEX;     // TODO: these complex types are not compatible with std::complex data types and require MPI-3.1+ implementation. Thus, checkpoint for std::complex data types has to be implemented separately 
+//    case Abstraction::type_c_double_complex:{ std::cout << "returning MPI_C_DOUBLE_COMPLEX\n"; return MPI_C_DOUBLE_COMPLEX; }
   };
-  //	throw std::runtime_error("MPI_Datatype Convert(Abstraction::DataType) failed");
+  	throw std::runtime_error("MPI_Datatype Convert(Abstraction::DataType) failed");
 }
 
 #endif
