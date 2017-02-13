@@ -16,21 +16,23 @@ namespace Abstraction
 typedef enum 
 	{
 		type_unknown = 0,
-		type_char,
-		type_unsigned_char,
-		type_short,
-		type_unsigned_short,
-		type_int,
-		type_unsigned_int,
-		type_long,
-		type_unsigned_long,
-		type_float,
-		type_double
+		type_char,              //MPI_CHAR signed char
+		type_unsigned_char,     //MPI_UNSIGNED_CHAR unsigned char
+		type_short,             //MPI_SHORT signed short int
+		type_unsigned_short,    //MPI_UNSIGNED_SHORT unsigned short int
+		type_int,               //MPI_INT signed int
+		type_unsigned_int,      //MPI_UNSIGNED unsigned int
+		type_long,              //MPI_LONG signed long int
+		type_unsigned_long,     //MPI_UNSIGNED_LONG unsigned long int
+		type_float,             //MPI_FLOAT float
+		type_double,             //MPI_DOUBLE double
+    type_long_double        //MPI_LONG_DOUBLE long double
 //		type_c_complex,     
 //    type_c_double_complex
 	}DataType;
 }
-  
+ 
+
 template <class T>
 Abstraction::DataType getAbstractionDataType()
 { throw std::runtime_error("Intrinsic type not supported by the abstraction."); }
@@ -76,6 +78,11 @@ template <>
 inline Abstraction::DataType getAbstractionDataType<double>()
 { return Abstraction::type_double; }
 
+template <>
+inline Abstraction::DataType getAbstractionDataType<long double>()
+{ return Abstraction::type_long_double; }
+
+
 //template <>
 //inline Abstraction::DataType getAbstractionDataType<std::complex<int> >()
 //{ return Abstraction::type_c_complex; }
@@ -106,6 +113,7 @@ static MPI_Datatype ConvertType(Abstraction::DataType type)
     case Abstraction::type_unsigned_long: return MPI_UNSIGNED_LONG;
     case Abstraction::type_float: return MPI_FLOAT;
     case Abstraction::type_double: return MPI_DOUBLE;
+    case Abstraction::type_long_double: return MPI_LONG_DOUBLE;
 //    case Abstraction::type_c_complex: return MPI_C_COMPLEX;     // TODO: these complex types are not compatible with std::complex data types and require MPI-3.1+ implementation. Thus, checkpoint for std::complex data types has to be implemented separately 
 //    case Abstraction::type_c_double_complex:{ std::cout << "returning MPI_C_DOUBLE_COMPLEX\n"; return MPI_C_DOUBLE_COMPLEX; }
   };
