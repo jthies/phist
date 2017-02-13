@@ -117,7 +117,7 @@ public:
   
   // implementation of add() for anything that is CpBase,
   // anything else will give an error message
-  int add(std::string label, CpBase * p);
+  int addToMap(std::string label, CpBase * p);
 
   // specialized implementation of add for POD (plain old data), which is obviously
   // not derived from our base class CpBase. The same can be done for e.g. 
@@ -128,11 +128,15 @@ public:
   //       for deleting it.
 
   // ===== POD ===== //
-  int add(std::string label, int * const i);
+   
+  template <class T>
+  int add(std::string label, T * const i);
+/*
   int add(std::string label, float * const i);
   int add(std::string label, double * const d);
   int add(std::string label, std::complex<double> * const d);
   int add(std::string label, std::complex<float> * const d);
+*/
   // ===== POD ARRAY ===== // 
   template <class T>
   int add(std::string label, T* const arrayPtr_, const size_t nRows_);
@@ -157,7 +161,7 @@ public:
 
 // implementation of add() for anything that is CpBase,
 // anything else will give an error message
-int Checkpoint::add(std::string label, CpBase * p)
+int Checkpoint::addToMap(std::string label, CpBase * p)
 {
   if( craftEnabled == 0){
 		craftDbg(3, "Checkpoint::add(): CRAFT_ENABLE: %d", craftEnabled);
@@ -180,11 +184,12 @@ int Checkpoint::add(std::string label, CpBase * p)
 //       for deleting it.
 
 // ===== POD ===== //
-int Checkpoint::add(std::string label, int * const i){
-  this->add(label, new CpPOD<int>(i, cpMpiComm));
+template <class T>
+int Checkpoint::add(std::string label, T * const i){
+  this->addToMap(label, new CpPOD<T>(i, cpMpiComm));
 }
 
-int Checkpoint::add(std::string label, float * const i){
+/*int Checkpoint::add(std::string label, float * const i){
   this->add(label, new CpPOD<float>(i, cpMpiComm));
 }
 int Checkpoint::add(std::string label, double * const d){
@@ -196,28 +201,28 @@ int Checkpoint::add(std::string label, std::complex<double> * const d){
 int Checkpoint::add(std::string label, std::complex<float> * const d){
   this->add(label, new CpPOD<std::complex<float> >(d, cpMpiComm));
 }
-
+*/
 // ===== POD ARRAY ===== // 
 template <class T>
 int Checkpoint::add(std::string label, T* const arrayPtr_, const size_t nRows_){
-  this->add(label, new CpArray<T>(arrayPtr_, nRows_, cpMpiComm));
+  this->addToMap(label, new CpArray<T>(arrayPtr_, nRows_, cpMpiComm));
 }
 // ===== POD MULTI-ARRAY ===== // 
 template <class T>
 int Checkpoint::add(std::string label, T** const arrayPtr_, const size_t nRows_, const size_t nCols_, const int toCpCol_){
-  this->add(label, new CpMultiArray<T>(arrayPtr_, nRows_, nCols_, toCpCol_, cpMpiComm));
+  this->addToMap(label, new CpMultiArray<T>(arrayPtr_, nRows_, nCols_, toCpCol_, cpMpiComm));
 }
 
 #ifdef GHOST_CP
 // ===== GHOST DENSE MATRIX ===== //
 int Checkpoint::add(std::string label, ghost_densemat * const GDM)
 {
-  this->add(label, new CpGhostDenseMat(GDM, cpMpiComm));
+  this->addToMap(label, new CpGhostDenseMat(GDM, cpMpiComm));
 }
 int Checkpoint::add(std::string label, ghost_densemat ** const GDMArray, const size_t nDenseMat_, const int toCpDenseMat_)
 {
 		assert (cpCommitted == false ); 
-		this->add(label, new CpGhostDenseMatArray(GDMArray, nDenseMat_, toCpDenseMat_, cpMpiComm) );
+		this->addToMap(label, new CpGhostDenseMatArray(GDMArray, nDenseMat_, toCpDenseMat_, cpMpiComm) );
 }
 // ===== GHOST SPARSE MATRIX ===== // TODO: add this functionality if needed by users
 //int Checkpoint::add(std::string label, ghost_sparsemat * const GSM)
@@ -230,12 +235,12 @@ int Checkpoint::add(std::string label, ghost_densemat ** const GDMArray, const s
 // ===== PHIST MVEC ===== // 
 int Checkpoint::add(std::string label, TYPE(mvec_ptr) const mvec)
 {	
-  this->add(label, new TYPE(CpPhistMvec)(mvec) );
+  this->addToMap(label, new TYPE(CpPhistMvec)(mvec) );
 }
 // ===== PHIST SDMAT ===== //	TODO: as MVEC, and SDMAT are both void*, they should be differenciated in some better way.  
 int Checkpoint::add(std::string label, TYPE(sdMat_ptr) const sdMat, TYPE(sdMat_ptr) const temp)
 {	
-  this->add(label, new TYPE(CpPhistSdMat)(sdMat, cpMpiComm) );
+  this->addToMap(label, new TYPE(CpPhistSdMat)(sdMat, cpMpiComm) );
 }
 #endif
 
