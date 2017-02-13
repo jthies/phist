@@ -93,6 +93,11 @@ protected:
 	int PFSread();
 	int SCRread();
   int getCpVersion(); 
+ 
+  // implementation of add() for anything that is CpBase,
+  // anything else will give an error message
+  int addToMap(std::string label, CpBase * p);
+
 
 public:
 	Checkpoint(const std::string name_, const MPI_Comm cpMpiComm);
@@ -115,11 +120,7 @@ public:
  	int write();
 	int update();
   
-  // implementation of add() for anything that is CpBase,
-  // anything else will give an error message
-  int addToMap(std::string label, CpBase * p);
-
-  // specialized implementation of add for POD (plain old data), which is obviously
+    // specialized implementation of add for POD (plain old data), which is obviously
   // not derived from our base class CpBase. The same can be done for e.g. 
   // ghost_densemat
   // TODO: here a new object is created that will not be deleted unless we have some
