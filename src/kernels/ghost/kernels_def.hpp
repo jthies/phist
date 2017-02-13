@@ -2200,6 +2200,8 @@ extern "C" void SUBR(sparseMat_create_fromRowFunc)(TYPE(sparseMat_ptr) *vA, phis
   mtraits.C=sellC;
   mtraits.sortScope=sellSigma;
 
+  mtraits.flags = (ghost_sparsemat_flags)(mtraits.flags|get_perm_flag(iflag_in,outlev));
+
   PHIST_SOUT(outlev, "Creating sparseMat with SELL-%d-%d format.\n", mtraits.C, mtraits.sortScope);
 
   mtraits.datatype = st::ghost_dt;
