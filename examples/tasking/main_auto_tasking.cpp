@@ -1,15 +1,11 @@
 #include "phist_config.h"
-#ifdef PHIST_HAVE_MPI
-#include <mpi.h>
-#endif
+
+#include "phist_tools.h"
+#include "phist_kernels.h"
 
 #include <iostream>
 #include <unistd.h>
 
-
-#include "phist_macros.h"
-#include "phist_tasks.h"
-#include "phist_kernels.h"
 
 
 void printHello(int n, int* iflag)

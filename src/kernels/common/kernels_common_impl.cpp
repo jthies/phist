@@ -1,26 +1,9 @@
 #include "phist_config.h"
-/* needs to be included before system headers for some intel compilers+mpi */
-#ifdef PHIST_HAVE_MPI
-#include <mpi.h>
-#else
-#define MPI_COMM_WORLD 0
-#endif
 
-#ifdef PHIST_HAVE_LIKWID
-#include <likwid.h>
-#endif
-#include <stdlib.h>
-
-#include <cstdlib>
-#include <unistd.h>
-
-#include "phist_macros.h"
-#include "phist_tasks.h"
-#include "phist_fcntrace.hpp"
-#include "phist_perfcheck.hpp"
+#include "phist_tools.h"
 #include "phist_kernels.h"
+#include "phist_perfcheck.hpp"
 #include "phist_random.h"
-#include "phist_ScalarTraits.hpp"
 
 //! this function should not be called by the user but by each kernel lib in kernels_init()
 extern "C" void phist_kernels_common_init(int *argc, char*** argv, int* iflag)
