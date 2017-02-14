@@ -432,8 +432,14 @@ extern "C" void SUBR(mvec_extract_view)(TYPE(mvec_ptr) vV, _ST_** val, phist_lid
     if (V->traits.location == GHOST_LOCATION_DEVICE)
     {
       if (V->traits.flags & GHOST_DENSEMAT_NOT_RELOCATE) {      
-        PHIST_OUT(PHIST_ERROR,"%s, host side of vector not allocated\n",__FUNCTION__);
-        *iflag=PHIST_INVALID_INPUT;
+        static bool first_time=true;
+        if (first_time)
+        {
+          first_time=false;
+          PHIST_OUT(PHIST_ERROR,"%s, host side of vector not allocated\n",__FUNCTION__);
+        }
+        *iflag=+1; // val will be NULL
+        *val=NULL;
         return;
       }
       ghost_densemat_download(V);
