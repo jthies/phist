@@ -323,7 +323,7 @@ PHIST_PERFCHECK_BENCHMARK(STREAM_STORE, phist_bench_stream_store);
   int nY_ = std::min(ldY,((nV-1)/cl_size+1)*cl_size); \
   if( nY_+cl_size > ldY ) nY_ = ldY; \
   *iflag = tmp_iflag; \
-  PHIST_PERFCHECK_VERIFY(__FUNCTION__,(a!=st::zero()),(b!=st::zero()),nV,nX_,nY_,0,0, STREAM_TRIAD(((a!=st::zero())*nX_+(b!=st::zero())*nY_+nY_)*n*sizeof(_ST_)),n*(1+(a!=0)+2*(b!=0)));
+  PHIST_PERFCHECK_VERIFY(__FUNCTION__,(a!=st::zero()),(b!=st::zero()),nV,nX_,nY_,0,0, STREAM_TRIAD(((a!=st::zero())*nX_+(b!=st::zero())*nY_+nY_)*n*sizeof(_ST_)),n*(1+(a!=st::zero())+2*(b!=st::zero())));
 
 #endif
 
