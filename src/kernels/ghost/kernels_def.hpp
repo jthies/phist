@@ -423,13 +423,17 @@ extern "C" void SUBR(mvec_extract_view)(TYPE(mvec_ptr) vV, _ST_** val, phist_lid
     *iflag=-1;
     return;
   }
+
+  PHIST_CHK_IERR(*iflag=check_local_size(V->stride),*iflag);
+  *lda = V->stride;
+
   if (V->val==NULL)
   {
     if (V->traits.location == GHOST_LOCATION_DEVICE)
     {
       if (V->traits.flags & GHOST_DENSEMAT_NOT_RELOCATE) {      
         PHIST_OUT(PHIST_ERROR,"%s, host side of vector not allocated\n",__FUNCTION__);
-        *iflag=PHIST_NOT_IMPLEMENTED;
+        *iflag=PHIST_INVALID_INPUT;
         return;
       }
       ghost_densemat_download(V);
@@ -442,9 +446,7 @@ extern "C" void SUBR(mvec_extract_view)(TYPE(mvec_ptr) vV, _ST_** val, phist_lid
     }
   }
   *val=(ST*)V->val;
-  PHIST_CHK_IERR(*iflag=check_local_size(V->stride),*iflag);
 
-  *lda = V->stride;
 }
 
 extern "C" void SUBR(sdMat_extract_view)(TYPE(sdMat_ptr) vM, _ST_** val, phist_lidx* lda, int* iflag)
