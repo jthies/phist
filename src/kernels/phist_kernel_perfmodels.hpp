@@ -107,7 +107,7 @@ PHIST_PERFCHECK_BENCHMARK(STREAM_STORE, phist_bench_stream_store);
   phist_lidx ldV, ldVb; \
   SUBR(mvec_extract_view)((TYPE(mvec_ptr))V,&V_raw,&ldV,iflag); \
   SUBR(mvec_extract_view)((TYPE(mvec_ptr))Vblock,&Vb_raw,&ldVb,iflag); \
-  phist_lidx cl_size = 64/sizeof(_ST_); \
+  phist_lidx cl_size = phist_cacheline_size<_ST_>(); \
   int nV_ = std::min(ldV,((nV-1)/cl_size+1)*cl_size); \
   if( nV_+cl_size > ldV ) nV_ = ldV; \
   int nVb_ = std::min(ldVb,((nV-1)/cl_size+1)*cl_size); \
@@ -138,7 +138,7 @@ PHIST_PERFCHECK_BENCHMARK(STREAM_STORE, phist_bench_stream_store);
   phist_lidx ldV, ldVb; \
   SUBR(mvec_extract_view)((TYPE(mvec_ptr))V,&V_raw,&ldV,iflag); \
   SUBR(mvec_extract_view)((TYPE(mvec_ptr))Vblock,&Vb_raw,&ldVb,iflag); \
-  phist_lidx cl_size = 64/sizeof(_ST_); \
+  phist_lidx cl_size = phist_cacheline_size<_ST_>(); \
   int nV_ = std::min(ldV,((nV-1)/cl_size+1)*cl_size); \
   if( nV_+cl_size > ldV ) nV_ = ldV; \
   int nVb_ = std::min(ldVb,((nV-1)/cl_size+1)*cl_size); \
@@ -175,7 +175,7 @@ PHIST_PERFCHECK_BENCHMARK(STREAM_STORE, phist_bench_stream_store);
   _ST_ *V_raw; \
   phist_lidx ldV; \
   SUBR(mvec_extract_view)((TYPE(mvec_ptr))V,&V_raw,&ldV,iflag); \
-  phist_lidx cl_size = 64/sizeof(_ST_); \
+  phist_lidx cl_size = phist_cacheline_size<_ST_>(); \
   int nV_ = std::min(ldV,((nV-1)/cl_size+1)*cl_size); \
   if( nV_+cl_size > ldV ) nV_ = ldV; \
   *iflag = tmp_iflag; \
@@ -211,7 +211,7 @@ PHIST_PERFCHECK_BENCHMARK(STREAM_STORE, phist_bench_stream_store);
   phist_lidx ldV, ldW; \
   SUBR(mvec_extract_view)((TYPE(mvec_ptr))V,&V_raw,&ldV,iflag); \
   SUBR(mvec_extract_view)((TYPE(mvec_ptr))W,&W_raw,&ldW,iflag); \
-  phist_lidx cl_size = 64/sizeof(_ST_); \
+  phist_lidx cl_size = phist_cacheline_size<_ST_>(); \
   int nV_ = std::min(ldV,((nV-1)/cl_size+1)*cl_size); \
   if( nV_+cl_size > ldV ) nV_ = ldV; \
   int nW_ = std::min(ldW,((nV-1)/cl_size+1)*cl_size); \
@@ -248,7 +248,7 @@ PHIST_PERFCHECK_BENCHMARK(STREAM_STORE, phist_bench_stream_store);
   _ST_ *V_raw; \
   phist_lidx ldV; \
   SUBR(mvec_extract_view)((TYPE(mvec_ptr))V,&V_raw,&ldV,iflag); \
-  phist_lidx cl_size = 64/sizeof(_ST_); \
+  phist_lidx cl_size = phist_cacheline_size<_ST_>(); \
   int nV_ = std::min(ldV,((nV-1)/cl_size+1)*cl_size); \
   if( nV_+cl_size > ldV ) nV_ = ldV; \
   *iflag = tmp_iflag; \
@@ -283,7 +283,7 @@ PHIST_PERFCHECK_BENCHMARK(STREAM_STORE, phist_bench_stream_store);
   _ST_ *V_raw; \
   phist_lidx ldV; \
   SUBR(mvec_extract_view)((TYPE(mvec_ptr))V,&V_raw,&ldV,iflag); \
-  phist_lidx cl_size = 64/sizeof(_ST_); \
+  phist_lidx cl_size = phist_cacheline_size<_ST_>(); \
   int nV_ = std::min(ldV,((nV-1)/cl_size+1)*cl_size); \
   if( nV_+cl_size > ldV ) nV_ = ldV; \
   *iflag = tmp_iflag; \
@@ -319,7 +319,7 @@ PHIST_PERFCHECK_BENCHMARK(STREAM_STORE, phist_bench_stream_store);
   phist_lidx ldX, ldY; \
   SUBR(mvec_extract_view)((TYPE(mvec_ptr))X,&X_raw,&ldX,iflag); \
   SUBR(mvec_extract_view)((TYPE(mvec_ptr))Y,&Y_raw,&ldY,iflag); \
-  phist_lidx cl_size = 64/sizeof(_ST_); \
+  phist_lidx cl_size = phist_cacheline_size<_ST_>(); \
   int nX_ = std::min(ldX,((nV-1)/cl_size+1)*cl_size); \
   if( nX_+cl_size > ldX ) nX_ = ldX; \
   int nY_ = std::min(ldY,((nV-1)/cl_size+1)*cl_size); \
@@ -373,7 +373,7 @@ PHIST_PERFCHECK_BENCHMARK(STREAM_STORE, phist_bench_stream_store);
   phist_lidx ldV, ldW; \
   SUBR(mvec_extract_view)((TYPE(mvec_ptr))V,&V_raw,&ldV,iflag); \
   SUBR(mvec_extract_view)((TYPE(mvec_ptr))W,&W_raw,&ldW,iflag); \
-  phist_lidx cl_size = 64/sizeof(_ST_); \
+  phist_lidx cl_size = phist_cacheline_size<_ST_>(); \
   int nV_ = std::min(ldV,((nV-1)/cl_size+1)*cl_size); \
   if( nV_+cl_size > ldV ) nV_ = ldV; \
   int nW_ = std::min(ldW,((nW-1)/cl_size+1)*cl_size); \
@@ -413,7 +413,7 @@ PHIST_PERFCHECK_BENCHMARK(STREAM_STORE, phist_bench_stream_store);
   phist_lidx ldV, ldW; \
   SUBR(mvec_extract_view)((TYPE(mvec_ptr))V,&V_raw,&ldV,iflag); \
   SUBR(mvec_extract_view)((TYPE(mvec_ptr))W,&W_raw,&ldW,iflag); \
-  phist_lidx cl_size = 64/sizeof(_ST_); \
+  phist_lidx cl_size = phist_cacheline_size<_ST_>(); \
   int nV_ = std::min(ldV,((nV-1)/cl_size+1)*cl_size); \
   if( nV_+cl_size > ldV ) nV_ = ldV; \
   int nW_ = std::min(ldW,((nW-1)/cl_size+1)*cl_size); \
@@ -454,7 +454,7 @@ PHIST_PERFCHECK_BENCHMARK(STREAM_STORE, phist_bench_stream_store);
   phist_lidx ldV, ldW; \
   SUBR(mvec_extract_view)((TYPE(mvec_ptr))V,&V_raw,&ldV,iflag); \
   SUBR(mvec_extract_view)((TYPE(mvec_ptr))W,&W_raw,&ldW,iflag); \
-  phist_lidx cl_size = 64/sizeof(_ST_); \
+  phist_lidx cl_size = phist_cacheline_size<_ST_>(); \
   int nV_ = std::min(ldV,((nV-1)/cl_size+1)*cl_size); \
   if( nV_+cl_size > ldV ) nV_ = ldV; \
   int nW_ = std::min(ldW,((nW-1)/cl_size+1)*cl_size); \
@@ -493,7 +493,7 @@ PHIST_PERFCHECK_BENCHMARK(STREAM_STORE, phist_bench_stream_store);
   _ST_ *V_raw; \
   phist_lidx ldV; \
   SUBR(mvec_extract_view)((TYPE(mvec_ptr))V,&V_raw,&ldV,iflag); \
-  phist_lidx cl_size = 64/sizeof(_ST_); \
+  phist_lidx cl_size = phist_cacheline_size<_ST_>(); \
   int nV_ = std::min(ldV,((nV-1)/cl_size+1)*cl_size); \
   if( nV_+cl_size > ldV ) nV_ = ldV; \
   int nW_ = std::min(ldV,((nW-1)/cl_size+1)*cl_size); \
