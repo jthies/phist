@@ -107,7 +107,9 @@ PHIST_TASK_BEGIN(ComputeTask)
   // which is the behavior we want if no context/maps are given:
   PHIST_CHK_GERR(ghost_sparsemat_create(&mat,NULL,&mtraits,1),*iflag);                               
   // this will setup the context and read the matrix from the file:
-  PHIST_CHK_GERR(ghost_sparsemat_init_mm(mat,cfname,*comm,get_proc_weight()),*iflag);
+  // note: we force equal partition sizes because we can assume that a matrix read from a file is small
+  // and different partition weights make no sense.
+  PHIST_CHK_GERR(ghost_sparsemat_init_mm(mat,cfname,*comm,get_proc_weight(1.0)),*iflag);
   char *str;
   ghost_context_string(&str,mat->context);
   PHIST_SOUT(outlev,"%s\n",str);
@@ -161,7 +163,9 @@ PHIST_TASK_BEGIN(ComputeTask)
         char* cfname=const_cast<char*>(filename);
 
   PHIST_CHK_GERR(ghost_sparsemat_create(&mat,NULL,&mtraits,1),*iflag);                               
-  PHIST_CHK_GERR(ghost_sparsemat_init_bin(mat,cfname,*comm,get_proc_weight()),*iflag);
+  // note: we force equal partition sizes because we can assume that a matrix read from a file is small
+  // and different partition weights make no sense.
+  PHIST_CHK_GERR(ghost_sparsemat_init_bin(mat,cfname,*comm,get_proc_weight(1.0)),*iflag);
 
   char *str;
   ghost_context_string(&str,mat->context);
@@ -2217,7 +2221,8 @@ extern "C" void SUBR(sparseMat_create_fromRowFunc)(TYPE(sparseMat_ptr) *vA, phis
   // in _init_rowfunc below, where we also get a chance to pass in an mpicomm.
   PHIST_CHK_GERR(ghost_sparsemat_create(&mat,NULL,&mtraits,1),*iflag);                               
   mtraits.flags=GHOST_SPARSEMAT_DEFAULT;
-  double weight=phist::ghost_internal::get_proc_weight();
+  // use equal partition sizes for small matrices
+  double weight=phist::ghost_internal::get_proc_weight(nrows<1e4?1.0:-1.0);
   PHIST_CHK_GERR(ghost_sparsemat_init_rowfunc(mat,&src,*mpicomm,weight),*iflag);
 
   char *str;
