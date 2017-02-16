@@ -134,6 +134,16 @@ kernel libs) ?
 #cmakedefine PHIST_USE_GHOST_TASKS ${PHIST_USE_GHOST_TASKS}
 #cmakedefine PHIST_SELL_C ${PHIST_SELL_C}
 #cmakedefine PHIST_SELL_SIGMA ${PHIST_SELL_SIGMA}
+/* default mode flag passed to ghost_spmv, see ghost/spmv.h for details.
+   as of GHOST 1.1:
+   0: vector mode
+   8: overlap mode (using non-blocking MPI)
+  16: task mode (using ghost tasks for the overlapping)
+  
+  The default value can be overridden by flags to phist_XsparseMat_times_mvec*, see
+  src/kernels/phist_kernel_flags.h
+*/
+#define PHIST_DEFAULT_SPMV_MODE ${PHIST_DEFAULT_SPMV_MODE}
 #endif
 
 #cmakedefine PHIST_KERNEL_LIB_BUILTIN_PIN_THREADS
