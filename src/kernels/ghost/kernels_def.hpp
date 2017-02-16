@@ -1371,7 +1371,7 @@ _ST_* ydoty, _ST_* xdoty, int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
 #include "phist_std_typedefs.hpp"
-
+  int iflag_in=*iflag;
 #ifdef PHIST_TESTING
   // check if the input and output have the correct maps, that is they live in the same index space
   // as the columns and rows of A, respectively, and have the same distribution and permutation.
@@ -1390,16 +1390,16 @@ _ST_* ydoty, _ST_* xdoty, int* iflag)
 
   ghost_spmv_opts spMVM_opts=GHOST_SPMV_OPTS_INITIALIZER;
   // ghost spmvm mode
-  if( *iflag & PHIST_SPMVM_ONLY_LOCAL )
+  if( iflag_in & PHIST_SPMVM_ONLY_LOCAL )
     spMVM_opts.flags = (ghost_spmv_flags)((int)spMVM_opts.flags | (int)GHOST_SPMV_MODE_NOCOMM);
-  else if( *iflag & PHIST_SPMVM_OVERLAP )
+  else if( iflag_in & PHIST_SPMVM_OVERLAP )
     spMVM_opts.flags = (ghost_spmv_flags)((int)spMVM_opts.flags | (int)GHOST_SPMV_MODE_OVERLAP);
-  else if( *iflag & PHIST_SPMVM_TASK )
+  else if( iflag_in & PHIST_SPMVM_TASK )
     spMVM_opts.flags = (ghost_spmv_flags)((int)spMVM_opts.flags | (int)GHOST_SPMV_MODE_TASK);
-  else if( !(*iflag & PHIST_SPMVM_VECTOR) )
+  else if( !(iflag_in & PHIST_SPMVM_VECTOR) )
     spMVM_opts.flags = (ghost_spmv_flags)((int)spMVM_opts.flags | (int)PHIST_DEFAULT_SPMV_MODE);
   bool no_reduce=false;
-  if (*iflag & PHIST_NO_GLOBAL_REDUCTION )
+  if (iflag_in & PHIST_NO_GLOBAL_REDUCTION )
   {
     spMVM_opts.flags = (ghost_spmv_flags)((int)spMVM_opts.flags | (int)GHOST_SPMV_NOT_REDUCE);
     no_reduce=true;
