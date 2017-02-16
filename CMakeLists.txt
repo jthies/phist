@@ -1370,6 +1370,7 @@ if(INTEGRATION_BUILD AND NOT DISABLE_PYTHON_TESTS)
     message(STATUS "add integration tests")
     # python script that runs drivers with MPI as integration tests
     set(PHIST_TEST_DRIVERS_NUM_PROCS 2)
+    set(PHIST_TEST_DRIVERS_NUM_THREADS 12)
     configure_file(${PROJECT_SOURCE_DIR}/python/test_phist_drivers.py.in ${CMAKE_CURRENT_BINARY_DIR}/test_phist_drivers.py)
     set(TEST_OUTPUT_DIR ${PROJECT_BINARY_DIR}/test_output_np${PHIST_TEST_DRIVERS_NUM_PROCS}/test_phist_drivers)
     file(MAKE_DIRECTORY ${TEST_OUTPUT_DIR})
