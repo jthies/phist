@@ -1563,6 +1563,10 @@ extern "C" void SUBR(sparseMat_times_mvec_vadd_mvec)(_ST_ alpha, TYPE(const_spar
     spMVM_opts.flags = (ghost_spmv_flags)((int)spMVM_opts.flags | (int)GHOST_SPMV_MODE_OVERLAP);
   else if( *iflag & PHIST_SPMVM_TASK )
     spMVM_opts.flags = (ghost_spmv_flags)((int)spMVM_opts.flags | (int)GHOST_SPMV_MODE_TASK);
+  else if( !(*iflag & PHIST_SPMVM_VECTOR) )
+    spMVM_opts.flags = (ghost_spmv_flags)((int)spMVM_opts.flags | (int)GHOST_SPMV_MODE_TASK);
+// task mode seems a reasonable default, in my experiments it is faster than vector mode for stencil-like and spin 
+// matrices even on a single node with CPU+GPU.
   *iflag=0;
 
   PHIST_COUNT_MATVECS(vx);
