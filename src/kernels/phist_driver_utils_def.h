@@ -145,8 +145,7 @@ void SUBR(create_matrix)(TYPE(sparseMat_ptr)* mat, phist_const_comm_ptr comm,
 {
   PHIST_ENTER_FCN(__FUNCTION__);
   problem_t mat_type=FROM_FILE; // default: assume that 'which' is a file name
-  int outlev = *iflag & PHIST_SPARSEMAT_QUIET ? PHIST_DEBUG : PHIST_INFO;
-  outlev = PHIST_INFO;
+  int outlev = (*iflag & PHIST_SPARSEMAT_QUIET) ? PHIST_DEBUG : PHIST_INFO;
 
   int L; // problem size for Graphene (L x L grid) or the Anderson model (L^3 grid)
 

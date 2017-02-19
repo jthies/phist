@@ -116,14 +116,20 @@ namespace phist_PerfCheck
     PHIST_CHK_IERR(ierr = MPI_Reduce(&tmp[0],&sumTotalExpected[0],nTimers,MPI_DOUBLE,MPI_SUM,0,MPI_COMM_WORLD), ierr);
     PHIST_CHK_IERR(ierr = MPI_Reduce(&tmp[0],&maxTotalExpected[0],nTimers,MPI_DOUBLE,MPI_MAX,0,MPI_COMM_WORLD), ierr);
 
-    // sort by difference to expectation
-    std::vector<double> maxTotalDiff(nTimers);
+    std::vector<double> sortBy(nTimers);
     for(int i = 0; i < nTimers; i++)
-      maxTotalDiff[i] = std::abs(maxTotalTime[i]-maxTotalExpected[i]);
+    {
+      // sort by difference to expectation
+      //sortBy[i] = std::abs(maxTotalTime[i]-maxTotalExpected[i]);
+      // sort by total time consumed by kernel
+      sortBy[i]=maxTotalTime[i];
+    }
     std::vector<int> sortedIndex(nTimers);
     for(int i = 0; i < nTimers; i++)
+    {
       sortedIndex.at(i) = i;
-    SortClass sortFunc(maxTotalDiff);
+    }
+    SortClass sortFunc(sortBy);
     std::sort(sortedIndex.begin(), sortedIndex.end(), sortFunc);
 
     // make all fcnName strings the same length (-> nicer output) (and split fcnName and formula)
@@ -149,7 +155,7 @@ namespace phist_PerfCheck
     std::string function = "function(dim) / (formula)";
     function.resize(maxNameLen, ' ');
     fprintf(ofile, "================================================== PERFORMANCE CHECK RESULTS =====================================================\n");
-    fprintf(ofile, "%s  %10s  %10s  %10s  %10s  %10s\n", function.c_str(), "mtot.exp", "%peak-perf", "count", "max.%peak", "min.%peak");
+    fprintf(ofile, "%s  %10s  %10s  %10s  %10s  %10s\n", function.c_str(), "total time", "%roofline", "count", "max.%roofline", "min.%roofline");
     int nprocs;
     MPI_Comm_size(MPI_COMM_WORLD, &nprocs);
     double sumMaxTotalExpected = 0., sumMaxTotalTime = 0.;
@@ -160,7 +166,7 @@ namespace phist_PerfCheck
       {
         fprintf(ofile, "----------------------------------------------------------------------------------------------------------------------------------\n");
       }
-      fprintf(ofile, "%s  %10.3e  %10.3g  %10lu  %10.3g  %10.3g\n", fcnName.at(i).c_str(), maxTotalExpected.at(i), 100*maxTotalExpected.at(i)/maxTotalTime.at(i), numberOfCalls.at(i),
+      fprintf(ofile, "%s  %10.3e  %10.3g  %10lu  %10.3g  %10.3g\n", fcnName.at(i).c_str(), maxTotalTime.at(i), 100*maxTotalExpected.at(i)/maxTotalTime.at(i), numberOfCalls.at(i),
           100*minExpected.at(i)/minTime.at(i), 100*maxExpected.at(i)/maxTime.at(i));
       fprintf(ofile, " %s\n", fcnFormula.at(i).c_str());
       sumMaxTotalExpected += maxTotalExpected.at(i);

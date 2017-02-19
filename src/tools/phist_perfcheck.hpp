@@ -33,6 +33,12 @@
 #define PHIST_PERFCHECK_VERIFY(functionName,n1,n2,n3,n4,n5,n6,n7, benchFormula,flops) \
   phist_PerfCheck::PerfCheckTimer YouCanOnlyHaveOnePerfCheckInOneScope(functionName,#n1,n1,#n2,n2,#n3,n3,#n4,n4,#n5,n5,#n6,n6,#n7,n7, #benchFormula, benchFormula,flops);
 
+#ifdef PHIST_PERFCHECK_SEPARATE_OUTPUT
+#define PHIST_BENCH_MPI_SUM(valstar)
+#else
+#define PHIST_BENCH_MPI_SUM(valstar) \
+MPI_Allreduce(MPI_IN_PLACE,(valstar),1,MPI_DOUBLE,MPI_SUM,MPI_COMM_WORLD);
+#endif
 
 /*! Defines a new benchmark for the performance check
  * \param benchName the name of the benchmark
@@ -49,6 +55,7 @@ double benchName(double factor) { \
     benchFunction(&mean_bw,&benchResult,&ierr); \
     phist_PerfCheck::benchmarks[__FUNCTION__] = benchResult; \
   } \
+  PHIST_BENCH_MPI_SUM(&benchResult); \
   return factor / benchResult; \
 } \
 }

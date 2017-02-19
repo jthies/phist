@@ -107,7 +107,9 @@ PHIST_TASK_BEGIN(ComputeTask)
   // which is the behavior we want if no context/maps are given:
   PHIST_CHK_GERR(ghost_sparsemat_create(&mat,NULL,&mtraits,1),*iflag);                               
   // this will setup the context and read the matrix from the file:
-  PHIST_CHK_GERR(ghost_sparsemat_init_mm(mat,cfname,*comm,get_proc_weight()),*iflag);
+  // note: we force equal partition sizes because we can assume that a matrix read from a file is small
+  // and different partition weights make no sense.
+  PHIST_CHK_GERR(ghost_sparsemat_init_mm(mat,cfname,*comm,get_proc_weight(1.0)),*iflag);
   char *str;
   ghost_context_string(&str,mat->context);
   PHIST_SOUT(outlev,"%s\n",str);
@@ -161,7 +163,9 @@ PHIST_TASK_BEGIN(ComputeTask)
         char* cfname=const_cast<char*>(filename);
 
   PHIST_CHK_GERR(ghost_sparsemat_create(&mat,NULL,&mtraits,1),*iflag);                               
-  PHIST_CHK_GERR(ghost_sparsemat_init_bin(mat,cfname,*comm,get_proc_weight()),*iflag);
+  // note: we force equal partition sizes because we can assume that a matrix read from a file is small
+  // and different partition weights make no sense.
+  PHIST_CHK_GERR(ghost_sparsemat_init_bin(mat,cfname,*comm,get_proc_weight(1.0)),*iflag);
 
   char *str;
   ghost_context_string(&str,mat->context);
@@ -423,13 +427,23 @@ extern "C" void SUBR(mvec_extract_view)(TYPE(mvec_ptr) vV, _ST_** val, phist_lid
     *iflag=-1;
     return;
   }
+
+  PHIST_CHK_IERR(*iflag=check_local_size(V->stride),*iflag);
+  *lda = V->stride;
+
   if (V->val==NULL)
   {
     if (V->traits.location == GHOST_LOCATION_DEVICE)
     {
       if (V->traits.flags & GHOST_DENSEMAT_NOT_RELOCATE) {      
-        PHIST_OUT(PHIST_ERROR,"%s, host side of vector not allocated\n",__FUNCTION__);
-        *iflag=PHIST_NOT_IMPLEMENTED;
+        static bool first_time=true;
+        if (first_time)
+        {
+          first_time=false;
+          PHIST_OUT(PHIST_ERROR,"%s, host side of vector not allocated\n",__FUNCTION__);
+        }
+        *iflag=+1; // val will be NULL
+        *val=NULL;
         return;
       }
       ghost_densemat_download(V);
@@ -442,9 +456,7 @@ extern "C" void SUBR(mvec_extract_view)(TYPE(mvec_ptr) vV, _ST_** val, phist_lid
     }
   }
   *val=(ST*)V->val;
-  PHIST_CHK_IERR(*iflag=check_local_size(V->stride),*iflag);
 
-  *lda = V->stride;
 }
 
 extern "C" void SUBR(sdMat_extract_view)(TYPE(sdMat_ptr) vM, _ST_** val, phist_lidx* lda, int* iflag)
@@ -1359,7 +1371,7 @@ _ST_* ydoty, _ST_* xdoty, int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
 #include "phist_std_typedefs.hpp"
-
+  int iflag_in=*iflag;
 #ifdef PHIST_TESTING
   // check if the input and output have the correct maps, that is they live in the same index space
   // as the columns and rows of A, respectively, and have the same distribution and permutation.
@@ -1378,14 +1390,16 @@ _ST_* ydoty, _ST_* xdoty, int* iflag)
 
   ghost_spmv_opts spMVM_opts=GHOST_SPMV_OPTS_INITIALIZER;
   // ghost spmvm mode
-  if( *iflag & PHIST_SPMVM_ONLY_LOCAL )
+  if( iflag_in & PHIST_SPMVM_ONLY_LOCAL )
     spMVM_opts.flags = (ghost_spmv_flags)((int)spMVM_opts.flags | (int)GHOST_SPMV_MODE_NOCOMM);
-  else if( *iflag & PHIST_SPMVM_OVERLAP )
+  else if( iflag_in & PHIST_SPMVM_OVERLAP )
     spMVM_opts.flags = (ghost_spmv_flags)((int)spMVM_opts.flags | (int)GHOST_SPMV_MODE_OVERLAP);
-  else if( *iflag & PHIST_SPMVM_TASK )
+  else if( iflag_in & PHIST_SPMVM_TASK )
     spMVM_opts.flags = (ghost_spmv_flags)((int)spMVM_opts.flags | (int)GHOST_SPMV_MODE_TASK);
+  else if( !(iflag_in & PHIST_SPMVM_VECTOR) )
+    spMVM_opts.flags = (ghost_spmv_flags)((int)spMVM_opts.flags | (int)PHIST_DEFAULT_SPMV_MODE);
   bool no_reduce=false;
-  if (*iflag & PHIST_NO_GLOBAL_REDUCTION )
+  if (iflag_in & PHIST_NO_GLOBAL_REDUCTION )
   {
     spMVM_opts.flags = (ghost_spmv_flags)((int)spMVM_opts.flags | (int)GHOST_SPMV_NOT_REDUCE);
     no_reduce=true;
@@ -1551,6 +1565,8 @@ extern "C" void SUBR(sparseMat_times_mvec_vadd_mvec)(_ST_ alpha, TYPE(const_spar
     spMVM_opts.flags = (ghost_spmv_flags)((int)spMVM_opts.flags | (int)GHOST_SPMV_MODE_OVERLAP);
   else if( *iflag & PHIST_SPMVM_TASK )
     spMVM_opts.flags = (ghost_spmv_flags)((int)spMVM_opts.flags | (int)GHOST_SPMV_MODE_TASK);
+  else if( !(*iflag & PHIST_SPMVM_VECTOR) )
+    spMVM_opts.flags = (ghost_spmv_flags)((int)spMVM_opts.flags | (int)PHIST_DEFAULT_SPMV_MODE);
   *iflag=0;
 
   PHIST_COUNT_MATVECS(vx);
@@ -2200,6 +2216,8 @@ extern "C" void SUBR(sparseMat_create_fromRowFunc)(TYPE(sparseMat_ptr) *vA, phis
   mtraits.C=sellC;
   mtraits.sortScope=sellSigma;
 
+  mtraits.flags = (ghost_sparsemat_flags)(mtraits.flags|get_perm_flag(iflag_in,outlev));
+
   PHIST_SOUT(outlev, "Creating sparseMat with SELL-%d-%d format.\n", mtraits.C, mtraits.sortScope);
 
   mtraits.datatype = st::ghost_dt;
@@ -2207,7 +2225,8 @@ extern "C" void SUBR(sparseMat_create_fromRowFunc)(TYPE(sparseMat_ptr) *vA, phis
   // in _init_rowfunc below, where we also get a chance to pass in an mpicomm.
   PHIST_CHK_GERR(ghost_sparsemat_create(&mat,NULL,&mtraits,1),*iflag);                               
   mtraits.flags=GHOST_SPARSEMAT_DEFAULT;
-  double weight=phist::ghost_internal::get_proc_weight();
+  // use equal partition sizes for small matrices
+  double weight=phist::ghost_internal::get_proc_weight(nrows<1e4?1.0:-1.0);
   PHIST_CHK_GERR(ghost_sparsemat_init_rowfunc(mat,&src,*mpicomm,weight),*iflag);
 
   char *str;

@@ -521,8 +521,10 @@ elseif (PHIST_KERNEL_LIB STREQUAL "ghost")
   set(PHIST_MVECS_ROW_MAJOR 1 CACHE STRING "wether multi-vectors should be stored in row-major ordering")
   set(PHIST_USE_GHOST_TASKS 1 CACHE STRING "execute all kernels as GHOST tasks, recommended for performance, but it makes debugging easier to turn it off from time to time")
 
-  set(PHIST_SELL_C -1 CACHE INTEGER "chunk size C for the SELL-C-sigma format (-1: automatic choice)")
-  set(PHIST_SELL_SIGMA -1 CACHE INTEGER "sorting scope sigma for the SELL-C-sigma format (-1: automatic choice)")
+  set(PHIST_SELL_C -1 CACHE STRING "chunk size C for the SELL-C-sigma format (-1: automatic choice)")
+  set(PHIST_SELL_SIGMA -1 CACHE STRING "sorting scope sigma for the SELL-C-sigma format (-1: automatic choice)")
+
+  set(PHIST_DEFAULT_SPMV_MODE 0 CACHE STRING "default GHOST spmv mode (0: VECTOR, 8: OVERLAP, 16: TASK)")
 
   if (PHIST_USE_SOLVER_TPLS)
     list(APPEND OPTIONAL_TRILI_PKG "Anasazi")
@@ -1370,6 +1372,7 @@ if(INTEGRATION_BUILD AND NOT DISABLE_PYTHON_TESTS)
     message(STATUS "add integration tests")
     # python script that runs drivers with MPI as integration tests
     set(PHIST_TEST_DRIVERS_NUM_PROCS 2)
+    set(PHIST_TEST_DRIVERS_NUM_THREADS 12)
     configure_file(${PROJECT_SOURCE_DIR}/python/test_phist_drivers.py.in ${CMAKE_CURRENT_BINARY_DIR}/test_phist_drivers.py)
     set(TEST_OUTPUT_DIR ${PROJECT_BINARY_DIR}/test_output_np${PHIST_TEST_DRIVERS_NUM_PROCS}/test_phist_drivers)
     file(MAKE_DIRECTORY ${TEST_OUTPUT_DIR})
