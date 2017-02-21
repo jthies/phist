@@ -7,8 +7,6 @@ class CpOptions{
 private:
   int cpFreq;
   int nIter;
-  bool isRestarted;
-  bool withSCR;
 
 public:
   CpOptions();
@@ -19,9 +17,6 @@ public:
   void setnIter(const int nIter_);
   int getnIter();
   
-  void setRestartStatus(bool status);
-  bool getRestartStatus();
-
 };
 
 #endif

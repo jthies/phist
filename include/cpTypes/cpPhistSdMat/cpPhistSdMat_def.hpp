@@ -1,3 +1,4 @@
+#include <cpHelperFuncs.hpp>
 
 class TYPE(CpPhistSdMat) : public CpBase
 {

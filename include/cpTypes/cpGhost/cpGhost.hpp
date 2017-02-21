@@ -18,7 +18,6 @@ public:
 private:
 	ghost_densemat *  dataPtr;
 	ghost_densemat * asynData;
-  MPI_Comm cpMpiComm ;
 };
 
 

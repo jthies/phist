@@ -92,92 +92,6 @@ int Checkpoint::mkCpDir(std::string path){
 	return EXIT_SUCCESS;
 }
 
-int Checkpoint::writeCpMetaData(const std::string filename){			// writes a tmp file first and then replaces it after complete write
-  std::string filenameTmp;
-	filenameTmp = filename + ".tmp"; 
-	std::ofstream fstr;
-	fstr.open ((filenameTmp).c_str(), std::ios::out );	
-  
-	if(fstr.is_open()){
-		fstr << cpVersion << std::endl;
-		fstr.close();
-	}
-  else{
-    craftErr("Can't open file @ %s:%d",
-              __FILE__, __LINE__
-      );
-	  craftDbg(1, "Can't open file %s", (filename).c_str());
-		return EXIT_FAILURE;
-	}
-//	std::string cmd = "mv " + filenameTmp + " " + filename;
-  int ret=-99;
-  ret = rename(filenameTmp.c_str(), filename.c_str());
-  if( ret != 0){
-    craftDbg(1, "rename failed for %s. ret_val:%d", filenameTmp.c_str(), ret);
-  }
-//	system (cmd.c_str());
-  return EXIT_SUCCESS;
-}
-
-int Checkpoint::readCpMetaData(){
-	std::string filename, line;
-	filename = cpPath + "/" + "metadata.ckpt"; 
-	std::ifstream fstr;
-	fstr.open ((filename).c_str(), std::ios::in );	
-	craftDbg(3, "Metadata filename: %s", (filename).c_str());
-	if(fstr.is_open()){
-		while ( getline (fstr,line) )
-		{
-			cpVersion = atoi(line.c_str());
-		}
-		fstr.close();
-		craftDbg(1, "cpVersion to read: %d", cpVersion);
-    return EXIT_SUCCESS;
-	}
-  else{
-    craftErr("Can't open file @ %s:%d",
-              __FILE__, __LINE__
-      );
-	  craftDbg(1, "Can't open file %s", (filename).c_str());
-	  return EXIT_FAILURE;
-  }
-}
-
-int Checkpoint::SCRreadCpMetaData(){
-#ifdef SCR
-  // === writeMetaData file === // 
-	int myrank_ = -1;	
-	MPI_Comm_rank(cpMpiComm, &myrank_);
-	std::string myrank = numberToString(myrank_);
-	std::string filename = cpPath + "/" + "metadata" + myrank + ".ckpt"; 
-  char * fNameScrPath = new char[256]; 
-	char * tmpFilename  = new char[256];
-	strcpy(tmpFilename, filename.c_str()); 
-	SCR_Route_file(tmpFilename, fNameScrPath);
-	filename = fNameScrPath;
-	std::ifstream fstr;
-	fstr.open ((filename).c_str(), std::ios::in );	
-	craftDbg(3, "Metadata filename: %s", (filename).c_str());
-  std::string line;
-	if(fstr.is_open()){
-		while ( getline (fstr,line) )
-		{
-			cpVersion = atoi(line.c_str());
-		}
-		fstr.close();
-		craftDbg(1, "cpVersion to read: %d", cpVersion);
-	  return EXIT_SUCCESS;
-	}
-  else{
-    craftErr("Can't open file @ %s:%d",
-              __FILE__, __LINE__
-      );
-	  craftDbg(1, "Can't open file %s", (filename).c_str());
-	  return EXIT_FAILURE;
-  }
-#endif
-}
-
 int Checkpoint::deleteBackupCp(){
 	int myrank = -1;	
 	MPI_Comm_rank(cpMpiComm, &myrank);
@@ -195,7 +109,7 @@ int Checkpoint::deleteBackupCp(){
 	return EXIT_SUCCESS;
 }
 
-
+// ===== UPDATE ===== //
 int Checkpoint::update(){
   if( craftEnabled == 0){
 		craftDbg(3, "Checkpoint::update(): CRAFT_ENABLE: %d", craftEnabled);
@@ -209,6 +123,7 @@ int Checkpoint::update(){
 	return EXIT_SUCCESS;
 }
 
+// ===== WRITE ===== //
 int Checkpoint::write()				// TODO: make two version of write. 1) PFS 2) SCR. and do MPI/IO for PFS 
 {	
   if( !craftEnabled ){
@@ -226,6 +141,27 @@ int Checkpoint::write()				// TODO: make two version of write. 1) PFS 2) SCR. an
 		ret = PFSwrite();
   }
 	return EXIT_SUCCESS;
+}
+
+// ===== READ ===== //
+int Checkpoint::read()				// TODO: make two version of read. 1) PFS 2) SCR
+{
+  if( craftEnabled == 0){
+		craftDbg(3, "Checkpoint::read(): CRAFT_ENABLE: %d", craftEnabled);
+    return EXIT_FAILURE;
+  }
+	craftDbg(1, "reading Checkpoint...");
+  int ret=EXIT_FAILURE;
+  if( cpUseSCR ) {
+#ifdef SCR
+		ret = SCRread();
+#endif
+  }
+  else{
+		ret = PFSread();
+  }
+  craftDbg(1, "All Checkpoint files are read");
+  return ret;
 }
 
 int Checkpoint::SCRwrite(){
@@ -307,24 +243,31 @@ int Checkpoint::PFSwrite(){
 }
 
 
-int Checkpoint::read()				// TODO: make two version of read. 1) PFS 2) SCR
-{
-  if( craftEnabled == 0){
-		craftDbg(3, "Checkpoint::read(): CRAFT_ENABLE: %d", craftEnabled);
-    return EXIT_FAILURE;
-  }
-	craftDbg(1, "reading Checkpoint...");
-  int ret=EXIT_FAILURE;
-  if( cpUseSCR ) {
-#ifdef SCR
-		ret = SCRread();
-#endif
-  }
+int Checkpoint::writeCpMetaData(const std::string filename){			// writes a tmp file first and then replaces it after complete write
+  std::string filenameTmp;
+	filenameTmp = filename + ".tmp"; 
+	std::ofstream fstr;
+	fstr.open ((filenameTmp).c_str(), std::ios::out );	
+  
+	if(fstr.is_open()){
+		fstr << cpVersion << std::endl;
+		fstr.close();
+	}
   else{
-		ret = PFSread();
+    craftErr("Can't open file @ %s:%d",
+              __FILE__, __LINE__
+      );
+	  craftDbg(1, "Can't open file %s", (filename).c_str());
+		return EXIT_FAILURE;
+	}
+//	std::string cmd = "mv " + filenameTmp + " " + filename;
+  int ret=-99;
+  ret = rename(filenameTmp.c_str(), filename.c_str());
+  if( ret != 0){
+    craftDbg(1, "rename failed for %s. ret_val:%d", filenameTmp.c_str(), ret);
   }
-  craftDbg(1, "All Checkpoint files are read");
-  return ret;
+//	system (cmd.c_str());
+  return EXIT_SUCCESS;
 }
 
 int Checkpoint::PFSread(){
@@ -388,6 +331,74 @@ int Checkpoint::SCRread(){
 	return EXIT_SUCCESS;
 }
 
+
+int Checkpoint::readCpMetaData(){
+	std::string filename, line;
+	filename = cpPath + "/" + "metadata.ckpt"; 
+	std::ifstream fstr;
+	fstr.open ((filename).c_str(), std::ios::in );	
+	craftDbg(3, "Metadata filename: %s", (filename).c_str());
+	if(fstr.is_open()){
+		while ( getline (fstr,line) )
+		{
+			cpVersion = atoi(line.c_str());
+		}
+		fstr.close();
+		craftDbg(1, "cpVersion to read: %d", cpVersion);
+    return EXIT_SUCCESS;
+	}
+  else{
+    craftErr("Can't open file @ %s:%d",
+              __FILE__, __LINE__
+      );
+	  craftDbg(1, "Can't open file %s", (filename).c_str());
+	  return EXIT_FAILURE;
+  }
+}
+
+int Checkpoint::SCRreadCpMetaData(){
+#ifdef SCR
+  // === writeMetaData file === // 
+	int myrank_ = -1;	
+	MPI_Comm_rank(cpMpiComm, &myrank_);
+	std::string myrank = numberToString(myrank_);
+	std::string filename = cpPath + "/" + "metadata" + myrank + ".ckpt"; 
+  char * fNameScrPath = new char[256]; 
+	char * tmpFilename  = new char[256];
+	strcpy(tmpFilename, filename.c_str()); 
+	SCR_Route_file(tmpFilename, fNameScrPath);
+	filename = fNameScrPath;
+	std::ifstream fstr;
+	fstr.open ((filename).c_str(), std::ios::in );	
+	craftDbg(3, "Metadata filename: %s", (filename).c_str());
+  std::string line;
+	if(fstr.is_open()){
+		while ( getline (fstr,line) )
+		{
+			cpVersion = atoi(line.c_str());
+		}
+		fstr.close();
+		craftDbg(1, "cpVersion to read: %d", cpVersion);
+	  return EXIT_SUCCESS;
+	}
+  else{
+    craftErr("Can't open file @ %s:%d",
+              __FILE__, __LINE__
+      );
+	  craftDbg(1, "Can't open file %s", (filename).c_str());
+	  return EXIT_FAILURE;
+  }
+#endif
+}
+
+
+
+
+
+
+
+
+
 bool Checkpoint::needRestart(){
   if( craftReadCpOnRestart == 0 ){    // in case, that checkpoints exist but user wants to restart from the beginning. This flag is set by ENV variables.
     craftDbg(3, "Environment variable CRAFT_READ_CP_ON_RESTART is disabled(0) => Not restarting from last checkpoint");
@@ -431,3 +442,7 @@ bool Checkpoint::needRestart(){
   }
 }
 
+
+MPI_Comm Checkpoint::getCpComm(){
+  return cpMpiComm;
+}

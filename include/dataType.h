@@ -114,6 +114,8 @@ static MPI_Datatype ConvertType(Abstraction::DataType type)
     case Abstraction::type_float: return MPI_FLOAT;
     case Abstraction::type_double: return MPI_DOUBLE;
     case Abstraction::type_long_double: return MPI_LONG_DOUBLE;
+    // TODO: implement all c data-types. Check from 3.0 standard ( the green book)
+
 //    case Abstraction::type_c_complex: return MPI_C_COMPLEX;     // TODO: these complex types are not compatible with std::complex data types and require MPI-3.1+ implementation. Thus, checkpoint for std::complex data types has to be implemented separately 
 //    case Abstraction::type_c_double_complex:{ std::cout << "returning MPI_C_DOUBLE_COMPLEX\n"; return MPI_C_DOUBLE_COMPLEX; }
   };

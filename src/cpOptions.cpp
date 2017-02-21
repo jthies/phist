@@ -1,8 +1,6 @@
 #include <stdio.h>
 #include "include/cpOptions.h"
 
-
-
 CpOptions::CpOptions(){
   cpFreq = -9999999;
   nIter = 0;

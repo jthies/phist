@@ -1,7 +1,7 @@
 cmake_minimum_required (VERSION 2.6)
 project (GHOST-TEST C Fortran CXX)
-
-
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14")
+set (CMAKE_CXX_STANDARD 11)
 ###### OPTIONS ######
 option(GHOST_TEST
 				"In order to compile GHOST_TEST, ESSEXAMPELS-library will be required"
@@ -76,6 +76,7 @@ add_subdirectory(minimalWithoutLoop)
 add_subdirectory(multilevelCP)
 #add_subdirectory(multilevelCP2)
 add_subdirectory(arrayTest)
+add_subdirectory(mklexamples)
 if(GHOST_TEST)
 	add_subdirectory(ghostTest)
 endif()

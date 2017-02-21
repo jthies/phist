@@ -1,4 +1,5 @@
 cmake_minimum_required (VERSION 2.6)
+set (CMAKE_CXX_STANDARD 11)
 project (CRAFTLIB)
 set (PROJECT_DIR ${CMAKE_SOURCE_DIR})
 set (PROJECT_SRC_DIR ${PROJECT_DIR}/src/)
@@ -12,6 +13,9 @@ option(PHIST_CP
 option(GHOST_CP
 		"enables/disables the checkpoints of PHIST data types"
 		OFF)
+option(MKL_CP
+		"enables/disables the usage of MKL data types for C/R"
+		ON)
 option(SCR
 		"enables/disables the usage of SCR-library for node-level C/R"
 		OFF)
@@ -44,6 +48,7 @@ set (HEADERS
 		include/dataType.h
 		include/craftConf.h
 		include/timing.h
+    include/addedCpTypes.hpp
 		)
 
 set(TOOLS
@@ -115,7 +120,27 @@ if(MPIIO)
 endif()
 
 ##### Optional CP datatypes #####
+
+if(MKL_CP)
+  add_definitions(-DMKL_CP)
+  message (STATUS "MKL_CP is defined")
+  find_path(MKL_INCLUDE_DIR mkl.h $ENV{MKLROOT}/include)
+  set(MKL_LIBS $ENV{MKL_LIB})
+  include_directories (${MKL_INCLUDE_DIR} ) 
+  set(LIBS ${LIBS} ${MKL_LIBS} dl)
+
+  set (MKL_INC_DIR 	${PROJECT_INC_DIR}/cpTypes/cpMkl/)
+	set (MKL_INC 	${MKL_INC_DIR}/cpMkl.hpp)
+	set (MKL_INC 	${MKL_INC_DIR}/cpMklArray.hpp)
+	set (HEADERS 	${HEADERS} ${MKL_INC})
+	include_directories (${MKL_INC_DIR})
+  set (CPMKL_SRC         ${MKL_INC_DIR}/cpMkl.cpp)
+  set (SOURCE ${SOURCE} ${CPMKL_SRC})
+  add_definitions(-DMKL_CP)
+endif()
+
 if(GHOST_CP)
+  message (STATUS "GHOST_CP is defined")
 	find_package(GHOST REQUIRED)
 	add_definitions(-DGHOST_CP)
 	if(GHOST_FOUND)
@@ -166,7 +191,6 @@ if(PHIST_CP)
 
 	set ( SOURCE 	${SOURCE} ${CPPHISTSDMAT_SRC})
 	set ( HEADERS 	${HEADERS} ${CPPHISTSDMAT_INC})
-
 
 endif()
 

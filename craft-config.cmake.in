@@ -36,4 +36,8 @@ if(@MPIIO@ STREQUAL "ON")
 				set(CRAFT_FLAGS "${CRAFT_FLAGS} -DMPIIO")
 endif()
 
+if(@MKL_CP@ STREQUAL "ON")
+				set(CRAFT_FLAGS "${CRAFT_FLAGS} -DMKL_CP")
+endif()
+
 

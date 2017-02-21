@@ -15,9 +15,12 @@
 #include <cstring>
 #include <unistd.h>
 
+#include <iostream>
+#include <iomanip>
+#include <complex>
+#include <cmath>
 
 static char *prgname = "a.out";
-
 
 int read_params(int argc, char* argv[] , CpOptions * myCpOpt){
   prgname = argv[0];
@@ -54,6 +57,15 @@ int main(int argc, char* argv[])
 
 	int n = 5;
 	int myint = 0;
+  long double ld = 0.99;
+  std::complex<double> d_c1(0.1, 0.1);
+  std::complex<double> d_one(1.0, 1.0);
+  std::complex<int> i_c1(0, 0);
+  std::complex<int> i_one(1, 1);
+//  using namespace std::complex_literals;
+//  std::cout << std::fixed << std::setprecision(1);
+//  std::complex<double> z1 = 1i * 1i;     // imaginary unit squared
+//  std::cout << "i * i = " << z1 << '\n'; 
 	double mydouble = 0.0123;
 	int * myarray 	= new int[n];
 	for(int i = 0; i < n; ++i){
@@ -63,11 +75,13 @@ int main(int argc, char* argv[])
 	int iteration = 0;
 	
 	Checkpoint myCP( "aa", FT_Comm);
-//	myCP.disableSCR();
 	myCP.add("myint", &myint);
-	myCP.add("mydouble", &mydouble);
+//	myCP.add("mydouble", &mydouble);
 	myCP.add("iteration", &iteration);
   myCP.add("myarray", myarray, n);
+//  myCP.add("ld", &ld);
+//  myCP.add("i_c1", &i_c1);
+//  myCP.add("d_c1", &d_c1);
 	myCP.commit(); 
 	
   if( myCP.needRestart() == true) 
@@ -75,12 +89,13 @@ int main(int argc, char* argv[])
     { if (myrank == 0) printf("%d:RESTART ------>  true \n", myrank); }
     if(myCP.read()==EXIT_SUCCESS){
 		  iteration++;
-		  { if (myrank == 0) printf("%d:iteration = %d \n", myrank, iteration); }
+		  { printf("%d:iteration = %d \n", myrank, iteration); }
     }
 	}
   for(; iteration <= myCpOpt->getnIter() ; iteration++)
   {
 		myint++;
+		mydouble++;
 		for(size_t i = 0; i < n ; ++i){
 			myarray[i] += 1;
 		}
@@ -91,12 +106,14 @@ int main(int argc, char* argv[])
 //        system(cmd); 
 //      }
 //    }
-		usleep(500000);
-		{ if(myrank==0) printf("%d:=== iter: %d , myint: %d \t\n", myrank, iteration, myint-1);}
+		{ printf("%d:=== iter: %d , myint: %d \t\n", myrank, iteration, myint-1);}
+//		{ printf("%d:=== iter: %d , c1: %d \t\n", myrank, iteration, c1);}
+		usleep(1000000);
+//		{ if(myrank==0) printf("%d:=== iter: %d , mydouble: %f \t\n", myrank, iteration, mydouble-1);}
 		if(iteration % myCpOpt->getCpFreq() == 0){
 		  if(myrank==0){ printf("Checkpointing...\n");}
 			myCP.update();
-			myCP.write();
+  		myCP.write();
 		}
 	  MPI_Barrier(FT_Comm);
 	}

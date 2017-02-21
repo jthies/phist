@@ -6,6 +6,7 @@
 #include <malloc.h>
 #include <stdio.h>
 #include <math.h>
+#include <complex>
 
 #include <essexamples.h>
 #include <checkpoint.hpp>
@@ -118,7 +119,7 @@ static void *mainTask(void *varg)
     ghost_densemat_init_densemat(p,r,0,0); // p = r
 
 		if( myrank == printRank) {
-				printf("==== Defining CP ====\n");
+		  printf("==== Defining CP ====\n");
 		}
 	Checkpoint  myCP( "ghosttest", FT_Comm);
 	myCP.disableSCR();

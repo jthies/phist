@@ -53,7 +53,11 @@ int read_params(int argc, char* argv[] , CpOptions * myCpOpt){
 		}
 	}
 }
-
+template <typename ...Params>
+void tempf(Params&&... params)
+{
+//  addCpType(this, std::forward<Params>(params)...);
+}
 
 int main(int argc, char* argv[])
 {
@@ -77,7 +81,7 @@ int main(int argc, char* argv[])
 	int n = 5, nRows=5, nCols=5;
 	printf("sizeof(float)=%d\n", sizeof(float));
 
-	int * a 	= new int[n];
+	int  a [n];
 	float ** aa = new float*[nCols];
 	for(int i=0; i<nRows; ++i){
 		aa[i] = new float[nRows];	
@@ -93,10 +97,10 @@ int main(int argc, char* argv[])
 			a[i] = 0;
 			d[i] = 0.55;
 	}
+  
 	int rankCP = myrank;
 	Checkpoint  myCP( "aT", FT_Comm);
-  
-	myCP.add("a", a, n);
+	myCP.add("a", (int *) a, n);
 	myCP.add("aa", aa, nRows, nCols, ALL);
 	myCP.add("d", d, n);
 	myCP.add("iteration", &iteration);
