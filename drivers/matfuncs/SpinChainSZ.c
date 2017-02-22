@@ -440,14 +440,23 @@ int crsSpinChain( ghost_gidx row, ghost_lidx *nnz, ghost_gidx *cols, void *vals,
 		ghost_gidx hp_Jz = 0;
 		
 		int32_t l;
-		 if( Bz != 0. ) for(l=0;l<L;l++)if ( (1 << l) &  il ) hp_Bz += 1;
-		                                 else                  hp_Bz -= 1;
-		
+		if( Bz != 0. ){ 
+			for(l=0;l<L;l++){
+				if ( (1 << l) &  il ){
+					hp_Bz += 1;
+				} else {
+					hp_Bz -= 1;
+				}
+			}
+		}
 		if( Jz != 0. ){
 			for(l=0;l<L-useOBC;l++){
 				//if (bitcount( il &  ishftc( 1|2 , l , L)) == 1)   hp_Jz -= 1;
-				if ( CHECK_DIFF_NN (il , ishftc( 1|2 , l , L)) ) hp_Jz -= 1;
-				else                                              hp_Jz += 1;
+				if ( CHECK_DIFF_NN (il , ishftc( 1|2 , l , L)) ){ 
+					hp_Jz -= 1;
+				} else {                                          
+					hp_Jz += 1;
+				}
 			}
 		 }
 		
