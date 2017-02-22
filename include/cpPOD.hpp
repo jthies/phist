@@ -15,14 +15,16 @@ public:
 	CpPOD( T * const dataPtr_, const MPI_Comm cpMpiComm_=MPI_COMM_WORLD);
 	~CpPOD(){}	
 
-	int read(const std::string * filename);
-	int write(const std::string * filename);
-	int update();
+	
 	
 private:
 	T * dataPtr;
 	T * asynData;
   
+  int read(const std::string * filename);
+	int write(const std::string * filename);
+	int update();
+
   int readParallel(const std::string * filename);
 	int readSerial(const std::string * filename);
 	int writeParallel(const std::string * filename);

@@ -8,24 +8,6 @@ private:
 	TYPE(sdMat_ptr) dataPtr;
 	TYPE(sdMat_ptr) asynData;
 	int iflag;
-
-public:
-	TYPE(CpPhistSdMat)(){}
-	~TYPE(CpPhistSdMat)(){}	
-
-	TYPE(CpPhistSdMat)( TYPE(sdMat_ptr) dataPtr_, const MPI_Comm cpMpiComm_=MPI_COMM_WORLD ){
-		dataPtr = dataPtr_;
-		iflag = 0;
-    cpMpiComm = cpMpiComm_;
-		phist_comm_ptr comm= NULL;				// TODO: comm needs to be different in the case of FT.
-		PHIST_CHK_IERR(phist_comm_create(&comm, &iflag), iflag);
-		int nr, nc;	
-		PHIST_CHK_IERR(SUBR(sdMat_get_nrows)(dataPtr,&nr,&iflag),iflag);
-		PHIST_CHK_IERR(SUBR(sdMat_get_ncols)(dataPtr,&nc,&iflag),iflag);
-		PHIST_CHK_IERR(SUBR(sdMat_create)(&asynData, nr, nc, comm, &iflag), iflag); 
-	}
-
-	
 	int update(){
 		craftDbg(3, "CpPhistSdMat Before update: \n");
     SUBR(sdMat_add_sdMat)(st::one(),dataPtr,st::zero(),asynData,&iflag);
@@ -44,4 +26,22 @@ public:
     SUBR(sdMat_add_sdMat)(st::one(),asynData,st::zero(),dataPtr,&iflag);
 		return 0;
 	}
+
+public:
+	TYPE(CpPhistSdMat)(){}
+	~TYPE(CpPhistSdMat)(){}	
+
+	TYPE(CpPhistSdMat)( TYPE(sdMat_ptr) dataPtr_, const MPI_Comm cpMpiComm_=MPI_COMM_WORLD ){
+		dataPtr = dataPtr_;
+		iflag = 0;
+    cpMpiComm = cpMpiComm_;
+		phist_comm_ptr comm= NULL;				// TODO: comm needs to be different in the case of FT.
+		PHIST_CHK_IERR(phist_comm_create(&comm, &iflag), iflag);
+		int nr, nc;	
+		PHIST_CHK_IERR(SUBR(sdMat_get_nrows)(dataPtr,&nr,&iflag),iflag);
+		PHIST_CHK_IERR(SUBR(sdMat_get_ncols)(dataPtr,&nc,&iflag),iflag);
+		PHIST_CHK_IERR(SUBR(sdMat_create)(&asynData, nr, nc, comm, &iflag), iflag); 
+	}
+
+	
 };

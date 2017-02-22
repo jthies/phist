@@ -39,7 +39,7 @@ extern "C"{
 
 class Checkpoint
 {
-protected:
+private:
 	MPI_Comm cpMpiComm;
 	std::string cpPath;
 	std::string cpBasePath;	
@@ -62,7 +62,7 @@ protected:
 	int PFSread();
 	int SCRread();
   int getCpVersion(); 
- 
+   
   typedef std::map<const std::string,CpBase *> cp_const_map;
   cp_const_map objects;
   

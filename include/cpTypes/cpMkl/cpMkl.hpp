@@ -17,13 +17,13 @@ class CpMklComplex8: public CpBase
 public:
 	CpMklComplex8(MKL_Complex8 *  dataPtr_, const MPI_Comm cpMpiComm_=MPI_COMM_WORLD);
 	~CpMklComplex8(){}	
-	int update();
-	int write( const std::string * filename);
-	int read(const std::string * filename);
-
 private:
 	MKL_Complex8 * dataPtr;
 	MKL_Complex8 * asynData;
+
+	int update();
+	int write( const std::string * filename);
+	int read(const std::string * filename);
 
   int readParallel(const std::string * filename);
 	int readSerial(const std::string * filename);

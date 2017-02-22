@@ -19,22 +19,23 @@ public:
   CpArray( T * const dataPtr_, const size_t nRows_, const MPI_Comm cpMpiComm_=MPI_COMM_WORLD);
 	~CpArray(){}	
 
-	int read(const std::string * filename);
-  int write(const std::string * filename);
-	int update();
-	void print();
-	
+
 private:
 	T * dataPtr;
 	T * asynData;
 	size_t nRows;
 	void copyArray(T * const src, T * const dst, const size_t numElems);
 
+  int read(const std::string * filename);
+  int write(const std::string * filename);
+	int update();
+	void print();
+
   int readParallel(const std::string * filename);
 	int readSerial(const std::string * filename);
 	int writeParallel(const std::string * filename);
 	int writeSerial(const std::string * filename);
-	
+		
 };
 
 // ===== POD MULTI-ARRAY ===== // 
