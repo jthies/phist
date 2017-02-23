@@ -38,6 +38,7 @@ set (SOURCE
 		)
 
 set (HEADERS
+    include/craft.h
 		include/checkpoint.hpp
 		include/cpArray.hpp
 		include/cpBase.hpp

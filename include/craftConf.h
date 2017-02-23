@@ -61,7 +61,7 @@
 #endif
 
 
-void getEnvParam();
+void CRAFT_getEnvParam();
 
 extern int craftDebug;
 extern int craftDebugLog;

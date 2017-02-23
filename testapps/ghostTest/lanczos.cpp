@@ -21,19 +21,14 @@ GHOST_REGISTER_DT_S(matdt) // matrix has float values
 #define IMTQL1(a,b,c,d) imtql1f_(a,b,c,d)
 #endif
 
-#include "lanczos.h"
+#include <craft.h>
 
-#include <checkpoint.hpp>
-#include <cpOptions.h>
+#include "lanczos.h"
 #include <ghost.h>
 #include <ghost/types.h>
 extern "C"{
 #include "essexamples.h"
 }
-#ifdef AFT
-	#include <aft.h>
-	#include <aft_macros.h>
-#endif
 
 typedef struct args{
 	int argc;

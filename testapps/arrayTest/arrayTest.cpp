@@ -5,13 +5,7 @@
 #include <unistd.h>
 #include <malloc.h>
 
-#ifdef AFT
-	#include <aft.h>
-	#include <aft_macros.h>
-#endif
-#include <checkpoint.hpp>
-#include <cpOptions.h>
-
+#include <craft.h>
 #include "arrayTest.h"
 
 static char *prgname = "a.out";

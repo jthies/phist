@@ -10,8 +10,7 @@
 #endif
 
 #include "minimal.h"
-#include <checkpoint.hpp>
-#include <cpOptions.h>
+#include <craft.h>
 #include <cstring>
 #include <unistd.h>
 

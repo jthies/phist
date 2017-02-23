@@ -8,16 +8,12 @@
 #include <math.h>
 #include <complex>
 
+#include <craft.h>
+
 #include <essexamples.h>
-#include <checkpoint.hpp>
-#include <cpOptions.h>
 #include <ghost.h>
 #include <ghost/types.h>
-#ifdef AFT
-	#include <aft.h>
-	#include <aft_macros.h>
-#endif
-#include <cpTypes/cpGhost/cpGhost.hpp>
+
 #include <cpPOD.hpp>
 
 #include "ghostTest.h"

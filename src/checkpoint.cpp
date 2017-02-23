@@ -12,7 +12,7 @@ Checkpoint::Checkpoint( const std::string name_,
                        )
 {
 #ifndef AFT
-  getEnvParam();
+  CRAFT_getEnvParam();
 #endif  
   static std::set<std::string> nameKeys;    // to determine the uniqueness of different checkpoint names.
   std::pair<std::set<std::string>::iterator,bool> ret;

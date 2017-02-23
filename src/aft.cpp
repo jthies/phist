@@ -4,7 +4,7 @@
 static char estr[MPI_MAX_ERROR_STRING]=""; 
 static int strl; /* error messages */
 
-int initRescueNodeList(MPI_Comm * const comm){    // executed once for the FIRST RUN.
+int CRAFT_initRescueNodeList(MPI_Comm * const comm){    // executed once for the FIRST RUN.
   int myrank, numprocs;
   MPI_Comm_rank(*comm, &myrank);
   MPI_Comm_size(*comm, &numprocs);
@@ -105,7 +105,7 @@ int makeActiveMachineList(std::vector<std::string> *activeMachineList_, MPI_Comm
 
 
 /* Do all the magic in the error handler i.e. MPIX_Comm_revoke */
-void errhandler_respawn(MPI_Comm* pcomm, int* errcode, ...) {
+void CRAFT_errhandlerRespawn(MPI_Comm* pcomm, int* errcode, ...) {
 
     int eclass;
     MPI_Error_class(*errcode, &eclass);
@@ -130,7 +130,7 @@ void errhandler_respawn(MPI_Comm* pcomm, int* errcode, ...) {
  *  Return: true: the app needs to redo some iterations
  *  false: no failure was fixed, we do not need to redo any work.
  */
-int app_needs_repair(MPI_Comm *comm, char ** argv) {
+int CRAFT_appNeedsRepair(MPI_Comm *comm, char ** argv) {
     /* This is the first time we see an error on this comm, do the swap of the
  *      * worlds. Next time we will have nothing to do. */
 	MPI_Comm *tempcomm = new MPI_Comm[1];
@@ -138,7 +138,7 @@ int app_needs_repair(MPI_Comm *comm, char ** argv) {
 	if(*comm != MPI_COMM_NULL){
 		MPI_Comm_rank(*comm, &myrank);
 	}
-	craftDbg(1, "appNeedsRepair start");
+	craftDbg(1, "CRAFT_appNeedsRepair start");
 //	if( *comm != MPI_COMM_NULL ) {
 	        /* swap the worlds */
         /* We keep comm around so that the error handler remains attached until the
@@ -169,7 +169,7 @@ int app_needs_repair(MPI_Comm *comm, char ** argv) {
   *comm = *tempcomm;
 //	MPI_Comm_dup(*tempcomm, comm);
 	MPI_Comm_rank(*comm, &myrank);	
-	craftDbg(1, "appNeedsRepair done");
+	craftDbg(1, "CRAFT_appNeedsRepair done");
   return 0; /* we have repaired the world, we need to reexecute */
 }
 
@@ -516,7 +516,7 @@ int writeFailedList(const int nd, const int * const failedRanks, MPI_Comm * cons
   return 0;
 }
 
-int removeMachineFiles(MPI_Comm * const comm){
+int CRAFT_removeMachineFiles(MPI_Comm * const comm){
   removeFile( machinefileActiveProcs, comm);
   removeFile( machinefileFailedProcs, comm);
   removeFile( machinefileSpawnProcs , comm);

@@ -7,14 +7,13 @@
 	#include <aft_macros.h>
 #endif
 
-#include "minimalWithoutLoop.h"
-#include <checkpoint.hpp>
-#include <cpOptions.h>
+#include <craft.h>
 #include <cstring>
 #include <unistd.h>
 #include <stdlib.h>
 #include <math.h>
 
+#include "minimalWithoutLoop.h"
 
 static char *prgname = "a.out";
 

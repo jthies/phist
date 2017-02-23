@@ -14,11 +14,14 @@
 #include "cpEnum.h"
 #include "timing.h"
 
-int app_needs_repair(MPI_Comm *comm, char ** argv);
-void errhandler_respawn(MPI_Comm* pcomm, int* errcode, ...);
+// TODO: At the moment CRAFT_ prefix is added to functions which appear in AFT-macros. In order to have name consistency, check all function names according.
+
+
+int CRAFT_appNeedsRepair(MPI_Comm *comm, char ** argv);
+void CRAFT_errhandlerRespawn(MPI_Comm* pcomm, int* errcode, ...);
 int MPIX_Comm_replace(MPI_Comm comm, MPI_Comm *newcomm, char** argv);   // NONSHRINKING recovery ( REUSE, NOREUSE node policy)
 
-int initRescueNodeList(MPI_Comm * const comm);
+int CRAFT_initRescueNodeList(MPI_Comm * const comm);
 int writeActiveMachineList(std::vector<std::string> *activeNodeList_, MPI_Comm * const comm);
 int makeActiveMachineList(std::vector<std::string> *activeNodeList_, MPI_Comm * const comm);
 
@@ -31,7 +34,7 @@ int writeFailedList(const int nd, const int * const failedRanks, MPI_Comm * cons
 int getNumFailed(const MPI_Comm * const comm, const MPI_Comm * scomm);
 int getFailedRanks(const MPI_Comm * const comm, const MPI_Comm * scomm, int * failedRanks);
 
-int removeMachineFiles(MPI_Comm * const comm);
+int CRAFT_removeMachineFiles(MPI_Comm * const comm);
 int removeFile(const char * filename, MPI_Comm * const comm);
 
 int printNodeName( const MPI_Comm * const comm);

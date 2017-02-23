@@ -4,14 +4,9 @@
 // ./minimalWithoutLoop.bin -cppath <CHECKPOINT-PATH> -cpfreq 10 -niter 40 -restart 
 //
 
-#ifdef AFT
-	#include <aft.h>
-	#include <aft_macros.h>
-#endif
+#include <craft.h>
 
 #include "multipleAftZones.h"
-#include <checkpoint.hpp>
-#include <cpOptions.h>
 #include <cstring>
 #include <unistd.h>
 

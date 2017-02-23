@@ -13,7 +13,7 @@ std::string craftCommSpawnPolicy    = CRAFT_COMM_SPAWN_POLICY;
 std::string craftCommRecoveryPolicy = CRAFT_COMM_RECOVERY_POLICY;
 std::string pbsNodeFile    = PBS_NODEFILE;
 
-void getEnvParam(){
+void CRAFT_getEnvParam(){
   char* envIn = new char[256];
  
   envIn = getenv ("CRAFT_DEBUG");
