@@ -2,11 +2,11 @@
 #define PHIST_TIMEMONITOR_HPP
 
 #include "phist_config.h"
-#include "phist_tools.h"
 #ifdef PHIST_HAVE_OPENMP
 #include <omp.h>
 #endif
 
+extern "C" const char* phist_retcode2str(int code);
 
 #ifdef PHIST_USE_TEUCHOS_TIMEMONITOR
 
