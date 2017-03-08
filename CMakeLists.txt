@@ -50,6 +50,10 @@ option(PHIST_HAVE_AVX  "enable AVX SIMD intrinsics in PHIST code" OFF)
 option(PHIST_HAVE_AVX2 "enable AVX2 SIMD intrinsics in PHIST code" OFF)
 option(PHIST_HAVE_AVX512 "enable AVX512 SIMD intrinsics in PHIST code" ${PHIST_BUILD_MIC})
 
+if (PHIST_BUILD_MIC)
+  set(PHIST_HAVE_SSE OFF)
+endif()
+
 # reproducible random number generator?
 # TODO - this is not quite working yet, once it is, make it the default
 option(PHIST_BUILTIN_RNG
@@ -265,6 +269,23 @@ if (CMAKE_C_COMPILER_ID STREQUAL "GNU")
       set (CMAKE_CXX_FLAGS      "${CMAKE_CXX_FLAGS}     -fopenmp -fopenmp-simd")
       set (CMAKE_Fortran_FLAGS  "${CMAKE_Fortran_FLAGS} -fopenmp -fopenmp-simd")
     endif ()
+  endif()
+
+  # phist may use some SIMD instructions for e.g. the stream benchmark or double-double operations  
+  if (PHIST_HAVE_SSE)
+    set (CMAKE_C_FLAGS  "${CMAKE_C_FLAGS} -msse")
+  endif()
+  if (PHIST_HAVE_AVX)
+    set (CMAKE_C_FLAGS  "${CMAKE_C_FLAGS} -mavx")
+  endif()
+  if (PHIST_HAVE_AVX2)
+    set (CMAKE_C_FLAGS  "${CMAKE_C_FLAGS} -mavx2 -mfma")
+  endif()
+  if (PHIST_HAVE_AVX512)
+    set (CMAKE_C_FLAGS  "${CMAKE_C_FLAGS} -mavx512f")
+  endif()
+  if (PHIST_HAVE_AVX512)
+    set (CMAKE_C_FLAGS  "${CMAKE_C_FLAGS} -mavx512f")
   endif()
 
   if(PHIST_HAVE_MKL)
