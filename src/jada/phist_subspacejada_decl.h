@@ -40,7 +40,10 @@
 //!           eigenpairs, unconverged eigenvalues may be contained in the complete R if more    
 //!           space is available.                                                               
 //! nIter:    number of iterations performed                                                    
-//! resNorm:  norm of the residuals of the Schur form $A*q_i-Q*r_i, i=1,nEig$                   
+//! ev:       array of eigenvalues in complex arithmetic. Must be allocated by the user with    
+//!           at least opts.numEigs + opts.blockSize - 1 elements.                              
+//! resNorm:  norm of the residuals of the Schur form $A*q_i-Q*r_i, i=1,nEig$. Must be alloca-  
+//!           ted by te user with at least opts.numEigs + opts.blockSize - 1 elements.          
 //! iflag:     return code of the solver (0 on success, negative on error, positive on warning) 
 //!                                                                                             
 void SUBR(subspacejada)( TYPE(const_linearOp_ptr) A_op,  TYPE(const_linearOp_ptr) B_op,
