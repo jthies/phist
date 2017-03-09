@@ -140,7 +140,7 @@ else
   GET_ARG(opts.innerSolvBlockSize,p++,opts.innerSolvBlockSize>0&&opts.innerSolvBlockSize<=opts.blockSize);
 
   // inner GMRES subspace dimension. -1 means "same as innerSolvMaxIters"
-  GET_ARG(opts.innerSolvMaxBas,p++,opts.(innerSolvMaxBas>0)||(innerSolvMaxBas==-1));
+  GET_ARG(opts.innerSolvMaxBas,p++,(opts.innerSolvMaxBas>0)||(opts.innerSolvMaxBas==-1));
   opts.innerSolvMaxIters=opts.innerSolvMaxBas;
 
   // initial shift
