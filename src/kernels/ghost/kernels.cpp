@@ -30,10 +30,6 @@
 # endif
 #endif
 
-#ifdef GHOST_COMPATIBLE_CHECK
-#warning "GHOST's builtin compatibility check can cause problems together with PHIST. Please consider building GHOST with GHOST_COMPATIBLE_CHECK disabled"
-#endif
-
 namespace phist 
 {
 

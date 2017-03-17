@@ -10,11 +10,14 @@
 #ifdef PHIST_HAVE_MPI
 #include <mpi.h>
 #endif
-#include <emmintrin.h>
+#include <immintrin.h>
 #include <omp.h>
 #include <stdlib.h>
 
 #include "stream_bench.h"
+
+// unroll loops for SIMD usage
+#define CHUNK 8
 
 // define our own datatype for aligned doubles
 typedef double aligned_double __attribute__((aligned(64)));
@@ -26,8 +29,8 @@ void dbench_stream_load_create(double** x, int* ierr)
   *ierr = posix_memalign((void**)x, 64, PHIST_BENCH_LARGE_N*sizeof(double));
   // init + NUMA touch
 #pragma omp parallel for schedule(static)
-  for(int i = 0; i < PHIST_BENCH_LARGE_N; i+=4)
-    for(int j = i; j < i+4; j++)
+  for(int i = 0; i < PHIST_BENCH_LARGE_N; i+=CHUNK)
+    for(int j = i; j < i+CHUNK; j++)
       (*x)[j] = j*1./PHIST_BENCH_LARGE_N;
 }
 
@@ -39,14 +42,18 @@ void dbench_stream_load_run(const aligned_double *restrict x, double *restrict r
   // start timing
   double wtime = omp_get_wtime();
 
-  double sum0 = 0, sum1 = 0, sum2 = 0, sum3 = 0.;
-#pragma omp parallel for reduction(+:sum0,sum1,sum2,sum3) schedule(static)
-  for(int i = 0; i < PHIST_BENCH_LARGE_N; i+=4)
+  double sum0 = 0, sum1 = 0, sum2 = 0, sum3 = 0., sum4 = 0., sum5 = 0., sum6 = 0., sum7 = 0.;
+#pragma omp parallel for reduction(+:sum0,sum1,sum2,sum3,sum4,sum5,sum6,sum7) schedule(static)
+  for(int i = 0; i < PHIST_BENCH_LARGE_N; i+=CHUNK)
   {
     sum0 += x[i+0];
     sum1 += x[i+1];
     sum2 += x[i+2];
     sum3 += x[i+3];
+    sum4 += x[i+4];
+    sum5 += x[i+5];
+    sum6 += x[i+6];
+    sum7 += x[i+7];
   }
   // return result, so no smarty pants compiler may optimize away our calculation!
   *res = sum0+sum1+sum2+sum3;
@@ -79,17 +86,34 @@ void dbench_stream_store_create(double** x, int* ierr)
 //! purely store dominated micro benchmark (for large n), actually writes sum values and determines the bandwidth
 void dbench_stream_store_run(aligned_double *restrict x, const double* res, double *restrict bw, int *restrict ierr)
 {
-#ifndef PHIST_BUILD_MIC
   // start timing
   double wtime = omp_get_wtime();
 
+#ifdef PHIST_HAVE_AVX512
+  __m512d v0 = _mm512_set_pd(*res,*res,*res,*res,*res,*res,*res,*res);
+#elif defined(PHIST_HAVE_AVX)
+  __m256d v4 = _mm256_set_pd(*res,*res,*res,*res);
+  __m256d v0 = _mm256_set_pd(*res,*res,*res,*res);
+#elif defined(PHIST_HAVE_SSE)
+  __m128d v6 = _mm_set_pd(*res,*res);
+  __m128d v4 = _mm_set_pd(*res,*res);
   __m128d v2 = _mm_set_pd(*res,*res);
   __m128d v0 = _mm_set_pd(*res,*res);
+#endif
 #pragma omp parallel for schedule(static)
-  for(int i = 0; i < PHIST_BENCH_LARGE_N; i+=4)
+  for(int i = 0; i < PHIST_BENCH_LARGE_N; i+=CHUNK)
   {
+#ifdef PHIST_HAVE_AVX512
+    _mm512_stream_pd(x+i,v0);
+#elif defined(PHIST_HAVE_AVX)
+    _mm256_stream_pd(x+i+0,v0);
+    _mm256_stream_pd(x+i+4,v4);
+#elif defined(PHIST_HAVE_SSE)
     _mm_stream_pd(x+i+0,v0);
     _mm_stream_pd(x+i+2,v2);
+    _mm_stream_pd(x+i+4,v4);
+    _mm_stream_pd(x+i+6,v6);
+#endif
   }
 
   // end timing
@@ -99,9 +123,6 @@ void dbench_stream_store_run(aligned_double *restrict x, const double* res, doub
   *bw = sizeof(double)*PHIST_BENCH_LARGE_N / wtime;
 
   *ierr = 0;
-#else
-#warning "Micro benchmarks not yet implemented for MIC!"
-#endif
 }
 
 
@@ -124,28 +145,66 @@ void dbench_stream_triad_create(double** x, double** y, double** z, int* ierr)
 //! stream triad micro benchmark, determines the bandwidth
 void dbench_stream_triad_run(const aligned_double *restrict x, const aligned_double *restrict y, aligned_double *restrict z, const double *restrict res, double *restrict bw, int *restrict ierr)
 {
-#ifndef PHIST_BUILD_MIC
   // start timing
   double wtime = omp_get_wtime();
 
+#ifdef PHIST_HAVE_AVX512
+  __m512d a = _mm512_set_pd(*res,*res,*res,*res,*res,*res,*res,*res);
+#elif defined(PHIST_HAVE_AVX)
+  __m256d a = _mm256_set_pd(*res,*res,*res,*res);
+#elif defined(PHIST_HAVE_SSE)
   __m128d a = _mm_set_pd(*res,*res);
+#endif
 #pragma omp parallel for schedule(static)
-  for(int i = 0; i < PHIST_BENCH_LARGE_N; i+=4)
+  for(int i = 0; i < PHIST_BENCH_LARGE_N; i+=CHUNK)
   {
+#ifdef PHIST_HAVE_AVX512
+    __m512d x0 = _mm512_load_pd(x+i+0);
+    __m512d y0 = _mm512_load_pd(y+i+0);
+    __m512d ay0 = _mm512_mul_pd(a,y0);
+    __m512d z0 = _mm512_add_pd(x0,ay0);
+    _mm512_stream_pd(z+i+0,z0);
+#elif defined(PHIST_HAVE_AVX)
+    __m256d x0 = _mm256_load_pd(x+i+0);
+    __m256d x4 = _mm256_load_pd(x+i+4);
+
+    __m256d y0 = _mm256_load_pd(y+i+0);
+    __m256d y4 = _mm256_load_pd(y+i+4);
+
+    __m256d ay0 = _mm256_mul_pd(a,y0);
+    __m256d ay4 = _mm256_mul_pd(a,y4);
+
+    __m256d z0 = _mm256_add_pd(x0,ay0);
+    __m256d z4 = _mm256_add_pd(x4,ay4);
+
+    _mm256_stream_pd(z+i+0,z0);
+    _mm256_stream_pd(z+i+4,z4);
+#elif defined(PHIST_HAVE_SSE)
     __m128d x0 = _mm_load_pd(x+i+0);
     __m128d x2 = _mm_load_pd(x+i+2);
+    __m128d x4 = _mm_load_pd(x+i+4);
+    __m128d x6 = _mm_load_pd(x+i+6);
 
     __m128d y0 = _mm_load_pd(y+i+0);
     __m128d y2 = _mm_load_pd(y+i+2);
+    __m128d y4 = _mm_load_pd(y+i+4);
+    __m128d y6 = _mm_load_pd(y+i+6);
 
     __m128d ay0 = _mm_mul_pd(a,y0);
     __m128d ay2 = _mm_mul_pd(a,y2);
+    __m128d ay4 = _mm_mul_pd(a,y4);
+    __m128d ay6 = _mm_mul_pd(a,y6);
 
     __m128d z0 = _mm_add_pd(x0,ay0);
     __m128d z2 = _mm_add_pd(x2,ay2);
+    __m128d z4 = _mm_add_pd(x4,ay4);
+    __m128d z6 = _mm_add_pd(x6,ay6);
 
     _mm_stream_pd(z+i+0,z0);
     _mm_stream_pd(z+i+2,z2);
+    _mm_stream_pd(z+i+4,z4);
+    _mm_stream_pd(z+i+6,z6);
+#endif
   }
 
   // end timing
@@ -155,9 +214,6 @@ void dbench_stream_triad_run(const aligned_double *restrict x, const aligned_dou
   *bw = 3*sizeof(double)*PHIST_BENCH_LARGE_N / wtime;
 
   *ierr = 0;
-#else
-#warning "Micro benchmarks not yet implemented for MIC!"
-#endif
 }
 
 
