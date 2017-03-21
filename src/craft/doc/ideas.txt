@@ -1,0 +1,48 @@
+1. use a single map<string, CpDataBase>
+=======================================
+
+
+- virtual base class CpDataBase with e.g.
+
+virtual int write() = 0;
+
+- derive CpArray<T>, CpPod<T> etc. from CpDataBase
+
+=> user can add own data type by implementing CpDataBase
+
+2. get rid of ADD_XYZ funcitions
+
+class CP
+{
+
+  template<typename T> 
+  int add(const std::string& label, T* data)
+  {
+    CpDataBase* cpData = std::dynamic_cast<CpDataBase*>(data);
+    if (cpData!=NULL)
+    {
+      my_map.insert(label,cpData);
+    }
+    else
+    {
+      // by default, return an error because there is no 
+      // function implemented for this data type
+      return -1;
+    }
+    return 0;
+  }
+
+  template<typename T>
+  int add(const std::string& label, T* data, int count);
+
+  template<typename T>
+  int add(const std::string& label, T** data, int n1, int n2);
+
+};
+
+template<>
+  int add(const std::string& label, int i)
+  {
+    my_map.insert(label,new CpPod<int>(i));
+    return 0;
+  }
