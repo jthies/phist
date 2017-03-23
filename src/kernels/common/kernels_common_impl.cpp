@@ -7,6 +7,9 @@
 
 #include <sys/types.h>
 #include <unistd.h>
+#ifdef PHIST_HAVE_LIKWID
+#include <likwid.h>
+#endif
 
 //! this function should not be called by the user but by each kernel lib in kernels_init()
 extern "C" void phist_kernels_common_init(int *argc, char*** argv, int* iflag)

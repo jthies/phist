@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.5.0)
+cmake_minimum_required(VERSION 3.3.0)
 
 # some guidelines for extending/modifying the PHIST CMakeLists.txt file. 
 # Things may not be handled this way everywhere yet, but you should keep these
@@ -43,6 +43,7 @@ endif()
 
 option(PHIST_ENABLE_MPI "Enable MPI within PHIST" ON)
 option(PHIST_ENABLE_OPENMP "Enable OpenMP within PHIST" ON)
+option(PHIST_USE_LIKWID "Enable instrumentation for likwid-perfctr" OFF)
 option(PHIST_BUILD_MIC "Build for Intel MIC" OFF)
 
 option(PHIST_HAVE_SSE  "enable SSE SIMD intrinsics in PHIST code" ON)
@@ -346,9 +347,9 @@ elseif (CMAKE_C_COMPILER_ID STREQUAL "Intel")
   endif()
 
   if (PHIST_BUILD_MIC)
-      set (CMAKE_C_FLAGS_RELEASE        "-O3 -no-prec-div -mmic")
-      set (CMAKE_CXX_FLAGS_RELEASE      "-O3 -no-prec-div -mmic")
-      set (CMAKE_Fortran_FLAGS_RELEASE  "-O3 -no-prec-div -mmic")
+      set (CMAKE_C_FLAGS_RELEASE        "-O3 -no-prec-div -xmic-avx512")
+      set (CMAKE_CXX_FLAGS_RELEASE      "-O3 -no-prec-div -xmic-avx512")
+      set (CMAKE_Fortran_FLAGS_RELEASE  "-O3 -no-prec-div -xmic-avx512")
   else()
       set (CMAKE_C_FLAGS_RELEASE        "-O3 -no-prec-div -xHOST")
       set (CMAKE_CXX_FLAGS_RELEASE      "-O3 -no-prec-div -xHOST")
@@ -365,9 +366,9 @@ elseif (CMAKE_C_COMPILER_ID STREQUAL "Intel")
   set (CMAKE_CXX_FLAGS_DEBUG      "-fstack-protector -w2 -debug -traceback")
   set (CMAKE_Fortran_FLAGS_DEBUG  "-check all -check noarg_temp_created -debug -traceback")
   if (PHIST_BUILD_MIC)
-      set (CMAKE_C_FLAGS_DEBUG        "-mmic -check-pointers=rw -check=uninit,stack -fstack-protector -w2 -debug -traceback")
-      set (CMAKE_CXX_FLAGS_DEBUG      "-mmic -check-pointers=rw -check=uninit,stack -fstack-protector -w2 -debug -traceback")
-      set (CMAKE_Fortran_FLAGS_DEBUG  "-mmic -check all -debug -traceback")
+      set (CMAKE_C_FLAGS_DEBUG        "-xmic-avx512 -check-pointers=rw -check=uninit,stack -fstack-protector -w2 -debug -traceback")
+      set (CMAKE_CXX_FLAGS_DEBUG      "-xmic-avx512 -check-pointers=rw -check=uninit,stack -fstack-protector -w2 -debug -traceback")
+      set (CMAKE_Fortran_FLAGS_DEBUG  "-xmic-avx512 -check all -debug -traceback")
   endif()
   # this is for some reason required with Intel 15 on Emmy:
   set (CMAKE_EXE_LINKER_FLAGS_DEBUG "-lifcore -lifport")
@@ -937,20 +938,23 @@ if(PHIST_KERNEL_LIB STREQUAL "builtin")
   endif()
 endif()
 
-find_package(Likwid PATHS "$ENV{LIKWID_HOME}" "${CMAKE_CURRENT_SOURCE_DIR}/cmake/" Optional)
-if (${LIKWID_Found})
-  set(PHIST_HAVE_LIKWID 1)
-  include_directories(${LIKWID_INCLUDE_DIRS})
-  target_link_libraries(phist_tools ${LIKWID_LIBRARIES})
-  option(LIKWID_PERFMON "Activate function-level Likwid performance monitoring (to be used with likwid-perfctr -m)" Off)
-  if (${LIKWID_PERFMON})
-    message(STATUS "activated function-level Likwid performance monitoring")
-  else()
-    message(STATUS "disabled function-level Likwid performance monitoring")
-  endif ()
-else()
-  message(STATUS "continuing without Likwid, you can set the environment variable LIKWID_HOME to help CMake find it")
+if (PHIST_USE_LIKWID)
+        set(LIKWID_INCLUDE_DIR "" CACHE PATH "Location of likwid.h")
+        include_directories(${LIKWID_INCLUDE_DIR})
+        get_filename_component(LIKWID_LIBDIR ${LIKWID_INCLUDE_DIR}/../lib REALPATH)
+        find_library(LIKWID_LIBRARIES likwid ${LIKWID_LIBDIR})
+
+        option(LIKWID_PERFMON "Activate function-level Likwid performance monitoring (to be used with likwid-perfctr -m)" ON)
+        if (${LIKWID_PERFMON})
+          message(STATUS "activated function-level Likwid performance monitoring")
+        else()
+          message(STATUS "disabled function-level Likwid performance monitoring")
+        endif ()
+        set(PHIST_HAVE_LIKWID 1)
+      target_link_libraries(phist_tools ${LIKWID_LIBRARIES})
+
 endif()
+
 
 ###########################################################################################
 # check for required Trilinos libraries, note that you have to add the Trilinos lib/cmake #
