@@ -258,13 +258,13 @@ extern "C" void phist_kernels_init(int* argc, char*** argv, int* iflag)
   ghost_machine_npu(&npu,GHOST_NUMANODE_ANY);
 
   ghost_pumap_string(&str);
-  PHIST_ORDERED_OUT(PHIST_VERBOSE,MPI_COMM_WORLD,"%s\n",str);
+  PHIST_ORDERED_OUT(PHIST_INFO,MPI_COMM_WORLD,"%s\n",str);
   free(str); str = NULL;
 
 #if defined(PHIST_HAVE_KOKKOS)&&defined(PHIST_HAVE_BELOS)
    PHIST_SOUT(PHIST_INFO,"TSQR using node-type %s\n",node_type::name().c_str());
 #else
-   PHIST_SOUT(PHIST_INFO,"TSQR not available\n");
+   PHIST_SOUT(PHIST_DEBUG,"TSQR not available\n");
 #endif
 
   // initialize ghost's task-queue (required for tasks!)
