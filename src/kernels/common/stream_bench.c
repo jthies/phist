@@ -42,22 +42,24 @@ void dbench_stream_load_run(const aligned_double *restrict x, double *restrict r
   // start timing
   double wtime = omp_get_wtime();
 
-  double sum0 = 0, sum1 = 0, sum2 = 0, sum3 = 0., sum4 = 0., sum5 = 0., sum6 = 0., sum7 = 0.;
-#pragma omp parallel for reduction(+:sum0,sum1,sum2,sum3,sum4,sum5,sum6,sum7) schedule(static)
+#pragma omp parallel 
+{
+  double sum[CHUNK]={0.0};
+#pragma omp for
   for(int i = 0; i < PHIST_BENCH_LARGE_N; i+=CHUNK)
   {
-    sum0 += x[i+0];
-    sum1 += x[i+1];
-    sum2 += x[i+2];
-    sum3 += x[i+3];
-    sum4 += x[i+4];
-    sum5 += x[i+5];
-    sum6 += x[i+6];
-    sum7 += x[i+7];
+#pragma omp simd
+    for (int j=0; j<CHUNK; j++)
+    {
+      sum[j] += x[i+j];
+    }
   }
-  // return result, so no smarty pants compiler may optimize away our calculation!
-  *res = sum0+sum1+sum2+sum3;
-
+#pragma omp critical
+  {
+    // return result, so no smarty pants compiler may optimize away our calculation!
+    *res = sum[0]+sum[1]+sum[2]+sum[3]+sum[4]+sum[5]+sum[6]+sum[7];
+  }
+}
   // end timing
   wtime = omp_get_wtime() - wtime;
 
