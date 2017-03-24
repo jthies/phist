@@ -1,0 +1,37 @@
+======================
+needRestart() function
+======================
+This function checks if it is the 1st-run or a restarted run. It is especially useful in case of nested checkpoints, where the inner-level checkpoints need not to read every time.
+ 
+  Related: CRAFT_NO_RESTART 
+
+
+
+
+
+=======================
+  CRAFT ENV. PARAMETERS 
+=======================
+
+        VARIABLE          DEFAULT         DISCRIPTION 
+
+CRAFT_READ_CP_ON_RESTART    1             Set 0 to disable. Thus, CP will not be read. (needRestart will return false and read() will return immediately too.) by default it is enabled. 
+
+CRAFT_ENABLE                1             Set 0 to disable. No checkpoints will be taken.
+
+CRAFT_USE_SCR               1(true)       Set 0(false) to disable. If CRAFT is build with SCR, this flag can be used to disbale its usage in the application. Thus checkponts will be created on PFS.
+
+CRAFT_CP_PATH               "./"          Path to checkpoint in case of PFS-level checkpoints. 
+
+CRAFT_COMM_RECOVERY_POLICY  NON-SHRINKING  SHRINKING, NON-SHRINKING: NON-SHRINKING option will recover the communicator of the same size as before failure by spawning extra processes.
+
+CRAFT_COMM_SPAWN_POLICY     NO-REUSE     REUSE, NO-REUSE, DYNAMIC, SPECIFICNODE, In case of NON-SHRINKING recovery, where to spawn the new processes. Kill all procs and REUSE it, NO-REUSE, or DYNAMIC. NO-REUSE Will spawn on. DYNAMIC should redistribute the processes evenly on all available resources. SPECIFICNODE: a specific node could be assigned where to spawn procs.
+
+CRAFT_ALL_PROC_ON_FAULTY_NODE 0         Set 1 to enable, this will kill all processes on fault node. (one proc dies) and will not use that node in future calculations.
+
+
+
+
+
+
+

@@ -7,21 +7,25 @@
 
 #include <sys/types.h>
 #include <unistd.h>
+#ifdef PHIST_HAVE_LIKWID
+#include <likwid.h>
+#endif
 
 //! this function should not be called by the user but by each kernel lib in kernels_init()
 extern "C" void phist_kernels_common_init(int *argc, char*** argv, int* iflag)
 {
+  *iflag=0;
   phist_random_init();
 #ifdef PHIST_HAVE_LIKWID
-GHOST_TASK_DECLARE(likwidInitTask)
-GHOST_TASK_BEGIN(likwidInitTask)
+PHIST_TASK_DECLARE(likwidInitTask)
+PHIST_TASK_BEGIN(likwidInitTask)
   LIKWID_MARKER_INIT;
 #pragma omp parallel
   {
     LIKWID_MARKER_THREADINIT;
     LIKWID_MARKER_START("phist");
   }
-GHOST_TASK_END(likwidInitTask)
+PHIST_TASK_END(iflag)
 #endif
   // at this point, check for the environment variable PHIST_RUN_DEBUGGER and if it is set,
   // go into an infinite loop that can only be broken after attaching a debugger
@@ -52,14 +56,14 @@ extern "C" void phist_kernels_common_finalize(int *iflag)
 {
   *iflag=0;
 #ifdef PHIST_HAVE_LIKWID
-GHOST_TASK_DECLARE(LikwidFinalizeTask)
-GHOST_TASK_BEGIN(LikwidFinalizeTask)
+PHIST_TASK_DECLARE(LikwidFinalizeTask)
+PHIST_TASK_BEGIN(LikwidFinalizeTask)
 #pragma omp parallel
   {
     LIKWID_MARKER_STOP("phist");
   }
   LIKWID_MARKER_CLOSE;
-GHOST_TASK_END(LikwidFinalizeTask)
+PHIST_TASK_END(iflag)
 #endif
 #if defined(PHIST_TIMEMONITOR) || defined(PHIST_TIMEMONITOR_PERLINE)
 PHIST_CXX_TIMER_SUMMARIZE;

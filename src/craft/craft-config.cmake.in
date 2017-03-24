@@ -1,0 +1,43 @@
+set(CRAFT_INCLUDE_PATH @CMAKE_INSTALL_PREFIX@/include) 
+set(CRAFT_INCLUDE_PATH ${CRAFT_INCLUDE_PATH} @CMAKE_INSTALL_PREFIX@/include/cpTypes)
+
+set(CRAFT_LIBRARIES @CMAKE_INSTALL_PREFIX@/lib/libcraft.so)
+set(CRAFT_LIBDIR "${CMAKE_CURRENT_LIST_DIR}")
+
+##### PASSING OPTION-VALUES AS FLAGS #####
+
+if(@GHOST_CP@ STREQUAL "ON")
+  set(CRAFT_INCLUDE_PATH ${CRAFT_INCLUDE_PATH} @CMAKE_INSTALL_PREFIX@/include/cpTypes/cpGhost/)
+  set(CRAFT_FLAGS "${CRAFT_FLAGS} -DGHOST_CP")
+  set(GHOST_DIR @GHOST_LIBRARIES@)
+endif()
+
+if(@PHIST_CP@ STREQUAL "ON")
+				set(CRAFT_FLAGS "${CRAFT_FLAGS} -DPHIST_CP")
+endif()
+
+if(@SCR@ STREQUAL "ON")
+				set(CRAFT_FLAGS "${CRAFT_FLAGS} -DSCR")
+				set (SCR_INCLUDE_PATH @SCR_INCLUDE_PATH@)
+				include_directories("${SCR_INCLUDE_PATH}")
+				set (SCR_LIBRARY_PATH @SCR_LIBRARY_PATH@)
+				link_directories ("${SCR_LIBRARY_PATH}")
+				set (SCR_LIBRARIES "${SCR_LIBRARY_PATH}/libscr.so")
+				link_libraries (${SCR_LIBRARIES})
+				message (STATUS "SCR_LIBRARIES: ${SCR_LIBRARIES}")
+endif()
+
+if(@AFT@ STREQUAL "ON")
+				set(CRAFT_FLAGS "${CRAFT_FLAGS} -DAFT")
+endif()
+
+
+if(@MPIIO@ STREQUAL "ON")
+				set(CRAFT_FLAGS "${CRAFT_FLAGS} -DMPIIO")
+endif()
+
+if(@MKL_CP@ STREQUAL "ON")
+				set(CRAFT_FLAGS "${CRAFT_FLAGS} -DMKL_CP")
+endif()
+
+

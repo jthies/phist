@@ -1366,7 +1366,7 @@ TEST_F(CLASSNAME,fromRowFuncAndContext)
 
 #ifdef PHIST_KERNEL_LIB_GHOST
 
-TEST_F(CLASSNAME, different_ghost_spmv_modes )
+TEST_F(CLASSNAME, ghost_spmv_mode_overlap )
 {
     // set up input vector
     int v_arg[2];
@@ -1394,6 +1394,27 @@ TEST_F(CLASSNAME, different_ghost_spmv_modes )
     ASSERT_EQ(0, iflag_);
 
     ASSERT_NEAR(mt::one(), MvecsEqual(vec2_,vec3_,mt::one()),std::sqrt(mt::eps()));
+}
+
+TEST_F(CLASSNAME, ghost_spmv_mode_task )
+{
+    // set up input vector
+    int v_arg[2];
+    v_arg[0]=_N_;
+    v_arg[1]=_M_;
+        
+    SUBR(mvec_put_func)(vec1_,&PHIST_TG_PREFIX(mvec123func),v_arg,&iflag_);
+    ASSERT_EQ(0,iflag_);
+
+    ST alpha=st::prand(), beta=st::prand();
+
+    SUBR(mvec_put_func)(vec2_,&PHIST_TG_PREFIX(mvec321func),v_arg,&iflag_);
+    ASSERT_EQ(0,iflag_);
+
+    // use vector mode as reference solution
+    iflag_=PHIST_SPMVM_VECTOR;
+    SUBR(sparseMat_times_mvec)(alpha, A_, vec1_, beta, vec2_, &iflag_);
+    ASSERT_EQ(0, iflag_);
 
     SUBR(mvec_put_func)(vec3_,&PHIST_TG_PREFIX(mvec321func),v_arg,&iflag_);
     ASSERT_EQ(0,iflag_);
