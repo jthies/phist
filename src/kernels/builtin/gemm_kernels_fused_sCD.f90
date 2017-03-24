@@ -1,3 +1,11 @@
+/*******************************************************************************************/
+/* This file is part of the PHIST software available at https://bitbucket.org/essex/phist/ */
+/* You may redistribute it and/or modify it under the terms of the BSD-style licence       */
+/* included in this software.                                                              */
+/*                                                                                         */
+/* Contact: Jonas Thies (Jonas.Thies@DLR.de)                                               */
+/*                                                                                         */
+/*******************************************************************************************/
 !> \file gemm_fused_kernels_sCD.f90
 !! Fast parallel fused BLAS-gemm subroutines for different blocksizes for mvecT_times_mvec_times_sdMat_inplace in mvec_module
 !! \author "Melven Roehrig-Zoellner <Melven.Roehrig-Zoellner@DLR.de>

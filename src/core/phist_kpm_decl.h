@@ -1,3 +1,11 @@
+/*******************************************************************************************/
+/* This file is part of the PHIST software available at https://bitbucket.org/essex/phist/ */
+/* You may redistribute it and/or modify it under the terms of the BSD-style licence       */
+/* included in this software.                                                              */
+/*                                                                                         */
+/* Contact: Jonas Thies (Jonas.Thies@DLR.de)                                               */
+/*                                                                                         */
+/*******************************************************************************************/
 // KPM algorithm (Weiße, Wellein, Alvermann & Fehske, Rev. Mod. Phys. 78 (1), 275-306).
 // The arguments scale and shift have to map the spectrum of A into [-1,1]. 
 // M is the number of iterations.

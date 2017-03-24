@@ -1,3 +1,11 @@
+/*******************************************************************************************/
+/* This file is part of the PHIST software available at https://bitbucket.org/essex/phist/ */
+/* You may redistribute it and/or modify it under the terms of the BSD-style licence       */
+/* included in this software.                                                              */
+/*                                                                                         */
+/* Contact: Jonas Thies (Jonas.Thies@DLR.de)                                               */
+/*                                                                                         */
+/*******************************************************************************************/
 !> \file spmv_buff_cpy_kernels.f90
 !! Fast parallel subroutines for different block sizes that copy data from a mvec to an MPI communication
 !! buffer for crsMat_module

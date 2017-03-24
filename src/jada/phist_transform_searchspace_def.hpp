@@ -1,3 +1,11 @@
+/*******************************************************************************************/
+/* This file is part of the PHIST software available at https://bitbucket.org/essex/phist/ */
+/* You may redistribute it and/or modify it under the terms of the BSD-style licence       */
+/* included in this software.                                                              */
+/*                                                                                         */
+/* Contact: Jonas Thies (Jonas.Thies@DLR.de)                                               */
+/*                                                                                         */
+/*******************************************************************************************/
 //! apply a transformation matrix M to a given search space V and AV, BV and the projection H=V'AV
 extern "C" void SUBR(transform_searchSpace)(TYPE(mvec_ptr) V, TYPE(mvec_ptr) AV, TYPE(mvec_ptr) BV, TYPE(sdMat_ptr) H, 
         TYPE(sdMat_ptr) M, int transformBV, int *iflag)

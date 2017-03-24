@@ -1,3 +1,11 @@
+/*******************************************************************************************/
+/* This file is part of the PHIST software available at https://bitbucket.org/essex/phist/ */
+/* You may redistribute it and/or modify it under the terms of the BSD-style licence       */
+/* included in this software.                                                              */
+/*                                                                                         */
+/* Contact: Jonas Thies (Jonas.Thies@DLR.de)                                               */
+/*                                                                                         */
+/*******************************************************************************************/
 // calculates a possibly low rank approximation of a lower cholesky factor of an spd matrix
 // higher-precision + pivoting + stable low rank approximation
 extern "C" void SUBR(prec_cholesky)(_ST_ *__restrict__ a, _ST_ *__restrict__ aC, phist_lidx n, phist_lidx lda, phist_lidx *perm, int *rank, int* iflag)

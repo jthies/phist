@@ -1,3 +1,11 @@
+/*******************************************************************************************/
+/* This file is part of the PHIST software available at https://bitbucket.org/essex/phist/ */
+/* You may redistribute it and/or modify it under the terms of the BSD-style licence       */
+/* included in this software.                                                              */
+/*                                                                                         */
+/* Contact: Jonas Thies (Jonas.Thies@DLR.de)                                               */
+/*                                                                                         */
+/*******************************************************************************************/
 void SUBR(private_rebuild_carp_cgStates)(TYPE(feastCorrectionSolver_ptr) me, int bs, int* iflag)
 {
   PHIST_ENTER_FCN(__FUNCTION__);

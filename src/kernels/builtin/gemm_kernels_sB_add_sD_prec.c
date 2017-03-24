@@ -1,3 +1,11 @@
+/*******************************************************************************************/
+/* This file is part of the PHIST software available at https://bitbucket.org/essex/phist/ */
+/* You may redistribute it and/or modify it under the terms of the BSD-style licence       */
+/* included in this software.                                                              */
+/*                                                                                         */
+/* Contact: Jonas Thies (Jonas.Thies@DLR.de)                                               */
+/*                                                                                         */
+/*******************************************************************************************/
 ﻿/*! \file gemm_kernels_sB_add_sD_prec.c
  * Fast parallel BLAS-gemm like functions augmented with the product of the result with high precision for different blocksizes for mvec_module
  * \author "Melven Roehrig-Zoellner <Melven.Roehrig-Zoellner@DLR.de>

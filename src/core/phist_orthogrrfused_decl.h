@@ -1,3 +1,11 @@
+/*******************************************************************************************/
+/* This file is part of the PHIST software available at https://bitbucket.org/essex/phist/ */
+/* You may redistribute it and/or modify it under the terms of the BSD-style licence       */
+/* included in this software.                                                              */
+/*                                                                                         */
+/* Contact: Jonas Thies (Jonas.Thies@DLR.de)                                               */
+/*                                                                                         */
+/*******************************************************************************************/
 //! internal implementation of the orthog function, the regular SUBR(orthog) should be used instead in actual algorithms.
 
 //! Does not randomize the null space (if any). Note that the arguments are renamed and reordered, this should 

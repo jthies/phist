@@ -1,3 +1,11 @@
+/*******************************************************************************************/
+/* This file is part of the PHIST software available at https://bitbucket.org/essex/phist/ */
+/* You may redistribute it and/or modify it under the terms of the BSD-style licence       */
+/* included in this software.                                                              */
+/*                                                                                         */
+/* Contact: Jonas Thies (Jonas.Thies@DLR.de)                                               */
+/*                                                                                         */
+/*******************************************************************************************/
 /* \file spmvm_kernels_nt.c
  * Fast parallel spMVM kernels with nontemporal stores for different block vector sizes for crsMat_module
  * \author "Melven Roehrig-Zoellner <Melven.Roehrig-Zoellner@DLR.de>

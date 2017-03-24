@@ -1,3 +1,11 @@
+/*******************************************************************************************/
+/* This file is part of the PHIST software available at https://bitbucket.org/essex/phist/ */
+/* You may redistribute it and/or modify it under the terms of the BSD-style licence       */
+/* included in this software.                                                              */
+/*                                                                                         */
+/* Contact: Jonas Thies (Jonas.Thies@DLR.de)                                               */
+/*                                                                                         */
+/*******************************************************************************************/
 //! a simple Lanczos process to compute the largest and smallest eigenvalue 
 //! of a linear operator. This code is mainly intended as a testbed 
 //! for fault tolerance (FT) capabilities in PHIST right now. Only block size 1 
