@@ -48,7 +48,7 @@ PHIST_CHK_IERR(A_op->apply(st::one(),A_op->A, vold,minusbeta,vnew,iflag),*iflag)
 //! *numIter, number of iterations performed
 //!
 void SUBR(simple_lanczos_ft)(TYPE(const_linearOp_ptr) A_op,
-        _MT_ *evmin, _MT_ *evmax, int *numIter, Cp_Options *cpOpt, int* iflag )
+        _MT_ *evmin, _MT_ *evmax, int *numIter, CpOptions *cpOpt, int* iflag )
 {
 	
 	printf("==== SUBR(simple_lanczos_ft) ===== \n");
@@ -81,12 +81,12 @@ void SUBR(simple_lanczos_ft)(TYPE(const_linearOp_ptr) A_op,
 	int i = 0;
 // ===== CHECKPOINT DEFINITION ==== // 
 
-	Checkpoint  myCP("CP-L1", cpOpt->getCpPath(), MPI_COMM_WORLD);
+	Checkpoint  myCP("CP-L1", MPI_COMM_WORLD);
 	myCP.add("i", &i);	
 	myCP.add("alpha", &alpha);	
 	myCP.add("beta", &beta);	
-	myCP.add("alphas", alphas, maxIter);
-	myCP.add("betas", betas, maxIter);
+//	myCP.add("alphas", (_MT_ *) alphas, maxIter);
+//	myCP.add("betas", (_MT_ *) betas, maxIter);
 	myCP.add("vold", vold);
 	myCP.add("vnew", vnew);
 	myCP.commit();
@@ -95,7 +95,7 @@ void SUBR(simple_lanczos_ft)(TYPE(const_linearOp_ptr) A_op,
 	PHIST_TASK_DECLARE(ComputeTask)
 	PHIST_TASK_BEGIN(ComputeTask)
 	
-	if(cpOpt->getRestartStatus() == true) {
+	if(myCP.needRestart() == true) {
 		printf("===== Program is restarted =====\n");	
 		myCP.read();
 		i += 1;
@@ -148,7 +148,6 @@ void SUBR(simple_lanczos_ft)(TYPE(const_linearOp_ptr) A_op,
           
         *numIter=i;
         if (SUBR(converged)(*evmin)) break;
-
 		if( i % cpOpt->getCpFreq() == 0){ 
 			myCP.update();
 			myCP.write();
