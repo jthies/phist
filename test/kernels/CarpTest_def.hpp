@@ -753,7 +753,7 @@ TEST_F(CLASSNAME, x_mvec_add_mvec)
   ASSERT_EQ(0,iflag_);
     
   ASSERT_NEAR(1.0,MvecsEqualZD(z_vec1_, x_vec1_->v_, x_vec1_->vi_),mt::eps());
-  ASSERT_NEAR(1.0,MvecsEqualZD(z_vec2_, x_vec2_->v_, x_vec2_->vi_),1000*VTest::releps());
+  ASSERT_NEAR(1.0,MvecsEqualZD(z_vec2_, x_vec2_->v_, x_vec2_->vi_),1500*VTest::releps());
   
 }
 
