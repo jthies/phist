@@ -6,7 +6,7 @@
 /* Contact: Jonas Thies (Jonas.Thies@DLR.de)                                               */
 /*                                                                                         */
 /*******************************************************************************************/
-﻿/*! \file gemm_kernels_sB_add_sD_prec.c
+/*! \file gemm_kernels_sB_add_sD_prec.c
  * Fast parallel BLAS-gemm like functions augmented with the product of the result with high precision for different blocksizes for mvec_module
  * \author "Melven Roehrig-Zoellner <Melven.Roehrig-Zoellner@DLR.de>
  *
