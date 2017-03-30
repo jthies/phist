@@ -1,3 +1,11 @@
+/*******************************************************************************************/
+/* This file is part of the PHIST software available at https://bitbucket.org/essex/phist/ */
+/* You may redistribute it and/or modify it under the terms of the BSD-style licence       */
+/* included in this software.                                                              */
+/*                                                                                         */
+/* Contact: Jonas Thies (Jonas.Thies@DLR.de)                                               */
+/*                                                                                         */
+/*******************************************************************************************/
  //                                                                                             
  // this function does an in-place Schur decomposition of T(1:m,1:m) into T and S.              
  // The Ritz values appear on the diagonal of T (for the real case there may be 2x2 blocks      

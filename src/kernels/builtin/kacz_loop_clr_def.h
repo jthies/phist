@@ -1,3 +1,11 @@
+/*******************************************************************************************/
+/* This file is part of the PHIST software available at https://bitbucket.org/essex/phist/ */
+/* You may redistribute it and/or modify it under the terms of the BSD-style licence       */
+/* included in this software.                                                              */
+/*                                                                                         */
+/* Contact: Jonas Thies (Jonas.Thies@DLR.de)                                               */
+/*                                                                                         */
+/*******************************************************************************************/
 ! this file is included with NVEC #defined to certain common values
 ! like 1, 2, 4, 8 etc. in kacz_kernels.f90. To get a geral-purpose loop,
 ! it can be #included without NVEC #defined, in which case a local variable

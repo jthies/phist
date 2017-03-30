@@ -1,3 +1,11 @@
+/*******************************************************************************************/
+/* This file is part of the PHIST software available at https://bitbucket.org/essex/phist/ */
+/* You may redistribute it and/or modify it under the terms of the BSD-style licence       */
+/* included in this software.                                                              */
+/*                                                                                         */
+/* Contact: Jonas Thies (Jonas.Thies@DLR.de)                                               */
+/*                                                                                         */
+/*******************************************************************************************/
 // this file was taken from Trilinos 11.2.3 (Tpetra_TsqrAdaptor.hpp) and modified slightly
 // to adapt to ghost vectors. The reason we could not simply specialize the single function
 // getnonConstView(...) is that Ghost vectors do not know their data type at runtime, so

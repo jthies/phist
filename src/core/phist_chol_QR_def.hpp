@@ -1,3 +1,11 @@
+/*******************************************************************************************/
+/* This file is part of the PHIST software available at https://bitbucket.org/essex/phist/ */
+/* You may redistribute it and/or modify it under the terms of the BSD-style licence       */
+/* included in this software.                                                              */
+/*                                                                                         */
+/* Contact: Jonas Thies (Jonas.Thies@DLR.de)                                               */
+/*                                                                                         */
+/*******************************************************************************************/
 // SVQB algorithm (Stathopoulos & Wu, SISC 23 (6),2165-2182)
 // with rank-revealing pivoted cholesky (SVRR)
 // If the input vector has m columns and rank r, iflag=m-r is
