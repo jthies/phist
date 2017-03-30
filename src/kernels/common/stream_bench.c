@@ -27,6 +27,9 @@
 // unroll loops for SIMD usage
 #define CHUNK 8
 
+// align arrays to page size on KNL (2MB)
+#define ALIGN 2097152
+
 // define our own datatype for aligned doubles
 typedef double aligned_double __attribute__((aligned(64)));
 
@@ -34,7 +37,7 @@ typedef double aligned_double __attribute__((aligned(64)));
 //! allocate memory for bench_stream_load_run
 void dbench_stream_load_create(double** x, int* ierr)
 {
-  *ierr = posix_memalign((void**)x, 64, PHIST_BENCH_LARGE_N*sizeof(double));
+  *ierr = posix_memalign((void**)x, ALIGN, PHIST_BENCH_LARGE_N*sizeof(double));
   // init + NUMA touch
 #pragma omp parallel for schedule(static)
   for(int i = 0; i < PHIST_BENCH_LARGE_N; i+=CHUNK)
