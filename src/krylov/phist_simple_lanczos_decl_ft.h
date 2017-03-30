@@ -22,7 +22,7 @@
 //! *numIter, number of iterations performed
 //!
 void SUBR(simple_lanczos_ft)(TYPE(const_linearOp_ptr) A_op,
-        _MT_* lambda_min, _MT_* lambda_max, int *numIter, Cp_Options * cpOpt, int* iflag);
+        _MT_* lambda_min, _MT_* lambda_max, int *numIter, CpOptions * cpOpt, int* iflag);
 
 
 

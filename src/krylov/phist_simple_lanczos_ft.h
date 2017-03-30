@@ -20,7 +20,7 @@
 #include "phist_operator.h"
 #include "phist_enums.h"
 
-#include "cp_options.h"
+#include "cpOptions.h"
 
 #endif //DOXYGEN
 

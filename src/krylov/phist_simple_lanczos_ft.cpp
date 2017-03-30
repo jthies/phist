@@ -23,9 +23,9 @@
 #define PHIST_CP
 #endif
 
-#include "Checkpoint.hpp"
-#include "cpTypes/cpPhistMvec/CpPhistMvec.h"
-#include "cp_options.h"
+#include "checkpoint.hpp"
+#include "cpTypes/cpPhistMvec/cpPhistMvec.h"
+#include "cpOptions.h"
 
 
 

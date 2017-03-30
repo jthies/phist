@@ -24,7 +24,7 @@
 
 #ifdef PHIST_CP
 #include "phist_simple_lanczos_ft.h"
-#include "cp_options.h"
+#include "cpOptions.h"
 #else 
 #include "phist_simple_lanczos.h"
 #endif
@@ -37,21 +37,15 @@
 // Computes the largest and smallest eigenvalue of a Hermitian matrix using the Lanczos
 // method. This driver is intended for testing fault tolarance concepts in PHIST.
 #ifdef PHIST_CP
-int read_params(int argc, char* argv[] , Cp_Options * myCpOpt){
+int read_params(int argc, char* argv[] , CpOptions * myCpOpt){
 	static char *prgname = "";
   prgname = argv[0];
 	char * tmp = new char[256];
 	std::string cpPathTemp ;
 	for (int i = 1; i < argc; ++i) {
-		if ((!strcmp(argv[i], "-cppath"))) {
-			sprintf(tmp, "%s" ,argv[++i]);
-			myCpOpt->setCpPath(tmp);
-			cpPathTemp = myCpOpt->getCpPath();
-			std::cout << "cpPath: " << cpPathTemp << std::endl;
-		}
 		if ((!strcmp(argv[i], "-restart"))) {
 			bool restart = true;
-			myCpOpt->setRestartStatus( restart );
+//			myCpOpt->setRestartStatus( restart );
 			std::cout << "Restart " << restart << std::endl;
 		}
 		if ((!strcmp(argv[i], "-niter"))) {
@@ -103,18 +97,16 @@ int main(int argc, char** argv)
   PHIST_ICHK_IERR(SUBR(linearOp_wrap_sparseMat)(&A_op,A,&iflag),iflag);
 
 #ifdef PHIST_CP
-	Cp_Options * cpOpt=new Cp_Options[1]; 
+	CpOptions * cpOpt=new CpOptions[1]; 
 	read_params(argc, argv ,cpOpt);
 	
-	printf("CPPATH : %s\n", cpOpt->getCpPath()); 
-	if (argc<3)
+	if (argc<2)
   {
- 		printf ( "Usage: %s <matrix> <CP-PATH> -restart(InCaseOfRestart)\n", argv[0]); 
+ 		printf ( "Usage: %s <matrix>\n", argv[0]); 
     return 1;
   }
 
 	cpOpt->setCpFreq(cpOpt->getCpFreq());
-	cpOpt->setCpPath(cpOpt->getCpPath());
 #endif
  
   // call Lanczos iteration routine
