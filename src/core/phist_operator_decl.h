@@ -66,6 +66,15 @@ void SUBR(linearOp_wrap_sparseMat_pair)(TYPE(linearOp_ptr) op,
                                         TYPE(const_sparseMat_ptr) A, TYPE(const_sparseMat_ptr) B, 
                                         int* iflag);
 
+#if defined(__cplusplus)&&defined(PHIST_KERNEL_LIB_EPETRA)&&defined(IS_DOUBLE)&&!defined(IS_COMPLEX)
+// forward declaration
+class Epetra_Operator;
+
+//! this function can be used to create an operator which encapsulates an Epetra_Operator.
+//! It does not allocate memory for the op struct, the caller has to do that beforehand.
+void SUBR(linearOp_wrap_epetra)(TYPE(linearOp_ptr) op, Epetra_Operator const* A, int* iflag);
+#endif
+
 //! create the identity operator that returns Y=alpha*X+beta*Y
 void SUBR(linearOp_identity)(TYPE(linearOp_ptr) op, 
                              phist_const_map_ptr  range_map,
