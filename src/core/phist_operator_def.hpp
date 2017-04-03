@@ -207,3 +207,4 @@ void SUBR(linearOp_identity)(TYPE(linearOp_ptr) op,
   }
 
 } // extern "C"
+
