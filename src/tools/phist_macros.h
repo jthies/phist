@@ -215,7 +215,9 @@ PHIST_OUT(PHIST_WARNING,"Warning, function %s is DEPRECATED.\n(file %s, line %d)
 # ifdef SCOREP_USER_ENABLE
 #   include <scorep/SCOREP_User.h>
 # else
+#  ifndef SCOREP_USER_REGION
 #   define SCOREP_USER_REGION(a, b)
+#  endif
 # endif
 # ifdef PHIST_TIMEMONITOR
 #   include "phist_timemonitor.hpp"
