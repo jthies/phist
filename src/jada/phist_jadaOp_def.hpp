@@ -114,6 +114,81 @@ void SUBR(jadaOp_apply_project_none)(_ST_ alpha, const void* op, TYPE(const_mvec
   }
 }
 
+// applies the jada-operator as in apply_project_pre_post but skips the final projection
+//
+// for B==NULL:  Y <- alpha*(AX_ +  X_*sigma) + beta*Y
+//               with X_=(I-VV')X
+//
+// for B!=NULL:  Y <- alpha*(AX_ + BX_*sigma) + beta*Y
+//               with X_=(I-V(VB)')X
+//
+void SUBR(jadaOp_apply_project_pre)(_ST_ alpha, const void* op, TYPE(const_mvec_ptr) X,
+    _ST_ beta, TYPE(mvec_ptr) Y, int* iflag)
+{
+#include "phist_std_typedefs.hpp"
+  PHIST_ENTER_FCN(__FUNCTION__);
+  PHIST_CAST_PTR_FROM_VOID(const TYPE(jadaOp_data), jadaOp, op, *iflag);
+
+  if( alpha == st::zero() )
+  {
+    PHIST_CHK_IERR( SUBR( mvec_scale       ) (Y, beta, iflag), *iflag);
+  }
+  else
+  {
+
+    // pre-project X_proj <- (I-VV'B)X
+    TYPE(mvec_ptr) X_proj = jadaOp->X_proj;
+    int nvec, nvecp, nvec_tmp=0;
+    PHIST_CHK_IERR( SUBR( mvec_num_vectors ) (X,             &nvec,     iflag), *iflag);
+    if (jadaOp->X_proj)
+    {
+      PHIST_CHK_IERR( SUBR( mvec_num_vectors ) (jadaOp->X_proj, &nvec_tmp, iflag), *iflag);
+    }
+    PHIST_CHK_IERR( SUBR( mvec_num_vectors ) (jadaOp->V,     &nvecp,    iflag), *iflag);
+
+      phist_const_map_ptr map=NULL;
+      PHIST_CHK_IERR(SUBR(mvec_get_map)(X,&map,iflag),*iflag);
+    phist_const_comm_ptr comm=NULL;
+    PHIST_CHK_IERR(phist_map_get_comm(map, &comm, iflag), *iflag);
+    
+    if (nvec!=nvec_tmp || X_proj==NULL)
+    {
+      // can not use the temporary vector in the jadaOp
+      PHIST_CHK_IERR(SUBR(mvec_create)(&X_proj,map,nvec,iflag),*iflag);
+    }
+    
+    TYPE(sdMat_ptr) tmp;
+    PHIST_CHK_IERR( SUBR( sdMat_create ) (&tmp, nvecp, nvec, comm, iflag), *iflag);
+
+    // for now we have BV, but in the long run I think we should get rid of that extra vector block (cf. #
+
+    // using a fused kernel here would save some data traffic, but the corresponding kernel doesn't exist right now:
+    // X_proj = X - V*(BV'X)
+
+    // tmp <- (BV)'*X and X_proj = X
+{
+PHIST_ENTER_FCN("phist_jadaOp_mvecT_times_mvec_and_copy_x");
+    PHIST_CHK_IERR( SUBR( mvecT_times_mvec ) (st::one(),  jadaOp->BV,  X,   st::zero(), tmp, iflag), *iflag);
+    PHIST_CHK_IERR( SUBR( mvec_add_mvec ) (st::one(), X, st::zero(), X_proj, iflag), *iflag);
+}
+    // X_proj <- X - V*tmp
+{
+PHIST_ENTER_FCN("phist_jadaOp_mvec_times_sdMat");
+    PHIST_CHK_IERR( SUBR( mvec_times_sdMat ) (-st::one(), jadaOp->V, tmp, st::one(),  X_proj,   iflag), 
+    *iflag);
+}
+
+    // apply shifted A and post-project
+    PHIST_CHK_IERR(SUBR(jadaOp_apply_project_none)(alpha, op, X_proj,beta, Y, iflag), *iflag);
+    if (X_proj && X_proj != jadaOp->X_proj)
+    {
+      PHIST_CHK_IERR(SUBR(mvec_delete)(X_proj,iflag),*iflag);
+    }
+    PHIST_CHK_IERR(SUBR(sdMat_delete)(tmp,iflag),*iflag);
+  }
+}
+
+
 // applies the jada-operator with only post-projection:
 //
 // for B==NULL:  Y <- alpha* (I-VV') * (AX +  X*sigma) + beta*Y
@@ -331,8 +406,9 @@ extern "C" void SUBR(jadaOp_delete)(TYPE(linearOp_ptr) jdOp, int *iflag)
 
 // create a preconditioner for the inner solve in Jacobi-Davidson.
 //
-// Given a linear operator that is a preconditioner for A-sigma_j*B, this function will simply          
-// wrap it up to use apply_shifted when apply() is called. We need this because our implementations     
+// Given a linear operator that is a preconditioner for A-sigma_j*B, this function will
+// wrap it up to use apply_shifted and pre-/post-apply adequate (skew-) projections
+// when apply() is called. We need this because our implementations     
 // of blockedGMRES and MINRES are not aware of the shifts so they can only call apply in the precon-    
 // ditioning operator. Obviously not all preconditioners are able to handle varying shifts without      
 // recomputing, this is not taken into account by this function:in that case the input P_op must be     
@@ -423,8 +499,13 @@ extern "C" void SUBR(jadaOp_set_leftPrecond)(TYPE(linearOp_ptr) jdOp, TYPE(const
     }
   }
   else
-  { // not sure what to do with B!=NULL, do we need a symmetric operator?
+  { 
+    PHIST_CAST_PTR_FROM_VOID(const TYPE(jadaOp_data), jdPrec, jadaPrec->A, *iflag);
     if (jdDat->B_op!=NULL) PHIST_SOUT(PHIST_WARNING,"left preconditioning and B!=I is untested\n");
-    jdOp->apply=SUBR(jadaOp_apply_project_none);
+    // We pre- and postproject with (I-Z(Z'BQ)^{-1}BQ^T), Z=P\Q. The post-projection
+    // is handled by the preconditioner wrapper (see jadaPrec_create)
+    jdOp->apply=SUBR(jadaOp_apply_project_pre);
+    jdDat->V=jdPrec->V;
+    jdDat->BV=jdPrec->BV;
   }
 }
