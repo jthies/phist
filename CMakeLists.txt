@@ -759,6 +759,11 @@ set (PHIST_CORE_SOURCE ${PROJECT_SOURCE_DIR}/src/core/phist_operator.cpp
                        ${PROJECT_SOURCE_DIR}/src/core/phist_svrr.cpp
                        ${PROJECT_SOURCE_DIR}/src/core/phist_kpm.cpp
                        )
+
+if (PHIST_KERNEL_LIB STREQUAL "epetra")
+  list (APPEND PHIST_CORE_SOURCE ${PROJECT_SOURCE_DIR}/src/core/phist_operator_epetra.cpp)
+endif()
+
 set (PHIST_KRYLOV_SOURCE ${PROJECT_SOURCE_DIR}/src/krylov/phist_simple_arnoldi.cpp
 				                 ${PROJECT_SOURCE_DIR}/src/krylov/phist_simple_lanczos.cpp
                          ${PROJECT_SOURCE_DIR}/src/krylov/phist_blockedgmres.cpp

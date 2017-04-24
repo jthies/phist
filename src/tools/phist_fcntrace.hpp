@@ -53,7 +53,9 @@ class phist_FcnTrace
   public:
     phist_FcnTrace(const char* fcn)
     {
+#ifdef PHIST_HAVE_OPENMP
 #pragma omp master
+#endif
       {
 #ifdef PHIST_TIMINGS_FULL_TRACE
         fcnTrace_.push_back(fcn);
@@ -67,7 +69,9 @@ class phist_FcnTrace
       PHIST_OUT(0,"PHIST ENTER %s\n",fcn_.c_str());
 #endif
 #ifdef PHIST_HAVE_LIKWID
+# ifdef PHIST_HAVE_OPENMP
 #pragma omp parallel
+# endif
       {
         LIKWID_MARKER_START(fcn_.c_str());
       }
@@ -78,7 +82,9 @@ class phist_FcnTrace
     ~phist_FcnTrace()
     { 
 #ifdef PHIST_HAVE_LIKWID
+# ifdef PHIST_HAVE_OPENMP
 #pragma omp parallel
+# endif
       {
         LIKWID_MARKER_STOP(fcn_.c_str());
       }
@@ -89,7 +95,9 @@ class phist_FcnTrace
 #endif
 
 #ifdef PHIST_TIMINGS_FULL_TRACE
+# ifdef PHIST_HAVE_OPENMP
 #pragma omp master
+# endif
       {
         fcnTrace_.pop_back();
       }
