@@ -14,7 +14,7 @@
 /*! Test fixure. */
 class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,_N_,MATNAME>,
                  public virtual KernelTestWithSparseMat<_ST_,_N_,_N_,PRECNAME>,
-                 public virtual KernelTestWithVectors<_ST_,_N_,_NV_,0,3>,
+                 public virtual KernelTestWithVectors<_ST_,_N_,_NV_,0,4>,
                  public virtual KernelTestWithSdMats<_ST_,_NVP_,_NV_>,
                  public JadaTestWithOpts
 {
@@ -22,7 +22,7 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,_N_,MATNAME>,
   public:
     typedef KernelTestWithSparseMat<_ST_,_N_,_N_,MATNAME> ATest;
     typedef KernelTestWithSparseMat<_ST_,_N_,_N_,PRECNAME> PTest;
-    typedef KernelTestWithVectors<_ST_,_N_,_NV_,0,3> VTest;
+    typedef KernelTestWithVectors<_ST_,_N_,_NV_,0,4> VTest;
     typedef KernelTestWithSdMats<_ST_,_NVP_,_NV_> MTest;
 
     static void SetUpTestCase()
@@ -70,7 +70,7 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,_N_,MATNAME>,
         opP_ = new TYPE(linearOp);
         SUBR(linearOp_wrap_sparseMat)(opP_, PTest::A_, &iflag_);
         ASSERT_EQ(0,iflag_);
-
+        
         PHISTTEST_MVEC_CREATE(&q_,map_,_NVP_,&iflag_);
         ASSERT_EQ(0,iflag_);
         sigma_ = new _ST_[_NV_];
@@ -210,11 +210,24 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,_N_,MATNAME>,
     _ST_* negSigma_ = NULL;
 };
 
-  TEST_F(CLASSNAME, unavailable_functions_return_NOT_IMPLEMENTED)
+  TEST_F(CLASSNAME, wrap_Ainv_as_USER_PRECON)
   {
     if( typeImplemented_ && !problemTooSmall_ )
     {
-      //
+        // now we have our approximate inverse as a linearOp, we can wrap it once more to get
+        // a valid phist preconditioner. This object adds an 'update' function etc, which should
+        // return with an error. It also takes care of checking for apply_shifted and falling back
+        // to apply if it is NULL.
+        TYPE(linearOp) userPrec;
+        // we explicitly disable the 'apply_shifted' function of our approximate inverse
+        opP_->apply_shifted=NULL;
+        // note that we do not need to pass in any matrix because we don't provide an 'update' function
+        SUBR(precon_create)(&userPrec,NULL,sigma_[0],NULL,NULL,NULL,
+                "user-defined",NULL,opP_,&iflag_);
+        ASSERT_EQ(0,iflag_);
+        // aplying the preconditioner should be the same as applying the original Ainv matrix
+        _ST_ alpha=st::prand(),beta=st::prand();
+        SUBR(mvec_random)(vec1_,&iflag_);
     }
   }
 
