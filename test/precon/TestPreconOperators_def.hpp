@@ -223,11 +223,21 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,_N_,MATNAME>,
         opP_->apply_shifted=NULL;
         // note that we do not need to pass in any matrix because we don't provide an 'update' function
         SUBR(precon_create)(&userPrec,NULL,sigma_[0],NULL,NULL,NULL,
-                "user-defined",NULL,opP_,&iflag_);
+                "user_defined",NULL,opP_,&iflag_);
         ASSERT_EQ(0,iflag_);
         // aplying the preconditioner should be the same as applying the original Ainv matrix
         _ST_ alpha=st::prand(),beta=st::prand();
         SUBR(mvec_random)(vec1_,&iflag_);
+        ASSERT_EQ(0,iflag_);
+        SUBR(mvec_random)(vec2_,&iflag_);
+        ASSERT_EQ(0,iflag_);
+        SUBR(mvec_add_mvec)(st::one(),vec1_,st::zero(),vec3_,&iflag_);
+        ASSERT_EQ(0,iflag_);
+        SUBR(sparseMat_times_mvec)(alpha,PTest::A_,vec1_,beta,vec2_,&iflag_);
+        ASSERT_EQ(0,iflag_);
+        SUBR(precon_apply)(alpha,PTest::A_,vec1_,beta,vec3_,&iflag_);
+        ASSERT_EQ(0,iflag_);
+        ASSERT_NEAR(mt::one(),MvecsEqual(vec2_,vec3_),10*VTest::releps());
     }
   }
 
