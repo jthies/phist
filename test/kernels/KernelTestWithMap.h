@@ -43,8 +43,13 @@ static void SetUpTestCase()
 static void SetUpTestCaseWithMap(phist_const_map_ptr map)
 {
   EXPECT_TRUE(map != NULL);
-  // prevent getting called multiple times
-  EXPECT_EQ(NULL,map_);
+  // there may already be a map_ if the test class is derived from multiple KernelTestWithSparseMat instances,
+  // in that case ask for identical maps before proceding
+  if (map_!=NULL && map_!=map)
+  {
+    phist_maps_compatible(map,map_,&iflag_);
+    EXPECT_EQ(0,iflag_);
+  }
 
   SetUpTestCase(); // creates defaultMap_, determines problemTooSmall_ etc
 
