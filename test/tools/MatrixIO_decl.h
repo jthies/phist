@@ -33,16 +33,22 @@ void SUBR(read_mat)(const char* filebase,phist_const_comm_ptr comm,int nglob, in
   //! creates a simple tridiagonal non-Hermitian but positive definite matrix. For usage info, see hpd_tridiag.
   int PHIST_TG_PREFIX(nhpd_tridiag)(ghost_gidx row, ghost_lidx *len, ghost_gidx* cols, void* vval, void *arg);
 
+  //! creates a simple tridiagonal Hermitian and indefinite matrix. For usage info, see hpd_tridiag.
+  int PHIST_TG_PREFIX(hid_tridiag)(ghost_gidx row, ghost_lidx *len, ghost_gidx* cols, void* vval, void *arg);
+
   //! creates a simple tridiagonal non-Hermitian and indefinite matrix. For usage info, see hpd_tridiag.
   int PHIST_TG_PREFIX(nhid_tridiag)(ghost_gidx row, ghost_lidx *len, ghost_gidx* cols, void* vval, void *arg);
 
   //! creates an approximate inverse of hpd_tridiag (the inverse of the 2x2 block diagonal approximation of A)
   int PHIST_TG_PREFIX(hpd_tridiag_ainv)(ghost_gidx row, ghost_lidx *len, ghost_gidx* cols, void* vval, void *arg);
 
-  //! creates an approximate inverse of nhid_tridiag (the inverse of the 2x2 block diagonal approximation of A)
+  //! creates an approximate inverse of nhpd_tridiag (the inverse of the 2x2 block diagonal approximation of A)
   int PHIST_TG_PREFIX(nhpd_tridiag_ainv)(ghost_gidx row, ghost_lidx *len, ghost_gidx* cols, void* vval, void *arg);
 
-  //! creates an approximate inverse of nhpd_tridiag (the inverse of the 2x2 block diagonal approximation of A)
+  //! creates an approximate inverse of hid_tridiag (the inverse of the 2x2 block diagonal approximation of A)
+  int PHIST_TG_PREFIX(hid_tridiag_ainv)(ghost_gidx row, ghost_lidx *len, ghost_gidx* cols, void* vval, void *arg);
+
+  //! creates an approximate inverse of nhid_tridiag (the inverse of the 2x2 block diagonal approximation of A)
   int PHIST_TG_PREFIX(nhid_tridiag_ainv)(ghost_gidx row, ghost_lidx *len, ghost_gidx* cols, void* vval, void *arg);
 
   //! defines a matrix with only a constant subdiagonal and an entry (1,N)

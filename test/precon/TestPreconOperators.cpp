@@ -12,6 +12,7 @@
 #include "phist_kernels.h"
 #include "gtest/phist_gtest.h"
 
+#include "phist_precon.h"
 #include "phist_jadaOp.h"
 #include "phist_jadaCorrectionSolver.h"
 #include "phist_orthog.h"

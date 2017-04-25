@@ -47,6 +47,7 @@ class KernelTestWithSparseMat<_ST_, _Nglob, _Mglob, _MatName, _multipleDefinitio
 
       if( typeImplemented_ && !problemTooSmall )
       {
+        iflag_=0;
         // read matrix first
         if (_MatName==MATNAME_IDFUNC)
         {
@@ -63,9 +64,13 @@ class KernelTestWithSparseMat<_ST_, _Nglob, _Mglob, _MatName, _multipleDefinitio
         {
           phist_sparseMat_rowFunc rowfunc=NULL;
           if (_MatName==MATNAME_hpd_tridiag) rowfunc=phist::testing::PHIST_TG_PREFIX(hpd_tridiag);
+          else if (_MatName==MATNAME_hid_tridiag) rowfunc=phist::testing::PHIST_TG_PREFIX(hid_tridiag);
           else if (_MatName==MATNAME_nhpd_tridiag) rowfunc=phist::testing::PHIST_TG_PREFIX(nhpd_tridiag);
+          else if (_MatName==MATNAME_nhid_tridiag) rowfunc=phist::testing::PHIST_TG_PREFIX(nhid_tridiag);
           else if (_MatName==MATNAME_hpd_tridiag_ainv) rowfunc=phist::testing::PHIST_TG_PREFIX(hpd_tridiag_ainv);
+          else if (_MatName==MATNAME_hid_tridiag_ainv) rowfunc=phist::testing::PHIST_TG_PREFIX(hid_tridiag_ainv);
           else if (_MatName==MATNAME_nhpd_tridiag_ainv) rowfunc=phist::testing::PHIST_TG_PREFIX(nhpd_tridiag_ainv);
+          else if (_MatName==MATNAME_nhid_tridiag_ainv) rowfunc=phist::testing::PHIST_TG_PREFIX(nhid_tridiag_ainv);
           else
           {
             iflag_=-99;
@@ -76,7 +81,7 @@ class KernelTestWithSparseMat<_ST_, _Nglob, _Mglob, _MatName, _multipleDefinitio
           // initialize rowFunc
           iflag_=rowfunc(-1,NULL,&gnrows,NULL,NULL);
           ASSERT_EQ(0,iflag_);
-          SUBR(sparseMat_create_fromRowFunc)(&A_,comm_,_Nglob,_Mglob,1,rowfunc,NULL,&iflag_);
+          SUBR(sparseMat_create_fromRowFunc)(&A_,comm_,_Nglob,_Mglob,3,rowfunc,NULL,&iflag_);
           ASSERT_EQ(0,iflag_);
 
           // "uninitialize"
