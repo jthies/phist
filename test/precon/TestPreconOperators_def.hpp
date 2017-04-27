@@ -221,8 +221,7 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,_N_,MATNAME>,
         TYPE(linearOp) userPrec;
         // we explicitly disable the 'apply_shifted' function of our approximate inverse
         opP_->apply_shifted=NULL;
-        // note that we do not need to pass in any matrix because we don't provide an 'update' function
-        SUBR(precon_create)(&userPrec,NULL,sigma_[0],NULL,NULL,NULL,
+        SUBR(precon_create)(&userPrec,ATest::A_,sigma_[0],NULL,NULL,NULL,
                 "user_defined",NULL,opP_,&iflag_);
         ASSERT_EQ(0,iflag_);
         // aplying the preconditioner should be the same as applying the original Ainv matrix
@@ -231,13 +230,24 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,_N_,MATNAME>,
         ASSERT_EQ(0,iflag_);
         SUBR(mvec_random)(vec2_,&iflag_);
         ASSERT_EQ(0,iflag_);
-        SUBR(mvec_add_mvec)(st::one(),vec1_,st::zero(),vec3_,&iflag_);
+        SUBR(mvec_add_mvec)(st::one(),vec2_,st::zero(),vec3_,&iflag_);
         ASSERT_EQ(0,iflag_);
+        SUBR(mvec_add_mvec)(st::one(),vec2_,st::zero(),vec4_,&iflag_);
+        ASSERT_EQ(0,iflag_);
+        
+        // reference solution using plain spMVM interface
         SUBR(sparseMat_times_mvec)(alpha,PTest::A_,vec1_,beta,vec2_,&iflag_);
         ASSERT_EQ(0,iflag_);
-        SUBR(precon_apply)(alpha,PTest::A_,vec1_,beta,vec3_,&iflag_);
+
+        // sanity check if our linearOp wrapper works
+        SUBR(linearOp_apply)(alpha,opP_,vec1_,beta,vec3_,&iflag_);
         ASSERT_EQ(0,iflag_);
         ASSERT_NEAR(mt::one(),MvecsEqual(vec2_,vec3_),10*VTest::releps());
+
+        // yet another wrapper ontop: userPrec.A_ is opP_ wrapped as an internal precon struct with a phist_Eprecon to identify it as USER_DEFINED
+        SUBR(linearOp_apply)(alpha,&userPrec,vec1_,beta,vec4_,&iflag_);
+        ASSERT_EQ(0,iflag_);
+        ASSERT_NEAR(mt::one(),MvecsEqual(vec2_,vec4_),10*VTest::releps());
     }
   }
 
