@@ -358,18 +358,25 @@ extern "C" void SUBR(jadaOp_create)(TYPE(const_linearOp_ptr)    AB_op,
   // projection.
   jdOp->A     = (const void*)myOp;
 
-  if (B_op!=NULL)
+  if (nvecp==0)
   {
-    PHIST_CHK_IERR(SUBR(mvec_create)(&myOp->X_proj,AB_op->domain_map,nvec,iflag),*iflag);
-    // make sure X_proj gets deleted automatically when myOp is deleted
-    myOp->_X_proj.set(myOp->X_proj);
-    // if the user passes in a B opeartor and projection vectors V, he also has to provide BV
-    PHIST_CHK_IERR(*iflag= (V!=NULL && BV==V)? PHIST_INVALID_INPUT: 0, *iflag);
-    jdOp->apply = (&SUBR(jadaOp_apply_project_pre_post));
+    jdOp->apply = SUBR(jadaOp_apply_project_none);
   }
   else
   {
-    jdOp->apply = (&SUBR(jadaOp_apply_project_post));
+    if (B_op!=NULL)
+    {
+      PHIST_CHK_IERR(SUBR(mvec_create)(&myOp->X_proj,AB_op->domain_map,nvec,iflag),*iflag);
+      // make sure X_proj gets deleted automatically when myOp is deleted
+      myOp->_X_proj.set(myOp->X_proj);
+      // if the user passes in a B opeartor and projection vectors V, he also has to provide BV
+      PHIST_CHK_IERR(*iflag= (V!=NULL && BV==V)? PHIST_INVALID_INPUT: 0, *iflag);
+      jdOp->apply = (&SUBR(jadaOp_apply_project_pre_post));
+    }
+    else
+    {
+      jdOp->apply = (&SUBR(jadaOp_apply_project_post));
+    }
   }
   jdOp->applyT= NULL; // not needed, I think, but it's trivial to implement
   jdOp->apply_shifted=NULL;// does not make sense, it would mean calling apply_shifted in a 
