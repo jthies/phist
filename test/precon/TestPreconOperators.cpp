@@ -53,5 +53,6 @@ using namespace testing;
 #define PRECNAME MATNAME_nhpd_tridiag_ainv
 #define _SOLVTYPE_ phist_GMRES
 #define _BASENAME_ TestPreconOperators_nhpd_tridiag
+#define _MAXBAS_ 250
 #include "../phist_typed_test_gen.h"
 
