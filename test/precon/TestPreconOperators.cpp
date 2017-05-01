@@ -25,13 +25,17 @@ using namespace testing;
 
 #define CLASSFILE_DEF "TestPreconOperators_def.hpp"
 
-#define MATNAME MATNAME_hpd_tridiag
-#define PRECNAME MATNAME_hpd_tridiag_ainv
-#define _BASENAME_ TestPreconOperators_hpd_tridiag
-#define _MAXBAS_ 20
+#define MATNAME MATNAME_lapl_tridiag
+#define PRECNAME MATNAME_lapl_tridiag_ainv
+#define _BASENAME_ TestPreconOperators_lapl_tridiag
+// use GMRES here, too because the left preconditioning would destroy
+// the symmetry in the current implementation
+//#define _SOLVTYPE_ phist_MINRES
+#define _SOLVTYPE_ phist_GMRES
+#define _MAXBAS_ 150
 
 // matrix size
-#define _N_ 64
+#define _N_ 250
 // number of iteration vectors _NV_
 #define _M_ 1
 // number of projection vectors in q
@@ -42,10 +46,12 @@ using namespace testing;
 #undef PRECNAME
 #undef _BASENAME_
 
-#define _N_ 64
+#define _N_ 250
 #define _M_ 1
 #define _NVP_ 1
 #define MATNAME MATNAME_nhpd_tridiag
 #define PRECNAME MATNAME_nhpd_tridiag_ainv
+#define _SOLVTYPE_ phist_GMRES
 #define _BASENAME_ TestPreconOperators_nhpd_tridiag
 #include "../phist_typed_test_gen.h"
+

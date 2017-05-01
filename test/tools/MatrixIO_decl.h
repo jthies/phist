@@ -30,6 +30,9 @@ void SUBR(read_mat)(const char* filebase,phist_const_comm_ptr comm,int nglob, in
   //! If called with row=-2, the function is "un-initialized" (the global sizes are reset).
   int PHIST_TG_PREFIX(hpd_tridiag)(ghost_gidx row, ghost_lidx *len, ghost_gidx* cols, void* vval, void *arg);
 
+  // tridiagonal matrix with entries [-1 2 -1] or [-i 2 -i] in the complex case (hpd)
+  int PHIST_TG_PREFIX(lapl_tridiag)(ghost_gidx row, ghost_lidx *len, ghost_gidx* cols, void* vval, void *arg);
+
   //! creates a simple tridiagonal non-Hermitian but positive definite matrix. For usage info, see hpd_tridiag.
   int PHIST_TG_PREFIX(nhpd_tridiag)(ghost_gidx row, ghost_lidx *len, ghost_gidx* cols, void* vval, void *arg);
 

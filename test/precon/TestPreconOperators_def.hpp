@@ -44,7 +44,7 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,_N_,MATNAME>,
       MTest::SetUp();
       JadaTestWithOpts::SetUp();
 
-      jadaOpts_.innerSolvType=phist_GMRES;
+      jadaOpts_.innerSolvType=_SOLVTYPE_;
       jadaOpts_.maxBas=_MAXBAS_;
 
       if( typeImplemented_ && !problemTooSmall_ )
@@ -202,6 +202,118 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,_N_,MATNAME>,
         ASSERT_LT(resNorm[i], 20*tol[i]);
       }
     }
+    
+    // solve _NV_ identical linear systems iteratively using MINRES or GMRES with or without a left preconditioner.
+    // The first column of rhs and sol is used for all _NV_ systems, *num_iter contains max_iter on input and actual
+    // num_iter on output. iflag=0 is returned if the solver converged within the given *num_iter to a residual<tol.
+    void run_krylov_solver(TYPE(linearOp_ptr) A_op, TYPE(linearOp_ptr) leftPrec, TYPE(linearOp_ptr) rightPrec,
+                           TYPE(mvec_ptr) rhs, TYPE(mvec_ptr) sol, 
+                           phist_ElinSolv method, int *num_iter, _MT_ tol, int* iflag)
+    {
+      if (method==phist_GMRES||method==phist_MINRES)
+      {
+        // use a jadaOp for the matrix operator A without any projection space. This allows us to add
+        // a left preconditioner.
+        TYPE(linearOp_ptr) jdOp = new TYPE(linearOp);
+        std::vector<_ST_> noSigma(_NV_,st::zero());
+        SUBR(jadaOp_create)(A_op,NULL,NULL,NULL,&noSigma[0],_NV_,jdOp,&iflag_);
+        ASSERT_EQ(0,iflag_);
+        
+        TYPE(mvec_ptr) Prhs=rhs;
+        MvecOwner<_ST_> _Prhs;        
+        if (leftPrec!=NULL)
+        {
+          SUBR(jadaOp_set_leftPrecond)(jdOp,leftPrec,&iflag_);
+          ASSERT_EQ(0,iflag_);
+          // left-precondition the rhs
+          Prhs=NULL;
+          SUBR(mvec_clone_shape)(&Prhs,rhs,&iflag_);
+          _Prhs.set(Prhs);
+          ASSERT_EQ(0,iflag_);
+          SUBR(linearOp_apply)(st::one(),leftPrec,rhs,st::zero(),Prhs,&iflag_);
+          ASSERT_EQ(0,iflag_);
+        }
+        
+        int block_size=_NV_, max_blocks=*num_iter;
+        TYPE(blockedGMRESstate_ptr) states[block_size];
+        PHIST_CHK_IERR(SUBR(blockedGMRESstates_create)(states, block_size, map_, max_blocks, iflag), *iflag);
+
+        for (int i=0; i<block_size; i++) states[i]->tol=tol;
+
+        // copy the first rhs and sol column to all the others
+        TYPE(mvec_ptr) rhs0=NULL,Prhs0=NULL,sol0=NULL;
+
+        int nv;
+        SUBR(mvec_num_vectors)(rhs,&nv,iflag);
+        ASSERT_EQ(0,*iflag);
+        ASSERT_EQ(_NV_,nv);
+        SUBR(mvec_num_vectors)(sol,&nv,iflag);
+        ASSERT_EQ(0,*iflag);
+        ASSERT_EQ(_NV_,nv);
+
+        SUBR(mvec_view_block)(Prhs,&Prhs0,0,0,iflag);
+        SUBR(mvec_view_block)(rhs,&rhs0,0,0,iflag);
+        ASSERT_EQ(0,*iflag);
+        SUBR(mvec_view_block)(sol,&sol0,0,0,iflag);
+        ASSERT_EQ(0,*iflag);
+        
+        // make sure these views are eventually deleted
+        MvecOwner<_ST_> _rhs0(rhs0), _Prhs0(Prhs0),_sol0(sol0);
+        
+        for (int i=1; i<nv; i++)
+        {
+          SUBR(mvec_set_block)(rhs,rhs0,i,i,iflag);
+          ASSERT_EQ(0,*iflag);
+          SUBR(mvec_set_block)(Prhs,Prhs0,i,i,iflag);
+          ASSERT_EQ(0,*iflag);
+          SUBR(mvec_set_block)(sol,sol0,i,i,iflag);
+          ASSERT_EQ(0,*iflag);
+        }
+    
+        // first setup block_size systems  to work on,
+    
+        for (int i=0; i<block_size; i++)
+        {
+          // reset selected state object with 0 initial guess
+          PHIST_CHK_IERR(SUBR(blockedGMRESstate_reset)(states[i], rhs0, sol0, iflag), *iflag);
+        }
+        if (method==phist_GMRES)
+        {
+          int useIMGS=1;
+          PHIST_CHK_NEG_IERR(SUBR(blockedGMRESstates_iterate)(jdOp, rightPrec,states, block_size, num_iter, useIMGS, iflag), *iflag);
+        }
+        else if (method==phist_MINRES)
+        {
+          PHIST_CHK_NEG_IERR(SUBR(blockedMINRESstates_iterate)(jdOp, rightPrec,states, block_size, num_iter, iflag), *iflag);
+        }
+        int min_total_iter=9999999,max_total_iter=-1;
+        int num_converged=0;
+        for (int i=0; i<block_size; i++)
+        {
+          min_total_iter=std::min(min_total_iter,states[i]->totalIter);
+          max_total_iter=std::max(max_total_iter,states[i]->totalIter);
+          if (states[i]->status==0)
+          {
+            num_converged++;
+          }
+        }
+        // check that all of the identical linear systems converged
+        ASSERT_EQ(block_size,num_converged);
+        // in the same number of iterations
+        ASSERT_EQ(min_total_iter,max_total_iter);
+        _ST_ res_norms[block_size];
+        // check that the result is correct by comparing with the actual residual
+        PHIST_CHK_IERR(SUBR(blockedGMRESstates_updateSol)(states,block_size,rightPrec,sol,res_norms,false,iflag),*iflag);
+     
+        PHIST_CHK_IERR(SUBR(blockedGMRESstates_delete)(states,block_size,iflag),*iflag);
+        PHIST_CHK_IERR(SUBR(jadaOp_delete)(jdOp,iflag),*iflag);
+        delete jdOp;
+      }
+      else
+      {
+        PHIST_CHK_IERR(*iflag=PHIST_NOT_IMPLEMENTED,*iflag);
+      }
+    }
 
     TYPE(linearOp_ptr) opA_ = NULL, opP_ = NULL;
     TYPE(linearOp_ptr) jdOp_ = NULL, jdPrec_ = NULL;
@@ -264,41 +376,66 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,_N_,MATNAME>,
   {
     if( typeImplemented_ && !problemTooSmall_ )
     {
-      TYPE(jadaCorrectionSolver_ptr) solver = NULL;
-      jadaOpts_.blockSize=1;
-      SUBR(jadaCorrectionSolver_create)(&solver, jadaOpts_, map_, &iflag_);
-      ASSERT_EQ(0, iflag_);
+      SUBR(mvec_put_value)(vec1_,st::one(),&iflag_);
+      ASSERT_EQ(0,iflag_);
+      _MT_ nrm0;
+      SUBR(mvec_normalize)(vec1_,&nrm0,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(mvec_put_value)(vec2_,st::zero(),&iflag_);
+      ASSERT_EQ(0,iflag_);
 
-      TYPE(mvec_ptr) t_i = NULL;
-      TYPE(mvec_ptr) res_i = NULL;
-      _MT_ tol[_NV_];
-      for(int i = 0; i < _NV_; i++)
-      {
-        SUBR(mvec_view_block)(vec2_, &t_i, i, i, &iflag_);
-        ASSERT_EQ(0, iflag_);
-        SUBR(mvec_view_block)(vec3_, &res_i, i, i, &iflag_);
-        ASSERT_EQ(0, iflag_);
+      // compute initial residual norm. vec1 is b, vec2 x0, vec3 will be b-Ax0
+      SUBR(mvec_add_mvec)(st::one(),vec1_,st::zero(),vec3_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(sparseMat_times_mvec)(-st::one(),ATest::A_,vec2_,st::one(),vec3_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      _MT_ normR0[_NV_];
+      SUBR(mvec_norm2)(vec3_,normR0,&iflag_);
+            ASSERT_EQ(0,iflag_);
 
-        // create some random tolerance
-        tol[i] = exp((_MT_)-8*mt::one() + (_MT_)4*mt::prand());
+      // copy X0 to vec3 and vec4
+      SUBR(mvec_add_mvec)(st::one(),vec2_,st::zero(),vec3_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(mvec_add_mvec)(st::one(),vec2_,st::zero(),vec4_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      
+      int max_iter=_MAXBAS_;
+      _MT_ tol=0.1;
+      int num_iter0=max_iter, num_iter1=max_iter, num_iter2=max_iter;
+      
+      // run GMRES or MINRES without preconditioning
+      run_krylov_solver(opA_, NULL, NULL,
+                        vec1_, vec2_,
+                        _SOLVTYPE_, &num_iter0, tol, &iflag_);
+      ASSERT_EQ(0,iflag_);
 
-        SUBR(mvec_put_value)(t_i, st::zero(), &iflag_);
-        ASSERT_EQ(0, iflag_);
-
-        // run
-        SUBR(jadaCorrectionSolver_run)(solver, opA_, NULL, q_, NULL, &sigma_[i],res_i, NULL, &tol[i], 200, t_i, 1, 0, 0, &iflag_);
-        ASSERT_EQ(0, iflag_);
-      }
-
-      // check all solutions
-      checkResiduals(tol);
-
-      SUBR(mvec_delete)(res_i, &iflag_);
-      ASSERT_EQ(0, iflag_);
-      SUBR(mvec_delete)(t_i, &iflag_);
-      ASSERT_EQ(0, iflag_);
-      SUBR(jadaCorrectionSolver_delete)(solver, &iflag_);
-      ASSERT_EQ(0, iflag_);
+      // with left preconditioning
+      run_krylov_solver(opA_, opP_, NULL,
+                        vec1_, vec3_, 
+                        _SOLVTYPE_, &num_iter1, tol, &iflag_);
+      ASSERT_EQ(0,iflag_);
+      
+      // with right preconditioning
+      run_krylov_solver(opA_, NULL, opP_,
+                        vec1_, vec4_, 
+                        _SOLVTYPE_, &num_iter2, tol, &iflag_);
+      ASSERT_EQ(0,iflag_);
+    
+      // using a preconditioner should reduce the number of iteations somewhat
+      ASSERT_LT(num_iter1,(int)(0.8*num_iter0));
+      // left or right preconditioning should do roughly the same
+      ASSERT_LT(std::abs(num_iter1-num_iter2),2);
+      // and the results should be almost the same, too
+      PrintVector(PHIST_VERBOSE, "x without preconditioning", 
+                vec2_vp_, nloc_, lda_, stride_,mpi_comm_);
+      PrintVector(PHIST_VERBOSE, "x with left preconditioning", 
+                vec3_vp_, nloc_, lda_, stride_,mpi_comm_);
+      PrintVector(PHIST_VERBOSE, "x with right preconditioning", 
+                vec4_vp_, nloc_, lda_, stride_,mpi_comm_);
+                
+      EXPECT_NEAR(st::one(),MvecsEqual(vec2_,vec3_),tol*normR0[0]);
+      EXPECT_NEAR(st::one(),MvecsEqual(vec2_,vec4_),tol*normR0[0]);
+      EXPECT_NEAR(st::one(),MvecsEqual(vec3_,vec4_),tol*normR0[0]);
     }
   }
 

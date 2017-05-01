@@ -166,6 +166,18 @@ int PHIST_TG_PREFIX(hpd_tridiag)(ghost_gidx row, ghost_lidx *len, ghost_gidx* co
   return 0;
 }
 
+// 1D laplacian, tridiag([-1 2 -1])
+int PHIST_TG_PREFIX(lapl_tridiag)(ghost_gidx row, ghost_lidx *len, ghost_gidx* cols, void* vval, void *arg)
+{
+#include "phist_std_typedefs.hpp"
+#ifdef IS_COMPLEX
+    TRIDIAG((_ST_)2.0*st::one(),(_ST_)(1.0)*st::cmplx_I(),(_ST_)(-1.0)*st::cmplx_I(),false);
+#else
+    TRIDIAG((_ST_)2.0,(_ST_)(-1.0),(_ST_)(-1.0),false);
+#endif
+  return 0;
+}
+
 //! creates a simple tridiagonal non-Hermitian but positive definite matrix. For usage info, see hpd_tridiag.
 int PHIST_TG_PREFIX(nhpd_tridiag)(ghost_gidx row, ghost_lidx *len, ghost_gidx* cols, void* vval, void *arg)
 {
@@ -194,6 +206,18 @@ int PHIST_TG_PREFIX(hpd_tridiag_ainv)(ghost_gidx row, ghost_lidx *len, ghost_gid
   TRIDIAG((_ST_)0.8,(_ST_)(0.4)*st::cmplx_I(),(_ST_)(0.4)*st::cmplx_I(),true);
 #else
   TRIDIAG((_ST_)(4./3.),(_ST_)(2./3.),(_ST_)(2./3.),true);
+#endif
+  return 0;
+}
+
+//! creates an approximate inverse of lapl_tridiag (the inverse of the 2x2 block diagonal approximation of A)
+int PHIST_TG_PREFIX(lapl_tridiag_ainv)(ghost_gidx row, ghost_lidx *len, ghost_gidx* cols, void* vval, void *arg)
+{
+#include "phist_std_typedefs.hpp"
+#ifdef IS_COMPLEX
+  TRIDIAG((_ST_)0.4,(_ST_)(0.2)*st::cmplx_I(),(_ST_)(0.2)*st::cmplx_I(),true);
+#else
+  TRIDIAG((_ST_)(2./3.),(_ST_)(1./3.),(_ST_)(1./3.),true);
 #endif
   return 0;
 }
