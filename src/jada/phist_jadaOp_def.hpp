@@ -369,7 +369,7 @@ extern "C" void SUBR(jadaOp_create)(TYPE(const_linearOp_ptr)    AB_op,
       PHIST_CHK_IERR(SUBR(mvec_create)(&myOp->X_proj,AB_op->domain_map,nvec,iflag),*iflag);
       // make sure X_proj gets deleted automatically when myOp is deleted
       myOp->_X_proj.set(myOp->X_proj);
-      // if the user passes in a B opeartor and projection vectors V, he also has to provide BV
+      // if the user passes in a B operator and projection vectors V, he also has to provide BV
       PHIST_CHK_IERR(*iflag= (V!=NULL && BV==V)? PHIST_INVALID_INPUT: 0, *iflag);
       jdOp->apply = (&SUBR(jadaOp_apply_project_pre_post));
     }
@@ -511,7 +511,7 @@ extern "C" void SUBR(jadaOp_set_leftPrecond)(TYPE(linearOp_ptr) jdOp, TYPE(const
     if (jdDat->B_op!=NULL) PHIST_SOUT(PHIST_WARNING,"left preconditioning and B!=I is untested\n");
     // We pre- and postproject with (I-Z(Z'BQ)^{-1}BQ^T), Z=P\Q. The post-projection
     // is handled by the preconditioner wrapper (see jadaPrec_create)
-    jdOp->apply=SUBR(jadaOp_apply_project_pre);
+    jdOp->apply=SUBR(jadaOp_apply_project_none);
     jdDat->V=jdPrec->V;
     jdDat->BV=jdPrec->BV;
   }
