@@ -275,7 +275,7 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,_N_,MATNAME>,
         for (int i=0; i<block_size; i++)
         {
           // reset selected state object with 0 initial guess
-          PHIST_CHK_IERR(SUBR(blockedGMRESstate_reset)(states[i], rhs0, sol0, iflag), *iflag);
+          PHIST_CHK_IERR(SUBR(blockedGMRESstate_reset)(states[i], Prhs0, sol0, iflag), *iflag);
         }
         if (method==phist_GMRES)
         {
