@@ -45,7 +45,11 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,_N_,MATNAME>,
       JadaTestWithOpts::SetUp();
 
       jadaOpts_.innerSolvType=_SOLVTYPE_;
-      jadaOpts_.maxBas=_MAXBAS_;
+      jadaOpts_.innerSolvMaxIters=_MAXBAS_;
+      jadaOpts_.innerSolvMaxBas=_MAXBAS_;
+      jadaOpts_.minBas=12;
+      jadaOpts_.maxBas=jadaOpts_.minBas+10*_NV_;
+      jadaOpts_.convTol=1e-6;
 
       if( typeImplemented_ && !problemTooSmall_ )
       {
@@ -114,6 +118,9 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,_N_,MATNAME>,
         // as we are only interested in the direction of vec3_, scale it to one
         SUBR(mvec_normalize)(vec3_, tmp, &iflag_);
         ASSERT_EQ(0,iflag_);
+
+        jadaOpts_.preconType=phist_USER_PRECON;
+        jadaOpts_.preconOp=opP_;
       }
     }
 
@@ -440,7 +447,7 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,_N_,MATNAME>,
   }
 
 
-  TEST_F(CLASSNAME, jadaCorrectionSolver)
+  TEST_F(CLASSNAME, DISABLED_jadaCorrectionSolver)
   {
     if( typeImplemented_ && !problemTooSmall_ )
     {
@@ -477,5 +484,25 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,_N_,MATNAME>,
   {
     if( typeImplemented_ && !problemTooSmall_ )
     {
+      int nEig=3;
+      jadaOpts_.numEigs=nEig;
+      int blockDim=_NV_;
+      int nIter=100;
+      int nQ=nEig+blockDim-1;
+      TYPE(mvec_ptr) Q=NULL;
+      PHISTTEST_MVEC_CREATE(&Q,map_,nQ,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      TYPE(sdMat_ptr) R=NULL;
+      SUBR(sdMat_create)(&R,nQ,nQ,comm_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      MvecOwner<_ST_> _Q(Q);
+      SdMatOwner<_ST_> _R(R);
+      
+      _CT_ ev[nQ];
+      _MT_ resNorm[nQ];
+      
+      SUBR(subspacejada)(opA_, NULL, jadaOpts_,
+          Q, R, ev, resNorm, &nEig, &nIter, &iflag_);
+      ASSERT_EQ(0,iflag_);
     }
   }

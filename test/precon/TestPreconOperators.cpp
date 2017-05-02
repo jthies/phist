@@ -14,6 +14,7 @@
 
 #include "phist_precon.h"
 #include "phist_jadaOp.h"
+#include "phist_subspacejada.h"
 #include "phist_jadaCorrectionSolver.h"
 #include "phist_orthog.h"
 #include "../kernels/KernelTestWithSparseMat.h"
@@ -36,18 +37,19 @@ using namespace testing;
 
 // matrix size
 #define _N_ 250
-// number of iteration vectors _NV_
+// block size in jada/blockedGMRES _NV_
 #define _M_ 1
-// number of projection vectors in q
+// number of projection vectors in q (for testing operators)
 #define _NVP_ 1
 #include "../phist_typed_test_gen.h"
 
 #undef MATNAME
 #undef PRECNAME
 #undef _BASENAME_
+#undef _MAXBAS_
 
 #define _N_ 250
-#define _M_ 1
+#define _M_ 2
 #define _NVP_ 1
 #define MATNAME MATNAME_nhpd_tridiag
 #define PRECNAME MATNAME_nhpd_tridiag_ainv
