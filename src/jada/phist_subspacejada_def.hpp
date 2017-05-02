@@ -125,6 +125,13 @@ symmetric=symmetric||(opts.symmetry==phist_COMPLEX_SYMMETRIC);
   }
 #endif
 
+// check that Q and R are correctly allocated
+int nQ_in,nR_in,mR_in;
+PHIST_CHK_IERR(SUBR(mvec_num_vectors)(Q__,&nQ_in,iflag),*iflag);
+PHIST_CHK_IERR(SUBR(sdMat_get_nrows)(R_,&mR_in,iflag),*iflag);
+PHIST_CHK_IERR(SUBR(sdMat_get_ncols)(R_,&nR_in,iflag),*iflag);
+PHIST_CHK_IERR(*iflag=(nQ_in>=opts.numEigs+opts.blockSize-1)?0:PHIST_INVALID_INPUT,*iflag);
+PHIST_CHK_IERR(*iflag=(nQ_in==nR_in && nR_in==mR_in)?0:PHIST_INVALID_INPUT,*iflag);
   
   if (how==phist_HARMONIC)
   {
@@ -316,6 +323,12 @@ symmetric=symmetric||(opts.symmetry==phist_COMPLEX_SYMMETRIC);
   if (nv0>0)
   {
     PHIST_CHK_IERR(SUBR(mvec_view_block)((TYPE(mvec_ptr))opts.v0,&v0,0,nv0-1,iflag),*iflag);
+  }
+  else
+  {
+    nv0=1;
+    PHIST_CHK_IERR(SUBR(mvec_create)(&v0,AB_op->domain_map,nv0,iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(mvec_random)(v0,iflag),*iflag);
   }
   MvecOwner<_ST_> _v0(v0);
 
