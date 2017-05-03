@@ -6,7 +6,7 @@
 /* Contact: Jonas Thies (Jonas.Thies@DLR.de)                                               */
 /*                                                                                         */
 /*******************************************************************************************/
-#include "fdebug.h"
+#include "fmacros.h"
 !> \file mvec_module.f90
 !! Defines mvec_module, the phist builtin implementation of phist_Dmvec_*
 !! \author "Melven Roehrig-Zoellner <Melven.Roehrig-Zoellner@DLR.de>
@@ -25,23 +25,6 @@ module mvec_module
   use sdmat_module, only: SDMat_t
   implicit none
   private
-
-!>@todo duplicated code from crsmat_module.f90
-#ifndef PHIST_HAVE_GHOST
-#define G_LIDX_T C_INT32_T
-#define G_GIDX_T C_INT64_T
-#else
-#ifdef GHOST_IDX64_LOCAL
-#define G_LIDX_T C_INT64_T
-#else
-#define G_LIDX_T C_INT32_T
-#endif
-#ifdef GHOST_IDX64_GLOBAL
-#define G_GIDX_T C_INT64_T
-#else
-#define G_GIDX_T C_INT32_T
-#endif
-#endif
 
 #if PHIST_HIGH_PRECISION_KERNELS_FORCE
 #define FORCE_HIGH_PRECISION .true.

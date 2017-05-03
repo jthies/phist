@@ -6,7 +6,7 @@
 /* Contact: Jonas Thies (Jonas.Thies@DLR.de)                                               */
 /*                                                                                         */
 /*******************************************************************************************/
-#include "fdebug.h"
+#include "fmacros.h"
 !> \file crsmat_module.f90
 !! defines crsmat_module, the sparseMat implementation of phist builtin kernels
 !! \author "Melven Roehrig-Zoellner <Melven.Roehrig-Zoellner@DLR.de>"
@@ -14,9 +14,6 @@
 !!
 
 #include "phist_config.h"
-#ifdef PHIST_HAVE_GHOST
-#include <ghost/config.h>
-#endif
 
 #include "phist_kernel_flags.h"
 #include "phist_defs.h"
@@ -34,22 +31,6 @@ module crsmat_module
 
   private
 
-
-#ifndef PHIST_HAVE_GHOST
-#define G_LIDX_T C_INT32_T
-#define G_GIDX_T C_INT64_T
-#else
-#ifdef GHOST_IDX64_LOCAL
-#define G_LIDX_T C_INT64_T
-#else
-#define G_LIDX_T C_INT32_T
-#endif
-#ifdef GHOST_IDX64_GLOBAL
-#define G_GIDX_T C_INT64_T
-#else
-#define G_GIDX_T C_INT32_T
-#endif
-#endif
 
 ! this macro decides how many mvecs can be communicated at a time
 ! (should be >=1 for spMVM and >=2 for the CARP kernel with complex shifts)
