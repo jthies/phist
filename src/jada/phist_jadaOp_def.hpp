@@ -429,14 +429,14 @@ extern "C" void SUBR(jadaOp_delete)(TYPE(linearOp_ptr) jdOp, int *iflag)
 extern "C" void SUBR(jadaPrec_create)(TYPE(const_linearOp_ptr) P_op,
         TYPE(const_mvec_ptr) V, TYPE(const_mvec_ptr) BV,
         const _ST_ sigma[], int nvec,
-        TYPE(linearOp_ptr) jdPrec, int* iflag)
+        TYPE(linearOp_ptr) jdPrec, int projType, int* iflag)
 
 {
 #include "phist_std_typedefs.hpp"
-  if (V==NULL)
+  if (V==NULL||projType==0)
   {
-    // simply apply the preconditioner "as is"
-    PHIST_CHK_IERR(SUBR(jadaOp_create)(P_op,NULL,NULL,NULL,sigma, nvec, jdPrec,iflag),*iflag);
+    // simply apply the preconditioner "as is" or apply given projection vectors after applying P
+    PHIST_CHK_IERR(SUBR(jadaOp_create)(P_op,NULL,V,BV,sigma, nvec, jdPrec,iflag),*iflag);
     // use the version without the projections:
     jdPrec->apply=SUBR(jadaOp_apply_project_none);
   }
