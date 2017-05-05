@@ -308,7 +308,7 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,_N_,MATNAME>,
         ASSERT_EQ(block_size,num_converged);
         // in the same number of iterations
         ASSERT_EQ(min_total_iter,max_total_iter);
-        _ST_ res_norms[block_size];
+        _MT_ res_norms[block_size];
         // check that the result is correct by comparing with the actual residual
         PHIST_CHK_IERR(SUBR(blockedGMRESstates_updateSol)(states,block_size,rightPrec,sol,res_norms,false,iflag),*iflag);
      
@@ -440,9 +440,9 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,_N_,MATNAME>,
       PrintVector(PHIST_VERBOSE, "x with right preconditioning", 
                 vec4_vp_, nloc_, lda_, stride_,mpi_comm_);
                 
-      EXPECT_NEAR(st::one(),MvecsEqual(vec2_,vec3_),tol*normR0[0]);
-      EXPECT_NEAR(st::one(),MvecsEqual(vec2_,vec4_),tol*normR0[0]);
-      EXPECT_NEAR(st::one(),MvecsEqual(vec3_,vec4_),tol*normR0[0]);
+      EXPECT_NEAR(mt::one(),MvecsEqual(vec2_,vec3_),tol*normR0[0]);
+      EXPECT_NEAR(mt::one(),MvecsEqual(vec2_,vec4_),tol*normR0[0]);
+      EXPECT_NEAR(mt::one(),MvecsEqual(vec3_,vec4_),tol*normR0[0]);
     }
   }
 
