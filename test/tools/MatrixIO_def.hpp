@@ -159,7 +159,7 @@ int PHIST_TG_PREFIX(hpd_tridiag)(ghost_gidx row, ghost_lidx *len, ghost_gidx* co
 {
 #include "phist_std_typedefs.hpp"
 #ifdef IS_COMPLEX
-    TRIDIAG(st::one(),(_ST_)(-0.5)*st::cmplx_I(),(_ST_)(-0.5)*st::cmplx_I(),false);
+    TRIDIAG(st::one(),(_ST_)(-0.5)*st::cmplx_I(),(_ST_)(+0.5)*st::cmplx_I(),false);
 #else
     TRIDIAG(st::one(),(_ST_)(-0.5),(_ST_)(-0.5),false);
 #endif
@@ -170,11 +170,7 @@ int PHIST_TG_PREFIX(hpd_tridiag)(ghost_gidx row, ghost_lidx *len, ghost_gidx* co
 int PHIST_TG_PREFIX(lapl_tridiag)(ghost_gidx row, ghost_lidx *len, ghost_gidx* cols, void* vval, void *arg)
 {
 #include "phist_std_typedefs.hpp"
-#ifdef IS_COMPLEX
-    TRIDIAG((_ST_)2.0*st::one(),(_ST_)(1.0)*st::cmplx_I(),(_ST_)(-1.0)*st::cmplx_I(),false);
-#else
-    TRIDIAG((_ST_)2.0,(_ST_)(-1.0),(_ST_)(-1.0),false);
-#endif
+  TRIDIAG((_ST_)2.0,(_ST_)(-1.0),(_ST_)(-1.0),false);
   return 0;
 }
 
@@ -184,8 +180,8 @@ int PHIST_TG_PREFIX(nhpd_tridiag)(ghost_gidx row, ghost_lidx *len, ghost_gidx* c
 #include "phist_std_typedefs.hpp"
   _ST_ a=2.0*st::one(), b=(_ST_)-0.99, c=(_ST_)-1.01;
 #ifdef IS_COMPLEX
-  b*=st::cmplx_I();
-  c*=st::cmplx_I();
+  b-=(_ST_)0.01*st::cmplx_I();
+  c-=(_ST_)0.99*st::cmplx_I();
 #endif
   TRIDIAG(a,b,c,false);
   return 0; // not implemented, values above are for hpd_tridiag
