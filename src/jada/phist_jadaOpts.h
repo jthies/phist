@@ -88,10 +88,8 @@ int innerSolvRobust; /*! extra effort to get good jada updates
   //! is in fact not modified.
   void* preconOp;
 
-  //! This fields allows specifying a preconditioner (along with preconOpts to pass in options) in an option file.
-  //! Currently it is the responsibility of the driver routine to create the preconditioner in "preconOp", but in 
-  //! the future we may allow the jada solver(s) to update the preconditioner with new subspace information and   
-  //! shifts during the eigenvalue computation.
+  //! This field allows specifying a preconditioner (along with preconOpts to pass in options) in an option file.
+  //! It is the responsibility of the driver routine to create the preconditioner in "preconOp"
   phist_Eprecon preconType;
 
   //! option string passed to precon_create alongside preconType (if it is not NO_PRECON or INVALID_PRECON)
