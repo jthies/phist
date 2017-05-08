@@ -353,7 +353,8 @@ PHIST_CHK_IERR(*iflag=(nQ_in==nR_in && nR_in==mR_in)?0:PHIST_INVALID_INPUT,*ifla
   }
   else if (nv0<=1)
   {
-    PHIST_SOUT(PHIST_VERBOSE,"start Jacobi-Davidson with Arnoldi iterations\n");
+    PHIST_SOUT(PHIST_VERBOSE,"start Jacobi-Davidson with Arnoldi %d iterations on %s\n",
+        nV, opts.preconOp==NULL?"A":"inv(P)");
     PHIST_CHK_IERR(SUBR( mvec_view_block  ) (V_,      &V,                       0,     nV,        iflag), *iflag);
     PHIST_CHK_IERR(SUBR( mvec_view_block  ) (AV_,     &AV,                      0,     nV,        iflag), *iflag);
     PHIST_CHK_IERR(SUBR( mvec_view_block  ) (BV_,     &BV,                      0,     nV,        iflag), *iflag);
@@ -362,7 +363,18 @@ PHIST_CHK_IERR(*iflag=(nQ_in==nR_in && nR_in==mR_in)?0:PHIST_INVALID_INPUT,*ifla
     // also outputs A*V (DON'T recalculate it from V*H, because this may not be accurate enough!)
     // block Arnoldi seems numerically less useful than single-vector, so we accept these first few
     // steps to be less computationally efficient.
-    PHIST_CHK_IERR(SUBR( simple_arnoldi ) (AB_op, B_op, v0, V, AV, B_op ? BV : NULL, H, nV, iflag), *iflag);
+    //PHIST_CHK_IERR(SUBR( simple_arnoldi ) (AB_op, B_op, v0, V, AV, B_op ? BV : NULL, H, nV, iflag), *iflag);
+    if (opts.preconOp!=NULL)
+    {
+      PHIST_CHK_IERR(SUBR( simple_arnoldi ) ((TYPE(const_linearOp_ptr))opts.preconOp, B_op, v0, V, AV, B_op ? BV : NULL, H, nV, iflag), *iflag);
+      PHIST_CHK_IERR(SUBR(linearOp_apply)(st::one(),AB_op,V,st::zero(),AV,iflag),*iflag);
+      PHIST_CHK_IERR(SUBR(sdMat_view_block)(H_, &H, 0, nV, 0, nV, iflag), *iflag);
+      PHIST_CHK_IERR(SUBR(mvecT_times_mvec)(st::one(),V,AV,st::zero(),H,iflag),*iflag);
+    }
+    else
+    {
+      PHIST_CHK_IERR(SUBR( simple_arnoldi ) (AB_op, B_op, v0, V, AV, B_op ? BV : NULL, H, nV, iflag), *iflag);
+    }
   }
 
   // set views
