@@ -50,6 +50,15 @@ class PreconTraits<ST,phist_IFPACK>
                           "The remaining parameter list is passed to the factory unchanged.\n");
   }
 
+  static void Wrap(void** P, 
+        const void* vA, ST sigma, const void* vB, 
+        void const* Vkern, void const* BVkern,
+        void* last_arg, int* iflag)
+  {
+    PHIST_ENTER_FCN(__FUNCTION__);
+    *iflag=PHIST_NOT_IMPLEMENTED;
+  }
+
   static void Create(void** P, 
         const void* vA, ST sigma, const void* vB, 
         void const* Vkern, void const* BVkern,

@@ -131,6 +131,8 @@ extern "C" void SUBR(precon_create)(TYPE(linearOp_ptr) op, TYPE(const_sparseMat_
 //#else
 //        PHIST_SOUT(PHIST_ERROR,"\t'%s'\n",p);
 #endif
+    PHIST_SOUT(PHIST_ERROR,"In order to wrap an existing preconditioner of the corresponding type, \n"
+                           "you can pass in options=NULL and a pointer to the existing object via last_arg\n");
     *iflag=0;
     return;
   }
@@ -157,7 +159,14 @@ extern "C" void SUBR(precon_create)(TYPE(linearOp_ptr) op, TYPE(const_sparseMat_
     return;
   }
   
-  CALL_PT_MEMBER(precType,Create,&pt->P_,A,sigma,B,Vkern,BVkern,options,last_arg,iflag);
+  if (options==NULL && last_arg!=NULL)
+  {
+    CALL_PT_MEMBER(precType,Wrap,&pt->P_,A,sigma,B,Vkern,BVkern,last_arg,iflag);
+  }
+  else
+  {
+    CALL_PT_MEMBER(precType,Create,&pt->P_,A,sigma,B,Vkern,BVkern,options,last_arg,iflag);
+  }
   
   pt->A_=A;
   pt->B_=B;
