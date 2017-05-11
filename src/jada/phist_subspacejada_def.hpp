@@ -353,7 +353,7 @@ PHIST_CHK_IERR(*iflag=(nQ_in==nR_in && nR_in==mR_in)?0:PHIST_INVALID_INPUT,*ifla
   }
   else if (nv0<=1)
   {
-    PHIST_SOUT(PHIST_VERBOSE,"start Jacobi-Davidson with Arnoldi %d iterations on %s\n",
+    PHIST_SOUT(PHIST_VERBOSE,"start Jacobi-Davidson with %d Arnoldi iterations on %s\n",
         nV, opts.preconOp==NULL?"A":"inv(P)");
     PHIST_CHK_IERR(SUBR( mvec_view_block  ) (V_,      &V,                       0,     nV,        iflag), *iflag);
     PHIST_CHK_IERR(SUBR( mvec_view_block  ) (AV_,     &AV,                      0,     nV,        iflag), *iflag);
