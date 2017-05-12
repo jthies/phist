@@ -14,6 +14,7 @@
 #include <sstream>
 
 #include <cstdio>
+#include <cstring>
 
 extern "C" void phist_jadaOpts_setDefaults(phist_jadaOpts *opts)
 {
@@ -24,6 +25,7 @@ extern "C" void phist_jadaOpts_setDefaults(phist_jadaOpts *opts)
 
   opts->maxIters=300;
   opts->blockSize=1;
+  opts->lookAhead=-1;
   opts->minBas=10;
   opts->maxBas=20;
   opts->convTol=1.0e-12;
@@ -44,6 +46,7 @@ extern "C" void phist_jadaOpts_setDefaults(phist_jadaOpts *opts)
   
   opts->preconOp=NULL;
   opts->preconType=phist_NO_PRECON;
+  strcpy(opts->preconOpts,"none\0");
   opts->preconSkewProject=1;
   opts->preconUpdate=0;
 
@@ -98,6 +101,7 @@ extern "C" void phist_jadaOpts_fromFile(phist_jadaOpts* opts, const char* filena
 
   set_value("maxIters",opts->maxIters,file);
   set_value("blockSize",opts->blockSize,file);
+  set_value("lookAhead",opts->lookAhead,file);
   set_value("minBas",opts->minBas,file);
   set_value("maxBas",opts->maxBas,file);
   set_value("convTol",opts->convTol,file);
@@ -133,6 +137,7 @@ extern "C" void phist_jadaOpts_toFile(phist_jadaOpts const *opts, FILE* stream)
 
   fprintf(stream,"maxIters\t%d\n",opts->maxIters);
   fprintf(stream,"blockSize\t%d\n",opts->blockSize);
+  fprintf(stream,"lookAhead\t%d\n",opts->lookAhead);
   fprintf(stream,"minBas\t%d\n",opts->minBas);
   fprintf(stream,"maxBas\t%d\n",opts->maxBas);
   fprintf(stream,"convTol\t%4.2e\n",opts->convTol);

@@ -91,6 +91,7 @@ extern "C" void SUBR(subspacejada)( TYPE(const_linearOp_ptr) AB_op,  TYPE(const_
   _MT_ tol=opts.convTol;
   int nEig=opts.numEigs;
   int blockDim=opts.blockSize;
+  int lookAhead=opts.lookAhead>0?opts.lookAhead:2*blockDim;
   int maxIter =opts.maxIters;
                          
 int minBase=opts.minBas;
@@ -229,7 +230,7 @@ PHIST_CHK_IERR(*iflag=(nQ_in==nR_in && nR_in==mR_in)?0:PHIST_INVALID_INPUT,*ifla
   PHIST_CHK_IERR(SUBR( mvec_create  ) (&AV_,    AB_op->range_map,  maxBase,                iflag), *iflag);
   PHIST_CHK_IERR(SUBR( mvec_create  ) (&t_,     AB_op->domain_map, blockDim,               iflag), *iflag);
   PHIST_CHK_IERR(SUBR( mvec_create  ) (&At_,    AB_op->range_map,  blockDim,               iflag), *iflag);
-  int resDim = std::min(2*blockDim, nEig+blockDim-1);
+  int resDim = std::min(lookAhead, nEig+blockDim-1);
   PHIST_CHK_IERR(SUBR( mvec_create  ) (&res,    AB_op->range_map,  resDim,                 iflag), *iflag);
 
   PHIST_CHK_IERR(SUBR( sdMat_create ) (&H_,     maxBase,          maxBase,  range_comm,   iflag), *iflag);
@@ -461,7 +462,7 @@ PHIST_TESTING_CHECK_SUBSPACE_INVARIANTS;
   for(*nIter = 0; *nIter < maxIter; (*nIter)++)
   {
 // dynamically adjust current number of "sought" eigenvalues, so we do not consider the 20th eigenvalue if the 1st is not calculated yet!
-nEig_ = std::min(nConvEig + 2*blockDim, nEig+blockDim-1);
+nEig_ = std::min(nConvEig + lookAhead, nEig+blockDim-1);
 // dynamically adjust the size of the buffer for Q_, so we don't work with a huge stride at the beginning of the calculation!
 if( Qsize < nEig_ )
 {
@@ -694,6 +695,13 @@ PHIST_SOUT(PHIST_INFO,"\n");
 
     // check for converged eigenvalues
     int nNewConvEig = 0;
+#if PHIST_OUTLEV>=PHIST_EXTREME
+    for(int i = 0; i < nConvEig; i++)
+    {
+      PHIST_SOUT(PHIST_INFO,"In iteration %d:                    Locked eigenvalue %d is %16.8g%+16.8gi with residual %e\n", 
+        *nIter, i+1, ct::real(ev_H[i]),ct::imag(ev_H[i]), resNorm[i]);
+    }
+#endif
     for(int i = nConvEig; i < std::min(nEig,nEig_); i++)
     {
       if (resNorm[i]>0)
@@ -728,6 +736,13 @@ PHIST_SOUT(PHIST_INFO,"\n");
       else if( blockDim == 1 )
         break;
     }
+#if PHIST_OUTLEV>=PHIST_EXTREME
+    for(int i = std::min(nEig,nEig_); i<nEig+blockDim-1; i++)
+    {
+      PHIST_SOUT(PHIST_INFO,"In iteration %d:          do not consider  Ritz value %d (%16.8g%+16.8gi) yet.\n", 
+        *nIter, i+1, ct::real(ev_H[i]),ct::imag(ev_H[i]));
+    }
+#endif
 
     if( nNewConvEig > 0 )
     {

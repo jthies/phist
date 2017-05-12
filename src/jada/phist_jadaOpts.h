@@ -39,6 +39,7 @@ phist_EeigExtr how; //! use standaard or harmonic Ritz values, etc.
 
 int maxIters; //! maximum iterations allowed
 int blockSize; //! only for block methods (subspacejada)
+int lookAhead; //! consider at most 'lookAhead' unconverged eigenvalues at a time (set it to -1 for the default of 2*blockSize)
 int minBas; //! number of vectors retained upon restart
 int maxBas; //! maximum number of vectors allowed in the basis
 
