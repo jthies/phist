@@ -23,8 +23,9 @@ code alike */
 #define PHIST_WARNING 1
 #define PHIST_INFO 2
 #define PHIST_VERBOSE 3
-#define PHIST_DEBUG 4
-#define PHIST_TRACE 5
+#define PHIST_EXTREME 4
+#define PHIST_DEBUG 5
+#define PHIST_TRACE 6
 
 #ifndef PHIST_OUTLEV
 #define PHIST_OUTLEV PHIST_INFO
