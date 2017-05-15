@@ -71,6 +71,7 @@ phist_ElinSolv innerSolvType; //! GMRES, MINRES, CARP_CG, USER_DEFINED and NO_LI
 int innerSolvBlockSize;
 int innerSolvMaxBas;
 int innerSolvMaxIters;
+double innerSolvBaseTol;    //! in the k'th iteration on eigenvalue j, the tolerance used will be innerTolBase^k (default: 0.1)
 int innerSolvRobust; /*! extra effort to get good jada updates
                       * (in practice this may mean a more accurate orthogonalization etc.)
                       */

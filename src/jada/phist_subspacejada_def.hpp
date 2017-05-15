@@ -110,6 +110,7 @@ symmetric=symmetric||(opts.symmetry==phist_COMPLEX_SYMMETRIC);
 #endif
 
   phist_EeigExtr how=opts.how;
+  _MT_  innerTolBase=(_MT_)opts.innerSolvBaseTol;
 
 #if PHIST_OUTLEV>=PHIST_VERBOSE
   {
@@ -296,7 +297,7 @@ PHIST_CHK_IERR(*iflag=(nQ_in==nR_in && nR_in==mR_in)?0:PHIST_INVALID_INPUT,*ifla
   TYPE(jadaCorrectionSolver_ptr) innerSolv = NULL;
   phist_ElinSolv method = symmetric? phist_MINRES: phist_GMRES;
   PHIST_CHK_IERR(SUBR(jadaCorrectionSolver_create)(&innerSolv, opts, AB_op->domain_map, iflag), *iflag);
-  std::vector<_MT_> innerTol(nEig_,0.1);
+  std::vector<_MT_> innerTol(nEig_,innerTolBase);
   std::vector<_MT_> lastOuterRes(nEig_,mt::zero());
   
   int nv0=0;
@@ -356,6 +357,7 @@ PHIST_CHK_IERR(*iflag=(nQ_in==nR_in && nR_in==mR_in)?0:PHIST_INVALID_INPUT,*ifla
   {
     PHIST_SOUT(PHIST_VERBOSE,"start Jacobi-Davidson with %d Arnoldi iterations on %s\n",
         nV, opts.preconOp==NULL?"A":"inv(P)");
+//    PHIST_SOUT(PHIST_VERBOSE,"start Jacobi-Davidson with %d Arnoldi iterations on A\n", nV);
     PHIST_CHK_IERR(SUBR( mvec_view_block  ) (V_,      &V,                       0,     nV,        iflag), *iflag);
     PHIST_CHK_IERR(SUBR( mvec_view_block  ) (AV_,     &AV,                      0,     nV,        iflag), *iflag);
     PHIST_CHK_IERR(SUBR( mvec_view_block  ) (BV_,     &BV,                      0,     nV,        iflag), *iflag);
@@ -739,8 +741,8 @@ PHIST_SOUT(PHIST_INFO,"\n");
 #if PHIST_OUTLEV>=PHIST_EXTREME
     for(int i = std::min(nEig,nEig_); i<nEig+blockDim-1; i++)
     {
-      PHIST_SOUT(PHIST_INFO,"In iteration %d:          do not consider  Ritz value %d (%16.8g%+16.8gi) yet.\n", 
-        *nIter, i+1, ct::real(ev_H[i]),ct::imag(ev_H[i]));
+      PHIST_SOUT(PHIST_INFO,"In iteration %d:                additional Ritz value %d (%16.8g%+16.8gi) with residual %e\n", 
+        *nIter, i+1, ct::real(ev_H[i]),ct::imag(ev_H[i]),resNorm[i]);
     }
 #endif
 
@@ -906,9 +908,9 @@ PHIST_TESTING_CHECK_SUBSPACE_INVARIANTS;
       for(int i = 0; i < k; i++)
       {
         if( resNorm[nConvEig+i] > 4*lastOuterRes[nConvEig+i] )
-          innerTol[nConvEig+i] = 0.1;
+          innerTol[nConvEig+i] = innerTolBase;
         if( innerTol[nConvEig+i] > mt::eps() )
-          innerTol[nConvEig+i] = mt::max(mt::eps(), innerTol[nConvEig+i]*0.1);
+          innerTol[nConvEig+i] = mt::max(mt::eps(), innerTol[nConvEig+i]*innerTolBase);
         innerTol[nConvEig+i] = mt::max(innerTol[nConvEig+i], 0.1*tol/(mt::eps()+resNorm[nConvEig+i]));
         innerTol[nConvEig+i] = mt::min(innerTol[nConvEig+i], 0.1);
         lastOuterRes[nConvEig+i] = resNorm[nConvEig+i];
