@@ -355,9 +355,9 @@ PHIST_CHK_IERR(*iflag=(nQ_in==nR_in && nR_in==mR_in)?0:PHIST_INVALID_INPUT,*ifla
   }
   else if (nv0<=1)
   {
-    PHIST_SOUT(PHIST_VERBOSE,"start Jacobi-Davidson with %d Arnoldi iterations on %s\n",
-        nV, opts.preconOp==NULL?"A":"inv(P)");
-//    PHIST_SOUT(PHIST_VERBOSE,"start Jacobi-Davidson with %d Arnoldi iterations on A\n", nV);
+//    PHIST_SOUT(PHIST_VERBOSE,"start Jacobi-Davidson with %d Arnoldi iterations on %s\n",
+//        nV, opts.preconOp==NULL?"A":"inv(P)");
+    PHIST_SOUT(PHIST_VERBOSE,"start Jacobi-Davidson with %d Arnoldi iterations on A\n", nV);
     PHIST_CHK_IERR(SUBR( mvec_view_block  ) (V_,      &V,                       0,     nV,        iflag), *iflag);
     PHIST_CHK_IERR(SUBR( mvec_view_block  ) (AV_,     &AV,                      0,     nV,        iflag), *iflag);
     PHIST_CHK_IERR(SUBR( mvec_view_block  ) (BV_,     &BV,                      0,     nV,        iflag), *iflag);
@@ -367,7 +367,7 @@ PHIST_CHK_IERR(*iflag=(nQ_in==nR_in && nR_in==mR_in)?0:PHIST_INVALID_INPUT,*ifla
     // block Arnoldi seems numerically less useful than single-vector, so we accept these first few
     // steps to be less computationally efficient.
     //PHIST_CHK_IERR(SUBR( simple_arnoldi ) (AB_op, B_op, v0, V, AV, B_op ? BV : NULL, H, nV, iflag), *iflag);
-    if (opts.preconOp!=NULL)
+    if (opts.preconOp!=NULL && false)
     {
       PHIST_CHK_IERR(SUBR( simple_arnoldi ) ((TYPE(const_linearOp_ptr))opts.preconOp, B_op, v0, V, AV, B_op ? BV : NULL, H, nV, iflag), *iflag);
       PHIST_CHK_IERR(SUBR(linearOp_apply)(st::one(),AB_op,V,st::zero(),AV,iflag),*iflag);
@@ -412,7 +412,7 @@ PHIST_CHK_IERR(*iflag=(nQ_in==nR_in && nR_in==mR_in)?0:PHIST_INVALID_INPUT,*ifla
   for(int i = 0; i < nV; i++) \
     for(int j = 0; j < nV; j++) \
       orthEps = mt::max(orthEps, st::abs(Htmp_raw[i*ldaHtmp+j] - ((i==j) ? st::one() : st::zero()))); \
-  PHIST_OUT(PHIST_INFO, "Line %d: B-orthogonality of V: %e\n", __LINE__, orthEps); \
+  PHIST_SOUT(PHIST_INFO, "Line %d: B-orthogonality of V: %e\n", __LINE__, orthEps); \
  \
   /* check AV = A*V */ \
   PHIST_CHK_IERR(SUBR( mvec_view_block  ) (Vtmp_, &Vtmp,                  0,       nV-1,          iflag), *iflag); \
@@ -423,7 +423,7 @@ PHIST_CHK_IERR(*iflag=(nQ_in==nR_in && nR_in==mR_in)?0:PHIST_INVALID_INPUT,*ifla
   _MT_ equalEps = normVtmp[0]; \
   for(int i = 0; i < nV; i++) \
     equalEps = mt::max(equalEps, normVtmp[i]); \
-  PHIST_OUT(PHIST_INFO, "Line %d: AV - A*V: %e\n", __LINE__, equalEps); \
+  PHIST_SOUT(PHIST_INFO, "Line %d: AV - A*V: %e\n", __LINE__, equalEps); \
   /* check BV = B*V */ \
   if (B_op!=NULL) { \
   PHIST_CHK_IERR(SUBR( mvec_view_block  ) (Vtmp_, &Vtmp,                  0,       nV-1,          iflag), *iflag); \
@@ -434,7 +434,7 @@ PHIST_CHK_IERR(*iflag=(nQ_in==nR_in && nR_in==mR_in)?0:PHIST_INVALID_INPUT,*ifla
   _MT_ equalEps = normVtmp[0]; \
   for(int i = 0; i < nV; i++) \
     equalEps = mt::max(equalEps, normVtmp[i]); \
-  PHIST_OUT(PHIST_INFO, "Line %d: BV - B*V: %e\n", __LINE__, equalEps); \
+  PHIST_SOUT(PHIST_INFO, "Line %d: BV - B*V: %e\n", __LINE__, equalEps); \
   } \
   /* check H = V'*A*V */ \
   PHIST_CHK_IERR(SUBR( sdMat_view_block ) (Htmp_,&Htmp,0,    nV-1,      0,     nV-1,      iflag), *iflag); \
@@ -444,7 +444,7 @@ PHIST_CHK_IERR(*iflag=(nQ_in==nR_in && nR_in==mR_in)?0:PHIST_INVALID_INPUT,*ifla
   for(int i = 0; i < nV; i++) \
     for(int j = 0; j < nV; j++) \
       equalEps = mt::max(equalEps, st::abs(Htmp_raw[i*ldaHtmp+j])); \
-  PHIST_OUT(PHIST_INFO, "Line %d: H - V'*AV: %e\n", __LINE__, equalEps); \
+  PHIST_SOUT(PHIST_INFO, "Line %d: H - V'*AV: %e\n", __LINE__, equalEps); \
   /* PHIST_SOUT(PHIST_INFO, "H:\n"); */ \
   /* PHIST_CHK_IERR(SUBR( sdMat_print )(H, iflag), *iflag); */ \
   /* PHIST_SOUT(PHIST_INFO, "H - V'*AV:\n"); */ \
