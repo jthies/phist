@@ -577,7 +577,7 @@ static int global_msum(MT* value, int count, MPI_Comm mpi_comm)
   static void PrintVector(int outlev, std::string label, 
         ST* vec_vp, phist_lidx nloc, phist_lidx lda, phist_lidx stride,MPI_Comm mpi_comm) 
   {
-    if (outlev<PHIST_OUTLEV) return;
+    if (outlev>PHIST_OUTLEV) return;
     int rank=0, np=1;
 #ifdef PHIST_HAVE_MPI
     MPI_Comm_rank(mpi_comm,&rank);
