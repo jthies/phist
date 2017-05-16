@@ -15,6 +15,7 @@
 class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,_N_,MATNAME>,
                  public virtual KernelTestWithSparseMat<_ST_,_N_,_N_,PRECNAME>,
                  public virtual KernelTestWithVectors<_ST_,_N_,_NV_,0,4>,
+                 public virtual KernelTestWithVectors<_ST_,_N_,_NVP_,0,2>,
                  public virtual KernelTestWithSdMats<_ST_,_NVP_,_NV_>,
                  public JadaTestWithOpts
 {
@@ -23,6 +24,7 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,_N_,MATNAME>,
     typedef KernelTestWithSparseMat<_ST_,_N_,_N_,MATNAME> ATest;
     typedef KernelTestWithSparseMat<_ST_,_N_,_N_,PRECNAME> PTest;
     typedef KernelTestWithVectors<_ST_,_N_,_NV_,0,4> VTest;
+    typedef KernelTestWithVectors<_ST_,_N_,_NVP_,0,2> QTest;
     typedef KernelTestWithSdMats<_ST_,_NVP_,_NV_> MTest;
 
     static void SetUpTestCase()
@@ -31,6 +33,7 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,_N_,MATNAME>,
       ATest::SetUpTestCase(sparseMatCreateFlag);
       PTest::SetUpTestCase(sparseMatCreateFlag);
       VTest::SetUpTestCase();
+      QTest::SetUpTestCase();
       MTest::SetUpTestCase();
     }
 
@@ -41,6 +44,7 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,_N_,MATNAME>,
       ATest::SetUp();
       PTest::SetUp();
       VTest::SetUp();
+      QTest::SetUp();
       MTest::SetUp();
       JadaTestWithOpts::SetUp();
 
@@ -75,8 +79,11 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,_N_,MATNAME>,
         SUBR(linearOp_wrap_sparseMat)(opP_, PTest::A_, &iflag_);
         ASSERT_EQ(0,iflag_);
         
-        PHISTTEST_MVEC_CREATE(&q_,map_,_NVP_,&iflag_);
-        ASSERT_EQ(0,iflag_);
+        v1_=VTest::vec1_;
+        v2_=VTest::vec2_;
+        v3_=VTest::vec3_;
+        v4_=VTest::vec4_;
+        q_=QTest::vec1_;
         sigma_ = new _ST_[_NV_];
         negSigma_ = new _ST_[_NV_];
         for(int i = 0; i < _NV_; i++)
@@ -102,21 +109,25 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,_N_,MATNAME>,
         SUBR(jadaOp_create)(opA_,NULL,q_,NULL,negSigma_,_NV_,jdOp_,&iflag_);
         ASSERT_EQ(0,iflag_);
 
+        jdPrec_ = new TYPE(linearOp);
+        SUBR(jadaPrec_create)(opP_,q_,q_,sigma_,_NV_,jdPrec_,1,&iflag_);
+        ASSERT_EQ(0,iflag_);
+
         // setup system to solve, exact x and A*x
-        SUBR(mvec_random)(vec2_,&iflag_);
+        SUBR(mvec_random)(v2_,&iflag_);
         ASSERT_EQ(0,iflag_);
         // x needs to be in q^orth
-        SUBR(mvecT_times_mvec)(st::one(),q_,vec2_,st::zero(),mat1_,&iflag_);
+        SUBR(mvecT_times_mvec)(st::one(),q_,v2_,st::zero(),mat1_,&iflag_);
         ASSERT_EQ(0,iflag_);
-        SUBR(mvec_times_sdMat)(-st::one(),q_,mat1_,st::one(),vec2_,&iflag_);
+        SUBR(mvec_times_sdMat)(-st::one(),q_,mat1_,st::one(),v2_,&iflag_);
         ASSERT_EQ(0,iflag_);
         _MT_ tmp[_NV_];
-        SUBR(mvec_normalize)(vec2_, tmp, &iflag_);
+        SUBR(mvec_normalize)(v2_, tmp, &iflag_);
         ASSERT_EQ(0,iflag_);
-        jdOp_->apply(st::one(),jdOp_->A,vec2_,st::zero(),vec3_,&iflag_);
+        jdOp_->apply(st::one(),jdOp_->A,v2_,st::zero(),v3_,&iflag_);
         ASSERT_EQ(0,iflag_);
         // as we are only interested in the direction of vec3_, scale it to one
-        SUBR(mvec_normalize)(vec3_, tmp, &iflag_);
+        SUBR(mvec_normalize)(v3_, tmp, &iflag_);
         ASSERT_EQ(0,iflag_);
 
         jadaOpts_.preconType=phist_USER_PRECON;
@@ -141,8 +152,6 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,_N_,MATNAME>,
         if( opP_ != NULL )
           delete opP_;
         opP_ = NULL;
-        SUBR(mvec_delete)(q_,&iflag_);
-        ASSERT_EQ(0,iflag_);
         if( sigma_ != NULL )
           delete[] sigma_;
         sigma_ = NULL;
@@ -152,6 +161,7 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,_N_,MATNAME>,
       }
       MTest::TearDown();
       VTest::TearDown();
+      QTest::TearDown();
       ATest::TearDown();
       PTest::TearDown();
     }
@@ -160,6 +170,7 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,_N_,MATNAME>,
     {
       MTest::TearDownTestCase();
       VTest::TearDownTestCase();
+      QTest::TearDownTestCase();
       ATest::TearDownTestCase();
       PTest::TearDownTestCase();
     }
@@ -170,7 +181,7 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,_N_,MATNAME>,
 
       // the solution should be scaled to one
       _MT_ solutionNorm[_NV_];
-      SUBR(mvec_norm2)(vec2_, solutionNorm, &iflag_);
+      SUBR(mvec_norm2)(v2_, solutionNorm, &iflag_);
       ASSERT_EQ(0,iflag_);
       for(int i = 0; i < _NV_; i++)
       {
@@ -178,19 +189,19 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,_N_,MATNAME>,
       }
 
       // we cannot directly compare the vectors because the solution is scaled
-      jdOp_->apply(st::one(),jdOp_->A,vec2_,st::zero(),vec1_,&iflag_);
+      jdOp_->apply(st::one(),jdOp_->A,v2_,st::zero(),v1_,&iflag_);
       ASSERT_EQ(0,iflag_);
-      // rather check that vec1_ and vec3_ point in the same direction
+      // rather check that v1_ and vec3_ point in the same direction
       _MT_ tmp[_NV_];
-      SUBR(mvec_normalize)(vec1_, tmp, &iflag_);
+      SUBR(mvec_normalize)(v1_, tmp, &iflag_);
       ASSERT_EQ(0,iflag_);
       _ST_ dot[_NV_];
-      SUBR(mvec_dot_mvec)(vec3_, vec1_, dot, &iflag_);
+      SUBR(mvec_dot_mvec)(v3_, v1_, dot, &iflag_);
       ASSERT_EQ(0,iflag_);
-      SUBR(mvec_vadd_mvec)(dot, vec3_, -st::one(), vec1_, &iflag_);
+      SUBR(mvec_vadd_mvec)(dot, v3_, -st::one(), v1_, &iflag_);
       ASSERT_EQ(0,iflag_);
       _MT_ resNorm[_NV_];
-      SUBR(mvec_norm2)(vec1_, resNorm, &iflag_);
+      SUBR(mvec_norm2)(v1_, resNorm, &iflag_);
       ASSERT_EQ(0,iflag_);
       // check that the resnorm is actually near the required norm
       PHIST_SOUT(PHIST_INFO, "required tol.:");
@@ -324,7 +335,7 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,_N_,MATNAME>,
 
     TYPE(linearOp_ptr) opA_ = NULL, opP_ = NULL;
     TYPE(linearOp_ptr) jdOp_ = NULL, jdPrec_ = NULL;
-    TYPE(mvec_ptr) q_ = NULL;
+    TYPE(mvec_ptr) q_=NULL, v1_=NULL,v2_=NULL,v3_=NULL,v4_=NULL;
     _ST_* sigma_ = NULL;
     _ST_* negSigma_ = NULL;
 };
@@ -345,36 +356,56 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,_N_,MATNAME>,
         ASSERT_EQ(0,iflag_);
         // aplying the preconditioner should be the same as applying the original Ainv matrix
         _ST_ alpha=st::prand(),beta=st::prand();
-        SUBR(mvec_random)(vec1_,&iflag_);
+        SUBR(mvec_random)(v1_,&iflag_);
         ASSERT_EQ(0,iflag_);
-        SUBR(mvec_random)(vec2_,&iflag_);
+        SUBR(mvec_random)(v2_,&iflag_);
         ASSERT_EQ(0,iflag_);
-        SUBR(mvec_add_mvec)(st::one(),vec2_,st::zero(),vec3_,&iflag_);
+        SUBR(mvec_add_mvec)(st::one(),v2_,st::zero(),v3_,&iflag_);
         ASSERT_EQ(0,iflag_);
-        SUBR(mvec_add_mvec)(st::one(),vec2_,st::zero(),vec4_,&iflag_);
+        SUBR(mvec_add_mvec)(st::one(),v2_,st::zero(),v4_,&iflag_);
         ASSERT_EQ(0,iflag_);
         
         // reference solution using plain spMVM interface
-        SUBR(sparseMat_times_mvec)(alpha,PTest::A_,vec1_,beta,vec2_,&iflag_);
+        SUBR(sparseMat_times_mvec)(alpha,PTest::A_,v1_,beta,v2_,&iflag_);
         ASSERT_EQ(0,iflag_);
 
         // sanity check if our linearOp wrapper works
-        SUBR(linearOp_apply)(alpha,opP_,vec1_,beta,vec3_,&iflag_);
+        SUBR(linearOp_apply)(alpha,opP_,v1_,beta,v3_,&iflag_);
         ASSERT_EQ(0,iflag_);
-        ASSERT_NEAR(mt::one(),MvecsEqual(vec2_,vec3_),10*VTest::releps());
+        ASSERT_NEAR(mt::one(),MvecsEqual(v2_,v3_),10*VTest::releps());
 
         // yet another wrapper ontop: userPrec.A_ is opP_ wrapped as an internal precon struct with a phist_Eprecon to identify it as USER_DEFINED
-        SUBR(linearOp_apply)(alpha,&userPrec,vec1_,beta,vec4_,&iflag_);
+        SUBR(linearOp_apply)(alpha,&userPrec,v1_,beta,v4_,&iflag_);
         ASSERT_EQ(0,iflag_);
-        ASSERT_NEAR(mt::one(),MvecsEqual(vec2_,vec4_),10*VTest::releps());
+        ASSERT_NEAR(mt::one(),MvecsEqual(v2_,v4_),10*VTest::releps());
     }
   }
 
+  // test if q is orthonormal (prerequisite for other tests, although it does not have anything to do with preconditioning)
+  TEST_F(CLASSNAME, q_is_orthonormal)
+  {
+    _ST_* q_vp=NULL;
+    phist_lidx ldq;
+    SUBR(mvec_extract_view)(q_,&q_vp,&ldq,&iflag_);
+    ASSERT_EQ(0,iflag_);
+    EXPECT_NEAR(mt::one(),QTest::ColsAreNormalized(q_vp,nloc_,ldq,QTest::stride_,mpi_comm_),(MT)100.*QTest::releps(q_));
+    EXPECT_NEAR(mt::one(),QTest::ColsAreOrthogonal(q_vp,nloc_,ldq,QTest::stride_,mpi_comm_),(MT)100.*QTest::releps(q_));
+  }
+
+  // apply wrapped projected preconditioner and check PJD\Q = (I-(P\Q)inv(Q'P\Q)Q')P\Q = 0
   TEST_F(CLASSNAME, apply_jadaPrec)
   {
     if( typeImplemented_ && !problemTooSmall_ )
     {
-      // apply wrapped projected preconditioner and check orthogonality of result
+      ASSERT_EQ(0,iflag_);
+      TYPE(mvec_ptr) pq=NULL;
+      SUBR(mvec_clone_shape)(&pq,q_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(linearOp_apply)(st::one(),jdPrec_,q_,st::zero(),pq,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      
+      // should give 0 if the projection works
+      ASSERT_NEAR(mt::one(),MvecEqual(pq,st::zero()),VTest::releps());
     }
   }
 
@@ -383,27 +414,27 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,_N_,MATNAME>,
   {
     if( typeImplemented_ && !problemTooSmall_ )
     {
-      SUBR(mvec_put_value)(vec1_,st::one(),&iflag_);
+      SUBR(mvec_put_value)(v1_,st::one(),&iflag_);
       ASSERT_EQ(0,iflag_);
       _MT_ nrm0;
-      SUBR(mvec_normalize)(vec1_,&nrm0,&iflag_);
+      SUBR(mvec_normalize)(v1_,&nrm0,&iflag_);
       ASSERT_EQ(0,iflag_);
-      SUBR(mvec_put_value)(vec2_,st::zero(),&iflag_);
+      SUBR(mvec_put_value)(v2_,st::zero(),&iflag_);
       ASSERT_EQ(0,iflag_);
 
       // compute initial residual norm. vec1 is b, vec2 x0, vec3 will be b-Ax0
-      SUBR(mvec_add_mvec)(st::one(),vec1_,st::zero(),vec3_,&iflag_);
+      SUBR(mvec_add_mvec)(st::one(),v1_,st::zero(),v3_,&iflag_);
       ASSERT_EQ(0,iflag_);
-      SUBR(sparseMat_times_mvec)(-st::one(),ATest::A_,vec2_,st::one(),vec3_,&iflag_);
+      SUBR(sparseMat_times_mvec)(-st::one(),ATest::A_,v2_,st::one(),v3_,&iflag_);
       ASSERT_EQ(0,iflag_);
       _MT_ normR0[_NV_];
-      SUBR(mvec_norm2)(vec3_,normR0,&iflag_);
+      SUBR(mvec_norm2)(v3_,normR0,&iflag_);
             ASSERT_EQ(0,iflag_);
 
       // copy X0 to vec3 and vec4
-      SUBR(mvec_add_mvec)(st::one(),vec2_,st::zero(),vec3_,&iflag_);
+      SUBR(mvec_add_mvec)(st::one(),v2_,st::zero(),v3_,&iflag_);
       ASSERT_EQ(0,iflag_);
-      SUBR(mvec_add_mvec)(st::one(),vec2_,st::zero(),vec4_,&iflag_);
+      SUBR(mvec_add_mvec)(st::one(),v2_,st::zero(),v4_,&iflag_);
       ASSERT_EQ(0,iflag_);
       
       int max_iter=_MAXBAS_;
@@ -412,19 +443,19 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,_N_,MATNAME>,
       
       // run GMRES or MINRES without preconditioning
       run_krylov_solver(opA_, NULL, NULL,
-                        vec1_, vec2_,
+                        v1_, v2_,
                         _SOLVTYPE_, &num_iter0, tol, &iflag_);
       ASSERT_EQ(0,iflag_);
 
       // with left preconditioning
       run_krylov_solver(opA_, opP_, NULL,
-                        vec1_, vec3_, 
+                        v1_, v3_, 
                         _SOLVTYPE_, &num_iter1, tol, &iflag_);
       ASSERT_EQ(0,iflag_);
       
       // with right preconditioning
       run_krylov_solver(opA_, NULL, opP_,
-                        vec1_, vec4_, 
+                        v1_, v4_, 
                         _SOLVTYPE_, &num_iter2, tol, &iflag_);
       ASSERT_EQ(0,iflag_);
     
@@ -433,16 +464,16 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,_N_,MATNAME>,
       // left or right preconditioning should do roughly the same
       ASSERT_LT(std::abs(num_iter1-num_iter2),2);
       // and the results should be almost the same, too
-      PrintVector(PHIST_VERBOSE, "x without preconditioning", 
-                vec2_vp_, nloc_, lda_, stride_,mpi_comm_);
-      PrintVector(PHIST_VERBOSE, "x with left preconditioning", 
-                vec3_vp_, nloc_, lda_, stride_,mpi_comm_);
-      PrintVector(PHIST_VERBOSE, "x with right preconditioning", 
-                vec4_vp_, nloc_, lda_, stride_,mpi_comm_);
+      VTest::PrintVector(PHIST_VERBOSE, "x without preconditioning", 
+                VTest::vec2_vp_, VTest::nloc_, VTest::lda_, VTest::stride_,mpi_comm_);
+      VTest::PrintVector(PHIST_VERBOSE, "x with left preconditioning", 
+                VTest::vec3_vp_, nloc_, VTest::lda_, VTest::stride_,mpi_comm_);
+      VTest::PrintVector(PHIST_VERBOSE, "x with right preconditioning", 
+                VTest::vec4_vp_, nloc_, VTest::lda_, VTest::stride_,mpi_comm_);
                 
-      EXPECT_NEAR(mt::one(),MvecsEqual(vec2_,vec3_),tol*normR0[0]);
-      EXPECT_NEAR(mt::one(),MvecsEqual(vec2_,vec4_),tol*normR0[0]);
-      EXPECT_NEAR(mt::one(),MvecsEqual(vec3_,vec4_),tol*normR0[0]);
+      EXPECT_NEAR(mt::one(),MvecsEqual(v2_,v3_),tol*normR0[0]);
+      EXPECT_NEAR(mt::one(),MvecsEqual(v2_,v4_),tol*normR0[0]);
+      EXPECT_NEAR(mt::one(),MvecsEqual(v3_,v4_),tol*normR0[0]);
     }
   }
 
@@ -463,11 +494,11 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,_N_,MATNAME>,
         tol[i] = (_MT_)exp((_MT_)-8*mt::one() + (_MT_)4*mt::prand());
       }
 
-      SUBR(mvec_put_value)(vec2_, st::zero(), &iflag_);
+      SUBR(mvec_put_value)(v2_, st::zero(), &iflag_);
       ASSERT_EQ(0, iflag_);
 
       // run
-      SUBR(jadaCorrectionSolver_run)(solver, opA_, NULL, q_, NULL, sigma_,vec3_, NULL, tol, 200, vec2_, 1, 0, 0, &iflag_);
+      SUBR(jadaCorrectionSolver_run)(solver, opA_, NULL, q_, NULL, sigma_,v3_, NULL, tol, 200, v2_, 1, 0, 0, &iflag_);
       ASSERT_EQ(0, iflag_);
 
       // check all solutions
