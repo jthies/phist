@@ -33,6 +33,8 @@ using namespace testing;
 //#define _SOLVTYPE_ phist_MINRES
 #define _SOLVTYPE_ phist_GMRES
 #define _MAXBAS_ 150
+// number of inner Krylov iterations inside subspacejada
+#define _MAXINNER_ 10
 
 // matrix size
 #define _N_ 250

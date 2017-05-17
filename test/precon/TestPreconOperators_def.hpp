@@ -48,8 +48,8 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,_N_,MATNAME>,
       JadaTestWithOpts::SetUp();
 
       jadaOpts_.innerSolvType=_SOLVTYPE_;
-      jadaOpts_.innerSolvMaxIters=_MAXBAS_;
-      jadaOpts_.innerSolvMaxBas=_MAXBAS_;
+      jadaOpts_.innerSolvMaxIters=_MAXINNER_;
+      jadaOpts_.innerSolvMaxBas=_MAXINNER_;
       jadaOpts_.minBas=12;
       jadaOpts_.maxBas=jadaOpts_.minBas+10*_NV_;
       jadaOpts_.convTol=1e-6;
@@ -468,12 +468,12 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,_N_,MATNAME>,
       // left or right preconditioning should do roughly the same
       ASSERT_LT(std::abs(num_iter1-num_iter2),2);
       // and the results should be almost the same, too
-      VTest::PrintVector(PHIST_VERBOSE, "x without preconditioning", 
-                VTest::vec2_vp_, VTest::nloc_, VTest::lda_, VTest::stride_,mpi_comm_);
-      VTest::PrintVector(PHIST_VERBOSE, "x with left preconditioning", 
-                VTest::vec3_vp_, nloc_, VTest::lda_, VTest::stride_,mpi_comm_);
-      VTest::PrintVector(PHIST_VERBOSE, "x with right preconditioning", 
-                VTest::vec4_vp_, nloc_, VTest::lda_, VTest::stride_,mpi_comm_);
+//      VTest::PrintVector(PHIST_VERBOSE, "x without preconditioning", 
+//                VTest::vec2_vp_, VTest::nloc_, VTest::lda_, VTest::stride_,mpi_comm_);
+//      VTest::PrintVector(PHIST_VERBOSE, "x with left preconditioning", 
+//                VTest::vec3_vp_, nloc_, VTest::lda_, VTest::stride_,mpi_comm_);
+//      VTest::PrintVector(PHIST_VERBOSE, "x with right preconditioning", 
+//                VTest::vec4_vp_, nloc_, VTest::lda_, VTest::stride_,mpi_comm_);
                 
       EXPECT_NEAR(mt::one(),MvecsEqual(v2_,v3_),tol*normR0[0]);
       EXPECT_NEAR(mt::one(),MvecsEqual(v2_,v4_),tol*normR0[0]);
@@ -515,29 +515,53 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,_N_,MATNAME>,
 
   
 
+// this test is independent of _NVP_
+#if _NVP_==1
   TEST_F(CLASSNAME, subspacejada)
   {
     if( typeImplemented_ && !problemTooSmall_ )
     {
-      int nEig=3;
-      jadaOpts_.numEigs=nEig;
+      int nEig1=3,nEig2=nEig1;
+      jadaOpts_.numEigs=nEig1;
       int blockDim=_NV_;
-      int nIter=100;
-      int nQ=nEig+blockDim-1;
-      TYPE(mvec_ptr) Q=NULL;
-      PHISTTEST_MVEC_CREATE(&Q,map_,nQ,&iflag_);
+      int nIter1=100,nIter2=2*nIter1;
+      int nQ=nEig1+blockDim-1;
+      TYPE(mvec_ptr) Q1=NULL,Q2=NULL;
+      PHISTTEST_MVEC_CREATE(&Q1,map_,nQ,&iflag_);
       ASSERT_EQ(0,iflag_);
-      TYPE(sdMat_ptr) R=NULL;
-      SUBR(sdMat_create)(&R,nQ,nQ,comm_,&iflag_);
+      PHISTTEST_MVEC_CREATE(&Q2,map_,nQ,&iflag_);
       ASSERT_EQ(0,iflag_);
-      MvecOwner<_ST_> _Q(Q);
-      SdMatOwner<_ST_> _R(R);
+      TYPE(sdMat_ptr) R1=NULL,R2=NULL;
+      SUBR(sdMat_create)(&R1,nQ,nQ,comm_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(sdMat_create)(&R2,nQ,nQ,comm_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      MvecOwner<_ST_> _Q1(Q1),_Q2(Q2);
+      SdMatOwner<_ST_> _R1(R1),_R2(R2);
       
-      _CT_ ev[nQ];
-      _MT_ resNorm[nQ];
+      _CT_ ev1[nQ],ev2[nQ];
+      _MT_ resNorm1[nQ],resNorm2[nQ];
       
+      // set starting vector, note that this test is only compled with _NVP_==1
+      jadaOpts_.v0=q_;
+      
+      // use fixed number of inner iterations because preconditioning distorts the GMRES
+      // convergence tolerance
+      jadaOpts_.innerSolvBaseTol=0.0;
+      
+      // run with preconditioner
       SUBR(subspacejada)(opA_, NULL, jadaOpts_,
-          Q, R, ev, resNorm, &nEig, &nIter, &iflag_);
-      ASSERT_EQ(0,iflag_);
+          Q1, R1, ev1, resNorm1, &nEig1, &nIter1, &iflag_);
+      EXPECT_EQ(0,iflag_);
+
+      // run without preconditioner
+      jadaOpts_.preconOp=NULL;
+      SUBR(subspacejada)(opA_, NULL, jadaOpts_,
+          Q2, R2, ev2, resNorm2, &nEig2, &nIter2, &iflag_);
+      EXPECT_EQ(0,iflag_);
+      
+      // the preconditioner should at least not hurt the overall convergence:
+      ASSERT_LE(nIter1,nIter2);
     }
   }
+#endif
