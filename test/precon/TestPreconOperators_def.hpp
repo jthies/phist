@@ -84,7 +84,7 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,_N_,MATNAME>,
         v4_=VTest::vec4_;
         q_=QTest::vec1_;
         sigma_ = new _ST_[_NV_];
-        noSigma_ = new _ST_[_NV_];
+        noSigma_ = new _ST_[std::max(_NV_,_NVP_)];
         negSigma_ = new _ST_[_NV_];
         for(int i = 0; i < _NV_; i++)
         {
@@ -93,6 +93,7 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,_N_,MATNAME>,
           negSigma_[i] = -sigma_[i];
           noSigma_[i]  = st::zero();
         }
+        for (int i=0; i<_NVP_; i++) noSigma_[i]=st::zero();
 
         // create random orthogonal Q
         SUBR(mvec_random)(q_,&iflag_);
@@ -110,8 +111,9 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,_N_,MATNAME>,
         SUBR(jadaOp_create)(opA_,NULL,q_,NULL,negSigma_,_NV_,jdOp_,&iflag_);
         ASSERT_EQ(0,iflag_);
 
+        //note: we also want to apply this operator to Q, hence the max(_NV_,_NVP_) argument for the number of shifts
         jdPrec_ = new TYPE(linearOp);
-        SUBR(jadaPrec_create)(opP_,q_,q_,noSigma_,_NV_,jdPrec_,1,&iflag_);
+        SUBR(jadaPrec_create)(opP_,q_,q_,noSigma_,std::max(_NV_,_NVP_),jdPrec_,1,&iflag_);
         ASSERT_EQ(0,iflag_);
 
         // setup system to solve, exact x and A*x

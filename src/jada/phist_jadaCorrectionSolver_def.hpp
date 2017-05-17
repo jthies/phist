@@ -106,12 +106,13 @@ void SUBR(jadaCorrectionSolver_run)(TYPE(jadaCorrectionSolver_ptr) me,
   PHIST_ENTER_FCN(__FUNCTION__);
   *iflag = 0;
 
-  // total number of systems to solve
+  // total number of systems to solve. Note that we may get more vectors in res but only should
+  // consider res(resIndex(1:totalNumSys),:)
   int totalNumSys, totalNumRHS, numProj;
   PHIST_CHK_IERR(SUBR(mvec_num_vectors)(t, &totalNumSys, iflag), *iflag);
   PHIST_CHK_IERR(SUBR(mvec_num_vectors)(res, &totalNumRHS, iflag), *iflag);
   PHIST_CHK_IERR(SUBR(mvec_num_vectors)(Qtil, &numProj, iflag), *iflag);
-
+  
   // this check may fail: subspacejada expects us to grab the RHS's needed from res(:,resIndex[0:totalNumSys-1])
   //PHIST_CHK_IERR(*iflag=totalNumSys==totalNumRHS?0:PHIST_INVALID_INPUT,*iflag);
 
@@ -318,7 +319,7 @@ void SUBR(jadaCorrectionSolver_run)(TYPE(jadaCorrectionSolver_ptr) me,
   {
     // create preconditioner with totalNumSys zero shifts because we need to apply it to the RHS as well and
     // we check internally that sufficient shifts are given.
-    PHIST_CHK_IERR(SUBR(jadaPrec_create)(me->leftPrecon,q,Bq,&preconShifts[0],totalNumSys,&jadaPrecL,me->preconSkewProject,iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(jadaPrec_create)(me->leftPrecon,q,Bq,&preconShifts[0],totalNumRHS,&jadaPrecL,me->preconSkewProject,iflag),*iflag);
     rhs=NULL;
     PHIST_CHK_IERR(SUBR(mvec_clone_shape)(&rhs,res,iflag),*iflag);
     PHIST_CHK_IERR(jadaPrecL.apply(st::one(),jadaPrecL.A,res,st::zero(),rhs,iflag),*iflag);

@@ -75,6 +75,7 @@ class TYPE(jadaOp_data)
   TYPE(const_linearOp_ptr)    leftPrecon_op;   // left preconditioning operator
   TYPE(const_mvec_ptr)  V;      // B-orthonormal basis
   TYPE(const_mvec_ptr)  BV;     // B*V
+  int num_shifts;               // number of shifts given to constructor
   const _ST_*           sigma;  // array of NEGATIVE shifts, assumed to have correct size; TODO: what about 'complex' shifts for real JDQR?
   TYPE(mvec_ptr)        X_proj; // temporary storage for (I-VV'B)X, only used for B!= NULL
   MvecOwner<_ST_> _X_proj, _V_prec; // these objects make sure that some temporary storage is freed when the object is deleted
@@ -88,6 +89,13 @@ void SUBR(jadaOp_apply_project_none)(_ST_ alpha, const void* op, TYPE(const_mvec
 #include "phist_std_typedefs.hpp"
   PHIST_ENTER_FCN(__FUNCTION__);
   PHIST_CAST_PTR_FROM_VOID(const TYPE(jadaOp_data), jadaOp, op, *iflag);
+
+  int nvecX;
+  PHIST_CHK_IERR(SUBR(mvec_num_vectors)(X,&nvecX,iflag),*iflag);
+  if (nvecX>jadaOp->num_shifts)
+  {
+    PHIST_CHK_IERR(*iflag=PHIST_INVALID_INPUT,*iflag);
+  }
 
   if( alpha == st::zero() )
   {
@@ -128,6 +136,13 @@ void SUBR(jadaOp_apply_project_pre)(_ST_ alpha, const void* op, TYPE(const_mvec_
 #include "phist_std_typedefs.hpp"
   PHIST_ENTER_FCN(__FUNCTION__);
   PHIST_CAST_PTR_FROM_VOID(const TYPE(jadaOp_data), jadaOp, op, *iflag);
+
+  int nvecX;
+  PHIST_CHK_IERR(SUBR(mvec_num_vectors)(X,&nvecX,iflag),*iflag);
+  if (nvecX>jadaOp->num_shifts)
+  {
+    PHIST_CHK_IERR(*iflag=PHIST_INVALID_INPUT,*iflag);
+  }
 
   if( alpha == st::zero() )
   {
@@ -202,6 +217,13 @@ void SUBR(jadaOp_apply_project_post)(_ST_ alpha, const void* op, TYPE(const_mvec
   PHIST_ENTER_FCN(__FUNCTION__);
   PHIST_CAST_PTR_FROM_VOID(const TYPE(jadaOp_data), jadaOp, op, *iflag);
 
+  int nvecX;
+  PHIST_CHK_IERR(SUBR(mvec_num_vectors)(X,&nvecX,iflag),*iflag);
+  if (nvecX>jadaOp->num_shifts)
+  {
+    PHIST_CHK_IERR(*iflag=PHIST_INVALID_INPUT,*iflag);
+  }
+
   if( alpha == st::zero() )
   {
     PHIST_CHK_IERR( SUBR( mvec_scale       ) (Y, beta, iflag), *iflag);
@@ -249,6 +271,13 @@ void SUBR(jadaOp_apply_project_pre_post)(_ST_ alpha, const void* op, TYPE(const_
 #include "phist_std_typedefs.hpp"
   PHIST_ENTER_FCN(__FUNCTION__);
   PHIST_CAST_PTR_FROM_VOID(const TYPE(jadaOp_data), jadaOp, op, *iflag);
+
+  int nvecX;
+  PHIST_CHK_IERR(SUBR(mvec_num_vectors)(X,&nvecX,iflag),*iflag);
+  if (nvecX>jadaOp->num_shifts)
+  {
+    PHIST_CHK_IERR(*iflag=PHIST_INVALID_INPUT,*iflag);
+  }
 
   if( alpha == st::zero() )
   {
@@ -339,6 +368,7 @@ extern "C" void SUBR(jadaOp_create)(TYPE(const_linearOp_ptr)    AB_op,
   myOp->leftPrecon_op = NULL;
   myOp->V      = V;
   myOp->BV     = (BV != NULL ? BV     : V);
+  myOp->num_shifts = nvec;
   myOp->sigma  = sigma;
   // allocate necessary temporary arrays
   int nvecp=0;
@@ -460,21 +490,23 @@ extern "C" void SUBR(jadaPrec_create)(TYPE(const_linearOp_ptr) P_op,
     PHIST_CHK_IERR(P_op->apply(st::one(),P_op->A,V,st::zero(),PV,iflag),*iflag);
     TYPE(sdMat_ptr) BVtPV=NULL, M=NULL;
     phist_const_comm_ptr comm=NULL;
+
     PHIST_CHK_IERR(phist_map_get_comm(P_op->domain_map,&comm,iflag),*iflag);
     PHIST_CHK_IERR(SUBR(sdMat_create)(&BVtPV, nproj,nproj,comm,iflag),*iflag);
     PHIST_CHK_IERR(SUBR(sdMat_create)(&M, nproj,nproj,comm,iflag),*iflag);
     SdMatOwner<_ST_> _BVtPV(BVtPV), _M(M);
     
     PHIST_CHK_IERR(SUBR(mvecT_times_mvec)(st::one(),BV,PV,st::zero(),BVtPV,iflag),*iflag);
-      
+
     // compute the *transposed* pseudo-inverse of V'K\V in place
     int rank;
     PHIST_CHK_IERR(SUBR(sdMat_pseudo_inverse)(BVtPV,&rank,iflag),*iflag);
     // explicitly transpose the result
     PHIST_CHK_IERR(SUBR(sdMatT_add_sdMat)(st::one(),BVtPV,st::zero(),M,iflag),*iflag);
+
     // in-place PV*(V'P\V)^+
     PHIST_CHK_IERR(SUBR(mvec_times_sdMat_inplace)(PV,M,iflag),*iflag);
-            
+
     // use the version with only post-projection by giving B_op==NULL:
     PHIST_CHK_IERR(SUBR(jadaOp_create)(P_op,NULL,BV,PV,sigma, nvec, jdPrec,iflag),*iflag);
     jdPrec->apply=SUBR(jadaOp_apply_project_post);
