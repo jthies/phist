@@ -69,7 +69,7 @@ class KernelTestWithSparseMat<_ST_, _Nglob, _Mglob, _MatName, _multipleDefinitio
           else if (_MatName==MATNAME_nhpd_tridiag) rowfunc=phist::testing::PHIST_TG_PREFIX(nhpd_tridiag);
           else if (_MatName==MATNAME_nhid_tridiag) rowfunc=phist::testing::PHIST_TG_PREFIX(nhid_tridiag);
           else if (_MatName==MATNAME_hpd_tridiag_ainv) rowfunc=phist::testing::PHIST_TG_PREFIX(hpd_tridiag_ainv);
-          else if (_MatName==MATNAME_lapl_tridiag_ainv) rowfunc=phist::testing::PHIST_TG_PREFIX(hpd_tridiag_ainv);
+          else if (_MatName==MATNAME_lapl_tridiag_ainv) rowfunc=phist::testing::PHIST_TG_PREFIX(lapl_tridiag_ainv);
           else if (_MatName==MATNAME_hid_tridiag_ainv) rowfunc=phist::testing::PHIST_TG_PREFIX(hid_tridiag_ainv);
           else if (_MatName==MATNAME_nhpd_tridiag_ainv) rowfunc=phist::testing::PHIST_TG_PREFIX(nhpd_tridiag_ainv);
           else if (_MatName==MATNAME_nhid_tridiag_ainv) rowfunc=phist::testing::PHIST_TG_PREFIX(nhid_tridiag_ainv);

@@ -45,6 +45,9 @@ void SUBR(read_mat)(const char* filebase,phist_const_comm_ptr comm,int nglob, in
   //! creates an approximate inverse of hpd_tridiag (the inverse of the 2x2 block diagonal approximation of A)
   int PHIST_TG_PREFIX(hpd_tridiag_ainv)(ghost_gidx row, ghost_lidx *len, ghost_gidx* cols, void* vval, void *arg);
 
+  //! creates an approximate inverse of lapl_tridiag (the inverse of the 2x2 block diagonal approximation of A)
+  int PHIST_TG_PREFIX(lapl_tridiag_ainv)(ghost_gidx row, ghost_lidx *len, ghost_gidx* cols, void* vval, void *arg);
+
   //! creates an approximate inverse of nhpd_tridiag (the inverse of the 2x2 block diagonal approximation of A)
   int PHIST_TG_PREFIX(nhpd_tridiag_ainv)(ghost_gidx row, ghost_lidx *len, ghost_gidx* cols, void* vval, void *arg);
 
