@@ -316,7 +316,9 @@ void SUBR(jadaCorrectionSolver_run)(TYPE(jadaCorrectionSolver_ptr) me,
   // wrap the preconditioner so that apply_shifted is called
   if (me->leftPrecon!=NULL)
   {
-    PHIST_CHK_IERR(SUBR(jadaPrec_create)(me->leftPrecon,q,Bq,&preconShifts[0],k,&jadaPrecL,me->preconSkewProject,iflag),*iflag);
+    // create preconditioner with totalNumSys zero shifts because we need to apply it to the RHS as well and
+    // we check internally that sufficient shifts are given.
+    PHIST_CHK_IERR(SUBR(jadaPrec_create)(me->leftPrecon,q,Bq,&preconShifts[0],totalNumSys,&jadaPrecL,me->preconSkewProject,iflag),*iflag);
     rhs=NULL;
     PHIST_CHK_IERR(SUBR(mvec_clone_shape)(&rhs,res,iflag),*iflag);
     PHIST_CHK_IERR(jadaPrecL.apply(st::one(),jadaPrecL.A,res,st::zero(),rhs,iflag),*iflag);
@@ -325,7 +327,7 @@ void SUBR(jadaCorrectionSolver_run)(TYPE(jadaCorrectionSolver_ptr) me,
   }
   else if (me->rightPrecon!=NULL)
   {
-    PHIST_CHK_IERR(SUBR(jadaPrec_create)(me->rightPrecon,q,Bq,&currShifts[0],k,&jadaPrecR,me->preconSkewProject,iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(jadaPrec_create)(me->rightPrecon,q,Bq,&preconShifts[0],totalNumSys,&jadaPrecR,me->preconSkewProject,iflag),*iflag);
     jadaPrecRight=&jadaPrecR;
   }
   

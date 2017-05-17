@@ -184,7 +184,7 @@ void SUBR(orthogrrB)(TYPE(const_mvec_ptr) W, TYPE(mvec_ptr) V, TYPE(mvec_ptr) BV
       }
       PHIST_CHK_IERR(SUBR(sdMat_normF)(WtV,&WtV_err,iflag),*iflag);
       VtV_err += WtV_err;
-      PHIST_SOUT(PHIST_VERBOSE, "orthogRR: iter %d phase 1, desired eps %8.4e, WtV err. %8.4e, (est.) VtV err. %8.4e\n", iter, desiredEps, WtV_err, VtV_err);
+      PHIST_SOUT(PHIST_EXTREME, "orthogRR: iter %d phase 1, desired eps %8.4e, WtV err. %8.4e, (est.) VtV err. %8.4e\n", iter, desiredEps, WtV_err, VtV_err);
       if( WtV_err <= desiredEps && WtV_err*VtV_err <= desiredEps*desiredEps )
       {
         // calculated WtV_err is small enough (in contrast to estimated WtV_err from the previous iteration)
@@ -229,7 +229,7 @@ void SUBR(orthogrrB)(TYPE(const_mvec_ptr) W, TYPE(mvec_ptr) V, TYPE(mvec_ptr) BV
       PHIST_CHK_IERR(SUBR(sdMat_normF)(VtV_I,&VtV_err,iflag),*iflag);
 
       // possibly perform another full sweep with W, if R_1 is too badly conditioned
-      PHIST_SOUT(PHIST_VERBOSE, "orthogRR: iter %d phase 2, desired eps %8.4e, (est.) WtV err. %8.4e, VtV err. %8.4e\n", iter, desiredEps, WtV_err, VtV_err);
+      PHIST_SOUT(PHIST_EXTREME, "orthogRR: iter %d phase 2, desired eps %8.4e, (est.) WtV err. %8.4e, VtV err. %8.4e\n", iter, desiredEps, WtV_err, VtV_err);
       if( WtV_err <= desiredEps )
       {
         iter++;
@@ -298,7 +298,7 @@ void SUBR(orthogrrB)(TYPE(const_mvec_ptr) W, TYPE(mvec_ptr) V, TYPE(mvec_ptr) BV
       PHIST_CHK_IERR(SUBR(sdMat_rank_identity)(VtV_I,rank,iflag),*iflag);
       PHIST_CHK_IERR(SUBR(sdMat_add_sdMat)(st::one(),VtV,-st::one(),VtV_I,iflag),*iflag);
       PHIST_CHK_IERR(SUBR(sdMat_normF)(VtV_I,&VtV_err,iflag),*iflag);
-      PHIST_SOUT(PHIST_VERBOSE, "orthogRR: iter %d phase 3, desired eps %8.4e, VtV err. %8.4e\n", iter-1, desiredEps, VtV_err);
+      PHIST_SOUT(PHIST_EXTREME, "orthogRR: iter %d phase 3, desired eps %8.4e, VtV err. %8.4e\n", iter-1, desiredEps, VtV_err);
     }
 
 
