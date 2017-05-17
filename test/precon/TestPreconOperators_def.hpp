@@ -10,7 +10,6 @@
 #ifndef CLASSNAME
 #error "file not included correctly."
 #endif
-
 /*! Test fixure. */
 class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,_N_,MATNAME>,
                  public virtual KernelTestWithSparseMat<_ST_,_N_,_N_,PRECNAME>,
@@ -85,12 +84,14 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,_N_,MATNAME>,
         v4_=VTest::vec4_;
         q_=QTest::vec1_;
         sigma_ = new _ST_[_NV_];
+        noSigma_ = new _ST_[_NV_];
         negSigma_ = new _ST_[_NV_];
         for(int i = 0; i < _NV_; i++)
         {
           // there are hopefully no eigenvalues in this region so the matrix doesn't get nearly singular
           sigma_[i] = (_ST_)30*st::one() + (_ST_)5*st::prand();
           negSigma_[i] = -sigma_[i];
+          noSigma_[i]  = st::zero();
         }
 
         // create random orthogonal Q
@@ -110,7 +111,7 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,_N_,MATNAME>,
         ASSERT_EQ(0,iflag_);
 
         jdPrec_ = new TYPE(linearOp);
-        SUBR(jadaPrec_create)(opP_,q_,q_,sigma_,_NV_,jdPrec_,1,&iflag_);
+        SUBR(jadaPrec_create)(opP_,q_,q_,noSigma_,_NV_,jdPrec_,1,&iflag_);
         ASSERT_EQ(0,iflag_);
 
         // setup system to solve, exact x and A*x
@@ -158,6 +159,9 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,_N_,MATNAME>,
         if( negSigma_ != NULL )
           delete[] negSigma_;
         negSigma_ = NULL;
+        if( noSigma_ != NULL )
+          delete[] noSigma_;
+        noSigma_ = NULL;
       }
       MTest::TearDown();
       VTest::TearDown();
@@ -336,8 +340,7 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,_N_,MATNAME>,
     TYPE(linearOp_ptr) opA_ = NULL, opP_ = NULL;
     TYPE(linearOp_ptr) jdOp_ = NULL, jdPrec_ = NULL;
     TYPE(mvec_ptr) q_=NULL, v1_=NULL,v2_=NULL,v3_=NULL,v4_=NULL;
-    _ST_* sigma_ = NULL;
-    _ST_* negSigma_ = NULL;
+    _ST_ *sigma_ = NULL, *negSigma_=NULL, *noSigma_=NULL;
 };
 
   TEST_F(CLASSNAME, wrap_Ainv_as_USER_PRECON)
@@ -397,7 +400,6 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,_N_,MATNAME>,
   {
     if( typeImplemented_ && !problemTooSmall_ )
     {
-      ASSERT_EQ(0,iflag_);
       TYPE(mvec_ptr) pq=NULL;
       SUBR(mvec_clone_shape)(&pq,q_,&iflag_);
       ASSERT_EQ(0,iflag_);
