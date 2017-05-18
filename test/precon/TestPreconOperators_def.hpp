@@ -523,6 +523,7 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,_N_,MATNAME>,
     {
       int nEig1=3,nEig2=nEig1;
       jadaOpts_.numEigs=nEig1;
+      jadaOpts_.which=_WHICH_;
       int blockDim=_NV_;
       int nIter1=100,nIter2=2*nIter1;
       int nQ=nEig1+blockDim-1;

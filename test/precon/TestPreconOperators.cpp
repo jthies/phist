@@ -26,6 +26,8 @@ using namespace testing;
 
 #define CLASSFILE_DEF "TestPreconOperators_def.hpp"
 
+#define _WHICH_ phist_SR
+
 #define MATNAME MATNAME_lapl_tridiag
 #define PRECNAME MATNAME_lapl_tridiag_ainv
 // use GMRES here, too because the left preconditioning would destroy
@@ -42,43 +44,43 @@ using namespace testing;
 // block size in jada/blockedGMRES _NV_
 #define _M_ 1
 // number of projection vectors in q (for testing operators)
-#define _NVP_ 1
-#define _BASENAME_ TestPreconOperators_lapl_tridiag_proj1
+#define _K_ 1
+#define _BASENAME_ TestPreconOperators_lapl_tridiag
 #include "../phist_typed_test_gen.h"
 
 #undef _M_
-#undef _NVP_
+#undef _K_
 
 #define _N_ 250
 #define _M_ 2
-#define _NVP_ 6
+#define _K_ 6
 #undef _BASENAME_
-#define _BASENAME_ TestPreconOperators_lapl_tridiag_proj6
+#define _BASENAME_ TestPreconOperators_lapl_tridiag
 #include "../phist_typed_test_gen.h"
 
 #undef MATNAME
 #undef PRECNAME
 #undef _BASENAME_
 #undef _MAXBAS_
-#undef _NVP_
+#undef _K_
 
 #define _N_ 250
-#define _M_ 1
-#define _NVP_ 1
+#define _M_ 2
+#define _K_ 1
 #define MATNAME MATNAME_nhpd_tridiag
 #define PRECNAME MATNAME_nhpd_tridiag_ainv
 #define _SOLVTYPE_ phist_GMRES
 #define _MAXBAS_ 250
-#define _BASENAME_ TestPreconOperators_nhpd_tridiag_proj1
+#define _BASENAME_ TestPreconOperators_nhpd_tridiag
 #include "../phist_typed_test_gen.h"
 
 #undef _M_
-#undef _NVP_
+#undef _K_
 
 #define _N_ 250
 #define _M_ 2
-#define _NVP_ 6
+#define _K_ 6
 #undef _BASENAME_
-#define _BASENAME_ TestPreconOperators_nhpd_tridiag_proj6
+#define _BASENAME_ TestPreconOperators_nhpd_tridiag
 #include "../phist_typed_test_gen.h"
 
