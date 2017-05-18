@@ -108,9 +108,12 @@ int innerSolvRobust; /*! extra effort to get good jada updates
   int preconSkewProject;
   
   //! if 0, the preconditioner is kept the same throughout the
-  //! Jacobi-Davidson process. Otherwise it is updated with the
-  //! current shift before each correction solve (variants like
-  //! updating based on convergence rate may be added later).
+  //! Jacobi-Davidson process.
+  //! If 1 it is updated once with as shift the initial approximate eigenvalue obtained
+  //! by the starting space v0 or Arnoldi iterations, respectively.
+  //! If >1, it is updated with the current shift before each correction solve.
+  //!
+  //! Variants like updating based on convergence rate may be added later.
   int preconUpdate;
 
   //! pointer to solver object if innerSolvType==USER_DEFINED

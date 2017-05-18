@@ -930,6 +930,9 @@ PHIST_SOUT(PHIST_VERBOSE,"\n");
       // a new system primarily)
 //      int updatePrecon=(opts.preconUpdate!=0) && (nNewConvEig>0);
       int updatePrecon=(opts.preconUpdate!=0);
+      // special case: the user asked to update the preconditioner only once, this can be used e.g.
+      // to get a better initial preconditioner if the sought eigenvalues are far from 0.
+      if (opts.preconUpdate==1) opts.preconUpdate=0;
       PHIST_CHK_NEG_IERR(SUBR(jadaCorrectionSolver_run)(innerSolv, AB_op, B_op, Qtil, BQtil, sigma, res, &selectedRes[0],
                                                     &innerTol[nConvEig], innerMaxIters, t, innerIMGS, 
                                                     innerGMRESabortAfterFirstConverged, updatePrecon, iflag), *iflag);
