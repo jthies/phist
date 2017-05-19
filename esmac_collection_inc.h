@@ -1,0 +1,5 @@
+#include "esmac_matrix_FreeBosonChain.h"
+#include "esmac_matrix_FreeFermionChain.h"
+#include "esmac_matrix_Harmonic.h"
+#include "esmac_matrix_Hubbard.h"
+#include "esmac_matrix_SpinChainXXZ.h"
