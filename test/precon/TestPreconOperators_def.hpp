@@ -10,6 +10,7 @@
 #ifndef CLASSNAME
 #error "file not included correctly."
 #endif
+
 /*! Test fixure. */
 class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,_N_,MATNAME>,
                  public virtual KernelTestWithSparseMat<_ST_,_N_,_N_,PRECNAME>,
@@ -50,6 +51,7 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,_N_,MATNAME>,
       jadaOpts_.innerSolvType=_SOLVTYPE_;
       jadaOpts_.innerSolvMaxIters=_MAXINNER_;
       jadaOpts_.innerSolvMaxBas=_MAXINNER_;
+      jadaOpts_.blockSize=_NV_;
       jadaOpts_.minBas=12;
       jadaOpts_.maxBas=jadaOpts_.minBas+10*_NV_;
       jadaOpts_.convTol=1e-6;
@@ -487,7 +489,6 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,_N_,MATNAME>,
     if( typeImplemented_ && !problemTooSmall_ )
     {
       TYPE(jadaCorrectionSolver_ptr) solver = NULL;
-      jadaOpts_.blockSize=_NV_;
       SUBR(jadaCorrectionSolver_create)(&solver, jadaOpts_, map_, &iflag_);
       ASSERT_EQ(0, iflag_);
 
