@@ -8,6 +8,7 @@
 /*******************************************************************************************/
 #include "phist_config.h"
 #include "phist_tools.h"
+#include "phist_MemOwner.hpp"
 #include "phist_kernels.h"
 #include "phist_orthog.h"
 
