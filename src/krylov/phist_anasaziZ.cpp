@@ -20,6 +20,9 @@
 
 #ifdef PHIST_HAVE_ANASAZI
 
+// this solver is to unstable right now, it doesn't compile with Trilinos 12.x if TSQR is enabled
+//#define PHIST_HAVE_ANASAZI_TRACEMIN_DAVIDSON
+
 #include "phist_rcp_helpers.hpp"
 #include "phist_AnasaziOperatorTraits.hpp"
 
@@ -31,13 +34,6 @@
 
 // we include the Belos adaptors alongside the Anasazi adapters because
 // the TraceMinDavidsonSolMgr requires them.
-
-// some hacks to prevent TSQR orthomanager and some internal saddlepoint vector type
-// to clash in Trilinos 12.2.1
-#include "Belos_config.h"
-#ifdef BELOS_HAVE_TSQR
-#warning "a bug in Trilinos 12.2.1 prevents compiling TraceMinDavidson if TSQR is enabled in Belos"
-#endif
 
 # ifdef PHIST_KERNEL_LIB_GHOST
 #  include "ghost.h"
@@ -67,7 +63,7 @@
  */
 /*#include "phist_AnasaziBlockKrylovSchurSolMgr.hpp"*/
 #include "AnasaziBlockKrylovSchurSolMgr.hpp"
-# ifndef OLD_TRILINOS
+# ifdef PHIST_HAVE_ANASAZI_TRACEMIN_DAVIDSON
 # include "AnasaziTraceMinDavidsonSolMgr.hpp"
 # endif
 #endif

@@ -178,20 +178,28 @@ int PHIST_TG_PREFIX(lapl_tridiag)(ghost_gidx row, ghost_lidx *len, ghost_gidx* c
 int PHIST_TG_PREFIX(nhpd_tridiag)(ghost_gidx row, ghost_lidx *len, ghost_gidx* cols, void* vval, void *arg)
 {
 #include "phist_std_typedefs.hpp"
-  _ST_ a=2.0*st::one(), b=(_ST_)-0.99, c=(_ST_)-1.01;
-#ifdef IS_COMPLEX
-  b-=(_ST_)0.01*st::cmplx_I();
-  c-=(_ST_)0.99*st::cmplx_I();
-#endif
+  _ST_ a=2.0*st::one(), b=(_ST_)-0.9, c=(_ST_)-1.1;
   TRIDIAG(a,b,c,false);
-  return 0; // not implemented, values above are for hpd_tridiag
+  return 0; 
 }
 
 //! creates a simple tridiagonal non-Hermitian and indefinite matrix. For usage info, see hpd_tridiag.
-int PHIST_TG_PREFIX(nhid_tridiag)(ghost_gidx row, ghost_lidx *len, ghost_gidx* cols, void* vval, void *arg)
+int PHIST_TG_PREFIX(hid_tridiag)(ghost_gidx row, ghost_lidx *len, ghost_gidx* cols, void* vval, void *arg)
 {
 #include "phist_std_typedefs.hpp"
-  return -99; // not implemented, values above are for hpd_tridiag
+  // construct laplacian but shift it so that a few eigenvalues are negative
+
+  static double L=-1;
+  if (row==-1) L=(cols[0]+1); // L=gnrows+1
+  int k=3; // number of eigenvalues to shift over the axis
+  static const double pi=4.0*std::atan(1.0);
+  double pi_div_L=pi/L;
+  double ev_k  =(k    *pi_div_L)*(k    *pi_div_L);
+  double ev_kp1=((k+1)*pi_div_L)*((k+1)*pi_div_L);
+  double shift=(0.5*(ev_k+ev_kp1));
+
+  TRIDIAG((_ST_)(2.0-shift),(_ST_)(-1.0),(_ST_)(-1.0),false);
+  return 0;
 }
 
 //! creates an approximate inverse of hpd_tridiag (the inverse of the 2x2 block diagonal approximation of A)
@@ -210,11 +218,7 @@ int PHIST_TG_PREFIX(hpd_tridiag_ainv)(ghost_gidx row, ghost_lidx *len, ghost_gid
 int PHIST_TG_PREFIX(lapl_tridiag_ainv)(ghost_gidx row, ghost_lidx *len, ghost_gidx* cols, void* vval, void *arg)
 {
 #include "phist_std_typedefs.hpp"
-#ifdef IS_COMPLEX
-  TRIDIAG((_ST_)0.4,(_ST_)(0.2)*st::cmplx_I(),(_ST_)(0.2)*st::cmplx_I(),true);
-#else
   TRIDIAG((_ST_)(2./3.),(_ST_)(1./3.),(_ST_)(1./3.),true);
-#endif
   return 0;
 }
 
@@ -222,16 +226,31 @@ int PHIST_TG_PREFIX(lapl_tridiag_ainv)(ghost_gidx row, ghost_lidx *len, ghost_gi
 int PHIST_TG_PREFIX(nhpd_tridiag_ainv)(ghost_gidx row, ghost_lidx *len, ghost_gidx* cols, void* vval, void *arg)
 {
 #include "phist_std_typedefs.hpp"
-  _ST_ a=2.0*st::one(), b=(_ST_)-0.99, c=(_ST_)-1.01;
-#ifdef IS_COMPLEX
-  b*=st::cmplx_I();
-  c*=st::cmplx_I();
-#endif
+
+  _ST_ a=2.0*st::one(), b=(_ST_)-0.9, c=(_ST_)-1.1;
   _ST_ s=st::one()/(a*a-b*c);
   TRIDIAG(a*s,-c*s,-b*s,true);
   return 0;
 }
 
+//! creates an approximate inverse of nhid_tridiag (the inverse of the 2x2 block diagonal approximation of A)
+int PHIST_TG_PREFIX(hid_tridiag_ainv)(ghost_gidx row, ghost_lidx *len, ghost_gidx* cols, void* vval, void *arg)
+{
+#include "phist_std_typedefs.hpp"
+  static double L=-1;
+  if (row==-1) L=(cols[0]+1); // L=gnrows+1
+  int k=3; // number of eigenvalues to shift over the axis
+  static const double pi=4.0*std::atan(1.0);
+  double pi_div_L=pi/L;
+  double ev_k  =(k    *pi_div_L)*(k    *pi_div_L);
+  double ev_kp1=((k+1)*pi_div_L)*((k+1)*pi_div_L);
+  double shift=(0.5*(ev_k+ev_kp1));
+
+  _ST_ a=(2.0-shift)*st::one(), b=(_ST_)-1.0, c=(_ST_)-1.0;
+  _ST_ s=st::one()/(a*a-b*c);
+  TRIDIAG(a*s,-c*s,-b*s,true);
+  return 0;
+}
 //! creates an approximate inverse of nhid_tridiag (the inverse of the 2x2 block diagonal approximation of A)
 int PHIST_TG_PREFIX(nhid_tridiag_ainv)(ghost_gidx row, ghost_lidx *len, ghost_gidx* cols, void* vval, void *arg)
 {
