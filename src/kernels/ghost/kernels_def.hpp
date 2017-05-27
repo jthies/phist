@@ -10,6 +10,8 @@
 #include <ghost/config.h>
 #include <ghost/util.h>
 
+#include <climits>
+
 #ifdef TEST_MVEC_MAPS_SAME
 #undef TEST_MVEC_MAPS_SAME
 #endif
@@ -202,7 +204,39 @@ extern "C" void SUBR(sparseMat_read_mm_with_context)(TYPE(sparseMat_ptr)* A, phi
         const char* filename,int* iflag)
 {
   PHIST_ENTER_FCN(__FUNCTION__);
-  *iflag=PHIST_NOT_IMPLEMENTED;
+  int outlev = *iflag&PHIST_SPARSEMAT_QUIET ? PHIST_DEBUG : PHIST_INFO;
+
+PHIST_TASK_DECLARE(ComputeTask)
+PHIST_TASK_BEGIN(ComputeTask)
+
+  if (filename==NULL)
+  {
+    *iflag=PHIST_INVALID_INPUT;
+    return;
+  }
+
+  ghost_context const* context= (ghost_context const*)ctx;
+
+  // this function will create the sparsemat with (a clone of) the given context
+  // and return if it finds the rowFunc is NULL. We need the max number of entries per row,
+  // in GHOST gnrows is used for this value in init_mm, which is of course very pessimistic.
+  // But since file input is not our recommended way if providing a matrix, we stick to this
+  // simple strategy here.
+  phist_lidx maxnne=std::min((ghost_lidx)LONG_MAX, (phist_lidx)(context->row_map->gdim));
+  PHIST_CHK_IERR(SUBR(sparseMat_create_fromRowFuncAndContext)(A,ctx,maxnne,NULL,NULL,iflag),*iflag);
+
+  ghost_sparsemat* mat=(ghost_sparsemat*)(*A);
+  char* cfname=const_cast<char*>(filename);
+
+  PHIST_CHK_GERR(ghost_sparsemat_init_mm(mat,cfname,context->row_map->mpicomm,get_proc_weight()),*iflag);
+  char *str;
+  ghost_context_string(&str,mat->context);
+  PHIST_SOUT(outlev,"%s\n",str);
+  free(str); str = NULL;
+  ghost_sparsemat_info_string(&str,mat);
+  PHIST_SOUT(outlev,"%s\n",str);
+  free(str); str = NULL;
+PHIST_TASK_END(iflag);
   return;
 }
 
@@ -2173,6 +2207,17 @@ extern "C" void SUBR(sparseMat_create_fromRowFuncAndContext)(TYPE(sparseMat_ptr)
   
   PHIST_CHK_GERR(ghost_sparsemat_create(&mat,cloned_ctx,&mtraits,1),*iflag);
   mtraits.flags=GHOST_SPARSEMAT_DEFAULT; // map->mtraits_template.flags;
+
+  *vA = (TYPE(sparseMat_ptr))mat;
+
+  if (rowFunPtr==NULL)
+  {
+    // we use this hack to create an empty ghost_sparsemat object with the given context
+    // and initialize it in read_(mm/bin)_with_context.
+    *iflag=0;
+    return;
+  }
+
   PHIST_CHK_GERR(ghost_sparsemat_init_rowfunc(mat,&src,ctx->row_map->mpicomm,1.0),*iflag);
 
   char *str;
@@ -2182,8 +2227,6 @@ extern "C" void SUBR(sparseMat_create_fromRowFuncAndContext)(TYPE(sparseMat_ptr)
   ghost_sparsemat_info_string(&str,mat);
   PHIST_SOUT(outlev,"%s\n",str);
   free(str); str = NULL;
-
-  *vA = (TYPE(sparseMat_ptr))mat;
 
 PHIST_TASK_END(iflag);
   return;
