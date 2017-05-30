@@ -68,8 +68,8 @@ phist_ElinSolv innerSolvType; //! GMRES, MINRES, CARP_CG, USER_DEFINED and NO_LI
                               //! method (only the preconditioner is applied, with appropriate projections 
                               //! if preconSkewProject!=0 is set.
 
-int innerSolvBlockSize;
-int innerSolvMaxBas;
+int innerSolvBlockSize;       //! if set to -1, the outer block size (blockSize) is used.
+int innerSolvMaxBas;          //! if set to -1, innerSolvMaxBas=innerSolvMaxIters is used (no restarting of e.g. GMRES)
 int innerSolvMaxIters;
 double innerSolvBaseTol;    //! in the k'th iteration on eigenvalue j, the tolerance used will be innerTolBase^k (default: 0.1)
 int innerSolvRobust; /*! extra effort to get good jada updates

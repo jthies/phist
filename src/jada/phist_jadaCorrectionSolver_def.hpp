@@ -19,13 +19,15 @@ void SUBR(jadaCorrectionSolver_create)(TYPE(jadaCorrectionSolver_ptr) *me, phist
     (*me)->rightPrecon=NULL; 
   if ((*me)->method_==phist_GMRES||(*me)->method_==phist_MINRES)
   {
-    PHIST_CHK_IERR( *iflag = (opts.innerSolvBlockSize <= 0) ? -1 : 0, *iflag);
+    int innerSolvBlockSize=opts.innerSolvBlockSize;
+    if (innerSolvBlockSize<0) innerSolvBlockSize=opts.blockSize;
+    PHIST_CHK_IERR( *iflag = (innerSolvBlockSize <= 0) ? -1 : 0, *iflag);
 
-    (*me)->gmresBlockDim_ = opts.innerSolvBlockSize;
+    (*me)->gmresBlockDim_ = innerSolvBlockSize;
     (*me)->blockedGMRESstates_  = new TYPE(blockedGMRESstate_ptr)[(*me)->gmresBlockDim_];
-    int maxBas = opts.innerSolvMaxBas;
-    if (maxBas<0) maxBas=std::min(20,opts.innerSolvMaxIters);
-    PHIST_CHK_IERR(SUBR(blockedGMRESstates_create)((*me)->blockedGMRESstates_, opts.innerSolvBlockSize, map, maxBas, iflag), *iflag);
+    int innerSolvMaxBas = opts.innerSolvMaxBas;
+    if (innerSolvMaxBas<0) innerSolvMaxBas=opts.innerSolvMaxIters;
+    PHIST_CHK_IERR(SUBR(blockedGMRESstates_create)((*me)->blockedGMRESstates_, innerSolvBlockSize, map, innerSolvMaxBas, iflag), *iflag);
     (*me)->leftPrecon=(TYPE(linearOp_ptr))opts.preconOp;
     (*me)->preconSkewProject=opts.preconSkewProject;
   }
