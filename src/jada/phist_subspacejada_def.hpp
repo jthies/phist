@@ -308,18 +308,16 @@ PHIST_CHK_IERR(*iflag=(nQ_in==nR_in && nR_in==mR_in)?0:PHIST_INVALID_INPUT,*ifla
   if (nv0>1 && nv0<minBase)
   {
     PHIST_SOUT(PHIST_WARNING,"subspacejada currently only accepts either\n"
-                             "one or 'opts.minBas'(=%d here) vectors, but you provided %d.\n"
+                             "one or 'opts.minBas'(=%d here)<=nv<opts.maxBas(=%d) vectors, but you provided nv=%d.\n"
                              "Will only use the first column of v0.",
-                             opts.minBas, nv0);
+                             opts.minBas, opts.maxBas, nv0);
     nv0=1;
   }
-  else if (nv0>minBase)
+  else if (nv0>maxBase)
   {
-    PHIST_SOUT(PHIST_WARNING,"subspacejada currently only accepts either\n"
-                             "one or 'opts.minBas'(=%d here) vectors, but you provided %d.\n"
-                             "Will only use the first %d columns of v0.",
-                             opts.minBas, nv0,minBase);
-    nv0=minBase;
+    PHIST_SOUT(PHIST_WARNING,"shrinking initial basis to opts.maxBas (=%d), you provided %d vectors.\n",
+                             opts.maxBas, nv0);
+    nv0=opts.maxBas;
   }
   TYPE(mvec_ptr) v0=NULL;
   if (nv0>0)
@@ -334,9 +332,9 @@ PHIST_CHK_IERR(*iflag=(nQ_in==nR_in && nR_in==mR_in)?0:PHIST_INVALID_INPUT,*ifla
   }
   MvecOwner<_ST_> _v0(v0);
 
-  nV = minBase;
+  nV = nv0;
 
-  if (nv0==minBase)
+  if (nv0>=minBase)
   {
     PHIST_SOUT(PHIST_VERBOSE,"start Jacobi-Davidson with given vector space.\n"
                              "Assuming (B-)orthonormality of input v0!\n");
@@ -345,7 +343,7 @@ PHIST_CHK_IERR(*iflag=(nQ_in==nR_in && nR_in==mR_in)?0:PHIST_INVALID_INPUT,*ifla
     PHIST_CHK_IERR(SUBR( mvec_view_block  ) (BV_,     &BV,                      0,     nV-1,        iflag), *iflag);
     PHIST_CHK_IERR(SUBR( sdMat_view_block ) (H_,      &H,     0,      nV-1,     0,     nV-1,      iflag), *iflag);
 
-    PHIST_CHK_IERR(SUBR(mvec_set_block)(V,v0,0,minBase-1,iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(mvec_get_block)(v0,V,0,nV-1,iflag),*iflag);
     PHIST_CHK_IERR(AB_op->apply(st::one(),AB_op->A,V,st::zero(),AV,iflag),*iflag);
     if (B_op!=NULL)
     {
@@ -355,6 +353,7 @@ PHIST_CHK_IERR(*iflag=(nQ_in==nR_in && nR_in==mR_in)?0:PHIST_INVALID_INPUT,*ifla
   }
   else if (nv0<=1)
   {
+    nV=opts.minBas;
 //    PHIST_SOUT(PHIST_VERBOSE,"start Jacobi-Davidson with %d Arnoldi iterations on %s\n",
 //        nV, opts.preconOp==NULL?"A":"inv(P)");
     PHIST_SOUT(PHIST_VERBOSE,"start Jacobi-Davidson with %d Arnoldi iterations on A\n", nV);

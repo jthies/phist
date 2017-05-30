@@ -36,6 +36,7 @@ extern "C" void SUBR(orthog)(TYPE(const_mvec_ptr) V,
   
   TYPE(sdMat_ptr) WtW=NULL;
   PHIST_CHK_IERR(SUBR(sdMat_create)(&WtW,k,k,comm,iflag),*iflag);
+  SdMatOwner<_ST_> _WtW(WtW);
   
 
   if (B!=NULL)
@@ -79,6 +80,7 @@ extern "C" void SUBR(orthog)(TYPE(const_mvec_ptr) V,
     PHIST_CHK_IERR(SUBR(sdMat_create)(&R1p,k,k,comm,iflag),*iflag);
     PHIST_CHK_IERR(SUBR(sdMat_create)(&R1pp,k,k,comm,iflag),*iflag);
   }
+  SdMatOwner<_ST_> _R1pp(R1pp),_R1p(R1p), _R2p(R2p);
   while (randomize && dim0>0 && num_attempts++<max_attempts)
   {
     PHIST_SOUT(PHIST_DEBUG,"orthog: randomize %d column(s) to compensate rank deficiency (attempt %d)\n",
@@ -150,9 +152,6 @@ extern "C" void SUBR(orthog)(TYPE(const_mvec_ptr) V,
   {
     PHIST_CHK_IERR(SUBR(mvec_delete)(BW,iflag),*iflag);
   }
-  PHIST_CHK_IERR(SUBR(sdMat_delete)(WtW,iflag),*iflag);
-  if (R1p) PHIST_CHK_IERR(SUBR(sdMat_delete)(R1p,iflag),*iflag);
-  if (R2p) PHIST_CHK_IERR(SUBR(sdMat_delete)(R2p,iflag),*iflag);
   if (num_attempts==max_attempts)
   {
     *iflag=-8;

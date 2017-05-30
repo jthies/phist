@@ -178,7 +178,7 @@ int PHIST_TG_PREFIX(lapl_tridiag)(ghost_gidx row, ghost_lidx *len, ghost_gidx* c
 int PHIST_TG_PREFIX(nhpd_tridiag)(ghost_gidx row, ghost_lidx *len, ghost_gidx* cols, void* vval, void *arg)
 {
 #include "phist_std_typedefs.hpp"
-  _ST_ a=2.0*st::one(), b=(_ST_)-0.9, c=(_ST_)-1.1;
+  _ST_ a=(_ST_)2.0, b=(_ST_)-0.9, c=(_ST_)-1.1;
   TRIDIAG(a,b,c,false);
   return 0; 
 }
@@ -227,7 +227,7 @@ int PHIST_TG_PREFIX(nhpd_tridiag_ainv)(ghost_gidx row, ghost_lidx *len, ghost_gi
 {
 #include "phist_std_typedefs.hpp"
 
-  _ST_ a=2.0*st::one(), b=(_ST_)-0.9, c=(_ST_)-1.1;
+  _ST_ a=(_ST_)2.0, b=(_ST_)-0.9, c=(_ST_)-1.1;
   _ST_ s=st::one()/(a*a-b*c);
   TRIDIAG(a*s,-c*s,-b*s,true);
   return 0;
@@ -246,7 +246,7 @@ int PHIST_TG_PREFIX(hid_tridiag_ainv)(ghost_gidx row, ghost_lidx *len, ghost_gid
   double ev_kp1=((k+1)*pi_div_L)*((k+1)*pi_div_L);
   double shift=(0.5*(ev_k+ev_kp1));
 
-  _ST_ a=(2.0-shift)*st::one(), b=(_ST_)-1.0, c=(_ST_)-1.0;
+  _ST_ a=(_ST_)(2.0-shift), b=(_ST_)-1.0, c=(_ST_)-1.0;
   _ST_ s=st::one()/(a*a-b*c);
   TRIDIAG(a*s,-c*s,-b*s,true);
   return 0;
