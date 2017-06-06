@@ -516,8 +516,6 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,_N_,MATNAME>,
 
   
 
-// this test is independent of _NVP_
-#if _NVP_==1
   TEST_F(CLASSNAME, subspacejada)
   {
     if( typeImplemented_ && !problemTooSmall_ )
@@ -566,4 +564,3 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,_N_,MATNAME>,
       ASSERT_LE(nIter1,nIter2);
     }
   }
-#endif

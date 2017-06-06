@@ -191,7 +191,7 @@ int PHIST_TG_PREFIX(hid_tridiag)(ghost_gidx row, ghost_lidx *len, ghost_gidx* co
 
   static double L=-1;
   if (row==-1) L=(cols[0]+1); // L=gnrows+1
-  int k=3; // number of eigenvalues to shift over the axis
+  int k=10; // number of eigenvalues to shift over the axis
   static const double pi=4.0*std::atan(1.0);
   double pi_div_L=pi/L;
   double ev_k  =(k    *pi_div_L)*(k    *pi_div_L);
@@ -239,7 +239,7 @@ int PHIST_TG_PREFIX(hid_tridiag_ainv)(ghost_gidx row, ghost_lidx *len, ghost_gid
 #include "phist_std_typedefs.hpp"
   static double L=-1;
   if (row==-1) L=(cols[0]+1); // L=gnrows+1
-  int k=3; // number of eigenvalues to shift over the axis
+  int k=10; // number of eigenvalues to shift over the axis
   static const double pi=4.0*std::atan(1.0);
   double pi_div_L=pi/L;
   double ev_k  =(k    *pi_div_L)*(k    *pi_div_L);
