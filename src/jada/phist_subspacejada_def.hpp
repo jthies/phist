@@ -157,38 +157,11 @@ PHIST_CHK_IERR(*iflag=(nQ_in==nR_in && nR_in==mR_in)?0:PHIST_INVALID_INPUT,*ifla
   for (int i=0;i<nEig; i++) resNorm[i]=-mt::one();
 
   //------------------------------- check arguments --------------------------------
-  if( blockDim < 1 )
-  {
-    PHIST_SOUT(PHIST_ERROR, "parameter blockDim < 1!\n");
-    PHIST_CHK_IERR(*iflag = PHIST_INVALID_INPUT, *iflag);
-  }
-  if( innerBlockDim > blockDim || innerBlockDim < 1)
-  {
-    PHIST_SOUT(PHIST_ERROR, "parameter innerBlockDim > blockDim || innerBlockDim < 1!\n");
-    PHIST_CHK_IERR(*iflag = PHIST_INVALID_INPUT, *iflag);
-  }
-  if( minBase < nEig_ )
-  {
-    PHIST_SOUT(PHIST_ERROR, "parameter minBase < nEig+blockDim-1!\n");
-    PHIST_CHK_IERR(*iflag = PHIST_INVALID_INPUT, *iflag);
-  }
-  if( minBase+blockDim > maxBase )
-  {
-    PHIST_SOUT(PHIST_ERROR, "parameter minBase+blockDim > maxBase!\n");
-    PHIST_CHK_IERR(*iflag = PHIST_INVALID_INPUT, *iflag);
-  }
-  if( maxBase < nEig+blockDim )
-  {
-    PHIST_SOUT(PHIST_ERROR, "paramater maxBase < nEig+blockDim!\n");
-    PHIST_CHK_IERR(*iflag = PHIST_INVALID_INPUT, *iflag);
-  }
-/*
-  if( minBase % innerBlockDim != 0 )
-  {
-    PHIST_SOUT(PHIST_WARNING, "minBase is not a multiple of innerBlockDim, switching to single-vector arnoldi for initiali subspace!\n");
-  }
-*/
-
+  PHIST_CHK_IERR(*iflag= ( blockDim < 1 )?PHIST_INVALID_INPUT:0,*iflag);
+  PHIST_CHK_IERR(*iflag= ( innerBlockDim > blockDim || innerBlockDim < 1 && innerBlockDim != -1 )?PHIST_INVALID_INPUT:0,*iflag);
+  PHIST_CHK_IERR(*iflag= ( minBase < nEig_ )?PHIST_INVALID_INPUT:0,*iflag);
+  PHIST_CHK_IERR(*iflag= ( minBase+blockDim > maxBase )?PHIST_INVALID_INPUT:0,*iflag);
+  PHIST_CHK_IERR(*iflag= ( maxBase < nEig+blockDim )?PHIST_INVALID_INPUT:0,*iflag);
 
   //------------------------------- create vectors and matrices --------------------
   // get communicator for sdMats

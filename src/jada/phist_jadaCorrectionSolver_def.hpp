@@ -21,7 +21,7 @@ void SUBR(jadaCorrectionSolver_create)(TYPE(jadaCorrectionSolver_ptr) *me, phist
   {
     int innerSolvBlockSize=opts.innerSolvBlockSize;
     if (innerSolvBlockSize<0) innerSolvBlockSize=opts.blockSize;
-    PHIST_CHK_IERR( *iflag = (innerSolvBlockSize <= 0) ? -1 : 0, *iflag);
+    PHIST_CHK_IERR( *iflag = (innerSolvBlockSize <= 0) ? PHIST_INVALID_INPUT : 0, *iflag);
 
     (*me)->gmresBlockDim_ = innerSolvBlockSize;
     (*me)->blockedGMRESstates_  = new TYPE(blockedGMRESstate_ptr)[(*me)->gmresBlockDim_];
