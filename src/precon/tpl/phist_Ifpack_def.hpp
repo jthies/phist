@@ -44,6 +44,29 @@ class PreconTraits<double,phist_IFPACK>
                           "The remaining parameter list is passed to the factory unchanged.\n");
   }
 
+  static void Wrap(void** P, 
+        const void* vA, double sigma, const void* vB, 
+        phist_Dconst_mvec_ptr Vkern, phist_Dconst_mvec_ptr BVkern,
+        void* last_arg, int* iflag)
+  {
+    PHIST_ENTER_FCN(__FUNCTION__);
+    *iflag=0;
+    PHIST_CAST_PTR_FROM_VOID(const Epetra_CrsMatrix, A, vA,*iflag);
+    const Epetra_CrsMatrix* B = (const Epetra_CrsMatrix*)vB;
+    Ifpack_Preconditioner* P_in = (Ifpack_Preconditioner*)last_arg;
+    
+    phist::internal::prec_and_mat* PAM=new phist::internal::prec_and_mat(A,sigma,B);
+
+    PAM->IfpackPrec = Teuchos::rcp(P_in,false);
+    PAM->Prec=PAM->IfpackPrec;
+    PHIST_CHK_IERR(*iflag=PAM->Prec.get()!=NULL?0:PHIST_BAD_CAST,*iflag);
+    
+    // return created object as void pointer
+    *P=(void*)PAM;
+    
+    return;
+  }
+
   static void Create(void** P, 
         const void* vA, double sigma, const void* vB, 
         phist_Dconst_mvec_ptr Vkern, phist_Dconst_mvec_ptr BVkern,

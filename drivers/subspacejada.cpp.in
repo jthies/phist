@@ -85,6 +85,7 @@ int main(int argc, char** argv)
 
   // fill the jadaOpts struct to pass settings to the solver
   phist_jadaOpts opts;
+  phist_jadaOpts_setDefaults(&opts);
 
 if (argc==4 && argv[3][0]!='0'&&argv[3][0]!='1')
 {
@@ -96,7 +97,6 @@ else
 {
 
   PHIST_SOUT(PHIST_VERBOSE,"get options from command line (if any)'\n");
-  phist_jadaOpts_setDefaults(&opts);
   // parse command line
   int p=3;
   

@@ -155,7 +155,7 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,_N_,MATNAME>,
 
 
 #if _NV_ > 1
-  void test_sparseMat_times_mvec_with_views(_ST_ alpha, TYPE(const_sparseMat_ptr) A, _ST_ beta, int imin, int imax)
+  void test_sparseMat_times_mvec_with_views(_ST_ alpha, TYPE(const_sparseMat_ptr) A, _ST_ beta, int imin, int imax, bool in_view=true, bool result_view=true)
   {
     if( !typeImplemented_ || problemTooSmall_ )
       return;
@@ -169,16 +169,40 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,_N_,MATNAME>,
     SUBR(mvec_add_mvec)(st::one(), vec2_, st::zero(), vec3_, &iflag_);
     ASSERT_EQ(0, iflag_);
 
-    // create views
-    TYPE(mvec_ptr) vec1_view = NULL;
-    SUBR(mvec_view_block)(vec1_, &vec1_view, imin, imax, &iflag_);
-    ASSERT_EQ(0, iflag_);
-    TYPE(mvec_ptr) vec2_view = NULL;
-    SUBR(mvec_view_block)(vec2_, &vec2_view, imin, imax, &iflag_);
-    ASSERT_EQ(0, iflag_);
-
+    // create views or copies
+    TYPE(mvec_ptr) vec1_view = NULL, vec2_view = NULL;
+    if (in_view)
+    {
+      SUBR(mvec_view_block)(vec1_, &vec1_view, imin, imax, &iflag_);
+      ASSERT_EQ(0, iflag_);
+    }
+    else
+    {
+      PHISTTEST_MVEC_CREATE(&vec1_view, map_, imax-imin+1, &iflag_);
+      ASSERT_EQ(0, iflag_);
+      SUBR(mvec_get_block)(vec1_,vec1_view,imin,imax,&iflag_);
+      ASSERT_EQ(0, iflag_);
+    }
+    if (result_view)
+    {
+      SUBR(mvec_view_block)(vec2_, &vec2_view, imin, imax, &iflag_);
+      ASSERT_EQ(0, iflag_);
+    }
+    else
+    {
+      PHISTTEST_MVEC_CREATE(&vec2_view, map_, imax-imin+1, &iflag_);
+      ASSERT_EQ(0, iflag_);
+      SUBR(mvec_get_block)(vec2_,vec2_view,imin,imax,&iflag_);
+      ASSERT_EQ(0, iflag_);
+    }
     SUBR(sparseMat_times_mvec)(alpha, A, vec1_view, beta, vec2_view, &iflag_);
     ASSERT_EQ(0, iflag_);
+    
+    if (result_view==false)
+    {
+      SUBR(mvec_set_block)(vec2_,vec2_view,imin,imax,&iflag_);
+      ASSERT_EQ(0, iflag_);
+    }
 
     // make sure nothing changed outside of viewed block
     SUBR(mvec_from_device)(vec2_,&iflag_);
@@ -198,7 +222,7 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,_N_,MATNAME>,
     ASSERT_EQ(0, iflag_);
     ASSERT_NEAR(mt::one(), ArraysEqual(vec2_vp_+VIDX(0,imin,lda_),vec3_vp_+VIDX(0,imin,lda_),nloc_,imax-imin+1,lda_,stride_,vflag_), mt::sqrt(VTest::releps()));
 
-    // delete view
+    // delete views or copied columns
     SUBR(mvec_delete)(vec2_view, &iflag_);
     ASSERT_EQ(0, iflag_);
     SUBR(mvec_delete)(vec1_view, &iflag_);
@@ -935,12 +959,28 @@ protected:
 
 #if MATNAME == MATNAME_sprandn
 #if _NV_ > 1
-  TEST_F(CLASSNAME, sparseMat_times_mvec_random_with_view_0_0)
+  TEST_F(CLASSNAME, sparseMat_times_mvec_random_with_both_view_0_0)
   {
     _ST_ alpha = st::prand();
     _ST_ beta = st::prand();
 
     test_sparseMat_times_mvec_with_views(alpha, A_, beta, 0, 0);
+  }
+
+  TEST_F(CLASSNAME, sparseMat_times_mvec_random_with_input_view_0_0)
+  {
+    _ST_ alpha = st::prand();
+    _ST_ beta = st::prand();
+
+    test_sparseMat_times_mvec_with_views(alpha, A_, beta, 0, 0, true, false);
+  }
+
+  TEST_F(CLASSNAME, sparseMat_times_mvec_random_with_result_view_0_0)
+  {
+    _ST_ alpha = st::prand();
+    _ST_ beta = st::prand();
+
+    test_sparseMat_times_mvec_with_views(alpha, A_, beta, 0, 0, false, true);
   }
 
   TEST_F(CLASSNAME, sparseMat_times_mvec_vadd_mvec_random_with_view_0_0)
@@ -960,6 +1000,24 @@ protected:
     _ST_ beta = st::prand();
 
     test_sparseMat_times_mvec_with_views(alpha, A_, beta, 1, 1);
+  }
+
+
+  TEST_F(CLASSNAME, sparseMat_times_mvec_random_with_input_view_1_1)
+  {
+    _ST_ alpha = st::prand();
+    _ST_ beta = st::prand();
+
+    test_sparseMat_times_mvec_with_views(alpha, A_, beta, 1, 1, true, false);
+  }
+
+
+  TEST_F(CLASSNAME, sparseMat_times_mvec_random_with_result_view_1_1)
+  {
+    _ST_ alpha = st::prand();
+    _ST_ beta = st::prand();
+
+    test_sparseMat_times_mvec_with_views(alpha, A_, beta, 1, 1, false, true);
   }
 
   TEST_F(CLASSNAME, sparseMat_times_mvec_vadd_mvec_random_with_view_1_1)
@@ -982,6 +1040,22 @@ protected:
     _ST_ beta = st::prand();
 
     test_sparseMat_times_mvec_with_views(alpha, A_, beta, 1, 2);
+  }
+
+  TEST_F(CLASSNAME, sparseMat_times_mvec_random_with_input_view_1_2)
+  {
+    _ST_ alpha = st::prand();
+    _ST_ beta = st::prand();
+
+    test_sparseMat_times_mvec_with_views(alpha, A_, beta, 1, 2, false, true);
+  }
+
+  TEST_F(CLASSNAME, sparseMat_times_mvec_random_with_result_view_1_2)
+  {
+    _ST_ alpha = st::prand();
+    _ST_ beta = st::prand();
+
+    test_sparseMat_times_mvec_with_views(alpha, A_, beta, 1, 2, false, true);
   }
 
   TEST_F(CLASSNAME, sparseMat_times_mvec_vadd_mvec_random_with_view_1_2)
@@ -1159,7 +1233,6 @@ protected:
   }
 #endif
 #endif
-
 
 #if MATNAME == MATNAME_sprandn
 TEST_F(CLASSNAME,mvecT_times_mvec_after_spmvm)

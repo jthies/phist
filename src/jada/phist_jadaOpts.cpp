@@ -14,6 +14,7 @@
 #include <sstream>
 
 #include <cstdio>
+#include <cstring>
 
 extern "C" void phist_jadaOpts_setDefaults(phist_jadaOpts *opts)
 {
@@ -24,6 +25,7 @@ extern "C" void phist_jadaOpts_setDefaults(phist_jadaOpts *opts)
 
   opts->maxIters=300;
   opts->blockSize=1;
+  opts->lookAhead=-1;
   opts->minBas=10;
   opts->maxBas=20;
   opts->convTol=1.0e-12;
@@ -37,13 +39,15 @@ extern "C" void phist_jadaOpts_setDefaults(phist_jadaOpts *opts)
   opts->innerSolvType=phist_GMRES;
   opts->innerSolvMaxBas=-1;
   opts->innerSolvMaxIters=20;
-  opts->innerSolvBlockSize=1;
+  opts->innerSolvBlockSize=-1;
   opts->innerSolvStopAfterFirstConverged=0;
   opts->innerSolvRobust=1;
   opts->innerSolvMaxProjectionSpace=-1;
+  opts->innerSolvBaseTol=0.1;
   
   opts->preconOp=NULL;
   opts->preconType=phist_NO_PRECON;
+  strcpy(opts->preconOpts,"none\0");
   opts->preconSkewProject=1;
   opts->preconUpdate=0;
 
@@ -79,7 +83,6 @@ void set_value(std::string key, entryType& entry, std::string file)
 extern "C" void phist_jadaOpts_fromFile(phist_jadaOpts* opts, const char* filename, int* iflag)
 {
   PHIST_ENTER_FCN(__FUNCTION__);
-  phist_jadaOpts_setDefaults(opts);
 
   // this converts the input file to a string
   std::ifstream ifs;
@@ -99,6 +102,7 @@ extern "C" void phist_jadaOpts_fromFile(phist_jadaOpts* opts, const char* filena
 
   set_value("maxIters",opts->maxIters,file);
   set_value("blockSize",opts->blockSize,file);
+  set_value("lookAhead",opts->lookAhead,file);
   set_value("minBas",opts->minBas,file);
   set_value("maxBas",opts->maxBas,file);
   set_value("convTol",opts->convTol,file);
@@ -112,6 +116,7 @@ extern "C" void phist_jadaOpts_fromFile(phist_jadaOpts* opts, const char* filena
   set_value("innerSolvMaxBas",opts->innerSolvMaxBas,file);
   set_value("innerSolvMaxIters",opts->innerSolvMaxIters,file);
   set_value("innerSolvBlockSize",opts->innerSolvBlockSize,file);
+  set_value("innerSolvBaseTol",opts->innerSolvBaseTol,file);
   
   set_value("preconType",opts->preconType,file);
   set_value("preconOpts",opts->preconOpts,file);
@@ -134,6 +139,7 @@ extern "C" void phist_jadaOpts_toFile(phist_jadaOpts const *opts, FILE* stream)
 
   fprintf(stream,"maxIters\t%d\n",opts->maxIters);
   fprintf(stream,"blockSize\t%d\n",opts->blockSize);
+  fprintf(stream,"lookAhead\t%d\n",opts->lookAhead);
   fprintf(stream,"minBas\t%d\n",opts->minBas);
   fprintf(stream,"maxBas\t%d\n",opts->maxBas);
   fprintf(stream,"convTol\t%4.2e\n",opts->convTol);
@@ -147,6 +153,7 @@ extern "C" void phist_jadaOpts_toFile(phist_jadaOpts const *opts, FILE* stream)
   fprintf(stream,"innerSolvMaxBas\t%d\n",opts->innerSolvMaxBas);
   fprintf(stream,"innerSolvMaxIters\t%d\n",opts->innerSolvMaxIters);
   fprintf(stream,"innerSolvBlockSize\t%d\n",opts->innerSolvBlockSize);
+  fprintf(stream,"innerSolvBaseTol\t%e\n",opts->innerSolvBaseTol);
   fprintf(stream,"preconType\t%s\n",precon2str(opts->preconType));
   fprintf(stream,"preconOpts\t%s\n",opts->preconOpts==NULL?"<NULL>":opts->preconOpts);
   fprintf(stream,"preconSkewProject\t%d\n",opts->preconSkewProject);

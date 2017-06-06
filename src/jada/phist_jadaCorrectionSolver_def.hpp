@@ -19,13 +19,15 @@ void SUBR(jadaCorrectionSolver_create)(TYPE(jadaCorrectionSolver_ptr) *me, phist
     (*me)->rightPrecon=NULL; 
   if ((*me)->method_==phist_GMRES||(*me)->method_==phist_MINRES)
   {
-    PHIST_CHK_IERR( *iflag = (opts.innerSolvBlockSize <= 0) ? -1 : 0, *iflag);
+    int innerSolvBlockSize=opts.innerSolvBlockSize;
+    if (innerSolvBlockSize<0) innerSolvBlockSize=opts.blockSize;
+    PHIST_CHK_IERR( *iflag = (innerSolvBlockSize <= 0) ? PHIST_INVALID_INPUT : 0, *iflag);
 
-    (*me)->gmresBlockDim_ = opts.innerSolvBlockSize;
+    (*me)->gmresBlockDim_ = innerSolvBlockSize;
     (*me)->blockedGMRESstates_  = new TYPE(blockedGMRESstate_ptr)[(*me)->gmresBlockDim_];
-    int maxBas = opts.innerSolvMaxBas;
-    if (maxBas<0) maxBas=std::min(20,opts.innerSolvMaxIters);
-    PHIST_CHK_IERR(SUBR(blockedGMRESstates_create)((*me)->blockedGMRESstates_, opts.innerSolvBlockSize, map, maxBas, iflag), *iflag);
+    int innerSolvMaxBas = opts.innerSolvMaxBas;
+    if (innerSolvMaxBas<0) innerSolvMaxBas=opts.innerSolvMaxIters;
+    PHIST_CHK_IERR(SUBR(blockedGMRESstates_create)((*me)->blockedGMRESstates_, innerSolvBlockSize, map, innerSolvMaxBas, iflag), *iflag);
     (*me)->leftPrecon=(TYPE(linearOp_ptr))opts.preconOp;
     (*me)->preconSkewProject=opts.preconSkewProject;
   }
@@ -106,12 +108,13 @@ void SUBR(jadaCorrectionSolver_run)(TYPE(jadaCorrectionSolver_ptr) me,
   PHIST_ENTER_FCN(__FUNCTION__);
   *iflag = 0;
 
-  // total number of systems to solve
+  // total number of systems to solve. Note that we may get more vectors in res but only should
+  // consider res(resIndex(1:totalNumSys),:)
   int totalNumSys, totalNumRHS, numProj;
   PHIST_CHK_IERR(SUBR(mvec_num_vectors)(t, &totalNumSys, iflag), *iflag);
   PHIST_CHK_IERR(SUBR(mvec_num_vectors)(res, &totalNumRHS, iflag), *iflag);
   PHIST_CHK_IERR(SUBR(mvec_num_vectors)(Qtil, &numProj, iflag), *iflag);
-
+  
   // this check may fail: subspacejada expects us to grab the RHS's needed from res(:,resIndex[0:totalNumSys-1])
   //PHIST_CHK_IERR(*iflag=totalNumSys==totalNumRHS?0:PHIST_INVALID_INPUT,*iflag);
 
@@ -256,7 +259,7 @@ void SUBR(jadaCorrectionSolver_run)(TYPE(jadaCorrectionSolver_ptr) me,
           first_time=0;
         }
         TYPE(linearOp) jadaPrec;
-        PHIST_CHK_IERR(SUBR(jadaPrec_create)(me->rightPrecon,q,Bq,&shifts[0],totalNumSys,&jadaPrec,iflag),*iflag);
+        PHIST_CHK_IERR(SUBR(jadaPrec_create)(me->rightPrecon,q,Bq,&shifts[0],totalNumSys,&jadaPrec,me->preconSkewProject,iflag),*iflag);
         // apply this preconditioner
         PHIST_CHK_IERR(jadaPrec.apply(st::one(),jadaPrec.A, _res, st::zero(), _t,iflag),*iflag);
         // delete the preconditioner (wrapper) again
@@ -316,7 +319,9 @@ void SUBR(jadaCorrectionSolver_run)(TYPE(jadaCorrectionSolver_ptr) me,
   // wrap the preconditioner so that apply_shifted is called
   if (me->leftPrecon!=NULL)
   {
-    PHIST_CHK_IERR(SUBR(jadaPrec_create)(me->leftPrecon,q,Bq,&preconShifts[0],k,&jadaPrecL,iflag),*iflag);
+    // create preconditioner with totalNumSys zero shifts because we need to apply it to the RHS as well and
+    // we check internally that sufficient shifts are given.
+    PHIST_CHK_IERR(SUBR(jadaPrec_create)(me->leftPrecon,q,Bq,&preconShifts[0],totalNumRHS,&jadaPrecL,me->preconSkewProject,iflag),*iflag);
     rhs=NULL;
     PHIST_CHK_IERR(SUBR(mvec_clone_shape)(&rhs,res,iflag),*iflag);
     PHIST_CHK_IERR(jadaPrecL.apply(st::one(),jadaPrecL.A,res,st::zero(),rhs,iflag),*iflag);
@@ -325,7 +330,7 @@ void SUBR(jadaCorrectionSolver_run)(TYPE(jadaCorrectionSolver_ptr) me,
   }
   else if (me->rightPrecon!=NULL)
   {
-    PHIST_CHK_IERR(SUBR(jadaPrec_create)(me->rightPrecon,q,Bq,&currShifts[0],k,&jadaPrecR,iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(jadaPrec_create)(me->rightPrecon,q,Bq,&preconShifts[0],totalNumSys,&jadaPrecR,me->preconSkewProject,iflag),*iflag);
     jadaPrecRight=&jadaPrecR;
   }
   

@@ -39,6 +39,16 @@ using namespace testing;
 #define MATNAME_sprandsym 7
 #define MATNAME_BENCH3D_8_A1 8
 #define MATNAME_IDFUNC 9
+#define MATNAME_hpd_tridiag 10
+#define MATNAME_lapl_tridiag 11
+#define MATNAME_nhpd_tridiag 12
+#define MATNAME_hid_tridiag 13
+#define MATNAME_nhid_tridiag 14
+#define MATNAME_hpd_tridiag_ainv 15
+#define MATNAME_lapl_tridiag_ainv 16
+#define MATNAME_nhpd_tridiag_ainv 17
+#define MATNAME_hid_tridiag_ainv 18
+#define MATNAME_nhid_tridiag_ainv 19
 
 inline bool MatNameEnumIsMatFunc(MATNAME_ENUM e){return (e==MATNAME_BENCH3D_8_A1)||(e==MATNAME_IDFUNC);}
 

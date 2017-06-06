@@ -44,7 +44,9 @@ void SUBR(blockedGMRESstates_create)(TYPE(blockedGMRESstate_ptr) state[], int nu
   PHIST_ENTER_FCN(__FUNCTION__);
   *iflag=0;
 
-  if (numSys <= 0)
+  PHIST_CHK_IERR(*iflag=(numSys<0)?PHIST_INVALID_INPUT:0,*iflag);
+
+  if (numSys == 0)
     return;
 
   phist_const_comm_ptr comm;

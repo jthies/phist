@@ -33,9 +33,15 @@ void SUBR(jadaOp_delete)(TYPE(linearOp_ptr)  jdOp, int *iflag);
 //! recomputing, this is not taken into account by this function:in that case the input P_op must be     
 //! updated beforehand, or the existing preconditioner for e.g. A or A-tau*B is applied.                 
 //!                                                                                                      
-//! If V is given, the preconditioner application will include a skew-projection                         
+//! If V is given, the preconditioner application will include either                                    
+//!                                                                                                      
+//! a skew-projection (if projType==1)                                                                   
 //!                                                                                                      
 //! Y <- (I - P_op\V (BV'P_op\V)^{-1} (BV)') P_op\X                                                      
+//!                                                                                                      
+//! a regular projection (if projType==0)                                                                
+//!                                                                                                      
+//! Y <- (I - V(BV)') P_op\X                                                                             
 //!                                                                                                      
 //! If BV==NULL, BV=V is assumed.                                                                        
 void SUBR(jadaPrec_create)(TYPE(const_linearOp_ptr) P_op, 
@@ -43,6 +49,7 @@ void SUBR(jadaPrec_create)(TYPE(const_linearOp_ptr) P_op,
                            TYPE(const_mvec_ptr)  BV,
                            const _ST_ sigma[], int nvec, 
                            TYPE(linearOp_ptr) jdPrec,
+                           int projType,
                            int* iflag);
 
 //! add a left preconditioner created by jadaPrec_create to a jadaOp.

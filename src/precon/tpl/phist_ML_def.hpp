@@ -43,6 +43,29 @@ class PreconTraits<double,phist_ML>
                           "    default values are only used for entries not present in the list.\n");
   }
 
+  static void Wrap(void** P, 
+        const void* vA, double sigma, const void* vB, 
+        phist_Dconst_mvec_ptr Vkern, phist_Dconst_mvec_ptr BVkern,
+        void* last_arg, int* iflag)
+  {
+    PHIST_ENTER_FCN(__FUNCTION__);
+    *iflag=0;
+    PHIST_CAST_PTR_FROM_VOID(const Epetra_CrsMatrix, A, vA,*iflag);
+    const Epetra_CrsMatrix* B = (const Epetra_CrsMatrix*)vB;
+    ML_Epetra::MultiLevelPreconditioner* P_in = (ML_Epetra::MultiLevelPreconditioner*)last_arg;
+    
+    phist::internal::prec_and_mat* PAM=new phist::internal::prec_and_mat(A,sigma,B);
+
+    PAM->MLPrec = Teuchos::rcp(P_in,false);
+    PAM->Prec=PAM->MLPrec;
+    PHIST_CHK_IERR(*iflag=PAM->Prec.get()!=NULL?0:PHIST_BAD_CAST,*iflag);
+    
+    // return created object as void pointer
+    *P=(void*)PAM;
+    
+    return;
+  }
+
   static void Create(void** P, 
         const void* vA, double sigma, const void* vB, 
         phist_Dconst_mvec_ptr Vkern, phist_Dconst_mvec_ptr BVkern,
@@ -83,7 +106,7 @@ class PreconTraits<double,phist_ML>
     PHIST_CHK_IERR(PAM->UpdateMatrix(A,sigma,B,iflag),*iflag);
     int dimV=0;
     Epetra_MultiVector* V = (Epetra_MultiVector*)Vkern;
-    if (V) dimV=std::min(2,V->NumVectors());
+//    if (V) dimV=std::min(2,V->NumVectors());
     if (dimV==0)
     {
       // without null space:

@@ -105,65 +105,157 @@ int PHIST_TG_PREFIX(some_rowFunc)(ghost_gidx row, ghost_lidx *len, ghost_gidx* c
 }
 */
 
+
+
+// a big macro to define the content of our (tridiagonal and block diagonal matrices quickly further down.
+// The matrix will be tridiag([ALOWER, ADIAG, AUPPER],-1:1,n,n) if BLOCKDIAG==false, and
+// kron(I,[ADIAG,AUPPER; ALOWER, ADIAG]) if BLOCKDIAG==true (in MATLAB notation). The macro also takes care
+// of the initialization of the problem size so that this code doesn't have to be replicated.
+#ifndef TRIDIAG
+#define TRIDIAG(ADIAG,AUPPER,ALOWER,BLOCKDIAG) \
+  static ghost_gidx gnrows=-1;\
+  _ST_ *vals=(_ST_*)vval;\
+  \
+  if (vals) vals[0]=(ADIAG);\
+  if (cols && row>=0) cols[0]=row;\
+\
+  if (row==-1)\
+  {\
+    gnrows=cols[0];\
+    return 0;\
+  }\
+  else if (row==-2)\
+  {\
+    gnrows=-2;\
+  }\
+  else if (gnrows<0)\
+  {\
+    PHIST_SOUT(PHIST_ERROR,"%s not correctly initialized, call with row=-1 and cols[0]=gnrows first!",__FUNCTION__);\
+    return -1;\
+  }\
+  else if (row==0 || ((BLOCKDIAG) && (row%2==0)))\
+  {\
+    *len=2;\
+    cols[1]=row+1;\
+    vals[1]=(AUPPER);\
+  }\
+  else if (row==gnrows-1 || ((BLOCKDIAG) && (row%2==1)))\
+  {\
+    *len=2;\
+    cols[1]=row-1;\
+    vals[1]=(ALOWER);\
+  }\
+  else\
+  {\
+    *len=3;\
+    cols[1]=row-1;\
+    cols[2]=row+1;\
+    vals[1]=(ALOWER);\
+    vals[2]=(AUPPER);\
+}
+#endif
+
 int PHIST_TG_PREFIX(hpd_tridiag)(ghost_gidx row, ghost_lidx *len, ghost_gidx* cols, void* vval, void *arg)
 {
 #include "phist_std_typedefs.hpp"
-  static ghost_gidx gnrows=-1;
-  _ST_ *vals=(_ST_*)vval;
-  
-  if (vals) vals[0]=st::one();
-  if (cols && row>=0) cols[0]=row;
-
-  if (row==-1)
-  {
-    gnrows=cols[0];
-    return 0;
-  }
-  else if (row==-2)
-  {
-    gnrows=-2;
-  }
-  else if (gnrows<0)
-  {
-    PHIST_SOUT(PHIST_ERROR,"%s not correctly initialized, call with row=-1 and cols[0]=gnrows first!",__FUNCTION__);
-    return -1;
-  }
-  else if (row==0)
-  {
-    *len=2;
-    cols[1]=row+1;
 #ifdef IS_COMPLEX
-    vals[1]=(_ST_)-0.5*st::cmplx_I();
+    TRIDIAG(st::one(),(_ST_)(-0.5)*st::cmplx_I(),(_ST_)(+0.5)*st::cmplx_I(),false);
 #else
-    vals[1]=-0.5*st::one();
+    TRIDIAG(st::one(),(_ST_)(-0.5),(_ST_)(-0.5),false);
 #endif
-  }
-  else if (row==gnrows-1)
-  {
-    *len=2;
-    cols[1]=row-1;
-#ifdef IS_COMPLEX
-    vals[1]=(_ST_)+0.5*st::cmplx_I();
-#else
-    vals[1]=-0.5*st::one();
-#endif
-  }
-  else
-  {
-    *len=3;
-    cols[1]=row-1;
-    cols[2]=row+1;
-#ifdef IS_COMPLEX
-    vals[1]=(_ST_)+0.5*st::cmplx_I();
-    vals[2]=(_ST_)-0.5*st::cmplx_I();
-#else
-    vals[1]=-0.5*st::one();
-    vals[2]=-0.5*st::one();
-#endif
-  }
   return 0;
 }
 
+// 1D laplacian, tridiag([-1 2 -1])
+int PHIST_TG_PREFIX(lapl_tridiag)(ghost_gidx row, ghost_lidx *len, ghost_gidx* cols, void* vval, void *arg)
+{
+#include "phist_std_typedefs.hpp"
+  TRIDIAG((_ST_)2.0,(_ST_)(-1.0),(_ST_)(-1.0),false);
+  return 0;
+}
+
+//! creates a simple tridiagonal non-Hermitian but positive definite matrix. For usage info, see hpd_tridiag.
+int PHIST_TG_PREFIX(nhpd_tridiag)(ghost_gidx row, ghost_lidx *len, ghost_gidx* cols, void* vval, void *arg)
+{
+#include "phist_std_typedefs.hpp"
+  _ST_ a=(_ST_)2.0, b=(_ST_)-0.9, c=(_ST_)-1.1;
+  TRIDIAG(a,b,c,false);
+  return 0; 
+}
+
+//! creates a simple tridiagonal non-Hermitian and indefinite matrix. For usage info, see hpd_tridiag.
+int PHIST_TG_PREFIX(hid_tridiag)(ghost_gidx row, ghost_lidx *len, ghost_gidx* cols, void* vval, void *arg)
+{
+#include "phist_std_typedefs.hpp"
+  // construct laplacian but shift it so that a few eigenvalues are negative
+
+  static double L=-1;
+  if (row==-1) L=(cols[0]+1); // L=gnrows+1
+  int k=10; // number of eigenvalues to shift over the axis
+  static const double pi=4.0*std::atan(1.0);
+  double pi_div_L=pi/L;
+  double ev_k  =(k    *pi_div_L)*(k    *pi_div_L);
+  double ev_kp1=((k+1)*pi_div_L)*((k+1)*pi_div_L);
+  double shift=(0.5*(ev_k+ev_kp1));
+
+  TRIDIAG((_ST_)(2.0-shift),(_ST_)(-1.0),(_ST_)(-1.0),false);
+  return 0;
+}
+
+//! creates an approximate inverse of hpd_tridiag (the inverse of the 2x2 block diagonal approximation of A)
+int PHIST_TG_PREFIX(hpd_tridiag_ainv)(ghost_gidx row, ghost_lidx *len, ghost_gidx* cols, void* vval, void *arg)
+{
+#include "phist_std_typedefs.hpp"
+#ifdef IS_COMPLEX
+  TRIDIAG((_ST_)0.8,(_ST_)(0.4)*st::cmplx_I(),(_ST_)(0.4)*st::cmplx_I(),true);
+#else
+  TRIDIAG((_ST_)(4./3.),(_ST_)(2./3.),(_ST_)(2./3.),true);
+#endif
+  return 0;
+}
+
+//! creates an approximate inverse of lapl_tridiag (the inverse of the 2x2 block diagonal approximation of A)
+int PHIST_TG_PREFIX(lapl_tridiag_ainv)(ghost_gidx row, ghost_lidx *len, ghost_gidx* cols, void* vval, void *arg)
+{
+#include "phist_std_typedefs.hpp"
+  TRIDIAG((_ST_)(2./3.),(_ST_)(1./3.),(_ST_)(1./3.),true);
+  return 0;
+}
+
+//! creates an approximate inverse of nhpd_tridiag (the inverse of the 2x2 block diagonal approximation of A)
+int PHIST_TG_PREFIX(nhpd_tridiag_ainv)(ghost_gidx row, ghost_lidx *len, ghost_gidx* cols, void* vval, void *arg)
+{
+#include "phist_std_typedefs.hpp"
+
+  _ST_ a=(_ST_)2.0, b=(_ST_)-0.9, c=(_ST_)-1.1;
+  _ST_ s=st::one()/(a*a-b*c);
+  TRIDIAG(a*s,-c*s,-b*s,true);
+  return 0;
+}
+
+//! creates an approximate inverse of nhid_tridiag (the inverse of the 2x2 block diagonal approximation of A)
+int PHIST_TG_PREFIX(hid_tridiag_ainv)(ghost_gidx row, ghost_lidx *len, ghost_gidx* cols, void* vval, void *arg)
+{
+#include "phist_std_typedefs.hpp"
+  static double L=-1;
+  if (row==-1) L=(cols[0]+1); // L=gnrows+1
+  int k=10; // number of eigenvalues to shift over the axis
+  static const double pi=4.0*std::atan(1.0);
+  double pi_div_L=pi/L;
+  double ev_k  =(k    *pi_div_L)*(k    *pi_div_L);
+  double ev_kp1=((k+1)*pi_div_L)*((k+1)*pi_div_L);
+  double shift=(0.5*(ev_k+ev_kp1));
+
+  _ST_ a=(_ST_)(2.0-shift), b=(_ST_)-1.0, c=(_ST_)-1.0;
+  _ST_ s=st::one()/(a*a-b*c);
+  TRIDIAG(a*s,-c*s,-b*s,true);
+  return 0;
+}
+//! creates an approximate inverse of nhid_tridiag (the inverse of the 2x2 block diagonal approximation of A)
+int PHIST_TG_PREFIX(nhid_tridiag_ainv)(ghost_gidx row, ghost_lidx *len, ghost_gidx* cols, void* vval, void *arg)
+{
+  return -99; // not implemented
+}
   // defines a matrix with only a constant subdiagonal and an entry (1,N)
   // that defines a periodic "right shift" of vector elements.
   int PHIST_TG_PREFIX(right_shift_perio)(ghost_gidx row, ghost_lidx *len, ghost_gidx* cols, void* vval, void *arg)

@@ -56,6 +56,15 @@ public:
     return;
   }
 
+  static void Wrap(void** P, 
+        const void* A, ST sigma, const void* B, 
+        const void* Vkern, const void* BVkern,
+        void* last_arg, int* iflag)
+  {
+    NotImplemented(iflag);
+    return;
+  }
+
   static void Update(void* P, const void* A, ST sigma, const void* B,
         const void* Vkern, const void* BVkern,
         int* iflag)
@@ -102,6 +111,15 @@ public:
   {
     PHIST_SOUT(PHIST_INFO,"NO_PRECON is equivalent to P=I, this 'preconditioner' does not\n"
                           "need any options\n");
+  }
+
+  static void Wrap(void** P, 
+        const void* A, ST sigma, const void* B, 
+        const void* Vkern, const void* BVkern,
+        void* last_arg, int* iflag)
+  {
+    *P=NULL;
+    return;
   }
 
   static void Create(void** P, 
@@ -163,6 +181,16 @@ public:
                           "the user in the form of a phist_XlinearOp.\n"
                           "The constructed preconditioner with all the linearOp functions set should be\n"
                           "passed to precon_create via the 'last_arg' argument.\n");
+  }
+
+  static void Wrap(void** P, 
+        const void* A, ST sigma, const void* B, 
+        const_mvec_ptr Vkern, const_mvec_ptr BVkern,
+        void* last_arg, int* iflag)
+  {
+    *P=last_arg;
+    *iflag=0;
+    return;
   }
 
   static void Create(void** P, 

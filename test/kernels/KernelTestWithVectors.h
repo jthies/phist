@@ -32,7 +32,7 @@ using namespace testing;
  * the global number of rows (_Nglob),
  * the number of colums (_Nvec),
  * _useViews (default false): setup the owned mvecs as views of larger
- * _numberOfVectorsInitialized set to 1-3, makes vec1_, vec2_ and vec3_ available
+ * _numberOfVectorsInitialized set to 1-4, makes vec1_, vec2_, vec3_ and vec4_ available
  * _multipleDefinitionCounter: used to enforce multiple template instantiations of static class variables where needed
    mvec blocks.
  */

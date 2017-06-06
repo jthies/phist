@@ -39,6 +39,7 @@ phist_EeigExtr how; //! use standaard or harmonic Ritz values, etc.
 
 int maxIters; //! maximum iterations allowed
 int blockSize; //! only for block methods (subspacejada)
+int lookAhead; //! consider at most 'lookAhead' unconverged eigenvalues at a time (set it to -1 for the default of 2*blockSize)
 int minBas; //! number of vectors retained upon restart
 int maxBas; //! maximum number of vectors allowed in the basis
 
@@ -67,9 +68,10 @@ phist_ElinSolv innerSolvType; //! GMRES, MINRES, CARP_CG, USER_DEFINED and NO_LI
                               //! method (only the preconditioner is applied, with appropriate projections 
                               //! if preconSkewProject!=0 is set.
 
-int innerSolvBlockSize;
-int innerSolvMaxBas;
+int innerSolvBlockSize;       //! if set to -1, the outer block size (blockSize) is used.
+int innerSolvMaxBas;          //! if set to -1, innerSolvMaxBas=innerSolvMaxIters is used (no restarting of e.g. GMRES)
 int innerSolvMaxIters;
+double innerSolvBaseTol;    //! in the k'th iteration on eigenvalue j, the tolerance used will be innerTolBase^k (default: 0.1)
 int innerSolvRobust; /*! extra effort to get good jada updates
                       * (in practice this may mean a more accurate orthogonalization etc.)
                       */
@@ -88,10 +90,8 @@ int innerSolvRobust; /*! extra effort to get good jada updates
   //! is in fact not modified.
   void* preconOp;
 
-  //! This fields allows specifying a preconditioner (along with preconOpts to pass in options) in an option file.
-  //! Currently it is the responsibility of the driver routine to create the preconditioner in "preconOp", but in 
-  //! the future we may allow the jada solver(s) to update the preconditioner with new subspace information and   
-  //! shifts during the eigenvalue computation.
+  //! This field allows specifying a preconditioner (along with preconOpts to pass in options) in an option file.
+  //! It is the responsibility of the driver routine to create the preconditioner in "preconOp"
   phist_Eprecon preconType;
 
   //! option string passed to precon_create alongside preconType (if it is not NO_PRECON or INVALID_PRECON)
@@ -108,9 +108,12 @@ int innerSolvRobust; /*! extra effort to get good jada updates
   int preconSkewProject;
   
   //! if 0, the preconditioner is kept the same throughout the
-  //! Jacobi-Davidson process. Otherwise it is updated with the
-  //! current shift before each correction solve (variants like
-  //! updating based on convergence rate may be added later).
+  //! Jacobi-Davidson process.
+  //! If 1 it is updated once with as shift the initial approximate eigenvalue obtained
+  //! by the starting space v0 or Arnoldi iterations, respectively.
+  //! If >1, it is updated with the current shift before each correction solve.
+  //!
+  //! Variants like updating based on convergence rate may be added later.
   int preconUpdate;
 
   //! pointer to solver object if innerSolvType==USER_DEFINED

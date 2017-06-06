@@ -163,7 +163,7 @@ if ((phist_anasaziType)variant==BKS)
     anasazi = Teuchos::rcp(new Anasazi::BlockKrylovSchurSolMgr<ST,AnasaziMV, OP>
         (eigenProblem, *anasaziList));
   }
-#ifndef OLD_TRILINOS
+#ifdef PHIST_HAVE_ANASAZI_TRACEMIN_DAVIDSON
   else if ((phist_anasaziType)variant==TMD)
   {
     anasaziList->set("Saddle Solver Type","Projected Krylov");
