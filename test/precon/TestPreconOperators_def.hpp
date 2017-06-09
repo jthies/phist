@@ -148,8 +148,13 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,_N_,MATNAME>,
       {
         SUBR(jadaOp_delete)(jdOp_,&iflag_);
         ASSERT_EQ(0,iflag_);
+        SUBR(jadaOp_delete)(jdPrec_,&iflag_);
+        ASSERT_EQ(0,iflag_);
         if( jdOp_ != NULL )
           delete jdOp_;
+        jdOp_ = NULL;
+        if( jdPrec_ != NULL )
+          delete jdPrec_;
         jdOp_ = NULL;
         if( opA_ != NULL )
           delete opA_;
