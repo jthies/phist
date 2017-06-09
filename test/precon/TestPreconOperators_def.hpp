@@ -516,7 +516,7 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,_N_,MATNAME>,
 
   
 
-  TEST_F(CLASSNAME, subspacejada)
+  TEST_F(CLASSNAME, DISABLED_subspacejada)
   {
     if( typeImplemented_ && !problemTooSmall_ )
     {
