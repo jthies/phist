@@ -385,6 +385,9 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,_N_,MATNAME>,
         SUBR(linearOp_apply)(alpha,&userPrec,v1_,beta,v4_,&iflag_);
         ASSERT_EQ(0,iflag_);
         ASSERT_NEAR(mt::one(),MvecsEqual(v2_,v4_),10*VTest::releps());
+    
+        SUBR(precon_delete)(&userPrec,&iflag_);
+        ASSERT_EQ(0,iflag_);
     }
   }
 
@@ -407,6 +410,7 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,_N_,MATNAME>,
       TYPE(mvec_ptr) pq=NULL;
       SUBR(mvec_clone_shape)(&pq,q_,&iflag_);
       ASSERT_EQ(0,iflag_);
+      MvecOwner<_ST_> _pq(pq);
       SUBR(linearOp_apply)(st::one(),jdPrec_,q_,st::zero(),pq,&iflag_);
       ASSERT_EQ(0,iflag_);
       
@@ -422,8 +426,8 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,_N_,MATNAME>,
     {
       SUBR(mvec_put_value)(v1_,st::one(),&iflag_);
       ASSERT_EQ(0,iflag_);
-      _MT_ nrm0;
-      SUBR(mvec_normalize)(v1_,&nrm0,&iflag_);
+      _MT_ nrm0[_NV_];
+      SUBR(mvec_normalize)(v1_,nrm0,&iflag_);
       ASSERT_EQ(0,iflag_);
       SUBR(mvec_put_value)(v2_,st::zero(),&iflag_);
       ASSERT_EQ(0,iflag_);
