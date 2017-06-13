@@ -31,7 +31,7 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,_N_,MATNAME>,
     {
       int sparseMatCreateFlag=getSparseMatCreateFlag(_N_,_NV_);
       ATest::SetUpTestCase(sparseMatCreateFlag);
-      PTest::SetUpTestCase(sparseMatCreateFlag);
+      PTest::SetUpTestCase(sparseMatCreateFlag,ATest::context_);
       VTest::SetUpTestCase();
       QTest::SetUpTestCase();
       MTest::SetUpTestCase();
@@ -148,8 +148,13 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,_N_,MATNAME>,
       {
         SUBR(jadaOp_delete)(jdOp_,&iflag_);
         ASSERT_EQ(0,iflag_);
+        SUBR(jadaOp_delete)(jdPrec_,&iflag_);
+        ASSERT_EQ(0,iflag_);
         if( jdOp_ != NULL )
           delete jdOp_;
+        jdOp_ = NULL;
+        if( jdPrec_ != NULL )
+          delete jdPrec_;
         jdOp_ = NULL;
         if( opA_ != NULL )
           delete opA_;
@@ -385,6 +390,9 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,_N_,MATNAME>,
         SUBR(linearOp_apply)(alpha,&userPrec,v1_,beta,v4_,&iflag_);
         ASSERT_EQ(0,iflag_);
         ASSERT_NEAR(mt::one(),MvecsEqual(v2_,v4_),10*VTest::releps());
+    
+        SUBR(precon_delete)(&userPrec,&iflag_);
+        ASSERT_EQ(0,iflag_);
     }
   }
 
@@ -407,6 +415,7 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,_N_,MATNAME>,
       TYPE(mvec_ptr) pq=NULL;
       SUBR(mvec_clone_shape)(&pq,q_,&iflag_);
       ASSERT_EQ(0,iflag_);
+      MvecOwner<_ST_> _pq(pq);
       SUBR(linearOp_apply)(st::one(),jdPrec_,q_,st::zero(),pq,&iflag_);
       ASSERT_EQ(0,iflag_);
       
@@ -422,8 +431,8 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,_N_,MATNAME>,
     {
       SUBR(mvec_put_value)(v1_,st::one(),&iflag_);
       ASSERT_EQ(0,iflag_);
-      _MT_ nrm0;
-      SUBR(mvec_normalize)(v1_,&nrm0,&iflag_);
+      _MT_ nrm0[_NV_];
+      SUBR(mvec_normalize)(v1_,nrm0,&iflag_);
       ASSERT_EQ(0,iflag_);
       SUBR(mvec_put_value)(v2_,st::zero(),&iflag_);
       ASSERT_EQ(0,iflag_);
@@ -516,7 +525,7 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,_N_,MATNAME>,
 
   
 
-  TEST_F(CLASSNAME, subspacejada)
+  TEST_F(CLASSNAME, DISABLED_subspacejada)
   {
     if( typeImplemented_ && !problemTooSmall_ )
     {

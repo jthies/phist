@@ -35,7 +35,7 @@ class KernelTestWithSparseMat<_ST_, _Nglob, _Mglob, _MatName, _multipleDefinitio
 
   public:
 
-    static void SetUpTestCase(int sparseMatCreateFlag)
+    static void SetUpTestCase(int sparseMatCreateFlag, phist_const_context_ptr ctx=NULL)
     {
       TestWithType<_ST_>::SetUpTestCase();
       KernelTest::SetUpTestCase();
@@ -83,8 +83,17 @@ class KernelTestWithSparseMat<_ST_, _Nglob, _Mglob, _MatName, _multipleDefinitio
           // initialize rowFunc
           iflag_=rowfunc(-1,NULL,&gnrows,NULL,NULL);
           ASSERT_EQ(0,iflag_);
-          SUBR(sparseMat_create_fromRowFunc)(&A_,comm_,_Nglob,_Mglob,3,rowfunc,NULL,&iflag_);
-          ASSERT_EQ(0,iflag_);
+          if (ctx==NULL)
+          {
+            SUBR(sparseMat_create_fromRowFunc)(&A_,comm_,_Nglob,_Mglob,3,rowfunc,NULL,&iflag_);
+            ASSERT_EQ(0,iflag_);
+          }
+          else
+          {
+            // check that the given context is compatible
+            SUBR(sparseMat_create_fromRowFuncAndContext)(&A_,ctx,3,rowfunc,NULL,&iflag_);
+            ASSERT_EQ(0,iflag_);
+          }
 
           // "uninitialize"
           rowfunc(-2,NULL,NULL,NULL,NULL);
@@ -99,7 +108,7 @@ class KernelTestWithSparseMat<_ST_, _Nglob, _Mglob, _MatName, _multipleDefinitio
         }
         ASSERT_EQ(0,iflag_);
         ASSERT_TRUE(A_ != NULL);
-
+        
         phist_const_map_ptr domain_map = NULL;
         SUBR(sparseMat_get_domain_map)(A_,&domain_map,&iflag_);
         ASSERT_EQ(0,iflag_);

@@ -84,7 +84,7 @@ using namespace testing;
 #define _N_ 300
 #define MATNAME MATNAME_hid_tridiag
 #define PRECNAME MATNAME_lapl_tridiag_ainv
-#define _BASENAME_ TestPreconOperators_hid_tridiag_with_hpd_prec
+#define _BASENAME_ TestPreconOperators_hid_tridiag_with_hpd_precon
 #define _SOLVTYPE_ phist_GMRES
 #define _MAXBAS_ 300
 
@@ -103,7 +103,7 @@ using namespace testing;
 #undef _BASENAME_
 
 #define PRECNAME MATNAME_hid_tridiag_ainv
-#define _BASENAME_ TestPreconOperators_hid_tridiag_with_hid_prec
+#define _BASENAME_ TestPreconOperators_hid_tridiag_with_hid_precon
 
 #define _N_ 300
 #define _M_ 1
