@@ -29,7 +29,7 @@ typedef struct TYPE(jadaCorrectionSolver) {
   void* customSolver_;
 
   //! this function is used instead of phist_jadaCorrectionSolver_run if innerSolvType is USER_DEFINED.
-  //! For jdqr or subspacejada with block size 1 it is enough to implement the simpler interface below,
+  //! For subspacejada with block size 1 it is enough to implement the simpler interface below,
   //! we first check in those cases if that interface is set before checking for this one.
   void (*customSolver_run)(         void*  customSolverData,
                                     void const*    A_op,       void const*    B_op,

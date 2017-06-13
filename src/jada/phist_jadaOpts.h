@@ -120,7 +120,7 @@ int innerSolvRobust; /*! extra effort to get good jada updates
   void* customSolver;
 
   //! this function is used instead of phist_jadaCorrectionSolver_run if innerSolvType is USER_DEFINED.
-  //! For jdqr or subspacejada with block size 1 it is enough to implement the simpler interface below,
+  //! For subspacejada with block size 1 it is enough to implement the simpler interface below,
   //! we first check in those cases if that interface is set before checking for this one.
   //! note that the scalar arguments are always passed in as doubles so that a single function pointer can
   //! be used in this untyped struct.
@@ -134,7 +134,7 @@ int innerSolvRobust; /*! extra effort to get good jada updates
                                     int abortAfterFirstConvergedInBlock,
                                     int * iflag);
 
-  //! simplified interface if only single-vector jdqr or subspacejada is used.
+  //! simplified interface if only single-vector subspacejada is used.
   void (*customSolver_run1)(        void*  customSolverData,
                                     void const* A_op,     void const*    B_op,
                                     void const* Qtil,     void const*    BQtil,

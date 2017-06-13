@@ -111,7 +111,7 @@ class phist_jadaOpts_t(_ct.Structure):
          void* customSolver;
        
          //! this function is used instead of phist_jadaCorrectionSolver_run if innerSolvType is USER_DEFINED.
-         //! For jdqr or subspacejada with block size 1 it is enough to implement the simpler interface below,
+         //! For subspacejada with block size 1 it is enough to implement the simpler interface below,
          //! we first check in those cases if that interface is set before checking for this one.
          //! note that the scalar arguments are always passed in as doubles so that a single function pointer can
          //! be used in this untyped struct.
@@ -125,7 +125,7 @@ class phist_jadaOpts_t(_ct.Structure):
                                            int abortAfterFirstConvergedInBlock,
                                            int * iflag);
        
-         //! simplified interface if only single-vector jdqr or subspacejada is used.
+         //! simplified interface if only single-vector subspacejada is used.
          void (*customSolver_run1)(        void*  customSolverData,
                                            void const* A_op,     void const*    B_op,
                                            void const* Qtil,     void const*    BQtil,
@@ -218,15 +218,4 @@ for _varT in ('S', 'D', 'C', 'Z'):
                                             c_int_p, c_int_p,
                                             c_int_p), skip_if_missing=True)
 
-    # from phist_jdqr_decl.h
-    #void SUBR(jdqr)(TYPE(const_linearOp_ptr) A_op, TYPE(const_linearOp_ptr) B_op,
-    #                TYPE(mvec_ptr) X, TYPE(mvec_ptr) Q, TYPE(sdMat_ptr) R,
-    #                _ST_* evals, _MT_* resid, int* is_cmplx,
-    #                phist_jadaOpts_t options, int* num_eigs, int* num_iters,
-    #                int* iflag);
-    _declare(None, _prefix+'jdqr', (_linearOp_ptr, _linearOp_ptr,
-                                    _mvec_ptr, _mvec_ptr, _sdMat_ptr,
-                                    _ST_p, _MT_p, c_int_p,
-                                    phist_jadaOpts_t, c_int_p, c_int_p,
-                                    c_int_p), skip_if_missing=True)
 
