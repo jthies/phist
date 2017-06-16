@@ -83,6 +83,8 @@ class phist_jadaOpts_t(_ct.Structure):
        int innerSolvBlockSize;
        int innerSolvMaxBas;
        int innerSolvMaxIters;
+       double innerSolvBaseTol;    //! in the k'th iteration on eigenvalue j, the tolerance used will be innerTolBase^k (default: 0.1)
+
        int innerSolvRobust; /*! extra effort to get good jada updates
                              * (in practice this may mean a more accurate orthogonalization etc.)
                              */
@@ -156,6 +158,7 @@ class phist_jadaOpts_t(_ct.Structure):
                 ("innerSolvBlockSize",  c_int),
                 ("innerSolvMaxBas",     c_int),
                 ("innerSolvMaxIters",   c_int),
+                ("innerSolvBaseTol", c_double),
                 ("innerSolvRobust",     c_int),
                 ("innerSolvStopAfterFirstConverged", c_int),
                 ("innerSolvMaxProjectionSpace", c_int),
