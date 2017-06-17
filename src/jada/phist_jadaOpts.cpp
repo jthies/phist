@@ -54,7 +54,6 @@ extern "C" void phist_jadaOpts_setDefaults(phist_jadaOpts *opts)
   opts->customSolver=NULL;
   opts->customSolver_run1=NULL;
   opts->customSolver_run=NULL;
-  opts->custom_computeResidual=NULL;
 
 }
 

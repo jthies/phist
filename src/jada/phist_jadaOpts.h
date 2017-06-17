@@ -144,16 +144,6 @@ int innerSolvRobust; /*! extra effort to get good jada updates
                                     int robust,
                                     int * iflag);
 
-//! This function allows customizing the residual calculation jdqr, it is a tailored
-//! interface for the HYMLS (http://bitbucket.org/hymls/hymls) project and not intended
-//! for other uses right now. Setting this does *not* affect subspacejada.
-void (*custom_computeResidual)(void* customSolverData, void const* B_op, void* r_ptr,
-        void const* Au_ptr, void const* u_ptr, void* rtil_ptr,
-        void const* Qv, void* tmp, void* Theta,
-        void* atil, void* *atilv, double *resid,
-        int nv, int nconv, int* iflag);
-
-
 } phist_jadaOpts;
 
 //! get jada options from a simple ASCII file and place them in the struct passed to the solvers.

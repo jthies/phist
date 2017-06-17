@@ -64,6 +64,8 @@ class phist_jadaOpts_t(_ct.Structure):
        // JaDa configuration
        int maxIters; //! maximum iterations allowed
        int blockSize; //! only for block methods (subspacejada)
+       int lookAhead; //! consider at most 'lookAhead' unconverged eigenvalues at a time (set it to -1 for the default of 2*blockSize)
+       
        int minBas; //! number of vectors retained upon restart
        int maxBas; //! maximum number of vectors allowed in the basis
        // how should JaDa start up?
@@ -147,6 +149,7 @@ class phist_jadaOpts_t(_ct.Structure):
                 ("how",                 _phist_tools.EeigExtr),
                 ("maxIters",            c_int),
                 ("blockSize",           c_int),
+                ("lookAhead",           c_int),
                 ("minBas",              c_int),
                 ("maxBas",              c_int),
                 ("v0",                  c_void_p),
@@ -169,8 +172,7 @@ class phist_jadaOpts_t(_ct.Structure):
                 ("preconUpdate",   c_int),
                 ("customSolver",        c_void_p),
                 ("customSolver_run",    c_void_p),
-                ("customSolver_run1",  c_void_p),
-                ("custom_computeResidual", c_void_p)]
+                ("customSolver_run1",  c_void_p)]
 
     def __init__(self):
         super(_ct.Structure,self).__init__()
