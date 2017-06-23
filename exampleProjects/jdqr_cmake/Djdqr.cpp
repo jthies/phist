@@ -21,7 +21,7 @@
 #include "phist_enums.h"
 #include "phist_kernels.h"
 #include "phist_operator.h"
-#include "phist_jdqr.h"
+#include "phist_subspacejada.h"
 #include "phist_jadaOpts.h"
 #include "phist_gen_d.h"
 #include "phist_driver_utils.h"
@@ -69,7 +69,7 @@ int main(int argc, char** argv)
                        // the distribution of matrix rows
   mvec_ptr X; // multivector for getting the eigenvectors
   
-  ST* evals; // for real non-symmetric matrices we can get complex pairs,
+  CT* evals; // for real non-symmetric matrices we can get complex pairs,
              // so we need twice the amount of memory to store the eigenvalues 
   MT* resid;
   
@@ -212,27 +212,25 @@ int main(int argc, char** argv)
   // allocate memory for eigenvalues and residuals. We allocate
   // one extra entry because in the real case we may get that the
   // last EV to converge is a complex pair (requirement of JDQR)
-  evals = (ST*)malloc((num_eigs+1)*sizeof(ST));
+  evals = (CT*)malloc((num_eigs+1)*sizeof(CT));
   resid = (MT*)malloc((num_eigs+1)*sizeof(MT));
-  is_cmplx = (int*)malloc((num_eigs+1)*sizeof(int));
 
-  // first column in X is currently used as starting vector of Arnoldi in jdqr. The first 
-  // jmin vectors are constructed by an Arnoldi process for stability reasons.
   phist_lidx nloc,lda; 
   ST* valX0;
   MT nrmX0[num_eigs+1];
   PHIST_ICHK_IERR(SUBR(mvec_my_length)(X,&nloc,&iflag),iflag);
   PHIST_ICHK_IERR(SUBR(mvec_extract_view)(X,&valX0,&lda,&iflag),iflag);
   PHIST_ICHK_IERR(SUBR(mvec_normalize)(X,nrmX0,&iflag),iflag);
-
-  SUBR(jdqr)(A_op,B_op,X,NULL,NULL,evals,resid,is_cmplx, 
+/* TODO: fix arguments, this example has to be updated to use subspacejada 
+  SUBR(subspacejada)(A_op,B_op,X,NULL,NULL,evals,resid,is_cmplx, 
         opts,
         &num_eigs,&num_iters,
         &iflag);
-
+*/
+/*
   if (iflag!=0)
     {
-    if (verbose) fprintf(stdout,"code %d returned from jdqr\n",iflag);
+    if (verbose) fprintf(stdout,"code %d returned from subspacejada\n",iflag);
     if (iflag<0) return iflag;
     }
   if (verbose)
@@ -308,7 +306,7 @@ int main(int argc, char** argv)
       i++;
       }
     }
-
+*/
   free(evals);
   free(resid);
   free(is_cmplx);
