@@ -23,7 +23,7 @@ SANITIZER="address"
 
 
 ## parse command line arguments
-usage() { echo "Usage: $0 [-k <builtin|ghost|epetra|tpetra|petsc>] [-e <PrgEnv/module-string>] [-f <optional-libs>]"; \
+usage() { echo "Usage: $0 [-k <builtin|ghost|epetra|tpetra|petsc|Eigen>] [-e <PrgEnv/module-string>] [-f <optional-libs>]"; \
           echo "       [-c <cmake flags to be added>] [-v <SSE|AVX|AVX2|CUDA>] [-t <trilinos version>]" 1>&2; exit 1; }
 
 function update_error { 
