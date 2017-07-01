@@ -41,7 +41,11 @@ if (NOT BUILD_SHARED_LIBS)
 endif()
 
 
-option(PHIST_ENABLE_MPI "Enable MPI within PHIST" ON)
+if (PHIST_KERNEL_LIB STREQUAL "Eigen")
+  option(PHIST_ENABLE_MPI "Enable MPI within PHIST" OFF)
+else()
+  option(PHIST_ENABLE_MPI "Enable MPI within PHIST" ON)
+endif()
 option(PHIST_ENABLE_OPENMP "Enable OpenMP within PHIST" ON)
 option(PHIST_USE_LIKWID "Enable instrumentation for likwid-perfctr" OFF)
 option(PHIST_BUILD_MIC "Build for Intel MIC" OFF)
@@ -497,7 +501,7 @@ endif()
 # setup which kernel library is being used.
 ##############################################################################
 
-set(PHIST_KERNEL_LIB "builtin" CACHE STRING "Select underlying kernel libraries for phist (builtin|ghost|epetra|tpetra|magma|petsc)")
+set(PHIST_KERNEL_LIB "builtin" CACHE STRING "Select underlying kernel libraries for phist (builtin|ghost|epetra|tpetra|magma|petsc|Eigen)")
 message(STATUS "kernel lib " ${PHIST_KERNEL_LIB} " ...")
 
 set(REQUIRE_TRILI_PKG,"")
@@ -589,6 +593,12 @@ elseif (PHIST_KERNEL_LIB STREQUAL "magma")
 elseif (PHIST_KERNEL_LIB STREQUAL "petsc")
   set(PHIST_KERNEL_LIB_PETSC 1)
   set(PHIST_MVECS_ROW_MAJOR 0)
+elseif (PHIST_KERNEL_LIB STREQUAL "Eigen")
+  set(PHIST_KERNEL_LIB_EIGEN 1)
+  set(PHIST_MVECS_ROW_MAJOR 0 CACHE STRING "wether multi-vectors should be stored in row-major ordering")
+  if( PHIST_HAVE_MPI )
+    message(FATAL_ERROR "Eigen kernel lib has no MPI support!")
+  endif()
 else ()
   message( FATAL_ERROR "PHIST_KERNEL_LIB not set or not recognized" )
 endif ()
@@ -613,7 +623,7 @@ endif()
 # because e.g. Isorropia/Zoltan and our own HYMLS require it. For larger    #
 # runs with Epetra it has to be switched off before compiling PHIST.        #
 #############################################################################
-if( "${PHIST_KERNEL_LIB}" MATCHES "epetra|petsc" )
+if( "${PHIST_KERNEL_LIB}" MATCHES "epetra|petsc|Eigen" )
   set(PHIST_FORCE_INT_GIDX_DEFAULT ON)
 else()
   set(PHIST_FORCE_INT_GIDX_DEFAULT OFF)
@@ -621,14 +631,14 @@ endif()
 
 option(PHIST_FORCE_INT_GIDX "Use 32-bit global indices for compatiblity with other libs" 
 ${PHIST_FORCE_INT_GIDX_DEFAULT})
-if( "${PHIST_KERNEL_LIB}" MATCHES "petsc" )
+if( "${PHIST_KERNEL_LIB}" MATCHES "petsc|Eigen" )
   set(PHIST_FORCE_INT_GIDX ON)
 endif()
 
 ##############################################################################
 # enable single precision and complex valued calculation if supported
 ##############################################################################
-if( "${PHIST_KERNEL_LIB}" MATCHES "tpetra|ghost|magma|petsc" )
+if( "${PHIST_KERNEL_LIB}" MATCHES "tpetra|ghost|magma|petsc|Eigen" )
   set(PHIST_SUPPORT_SP ON)
   set(PHIST_SUPPORT_COMPLEX ON)
 else()
@@ -834,6 +844,13 @@ if(PHIST_KERNEL_LIB STREQUAL "petsc")
   link_directories(${PETSC_LIBRARY_DIRS})
   list(APPEND external_libs ${PETSC_LIBRARIES})
   list(APPEND PHIST_PKG_CONFIG_REQUIRE PETSc)
+endif()
+
+if(PHIST_KERNEL_LIB STREQUAL "Eigen")
+  find_package (Eigen3 3.3 REQUIRED NO_MODULE)
+  include_directories(${EIGEN3_INCLUDE_DIRS})
+  add_definitions(-DEIGEN_NO_AUTOMATIC_RESIZING)
+  add_definitions(-DEIGEN_INITIALIZE_MATRICES_BY_ZERO)
 endif()
 
 if (PHIST_USE_CRAFT)
@@ -1267,7 +1284,11 @@ foreach(label ${PHIST_TESTS})
   list(APPEND ${label_uc}_TEST_SOURCES ${TEST_SOURCES})
   set(TEST_EXE ${PRODUCT_NAME}-${label}-test-${CMAKE_BUILD_TYPE})
   add_executable(${TEST_EXE} ${${label_uc}_TEST_SOURCES} ${TEST_DEPENDS})
-  set_target_properties(${TEST_EXE} PROPERTIES COMPILE_DEFINITIONS "GTEST_HAS_MPI=1;GTEST_HAS_PTHREADS=1;GTEST_HAS_EXCEPTIONS=1")
+  if(PHIST_HAVE_MPI)
+    set_target_properties(${TEST_EXE} PROPERTIES COMPILE_DEFINITIONS "GTEST_HAS_MPI=1;GTEST_HAS_PTHREADS=1;GTEST_HAS_EXCEPTIONS=1")
+  else()
+    set_target_properties(${TEST_EXE} PROPERTIES COMPILE_DEFINITIONS "GTEST_HAS_MPI=0;GTEST_HAS_PTHREADS=1;GTEST_HAS_EXCEPTIONS=1")
+  endif()
   # compile tests without optimization
   set_target_properties(${TEST_EXE} PROPERTIES COMPILE_FLAGS "-O0")
   target_link_libraries(${TEST_EXE} ${library_list})

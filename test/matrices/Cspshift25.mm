@@ -1,4 +1,4 @@
-%%MatrixMarket matrix coordinate real general
+%%MatrixMarket matrix coordinate complex general
 %shift matrix
 25 25 50
 1 2  1 0

@@ -1611,6 +1611,9 @@ namespace testing
 {
   void TestPartResult::gather_messages()
   {
+#if !GTEST_HAS_MPI
+    return;
+#else
     int rank, size;
     MPI_Comm_size(internal::GTEST_MPI_COMM_WORLD,&size);
     MPI_Comm_rank(internal::GTEST_MPI_COMM_WORLD,&rank);
@@ -1654,6 +1657,7 @@ namespace testing
       message_.assign(message_buf,total_len);
       delete [] message_buf;
     }
+#endif
   }
 }
 
@@ -8713,9 +8717,9 @@ bool FilePath::CreateDirectoriesRecursively() const {
 // directory for any reason, including if the parent directory does not
 // exist. Not named "CreateDirectory" because that's a macro on Windows.
 bool FilePath::CreateFolder() const {
+  int result;
 #if GTEST_HAS_MPI
   // only create the directory on the root process and check on the other that it exists
-  int result;
   int rank = 0;
   MPI_Comm_rank(GTEST_MPI_COMM_WORLD, &rank);
   if( rank == 0 ) {

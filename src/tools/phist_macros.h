@@ -93,7 +93,7 @@
                 fflush(PHIST_OUT_out);\
         }\
 }
-#define PHIST_ORDERED_OUT(level,mpicomm,msg, ...) PHIST_SOUT(level,msg,__VA_ARGS__);
+#define PHIST_ORDERED_OUT(level,mpicomm,msg, ...) PHIST_SOUT(level,msg,##__VA_ARGS__);
 #endif
 
 

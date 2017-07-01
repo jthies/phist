@@ -10,6 +10,7 @@
 #define PHIST_KERNELS_H
 
 #include "phist_config.h"
+#include "phist_mpi_kernels.h"
 #include "phist_kernel_flags.h"
 
 #ifndef DOXYGEN

@@ -32,6 +32,9 @@ extern "C" void SUBR(mvec_Irecv)(TYPE(const_mvec_ptr) V, int dest, int tag,
 void SUBR(mvec_transfer)(TYPE(const_mvec_ptr) V, int dest, int tag, 
         MPI_Comm comm, MPI_Request* req, int flag,int* iflag)
 {
+#ifndef PHIST_HAVE_MPI
+  *iflag = PHIST_NOT_IMPLEMENTED;
+#else
 #include "phist_std_typedefs.hpp"
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   *iflag=0;
@@ -115,6 +118,7 @@ void SUBR(mvec_transfer)(TYPE(const_mvec_ptr) V, int dest, int tag,
   // communication is complete:
   MPI_Type_free(&mpi_vtype);
 #endif
+#endif
 }
 
 #ifndef PHIST_KERNEL_LIB_GHOST
@@ -123,6 +127,9 @@ void SUBR(mvec_transfer)(TYPE(const_mvec_ptr) V, int dest, int tag,
 // it should be!)
 extern "C" void SUBR(sdMat_sync_values)(TYPE(sdMat_ptr) V, phist_const_comm_ptr comm, int* iflag)
 {
+#ifndef PHIST_HAVE_MPI
+  *iflag = PHIST_SUCCESS;
+#else
 #include "phist_std_typedefs.hpp"
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   *iflag=0;
@@ -156,6 +163,7 @@ extern "C" void SUBR(sdMat_sync_values)(TYPE(sdMat_ptr) V, phist_const_comm_ptr 
     }
   }
   PHIST_CHK_IERR(SUBR(sdMat_to_device)(V,iflag),*iflag);
+#endif
 }
 
 #endif

@@ -21,8 +21,13 @@ ghost_gidx perm2d( ghost_gidx row, phist_gidx arg2 )
   {
     n1 = row;
     n2 = arg2;
+#ifdef PHIST_HAVE_MPI
     MPI_Comm_rank(MPI_COMM_WORLD, &pid);
     MPI_Comm_size(MPI_COMM_WORLD, &np);
+#else
+    pid = 0;
+    np = 1;
+#endif
   
     np1=1;
     np2=np;
@@ -103,8 +108,13 @@ ghost_gidx perm3d( ghost_gidx row, phist_gidx arg2, phist_gidx arg3 )
     n1 = row;
     n2 = arg2;
     n3 = arg3;
+#ifdef PHIST_HAVE_MPI
     MPI_Comm_rank(MPI_COMM_WORLD, &pid);
     MPI_Comm_size(MPI_COMM_WORLD, &np);
+#else
+    pid = 0;
+    np = 1;
+#endif
 
     np1=1;
     np2=1;

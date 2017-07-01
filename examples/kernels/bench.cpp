@@ -24,6 +24,7 @@ for (int _io_barrier_i=0; _io_barrier_i<20; _io_barrier_i++) \
    */
 int main(int argc, char** argv)
 {
+#ifdef PHIST_HAVE_MPI
   int iflag = 0;
   PHIST_ICHK_IERR(phist_kernels_init(&argc,&argv,&iflag),iflag);
 PHIST_MAIN_TASK_BEGIN
@@ -120,4 +121,5 @@ if (rank==0)
 
 PHIST_MAIN_TASK_END
   PHIST_ICHK_IERR(phist_kernels_finalize(&iflag),iflag);
-  }
+#endif
+}

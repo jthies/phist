@@ -1,4 +1,4 @@
-%%MatrixMarket matrix coordinate real general
+%%MatrixMarket matrix coordinate complex general
 %zero matrix
 25 25 25
 1 1  0 0

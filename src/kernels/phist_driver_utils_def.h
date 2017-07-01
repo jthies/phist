@@ -53,7 +53,11 @@ void SUBR(sparseMat_read)(TYPE(sparseMat_ptr)* A, phist_const_comm_ptr comm,
 void SUBR(create_matrix_usage)(void)
 {
     int iflag;
+#ifdef PHIST_HAVE_MPI
     MPI_Comm comm=MPI_COMM_WORLD;
+#else
+    MPI_Comm comm = 0;
+#endif
     PHIST_SOUT(PHIST_INFO,"\nsupported matrix formats:\n\n");
     SUBR(sparseMat_read_mm)(NULL,&comm,NULL,&iflag);
     if (iflag!=PHIST_NOT_IMPLEMENTED)

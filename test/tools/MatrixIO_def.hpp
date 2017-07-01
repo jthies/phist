@@ -15,6 +15,7 @@ namespace phist
 void SUBR(read_mat)(const char* filebase,phist_const_comm_ptr comm, 
         int nglob, int mglob, TYPE(sparseMat_ptr) *ptr, int* iflag)
 {
+  PHIST_ENTER_FCN(__FUNCTION__);
   int iflag_in=*iflag;
   std::stringstream dimstr;
   dimstr<<nglob;

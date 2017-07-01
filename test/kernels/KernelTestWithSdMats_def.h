@@ -344,7 +344,9 @@ static void PrintSdMat(int outlev, std::string label,
           device_error = 1;
     
     // broadcast
+#ifdef PHIST_HAVE_MPI
     PHIST_CHK_IERR(*iflag = MPI_Bcast(buff,m*n,::phist::ScalarTraits<_ST_>::mpi_type(),0,MPI_COMM_WORLD),*iflag);
+#endif
     // check
     int error = 0;
     for(int j = 0; j < n; j++)
@@ -352,8 +354,12 @@ static void PrintSdMat(int outlev, std::string label,
         if( buff[j*m+i] != mat_raw[MIDX(i,j,lda)] )
           error = 1;
     error+=device_error;
+#ifdef PHIST_HAVE_MPI
     int globError = 0;
     PHIST_CHK_IERR(*iflag = MPI_Allreduce(&error,&globError,1,MPI_INT,MPI_MAX,MPI_COMM_WORLD),*iflag);
+#else
+    int globError = error;
+#endif
 
     delete[] buff;
 

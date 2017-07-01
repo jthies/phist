@@ -101,12 +101,13 @@ class KernelTestWithSparseMat<_ST_, _Nglob, _Mglob, _MatName, _multipleDefinitio
         else if (MatNameEnumIsMatFunc(_MatName)==false)
         {
           SUBR(read_mat)(MatNameEnumToStr(_MatName),comm_,_Nglob,_Mglob,&A_,&iflag_);
+          ASSERT_EQ(0,iflag_);
         }
         else
         {
           SUBR(create_matrix)(&A_,comm_,MatNameEnumToStr(_MatName),&iflag_);
+          ASSERT_EQ(0,iflag_);
         }
-        ASSERT_EQ(0,iflag_);
         ASSERT_TRUE(A_ != NULL);
         
         phist_const_map_ptr domain_map = NULL;

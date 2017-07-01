@@ -10,8 +10,6 @@
 /* needs to be included before system headers for some intel compilers+mpi */
 #ifdef PHIST_HAVE_MPI
 #include <mpi.h>
-#else
-#error "this file currently requires MPI"
 #endif
 
 #include "phist_perfcheck.hpp"
@@ -46,9 +44,11 @@ namespace phist_PerfCheck
     int nTimers = timingResults_.size();
     int nExpectedTimers = expectedResults_.size();
 
+#ifdef PHIST_HAVE_MPI
     // consider only timers from the first process!
     PHIST_CHK_IERR(ierr = MPI_Bcast(&nTimers, 1, MPI_INT, 0, MPI_COMM_WORLD), ierr);
     PHIST_CHK_IERR(ierr = MPI_Bcast(&nExpectedTimers, 1, MPI_INT, 0, MPI_COMM_WORLD), ierr);
+#endif
 
     PHIST_CHK_IERR(ierr = (nTimers != nExpectedTimers) ? -1 : 0, ierr);
 
@@ -76,11 +76,15 @@ namespace phist_PerfCheck
     for(TimeDataMap::const_iterator it = timingResults_.begin(); it != timingResults_.end(); it++)
       fcnNameList.append( it->first + '\n' );
     int strLen = fcnNameList.length();
+#ifdef PHIST_HAVE_MPI
     PHIST_CHK_IERR(ierr = MPI_Bcast(&strLen, 1, MPI_INT, 0, MPI_COMM_WORLD), ierr);
+#endif
     char* strBuf = new char[strLen];
     fcnNameList.copy(strBuf, strLen);
     strBuf[strLen-1] = '\0';
+#ifdef PHIST_HAVE_MPI
     PHIST_CHK_IERR(ierr = MPI_Bcast(strBuf, strLen, MPI_CHAR, 0, MPI_COMM_WORLD), ierr);
+#endif
     std::istringstream iss(strBuf);
 
     std::vector<std::string> fcnName(nTimers);
@@ -106,6 +110,7 @@ namespace phist_PerfCheck
     }
     delete[] strBuf;
 
+#ifdef PHIST_HAVE_MPI
     // reductions over mpi processes
     tmp = minTime;
     PHIST_CHK_IERR(ierr = MPI_Reduce(&tmp[0],&minTime[0],nTimers,MPI_DOUBLE,MPI_MIN,0,MPI_COMM_WORLD), ierr);
@@ -123,6 +128,7 @@ namespace phist_PerfCheck
     tmp = maxTotalExpected;
     PHIST_CHK_IERR(ierr = MPI_Reduce(&tmp[0],&sumTotalExpected[0],nTimers,MPI_DOUBLE,MPI_SUM,0,MPI_COMM_WORLD), ierr);
     PHIST_CHK_IERR(ierr = MPI_Reduce(&tmp[0],&maxTotalExpected[0],nTimers,MPI_DOUBLE,MPI_MAX,0,MPI_COMM_WORLD), ierr);
+#endif
 
     std::vector<double> sortBy(nTimers);
     for(int i = 0; i < nTimers; i++)
@@ -164,8 +170,10 @@ namespace phist_PerfCheck
     function.resize(maxNameLen, ' ');
     fprintf(ofile, "================================================== PERFORMANCE CHECK RESULTS =====================================================\n");
     fprintf(ofile, "%s  %10s  %10s  %10s  %10s  %10s\n", function.c_str(), "total time", "%roofline", "count", "max.%roofline", "min.%roofline");
-    int nprocs;
+    int nprocs = 1;
+#ifdef PHIST_HAVE_MPI
     MPI_Comm_size(MPI_COMM_WORLD, &nprocs);
+#endif
     double sumMaxTotalExpected = 0., sumMaxTotalTime = 0.;
     for(int i_ = 0; i_ < nTimers; i_++)
     {
