@@ -36,7 +36,7 @@ while getopts "k:e:f:c:v:t:h" o; do
     case "${o}" in
         k)
             KERNELS=${OPTARG}
-            ((KERNELS == "builtin" || KERNELS == "ghost" || KERNELS == "tpetra" || KERNELS == "epetra" || KERNELS == "petsc")) || usage
+            ((KERNELS == "builtin" || KERNELS == "ghost" || KERNELS == "tpetra" || KERNELS == "epetra" || KERNELS == "petsc" || KERNELS == "Eigen")) || usage
             ;;
         e)
             PRGENV=${OPTARG}
@@ -71,7 +71,8 @@ MODULES_KERNELS=(
   ["ghost"]="gsl"
   ["epetra"]="trilinos/trilinos-${TRILINOS_VERSION}"
   ["tpetra"]="trilinos/trilinos-${TRILINOS_VERSION}" 
-  ["petsc"]="petsc" )
+  ["petsc"]="petsc" 
+  ["Eigen"]="Eigen" )
 
 declare -A MODULES_KERNELS_OPTIONAL
 MODULES_KERNELS_OPTIONAL=(
@@ -79,7 +80,8 @@ MODULES_KERNELS_OPTIONAL=(
   ["ghost"]="ColPack trilinos/trilinos-11.12.1"
   ["epetra"]=""
   ["tpetra"]=""
-  ["petsc"]="" )
+  ["petsc"]="" 
+  ["Eigen"]="" )
 
 
 ## prepare system for compilation
