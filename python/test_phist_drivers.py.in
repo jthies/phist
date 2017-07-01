@@ -31,7 +31,10 @@ def RunTest(test_name,test_cmd):
     np='${PHIST_TEST_DRIVERS_NUM_PROCS}'
     nt='${PHIST_TEST_DRIVERS_NUM_THREADS}'
     env_args='env PHIST_NUM_THREADS='+nt
-    cmd_pre = mpirun+' '+np_flag+' '+np+' '+env_args+' '
+    if ${PHIST_HAVE_MPI}:
+        cmd_pre = mpirun+' '+np_flag+' '+np+' '+env_args+' '
+    else:
+        cmd_pre = ''
     cmd=cmd_pre+' '+test_cmd
 
     with open(logfile_path, 'w') as logfile:
