@@ -33,6 +33,7 @@
 //!  1 if the number of iterations was exceeded without any system converging.
 //!
 void SUBR( blockedQMR_iterate ) (TYPE(const_linearOp_ptr) Op, 
+                TYPE(const_linearOp_ptr) rightPreconOp,
                 TYPE(const_mvec_ptr) rhs, TYPE(mvec_ptr) sol,
                 int numSys, int *nIter, int* iflag);
 
