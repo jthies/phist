@@ -15,7 +15,7 @@
 typedef struct TYPE(jadaCorrectionSolver) {
   //! \name internal data structures
   //@{
-  int                   gmresBlockDim_;     //! number of blockedGMRES states iterated at once
+  int                   innerSolvBlockSize_;     //! number of blockedGMRES states iterated at once
   TYPE(blockedGMRESstate_ptr) *blockedGMRESstates_;     //! blockedGMRES states
   TYPE(carp_cgState_ptr) *carp_cgStates_; //! can use CARP-CG alternatively
   phist_ElinSolv     method_;    //! supported values are GMRES, MINRES, CARP_CG and CUSTOM.

@@ -23,8 +23,8 @@ void SUBR(jadaCorrectionSolver_create)(TYPE(jadaCorrectionSolver_ptr) *me, phist
     if (innerSolvBlockSize<0) innerSolvBlockSize=opts.blockSize;
     PHIST_CHK_IERR( *iflag = (innerSolvBlockSize <= 0) ? PHIST_INVALID_INPUT : 0, *iflag);
 
-    (*me)->gmresBlockDim_ = innerSolvBlockSize;
-    (*me)->blockedGMRESstates_  = new TYPE(blockedGMRESstate_ptr)[(*me)->gmresBlockDim_];
+    (*me)->innerSolvBlockSize_ = innerSolvBlockSize;
+    (*me)->blockedGMRESstates_  = new TYPE(blockedGMRESstate_ptr)[(*me)->innerSolvBlockSize_];
     int innerSolvMaxBas = opts.innerSolvMaxBas;
     if (innerSolvMaxBas<0) innerSolvMaxBas=opts.innerSolvMaxIters;
     PHIST_CHK_IERR(SUBR(blockedGMRESstates_create)((*me)->blockedGMRESstates_, innerSolvBlockSize, map, innerSolvMaxBas, iflag), *iflag);
@@ -66,7 +66,7 @@ void SUBR(jadaCorrectionSolver_delete)(TYPE(jadaCorrectionSolver_ptr) me, int *i
 
   if (me->method_==phist_GMRES || me->method_==phist_MINRES)
   {
-    PHIST_CHK_IERR(SUBR(blockedGMRESstates_delete)(me->blockedGMRESstates_, me->gmresBlockDim_, iflag), *iflag);
+    PHIST_CHK_IERR(SUBR(blockedGMRESstates_delete)(me->blockedGMRESstates_, me->innerSolvBlockSize_, iflag), *iflag);
     delete[] me->blockedGMRESstates_;
   }
   else if (me->method_==phist_CARP_CG)
@@ -291,13 +291,13 @@ void SUBR(jadaCorrectionSolver_run)(TYPE(jadaCorrectionSolver_ptr) me,
   PHIST_CHK_IERR(SUBR(mvec_put_value)(t, st::zero(), iflag), *iflag);
 
   // make sure all states are reset
-  for(int i = 0; i < me->gmresBlockDim_; i++)
+  for(int i = 0; i < me->innerSolvBlockSize_; i++)
   {
     PHIST_CHK_IERR(SUBR(blockedGMRESstate_reset)(me->blockedGMRESstates_[i], NULL, NULL, iflag), *iflag);
   }
 
   // current and maximal block dimension
-  int max_k = me->gmresBlockDim_;
+  int max_k = me->innerSolvBlockSize_;
   int k = max_k;
 
   // index of currently iterated systems in all systems to solve
