@@ -38,9 +38,10 @@ typedef enum phist_EeigExtr
 typedef enum phist_ElinSolv 
 {
   phist_NO_LINSOLV=0, // do nothing: X=B
-  phist_GMRES=1, // unpreconditioned GMRES
-  phist_MINRES=2, // unpreconditioned MINRES
-  phist_CARP_CG=3, // CG on the normal equations, preconditioned by CARP (parallel SSOR)
+  phist_GMRES=1, // GMRES for general matrices (with left and/or right preconditioning)
+  phist_MINRES=2, // MINRES for symmetric and indefinite matrices
+  phist_QMR=3, // QMR for symmetric and indefinite matrices
+  phist_CARP_CG=4, // CG on the normal equations, preconditioned by CARP (parallel SSOR)
   phist_USER_LINSOLV=98,// user wants to provide custom solver
   phist_INVALID_LINSOLV // returned if str2linSolv gets an invalid string
 } phist_ElinSolv;
