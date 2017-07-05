@@ -9,7 +9,7 @@
 
 // implementation of gmres on several systems simultaneously
 void SUBR(blockedQMR_iterate)(TYPE(const_linearOp_ptr) Aop, TYPE(const_linearOp_ptr) Pop,
-        TYPE(const_mvec_ptr) rhs, TYPE(mvec_ptr) sol, int numSys, int* nIter, int* iflag)
+        TYPE(const_mvec_ptr) rhs, TYPE(mvec_ptr) sol, int numSys, int* nIter, _MT_ tol[], int* iflag)
 {
 #include "phist_std_typedefs.hpp"
   *iflag = 0;
