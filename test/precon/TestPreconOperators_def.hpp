@@ -425,7 +425,10 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,_N_,MATNAME>,
   }
 
 
-  TEST_F(CLASSNAME, precon_improves_krylov_solver)
+  // note: this test is currently quite slow, so I disable it for now. I will implement a restarted GMRES
+  // wrapper function and use that insteaad to avoid the big subspace here, and maybe we could fiddle with
+  // the test matrices to get it to converge faster.
+  TEST_F(CLASSNAME, DISABLED_precon_improves_krylov_solver)
   {
     if( typeImplemented_ && !problemTooSmall_ )
     {
