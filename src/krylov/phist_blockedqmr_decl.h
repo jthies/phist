@@ -35,7 +35,7 @@
 void SUBR( blockedQMR_iterate ) (TYPE(const_linearOp_ptr) Op, 
                 TYPE(const_linearOp_ptr) rightPreconOp,
                 TYPE(const_mvec_ptr) rhs, TYPE(mvec_ptr) sol,
-                int numSys, int *nIter, _MT_ tol[], int* iflag);
+                int numSys, int *nIter, _MT_ const tol[], int* iflag);
 
 //@}
 //@}

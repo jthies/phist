@@ -16,14 +16,16 @@ void SUBR(jadaCorrectionSolver_create)(TYPE(jadaCorrectionSolver_ptr) *me, phist
   *me = new TYPE(jadaCorrectionSolver);
   (*me)->method_ = opts.innerSolvType;
   (*me)->leftPrecon=NULL; 
-    (*me)->rightPrecon=NULL; 
+  (*me)->rightPrecon=NULL; 
+
+  int innerSolvBlockSize=opts.innerSolvBlockSize;
+  if (innerSolvBlockSize<0) innerSolvBlockSize=opts.blockSize;
+  PHIST_CHK_IERR( *iflag = (innerSolvBlockSize <= 0) ? PHIST_INVALID_INPUT : 0, *iflag);
+
+  (*me)->innerSolvBlockSize_ = innerSolvBlockSize;
+
   if ((*me)->method_==phist_GMRES||(*me)->method_==phist_MINRES)
   {
-    int innerSolvBlockSize=opts.innerSolvBlockSize;
-    if (innerSolvBlockSize<0) innerSolvBlockSize=opts.blockSize;
-    PHIST_CHK_IERR( *iflag = (innerSolvBlockSize <= 0) ? PHIST_INVALID_INPUT : 0, *iflag);
-
-    (*me)->innerSolvBlockSize_ = innerSolvBlockSize;
     (*me)->blockedGMRESstates_  = new TYPE(blockedGMRESstate_ptr)[(*me)->innerSolvBlockSize_];
     int innerSolvMaxBas = opts.innerSolvMaxBas;
     if (innerSolvMaxBas<0) innerSolvMaxBas=opts.innerSolvMaxIters;
@@ -31,9 +33,16 @@ void SUBR(jadaCorrectionSolver_create)(TYPE(jadaCorrectionSolver_ptr) *me, phist
     (*me)->leftPrecon=(TYPE(linearOp_ptr))opts.preconOp;
     (*me)->preconSkewProject=opts.preconSkewProject;
   }
+  else if ((*me)->method_==phist_QMR)
+  {
+    //TODO: decide wether to use left or right preconditioning with QMR
+    (*me)->rightPrecon=(TYPE(linearOp_ptr))opts.preconOp;
+    (*me)->preconSkewProject=opts.preconSkewProject;
+  }
   else if ((*me)->method_==phist_CARP_CG)
   {
     *iflag=PHIST_NOT_IMPLEMENTED;
+    return;
   }
   else if ((*me)->method_==phist_USER_LINSOLV)
   {
@@ -221,7 +230,7 @@ void SUBR(jadaCorrectionSolver_run)(TYPE(jadaCorrectionSolver_ptr) me,
   }
  
   // if no Krylov method is used, only apply the preconditioner. This is also known as Olsen's method.
-  if (me->method_==phist_NO_LINSOLV)
+  if (me->method_==phist_NO_LINSOLV || me->method_==phist_QMR)
   {
     TYPE(mvec_ptr) _t=t,_res=(TYPE(mvec_ptr))res;
     int jlower=0,jupper=totalNumSys-1;
@@ -239,51 +248,66 @@ void SUBR(jadaCorrectionSolver_run)(TYPE(jadaCorrectionSolver_ptr) me,
     // make sure the view gets deleted at the end of the scope
     MvecOwner<_ST_> __res(_res!=res?_res:NULL);
     // wrap the preconditioner so that apply_shifted is called
+      TYPE(linearOp_ptr) jadaPrec=NULL;
+
     if (me->rightPrecon!=NULL)
     {
       std::vector<_ST_> shifts(totalNumSys, st::zero());
-      for (int i=0; i<totalNumSys; i++) shifts[i]=-sigma[i];
-      if (me->preconSkewProject==0)
+      if (me->method_==phist_NO_LINSOLV)
       {
-        PHIST_CHK_IERR(me->rightPrecon->apply_shifted(st::one(),me->rightPrecon->A, 
-                &shifts[0],_res,st::one(),_t,iflag),*iflag);
+        // use actual shifts instead of 0's
+        for (int i=0; i<totalNumSys; i++) shifts[i]=-sigma[i];
       }
-      else
+
+      PHIST_CHK_IERR(SUBR(jadaPrec_create)(me->rightPrecon,q,Bq,&shifts[0],totalNumSys,jadaPrec,me->preconSkewProject,iflag),*iflag);
+
+    }
+
+      if (me->method_==phist_NO_LINSOLV)
       {
-        static int first_time=1;
-        if (first_time)
+        if (jadaPrec!=NULL)
         {
-          PHIST_SOUT(PHIST_WARNING,"NO_LINSOLV/Olsens method (apply projected preconditioner only)\n"
-                                   "requires two preconditioner applications per correction vector\n"
-                                   "and may therefore be quite expensive...\n");
-          first_time=0;
+          // apply this preconditioner
+          PHIST_CHK_IERR(jadaPrec->apply(st::one(),jadaPrec->A, _res, st::zero(), _t,iflag),*iflag);
         }
-        TYPE(linearOp) jadaPrec;
-        PHIST_CHK_IERR(SUBR(jadaPrec_create)(me->rightPrecon,q,Bq,&shifts[0],totalNumSys,&jadaPrec,me->preconSkewProject,iflag),*iflag);
-        // apply this preconditioner
-        PHIST_CHK_IERR(jadaPrec.apply(st::one(),jadaPrec.A, _res, st::zero(), _t,iflag),*iflag);
-        // delete the preconditioner (wrapper) again
-        PHIST_CHK_IERR(jadaPrec.destroy(&jadaPrec,iflag),*iflag);
+        else
+        {
+          PHIST_CHK_IERR(SUBR(mvec_add_mvec)(st::one(),res,st::zero(),t,iflag),*iflag);
+        }
+
       }
-    }
-    else
-    {
-      static int first_time=1;
-      if (first_time)
+      else if (me->method_==phist_QMR)
       {
-        PHIST_SOUT(PHIST_WARNING,"NO_LINSOLV/Olsens method (apply projected preconditioner only)\n"
-                                 "was chosen in the jadaOpts, but no preconditioner is given. This\n"
-                                 "means that the correction equation is not solved!\n");
-        first_time=0;
+        // make sure the inner and outer block sizes are the same, and there is no permutation of the residual vectors.
+        // For GMRES and MINRES below we don't have this restriction
+        int k = me->innerSolvBlockSize_;
+        PHIST_CHK_IERR(*iflag=(k==totalNumSys)?0:PHIST_NOT_IMPLEMENTED,*iflag);
+        // note: we already checked the permutation of the res (rhs vectors) above is consecutive and
+        // extracted _res as a view of those columns. Check that _t has the same number of columns.
+        int nct;
+        PHIST_CHK_IERR(SUBR(mvec_num_vectors)(_t,&nct,iflag),*iflag);
+        PHIST_CHK_IERR(*iflag=(nct==totalNumSys)?0:PHIST_INVALID_INPUT,*iflag);
+        
+        // we need a jadaOp
+        TYPE(linearOp) jadaOp;
+        PHIST_CHK_IERR(SUBR(jadaOp_create)(AB_op, B_op, Qtil, BQtil, &sigma[0], k, &jadaOp, iflag), *iflag);
+        int nIter=maxIter;
+        PHIST_CHK_NEG_IERR(SUBR(blockedQMR_iterate)(&jadaOp, jadaPrec, _res,_t, k, &nIter, tol, iflag),*iflag);
       }
-      PHIST_CHK_IERR(SUBR(mvec_add_mvec)(st::one(),res,st::zero(),t,iflag),*iflag);
+
+      if (jadaPrec!=NULL)
+      {
+        // delete the preconditioner (wrapper) again
+        PHIST_CHK_IERR(jadaPrec->destroy(jadaPrec,iflag),*iflag);
+      }
+      *iflag=0;
+      return;
     }
-    *iflag=0;
-    return;
-  }
 
   
-  // all other cases implemented below: MINRES, GMRES, CARP-CG
+  // MINRES or GMRES implemented below, these are more fancy as they allow restarting,
+  // swapping out converged systems etc. In the future we may abolish all of that and treat
+  // them in the same way as QMR above. CARP-CG is not implemented at all right now.
 
   PHIST_CHK_IERR(*iflag = (maxIter <= 0) ? -1 : 0, *iflag);
 
@@ -511,4 +535,3 @@ PHIST_TASK_END(iflag)
   PHIST_CHK_IERR(SUBR(jadaOp_delete)(&jadaOp, iflag), *iflag);
   *iflag = nUnconvergedSystems;
 }
-
