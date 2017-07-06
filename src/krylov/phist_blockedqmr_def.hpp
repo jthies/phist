@@ -144,9 +144,12 @@ void SUBR(blockedQMR_iterate)(TYPE(const_linearOp_ptr) Aop, TYPE(const_linearOp_
 
       // sol = sol + eta d
       PHIST_CHK_IERR(SUBR(mvec_vadd_mvec)(eta, d, st::one(), sol, iflag), *iflag);
+
+      PHIST_SOUT(PHIST_VERBOSE,"QMR ITER %d: ",*nIter);
       
       for (int i=0; i<numSys; i++) {
         _MT_ dpest = sqrt(m + 1.0) * tau[i];
+             PHIST_SOUT(PHIST_VERBOSE,"\t%8.4g",dpest);
 
         // Check residual
         if (dpest < tol[i]) {
@@ -157,6 +160,7 @@ void SUBR(blockedQMR_iterate)(TYPE(const_linearOp_ptr) Aop, TYPE(const_linearOp_
         etaold[i] = eta[i];
         psiold[i] = psi[i];
       }
+      PHIST_SOUT(PHIST_VERBOSE,"\n");
       if (conv) break;
     }
     if (conv) break;
