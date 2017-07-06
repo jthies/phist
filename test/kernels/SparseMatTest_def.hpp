@@ -209,6 +209,9 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,_N_,MATNAME>,
     ASSERT_EQ(0, iflag_);
     SUBR(mvec_from_device)(vec3_,&iflag_);
     ASSERT_EQ(0, iflag_);
+    if (PHIST_OUTLEV>=PHIST_DEBUG) std::cout << "should differ only in range ["<<imin<<"..."<<imax<<"]"<<std::endl;
+      PrintVector(PHIST_DEBUG,"vec2",vec2_vp_,nloc_,lda_,stride_,mpi_comm_);
+      PrintVector(PHIST_DEBUG,"vec3",vec3_vp_,nloc_,lda_,stride_,mpi_comm_);
     ASSERT_REAL_EQ(mt::one(), ArraysEqual(vec2_vp_,vec3_vp_,nloc_,imin,lda_,stride_,vflag_));
     ASSERT_REAL_EQ(mt::one(), ArraysEqual(vec2_vp_+VIDX(0,imax+1,lda_),vec3_vp_+VIDX(0,imax+1,lda_),nloc_,nvec_-imax-1,lda_,stride_,vflag_));
 
@@ -216,8 +219,6 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,_N_,MATNAME>,
     SUBR(sparseMat_times_mvec)(alpha, A, vec1_, beta, vec3_, &iflag_);
     ASSERT_EQ(0, iflag_);
 
-    SUBR(mvec_from_device)(vec2_,&iflag_);
-    ASSERT_EQ(0, iflag_);
     SUBR(mvec_from_device)(vec3_,&iflag_);
     ASSERT_EQ(0, iflag_);
     ASSERT_NEAR(mt::one(), ArraysEqual(vec2_vp_+VIDX(0,imin,lda_),vec3_vp_+VIDX(0,imin,lda_),nloc_,imax-imin+1,lda_,stride_,vflag_), mt::sqrt(VTest::releps()));
