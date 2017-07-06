@@ -59,9 +59,9 @@ void SUBR(blockedQMR_iterate)(TYPE(const_linearOp_ptr) Aop, TYPE(const_linearOp_
   // assuming x0 = 0, r = rhs
   PHIST_CHK_IERR(SUBR(mvec_set_block)(r, rhs, 0, numSys-1, iflag), *iflag);
 
-  // dp = norm(R)
-  _MT_ dp[numSys];
-  PHIST_CHK_IERR(SUBR(mvec_norm2)(r, dp, iflag), *iflag);
+  // dp0 = norm(R): initial residual norm
+  _MT_ dp0[numSys];
+  PHIST_CHK_IERR(SUBR(mvec_norm2)(r, dp0, iflag), *iflag);
 
   // Rp = R  
   PHIST_CHK_IERR(SUBR(mvec_set_block)(rp, r, 0, numSys-1, iflag), *iflag);
@@ -72,8 +72,8 @@ void SUBR(blockedQMR_iterate)(TYPE(const_linearOp_ptr) Aop, TYPE(const_linearOp_
   for (int i=0; i<numSys; i++) {
     etaold[i] = 0.0;
     psiold[i] = 0.0;
-    tau   [i] = dp[i];
-    dpold [i] = dp[i];
+    tau   [i] = dp0[i];
+    dpold [i] = dp0[i];
   }
 
   PHIST_CHK_IERR(SUBR(mvec_dot_mvec)(r, rp, rhoold, iflag), *iflag);
@@ -152,7 +152,9 @@ void SUBR(blockedQMR_iterate)(TYPE(const_linearOp_ptr) Aop, TYPE(const_linearOp_
              PHIST_SOUT(PHIST_VERBOSE,"\t%8.4g",dpest);
 
         // Check residual
-        if (dpest < tol[i]) {
+        // NOTE: dpest may be so optimistic, so having a minimum number of
+        // iterations can be interesting.
+        if (dpest < tol[i]*dp0[i] && *nIter>4) {
           conv = true;
           break;
         }
