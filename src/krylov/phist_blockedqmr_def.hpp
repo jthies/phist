@@ -139,8 +139,8 @@ void SUBR(blockedQMR_iterate)(TYPE(const_linearOp_ptr) Aop, TYPE(const_linearOp_
       }
 
       // D = cf D + u if m == 0, else cf D + q
-      PHIST_CHK_IERR(SUBR(mvec_set_block)(d, m==0?u:q, 0, numSys-1, iflag), *iflag);
       PHIST_CHK_IERR(SUBR(mvec_vadd_mvec)(cf, d, st::one(), d, iflag), *iflag);
+      PHIST_CHK_IERR(SUBR(mvec_add_mvec)(st::one(), m==0?u:q, st::one(), d, iflag), *iflag);
 
       // sol = sol + eta d
       PHIST_CHK_IERR(SUBR(mvec_vadd_mvec)(eta, d, st::one(), sol, iflag), *iflag);
