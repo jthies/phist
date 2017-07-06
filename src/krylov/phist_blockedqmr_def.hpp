@@ -191,12 +191,12 @@ void SUBR(blockedQMR_iterate)(TYPE(const_linearOp_ptr) Aop, TYPE(const_linearOp_
     for (int i=0; i<numSys; i++) dpold[i] = dp[i];
   }
 
-  PHIST_CHK_IERR(SUBR(mvec_delete) (&r,  iflag), *iflag);
-  PHIST_CHK_IERR(SUBR(mvec_delete) (&rp, iflag), *iflag);
-  PHIST_CHK_IERR(SUBR(mvec_delete) (&v,  iflag), *iflag);
-  PHIST_CHK_IERR(SUBR(mvec_delete) (&t,  iflag), *iflag);
-  PHIST_CHK_IERR(SUBR(mvec_delete) (&q,  iflag), *iflag);
-  PHIST_CHK_IERR(SUBR(mvec_delete) (&p,  iflag), *iflag);
-  PHIST_CHK_IERR(SUBR(mvec_delete) (&u,  iflag), *iflag);
-  PHIST_CHK_IERR(SUBR(mvec_delete) (&d,  iflag), *iflag);
+  PHIST_CHK_IERR(SUBR(mvec_delete) (r,  iflag), *iflag);
+  PHIST_CHK_IERR(SUBR(mvec_delete) (rp, iflag), *iflag);
+  PHIST_CHK_IERR(SUBR(mvec_delete) (v,  iflag), *iflag);
+  PHIST_CHK_IERR(SUBR(mvec_delete) (t,  iflag), *iflag);
+  PHIST_CHK_IERR(SUBR(mvec_delete) (q,  iflag), *iflag);
+  PHIST_CHK_IERR(SUBR(mvec_delete) (p,  iflag), *iflag);
+  PHIST_CHK_IERR(SUBR(mvec_delete) (u,  iflag), *iflag);
+  PHIST_CHK_IERR(SUBR(mvec_delete) (d,  iflag), *iflag);
 }
