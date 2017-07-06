@@ -9,7 +9,7 @@
 
 // implementation of gmres on several systems simultaneously
 void SUBR(blockedQMR_iterate)(TYPE(const_linearOp_ptr) Aop, TYPE(const_linearOp_ptr) Pop,
-        TYPE(const_mvec_ptr) rhs, TYPE(mvec_ptr) sol, int numSys, int* nIter, _MT_ const tol[], int* iflag)
+        TYPE(const_mvec_ptr) rhs, TYPE(mvec_ptr) sol_in, int numSys, int* nIter, _MT_ const tol[], int symmetry, int* iflag)
 {
 #include "phist_std_typedefs.hpp"
   *iflag = 0;
@@ -20,9 +20,9 @@ void SUBR(blockedQMR_iterate)(TYPE(const_linearOp_ptr) Aop, TYPE(const_linearOp_
 
   *iflag=0;
 
-  if( Aop == NULL && rhs == NULL && sol == NULL )
+  if( Aop == NULL || rhs == NULL || sol_in == NULL )
   {
-    *iflag = PHIST_NOT_IMPLEMENTED;
+    *iflag = PHIST_INVALID_INPUT;
     return;
   }
 
@@ -30,7 +30,7 @@ void SUBR(blockedQMR_iterate)(TYPE(const_linearOp_ptr) Aop, TYPE(const_linearOp_
   {
     int ncrhs,ncsol;
     PHIST_CHK_IERR(SUBR(mvec_num_vectors)(rhs,&ncrhs,iflag),*iflag);
-    PHIST_CHK_IERR(SUBR(mvec_num_vectors)(sol,&ncsol,iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(mvec_num_vectors)(sol_in,&ncsol,iflag),*iflag);
     // note: we actually don't care about the dimensions of sol as long as it is large 
     // enough since we just work with views in this function. However, we issue a warning 
     // (positive iflag) if the array dimensions are larger than expected so that the user 
@@ -54,10 +54,14 @@ void SUBR(blockedQMR_iterate)(TYPE(const_linearOp_ptr) Aop, TYPE(const_linearOp_
   PHIST_CHK_IERR(SUBR(mvec_create) (&p,  Aop->domain_map, numSys, iflag), *iflag);
   PHIST_CHK_IERR(SUBR(mvec_create) (&u,  Aop->domain_map, numSys, iflag), *iflag);
   PHIST_CHK_IERR(SUBR(mvec_create) (&d,  Aop->domain_map, numSys, iflag), *iflag);
+  
+  TYPE(mvec_ptr) sol=NULL;
+  PHIST_CHK_IERR(SUBR(mvec_view_block)(sol_in,&sol,0,numSys-1,iflag),*iflag);
+  MvecOwner<_ST_> _sol(sol);
 
   // compute initial residual
   // assuming x0 = 0, r = rhs
-  PHIST_CHK_IERR(SUBR(mvec_set_block)(r, rhs, 0, numSys-1, iflag), *iflag);
+  PHIST_CHK_IERR(SUBR(mvec_get_block)(rhs, r, 0, numSys-1, iflag), *iflag);
 
   // dp0 = norm(R): initial residual norm
   _MT_ dp0[numSys];

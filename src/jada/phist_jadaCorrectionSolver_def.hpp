@@ -280,7 +280,7 @@ void SUBR(jadaCorrectionSolver_run)(TYPE(jadaCorrectionSolver_ptr) me,
       {
         // make sure the inner and outer block sizes are the same, and there is no permutation of the residual vectors.
         // For GMRES and MINRES below we don't have this restriction
-        int k = me->innerSolvBlockSize_;
+        int k = std::min(me->innerSolvBlockSize_, totalNumSys);
         PHIST_CHK_IERR(*iflag=(k==totalNumSys)?0:PHIST_NOT_IMPLEMENTED,*iflag);
         // note: we already checked the permutation of the res (rhs vectors) above is consecutive and
         // extracted _res as a view of those columns. Check that _t has the same number of columns.
@@ -292,7 +292,8 @@ void SUBR(jadaCorrectionSolver_run)(TYPE(jadaCorrectionSolver_ptr) me,
         TYPE(linearOp) jadaOp;
         PHIST_CHK_IERR(SUBR(jadaOp_create)(AB_op, B_op, Qtil, BQtil, &sigma[0], k, &jadaOp, iflag), *iflag);
         int nIter=maxIter;
-        PHIST_CHK_NEG_IERR(SUBR(blockedQMR_iterate)(&jadaOp, jadaPrec, _res,_t, k, &nIter, tol, iflag),*iflag);
+        int sym=0;
+        PHIST_CHK_NEG_IERR(SUBR(blockedQMR_iterate)(&jadaOp, jadaPrec, _res,_t, k, &nIter, tol, sym, iflag),*iflag);
       }
 
       if (jadaPrec!=NULL)
