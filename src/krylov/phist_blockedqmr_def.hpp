@@ -109,7 +109,7 @@ void SUBR(blockedQMR_iterate)(TYPE(const_linearOp_ptr) Aop, TYPE(const_linearOp_
 
     // r = r - a A K (u + q)
     PHIST_CHK_IERR(SUBR(mvec_set_block)(t, u, 0, numSys-1, iflag), *iflag);
-    PHIST_CHK_IERR(SUBR(mvec_add_mvec)(st::one(), u, st::one(), t, iflag), *iflag);
+    PHIST_CHK_IERR(SUBR(mvec_add_mvec)(st::one(), q, st::one(), t, iflag), *iflag);
     for (int i=0; i<numSys; i++) a[i] *= -1.0;
     if (Pop) {
       PHIST_CHK_IERR(Aop->apply(st::one(), Aop->A, t, st::zero(), v, iflag), *iflag);
