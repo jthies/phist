@@ -57,14 +57,14 @@ void SUBR(blockedQMR_iterate)(TYPE(const_linearOp_ptr) Aop, TYPE(const_linearOp_
 
   // compute initial residual
   // assuming x0 = 0, r = rhs
-  PHIST_CHK_IERR(SUBR(mvec_set_block)(r, rhs, 0, numSys, iflag), *iflag);
+  PHIST_CHK_IERR(SUBR(mvec_set_block)(r, rhs, 0, numSys-1, iflag), *iflag);
 
   // dp = norm(R)
   _MT_ dp[numSys];
   PHIST_CHK_IERR(SUBR(mvec_norm2)(r, dp, iflag), *iflag);
 
   // Rp = R  
-  PHIST_CHK_IERR(SUBR(mvec_set_block)(rp, r, 0, numSys, iflag), *iflag);
+  PHIST_CHK_IERR(SUBR(mvec_set_block)(rp, r, 0, numSys-1, iflag), *iflag);
 
   // Set initial conditions
   _ST_ etaold[numSys], psiold[numSys], rhoold[numSys];
@@ -77,8 +77,8 @@ void SUBR(blockedQMR_iterate)(TYPE(const_linearOp_ptr) Aop, TYPE(const_linearOp_
   }
 
   PHIST_CHK_IERR(SUBR(mvec_dot_mvec)(r, rp, rhoold, iflag), *iflag);
-  PHIST_CHK_IERR(SUBR(mvec_set_block)(u, r, 0, numSys, iflag), *iflag);
-  PHIST_CHK_IERR(SUBR(mvec_set_block)(p, r, 0, numSys, iflag), *iflag);
+  PHIST_CHK_IERR(SUBR(mvec_set_block)(u, r, 0, numSys-1, iflag), *iflag);
+  PHIST_CHK_IERR(SUBR(mvec_set_block)(p, r, 0, numSys-1, iflag), *iflag);
 
   // v = AKp
   if (Pop) {
@@ -102,13 +102,13 @@ void SUBR(blockedQMR_iterate)(TYPE(const_linearOp_ptr) Aop, TYPE(const_linearOp_
     for (int i=0; i<numSys; i++) a[i] = rhoold[i] / s[i];
 
     // q = -a*v + u
-    PHIST_CHK_IERR(SUBR(mvec_set_block)(q, u, 0, numSys, iflag), *iflag);
+    PHIST_CHK_IERR(SUBR(mvec_set_block)(q, u, 0, numSys-1, iflag), *iflag);
     for (int i=0; i<numSys; i++) a[i] *= -1.0;
     PHIST_CHK_IERR(SUBR(mvec_vadd_mvec)(a, v, st::one(), q, iflag), *iflag);
     for (int i=0; i<numSys; i++) a[i] *= -1.0;
 
     // r = r - a A K (u + q)
-    PHIST_CHK_IERR(SUBR(mvec_set_block)(t, u, 0, numSys, iflag), *iflag);
+    PHIST_CHK_IERR(SUBR(mvec_set_block)(t, u, 0, numSys-1, iflag), *iflag);
     PHIST_CHK_IERR(SUBR(mvec_add_mvec)(st::one(), u, st::one(), t, iflag), *iflag);
     for (int i=0; i<numSys; i++) a[i] *= -1.0;
     if (Pop) {
@@ -139,7 +139,7 @@ void SUBR(blockedQMR_iterate)(TYPE(const_linearOp_ptr) Aop, TYPE(const_linearOp_
       }
 
       // D = cf D + u if m == 0, else cf D + q
-      PHIST_CHK_IERR(SUBR(mvec_set_block)(d, m==0?u:q, 0, numSys, iflag), *iflag);
+      PHIST_CHK_IERR(SUBR(mvec_set_block)(d, m==0?u:q, 0, numSys-1, iflag), *iflag);
       PHIST_CHK_IERR(SUBR(mvec_vadd_mvec)(cf, d, st::one(), d, iflag), *iflag);
 
       // D = D + eta sol
@@ -170,13 +170,13 @@ void SUBR(blockedQMR_iterate)(TYPE(const_linearOp_ptr) Aop, TYPE(const_linearOp_
     for (int i=0; i<numSys; i++) b[i] = rho[i] / rhoold[i];
 
     // u = r + b q
-    PHIST_CHK_IERR(SUBR(mvec_set_block)(u, r, 0, numSys, iflag), *iflag);
+    PHIST_CHK_IERR(SUBR(mvec_set_block)(u, r, 0, numSys-1, iflag), *iflag);
     PHIST_CHK_IERR(SUBR(mvec_vadd_mvec)(b, q, st::one(), r, iflag), *iflag);
 
     // p = u + b(q + b p)
-    PHIST_CHK_IERR(SUBR(mvec_set_block)(t, q, 0, numSys, iflag), *iflag);
+    PHIST_CHK_IERR(SUBR(mvec_set_block)(t, q, 0, numSys-1, iflag), *iflag);
     PHIST_CHK_IERR(SUBR(mvec_vadd_mvec)(b, p, st::one(), t, iflag), *iflag);
-    PHIST_CHK_IERR(SUBR(mvec_set_block)(p, u, 0, numSys, iflag), *iflag);
+    PHIST_CHK_IERR(SUBR(mvec_set_block)(p, u, 0, numSys-1, iflag), *iflag);
     PHIST_CHK_IERR(SUBR(mvec_vadd_mvec)(b, t, st::one(), p, iflag), *iflag);
 
     // v = A K p
