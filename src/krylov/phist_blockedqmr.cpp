@@ -14,12 +14,10 @@
 #include <cstring>
 #include <cmath>
 #include <vector>
-#ifdef PHIST_HAVE_TEUCHOS
-#include <Teuchos_RCP.hpp>
-#endif
 
 #include "phist_blockedqmr.h"
 #include "phist_orthog.h"
+#include "phist_MemOwner.hpp"
 
 #ifdef PHIST_HAVE_SP
 #include "phist_gen_s.h"
