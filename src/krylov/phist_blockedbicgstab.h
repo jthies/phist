@@ -6,8 +6,8 @@
 /* Contact: Jonas Thies (Jonas.Thies@DLR.de)                                               */
 /*                                                                                         */
 /*******************************************************************************************/
-#ifndef PHIST_BLOCKEDQMR_H
-#define PHIST_BLOCKEDQMR_H
+#ifndef PHIST_BLOCKEDBICGSTAB_H
+#define PHIST_BLOCKEDBICGSTAB_H
 
 #include "phist_config.h"
 
