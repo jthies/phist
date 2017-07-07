@@ -158,7 +158,7 @@ PHIST_CHK_IERR(*iflag=(nQ_in==nR_in && nR_in==mR_in)?0:PHIST_INVALID_INPUT,*ifla
 
   //------------------------------- check arguments --------------------------------
   PHIST_CHK_IERR(*iflag= ( blockDim < 1 )?PHIST_INVALID_INPUT:0,*iflag);
-  PHIST_CHK_IERR(*iflag= ( innerBlockDim > blockDim || innerBlockDim < 1 && innerBlockDim != -1 )?PHIST_INVALID_INPUT:0,*iflag);
+  PHIST_CHK_IERR(*iflag= ( innerBlockDim>blockDim || (innerBlockDim<1 && innerBlockDim!=-1) )?PHIST_INVALID_INPUT:0,*iflag);
   PHIST_CHK_IERR(*iflag= ( minBase < nEig_ )?PHIST_INVALID_INPUT:0,*iflag);
   PHIST_CHK_IERR(*iflag= ( minBase+blockDim > maxBase )?PHIST_INVALID_INPUT:0,*iflag);
   PHIST_CHK_IERR(*iflag= ( maxBase < nEig+blockDim )?PHIST_INVALID_INPUT:0,*iflag);
