@@ -294,7 +294,11 @@ void SUBR(jadaCorrectionSolver_run)(TYPE(jadaCorrectionSolver_ptr) me,
         PHIST_CHK_IERR(SUBR(jadaOp_create)(AB_op, B_op, Qtil, BQtil, &sigma[0], k, &jadaOp, iflag), *iflag);
         int nIter=maxIter;
         int sym=0;
-        PHIST_CHK_NEG_IERR(SUBR(blockedQMR_iterate)(&jadaOp, jadaPrec, _res,_t, k, &nIter, tol, sym, iflag),*iflag);
+        // pass in the last k columns of Qtil (the current approximate eigenspace we're solving for)
+        TYPE(mvec_ptr) V=NULL;
+        PHIST_CHK_IERR(SUBR(mvec_view_block)((TYPE(mvec_ptr))Qtil,&V,std::max(numProj-k,0),numProj-1,iflag),*iflag);
+        MvecOwner<_ST_> _V(V);
+        PHIST_CHK_NEG_IERR(SUBR(blockedQMR_iterate)(&jadaOp, jadaPrec, _res,_t, V, k, &nIter, tol, sym, iflag),*iflag);
       }
       else if (me->method_==phist_BICGSTAB)
       {
@@ -312,8 +316,11 @@ void SUBR(jadaCorrectionSolver_run)(TYPE(jadaCorrectionSolver_ptr) me,
         TYPE(linearOp) jadaOp;
         PHIST_CHK_IERR(SUBR(jadaOp_create)(AB_op, B_op, Qtil, BQtil, &sigma[0], k, &jadaOp, iflag), *iflag);
         int nIter=maxIter;
-        int sym=0;
-        PHIST_CHK_NEG_IERR(SUBR(blockedBiCGStab_iterate)(&jadaOp, jadaPrec, _res,_t, k, &nIter, tol, iflag),*iflag);
+        // pass in the last k columns of Qtil (the current approximate eigenspace we're solving for)
+        TYPE(mvec_ptr) V=NULL;
+        PHIST_CHK_IERR(SUBR(mvec_view_block)((TYPE(mvec_ptr))Qtil,&V,std::max(numProj-k,0),numProj-1,iflag),*iflag);
+        MvecOwner<_ST_> _V(V);
+        PHIST_CHK_NEG_IERR(SUBR(blockedBiCGStab_iterate)(&jadaOp, jadaPrec, _res,_t, V, k, &nIter, tol, iflag),*iflag);
       }
 
       if (jadaPrec!=NULL)

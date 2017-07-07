@@ -9,7 +9,8 @@
 
 // implementation of gmres on several systems simultaneously
 void SUBR(blockedBiCGStab_iterate)(TYPE(const_linearOp_ptr) Aop, TYPE(const_linearOp_ptr) Pop,
-        TYPE(const_mvec_ptr) rhs, TYPE(mvec_ptr) sol_in, int numSys, int* nIter, _MT_ const tol[], int* iflag)
+        TYPE(const_mvec_ptr) rhs, TYPE(mvec_ptr) sol_in, TYPE(const_mvec_ptr) V,
+        int numSys, int* nIter, _MT_ const tol[], int* iflag)
 {
 #include "phist_std_typedefs.hpp"
   *iflag = 0;

@@ -26,6 +26,9 @@
 //! sol and rhs must both have numSys columns, and Op must be applicable to numSys columns. It is allowed that
 //! op acts as a different linear operator on each column of the input vector, e.g. Op*X_j = (A-sigma_jB)X_j
 //!
+//! If V!=NULL is given, it represents the approximate eigenspace Q~ corresponding to the shifts inside Jacobi-Davidson
+//! and can be used for checking convergence based on the eigenvalue residuals rather than the linear system residuals.
+//!
 //! On return, iflag will be set to:
 //!
 //! <0 if any error occurred,
@@ -34,7 +37,7 @@
 //!
 void SUBR( blockedBiCGStab_iterate ) (TYPE(const_linearOp_ptr) Op, 
                 TYPE(const_linearOp_ptr) rightPreconOp,
-                TYPE(const_mvec_ptr) rhs, TYPE(mvec_ptr) sol,
+                TYPE(const_mvec_ptr) rhs, TYPE(mvec_ptr) sol, TYPE(const_mvec_ptr) V,
                 int numSys, int *nIter, _MT_ const tol[], int* iflag);
 
 //@}
