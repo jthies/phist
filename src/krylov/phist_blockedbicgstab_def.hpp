@@ -25,6 +25,10 @@ void SUBR(blockedBiCGStab_iterate)(TYPE(const_linearOp_ptr) Aop, TYPE(const_line
     *iflag = PHIST_INVALID_INPUT;
     return;
   }
+  
+  PHIST_CHK_IERR(*iflag=(Pop==NULL)?0:PHIST_NOT_IMPLEMENTED,*iflag);
+  {
+  }
 
   // check dimensions
   {
@@ -69,8 +73,15 @@ void SUBR(blockedBiCGStab_iterate)(TYPE(const_linearOp_ptr) Aop, TYPE(const_line
 
   for (*nIter = 0; *nIter <= maxIter; (*nIter)++)
   {
-    // rho_i = norm2(r_i)
-    PHIST_CHK_IERR(SUBR(mvec_dot_mvec)(r,r,&rho[0],iflag),*iflag);
+    if (*nIter>0)
+    {
+      // rho_i = norm2(r_i)
+      PHIST_CHK_IERR(SUBR(mvec_dot_mvec)(r,r,&rho[0],iflag),*iflag);
+    }
+    else
+    {
+      for (int j=0; j < numSys; j++) rho[j]=rho0[j];
+    }
 
     bool firstConverged = false;
     PHIST_SOUT(PHIST_VERBOSE,"BICGSTAB ITER %d: ",*nIter);
@@ -78,7 +89,7 @@ void SUBR(blockedBiCGStab_iterate)(TYPE(const_linearOp_ptr) Aop, TYPE(const_line
     {
       rho[j]=std::sqrt(rho[j]);
       PHIST_SOUT(PHIST_VERBOSE,"\t%e",std::abs(rho[j]));
-      firstConverged = firstConverged || std::abs(rho[j]) < tol[j];
+      firstConverged = firstConverged || (std::abs(rho[j]) < tol[j]*std::sqrt(std::abs(rho0[j])));
     }
     PHIST_SOUT(PHIST_VERBOSE,"\n");
     if( firstConverged || *nIter == maxIter )
