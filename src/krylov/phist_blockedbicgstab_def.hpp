@@ -62,35 +62,27 @@ void SUBR(blockedBiCGStab_iterate)(TYPE(const_linearOp_ptr) Aop, TYPE(const_line
   PHIST_CHK_IERR(SUBR(mvec_view_block)(sol_in,&sol,0,numSys-1,iflag),*iflag);
   MvecOwner<_ST_> _sol(sol), _p(p),_q(q),_r(r),_r0(r0),_s(s),_t(t);
 
-  PHIST_CHK_IERR(SUBR(mvec_add_mvec)(st::one(),rhs,st::zero(),r,iflag),*iflag);
+  // set x=0, p=r=r0=b
   PHIST_CHK_IERR(SUBR(mvec_put_value)(sol,st::zero(),iflag),*iflag);
+  PHIST_CHK_IERR(SUBR(mvec_add_mvec)(st::one(),rhs,st::zero(),r,iflag),*iflag);
   PHIST_CHK_IERR(SUBR(mvec_add_mvec)(st::one(),r,st::zero(),p,iflag),*iflag);
   PHIST_CHK_IERR(SUBR(mvec_add_mvec)(st::one(),r,st::zero(),r0,iflag),*iflag);
 
-  std::vector<ST> rho(numSys,mt::one()), rho0(numSys,mt::one()), rho0_prev(numSys);
+  // rho0=(r0*r0), rho=(r,r0)
+  std::vector<ST> rho(numSys,mt::one()), rho0(numSys,mt::one()), rho_prev(numSys);
 
-  //rho0_0 = r0^T r0
   PHIST_CHK_IERR(SUBR(mvec_dot_mvec)(r0,r0,&rho0[0],iflag),*iflag);
+  rho=rho0;
 
   for (*nIter = 0; *nIter <= maxIter; (*nIter)++)
   {
-    if (*nIter>0)
-    {
-      // rho_i = norm2(r_i)
-      PHIST_CHK_IERR(SUBR(mvec_dot_mvec)(r,r,&rho[0],iflag),*iflag);
-    }
-    else
-    {
-      for (int j=0; j < numSys; j++) rho[j]=rho0[j];
-    }
-
     bool firstConverged = false;
-    PHIST_SOUT(PHIST_VERBOSE,"BICGSTAB ITER %d: ",*nIter);
+    PHIST_SOUT(PHIST_VERBOSE,"BICGSTAB ITER %d:",*nIter);
     for(int j = 0; j < numSys; j++)
     {
-      rho[j]=std::sqrt(rho[j]);
-      PHIST_SOUT(PHIST_VERBOSE,"\t%e",std::abs(rho[j]));
-      firstConverged = firstConverged || (std::abs(rho[j]) < tol[j]*std::sqrt(std::abs(rho0[j])));
+      MT rnrm=std::abs(std::sqrt(rho[j]/rho0[j]));
+      PHIST_SOUT(PHIST_VERBOSE,"\t%e",rnrm);
+      firstConverged = firstConverged || (rnrm < tol[j]);
     }
     PHIST_SOUT(PHIST_VERBOSE,"\n");
     if( firstConverged || *nIter == maxIter )
@@ -100,11 +92,13 @@ void SUBR(blockedBiCGStab_iterate)(TYPE(const_linearOp_ptr) Aop, TYPE(const_line
     // q_i = Op*p_i
     PHIST_CHK_IERR(Aop->apply(st::one(), Aop->A, p, st::zero(), q, iflag), *iflag);
 
-    // alpha_i = rho0_i / (q_i^T r0)
+    // alpha_i = rho_i / (q_i^T r0)
     std::vector<ST> alpha(numSys);
     PHIST_CHK_IERR(SUBR(mvec_dot_mvec)(q,r0,&alpha[0],iflag),*iflag);;
     for(int j = 0; j < numSys; j++)
-      alpha[j] = rho0[j] / alpha[j];
+    {
+      alpha[j] = rho[j] / alpha[j];
+    }
 
     // s_i = r_i - alpha_i*q_i
     PHIST_CHK_IERR(SUBR(mvec_vadd_mvec)(&alpha[0],q,st::zero(),s,iflag),*iflag);
@@ -119,7 +113,11 @@ void SUBR(blockedBiCGStab_iterate)(TYPE(const_linearOp_ptr) Aop, TYPE(const_line
     PHIST_CHK_IERR(SUBR(mvec_dot_mvec)(t,s,&ts[0],iflag),*iflag);
     PHIST_CHK_IERR(SUBR(mvec_dot_mvec)(t,t,&w[0],iflag),*iflag);
     for(int j = 0; j < numSys; j++)
-      w[j] = (ST) ts[j] / w[j];   
+    {
+      w[j] = ts[j] / w[j];   
+    }
+
+    // TODO: rprovide a kernel for these 3-term recurrences!
 
     // x_(i+1) = x_i + alpha_i*p_i + w_i*s_i
     PHIST_CHK_IERR(SUBR(mvec_vadd_mvec)(&alpha[0],p,st::one(),sol,iflag),*iflag);
@@ -129,23 +127,23 @@ void SUBR(blockedBiCGStab_iterate)(TYPE(const_linearOp_ptr) Aop, TYPE(const_line
     PHIST_CHK_IERR(SUBR(mvec_vadd_mvec)(&w[0],t,st::zero(),r,iflag),*iflag);
     PHIST_CHK_IERR(SUBR(mvec_add_mvec)(st::one(),s,-st::one(),r,iflag),*iflag);
 
-    // rho0_(i+1) = r_(i+1)^T r0*
-    rho0_prev = rho0;
-    PHIST_CHK_IERR(SUBR(mvec_dot_mvec)(r,r0,&rho0[0],iflag),*iflag);
+    // rho_(i+1) = r_(i+1)^T r0*
+    rho_prev = rho;
+    PHIST_CHK_IERR(SUBR(mvec_dot_mvec)(r,r0,&rho[0],iflag),*iflag);
 
     // beta_i = (rho0_(i+1) / rho0_i) x (a_i / w_i)
     std::vector<ST> beta(numSys);
     for(int j = 0; j < numSys; j++)
-      beta[j] = (ST) (rho0[j] / rho0_prev[j])*(alpha[j] / w[j]);    
-
+    {
+      beta[j] = (rho[j] / rho_prev[j])*(alpha[j] / w[j]);    
+    }
     // p_(i+1) = r_(i+1) + beta_i*(p_i - w_i*q_i)
-    for(int j = 0; j < numSys; j++)
-      w[j] = -w[j];
+    // TODO: can we express this in some useful kernel, see comment above
+    for(int j = 0; j < numSys; j++) w[j] = -w[j];
     PHIST_CHK_IERR(SUBR(mvec_vadd_mvec)(&w[0],q,st::one(),p,iflag),*iflag);    
     PHIST_CHK_IERR(SUBR(mvec_vscale)(p,&beta[0],iflag),*iflag);
     PHIST_CHK_IERR(SUBR(mvec_add_mvec)(st::one(),r,st::one(),p,iflag),*iflag);
   }
-
 }
 
 
