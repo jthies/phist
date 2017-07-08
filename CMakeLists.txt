@@ -768,6 +768,7 @@ set (PHIST_KRYLOV_SOURCE ${PROJECT_SOURCE_DIR}/src/krylov/phist_simple_arnoldi.c
 				                 ${PROJECT_SOURCE_DIR}/src/krylov/phist_simple_lanczos.cpp
                          ${PROJECT_SOURCE_DIR}/src/krylov/phist_blockedgmres.cpp
                          ${PROJECT_SOURCE_DIR}/src/krylov/phist_blockedqmr.cpp
+                         ${PROJECT_SOURCE_DIR}/src/krylov/phist_blockedbicgstab.cpp
                          ${PROJECT_SOURCE_DIR}/src/krylov/phist_blockedminres.cpp
                          ${PROJECT_SOURCE_DIR}/src/krylov/phist_belosS.cpp
                          ${PROJECT_SOURCE_DIR}/src/krylov/phist_belosC.cpp

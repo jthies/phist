@@ -22,6 +22,10 @@ void SUBR(jadaCorrectionSolver_create)(TYPE(jadaCorrectionSolver_ptr) *me, phist
   if (innerSolvBlockSize<0) innerSolvBlockSize=opts.blockSize;
   PHIST_CHK_IERR( *iflag = (innerSolvBlockSize <= 0) ? PHIST_INVALID_INPUT : 0, *iflag);
 
+  (*me)->hermitian           = opts.symmetry==phist_HERMITIAN? 1:0;
+  #ifndef IS_COMPLEX
+  if (opts.symmetry==phist_COMPLEX_SYMMETRIC) (*me)->hermitian = 1;
+  #endif
   (*me)->innerSolvBlockSize_ = innerSolvBlockSize;
 
   if ((*me)->method_==phist_GMRES||(*me)->method_==phist_MINRES)
@@ -33,9 +37,8 @@ void SUBR(jadaCorrectionSolver_create)(TYPE(jadaCorrectionSolver_ptr) *me, phist
     (*me)->leftPrecon=(TYPE(linearOp_ptr))opts.preconOp;
     (*me)->preconSkewProject=opts.preconSkewProject;
   }
-  else if ((*me)->method_==phist_QMR)
+  else if ((*me)->method_==phist_QMR || (*me)->method_==phist_BICGSTAB)
   {
-    //TODO: decide wether to use left or right preconditioning with QMR
     (*me)->rightPrecon=(TYPE(linearOp_ptr))opts.preconOp;
     (*me)->preconSkewProject=opts.preconSkewProject;
   }
@@ -230,7 +233,9 @@ void SUBR(jadaCorrectionSolver_run)(TYPE(jadaCorrectionSolver_ptr) me,
   }
  
   // if no Krylov method is used, only apply the preconditioner. This is also known as Olsen's method.
-  if (me->method_==phist_NO_LINSOLV || me->method_==phist_QMR)
+  if (me->method_==phist_NO_LINSOLV || 
+      me->method_==phist_QMR        ||
+      me->method_==phist_BICGSTAB)
   {
     TYPE(mvec_ptr) _t=t,_res=(TYPE(mvec_ptr))res;
     int jlower=0,jupper=totalNumSys-1;
@@ -276,11 +281,11 @@ void SUBR(jadaCorrectionSolver_run)(TYPE(jadaCorrectionSolver_ptr) me,
         }
 
       }
-      else if (me->method_==phist_QMR)
+      else if (me->method_==phist_QMR || me->method_==phist_BICGSTAB)
       {
         // make sure the inner and outer block sizes are the same, and there is no permutation of the residual vectors.
         // For GMRES and MINRES below we don't have this restriction
-        int k = me->innerSolvBlockSize_;
+        int k = std::min(me->innerSolvBlockSize_, totalNumSys);
         PHIST_CHK_IERR(*iflag=(k==totalNumSys)?0:PHIST_NOT_IMPLEMENTED,*iflag);
         // note: we already checked the permutation of the res (rhs vectors) above is consecutive and
         // extracted _res as a view of those columns. Check that _t has the same number of columns.
@@ -292,7 +297,19 @@ void SUBR(jadaCorrectionSolver_run)(TYPE(jadaCorrectionSolver_ptr) me,
         TYPE(linearOp) jadaOp;
         PHIST_CHK_IERR(SUBR(jadaOp_create)(AB_op, B_op, Qtil, BQtil, &sigma[0], k, &jadaOp, iflag), *iflag);
         int nIter=maxIter;
-        PHIST_CHK_NEG_IERR(SUBR(blockedQMR_iterate)(&jadaOp, jadaPrec, _res,_t, k, &nIter, tol, iflag),*iflag);
+        // pass in the last k columns of Qtil (the current approximate eigenspace we're solving for)
+        TYPE(mvec_ptr) V=NULL;
+        PHIST_CHK_IERR(SUBR(mvec_view_block)((TYPE(mvec_ptr))Qtil,&V,std::max(numProj-k,0),numProj-1,iflag),*iflag);
+        MvecOwner<_ST_> _V(V);
+        if (me->method_==phist_BICGSTAB)
+        {
+          PHIST_CHK_NEG_IERR(SUBR(blockedBiCGStab_iterate)(&jadaOp, jadaPrec, _res,_t, V, k, &nIter, tol, iflag),*iflag);
+        }
+        else if (me->method_==phist_QMR)
+        {
+          int sym=me->hermitian;
+          PHIST_CHK_NEG_IERR(SUBR(blockedQMR_iterate)(&jadaOp, jadaPrec, _res,_t, V, k, &nIter, tol, sym, iflag),*iflag);
+        }
       }
 
       if (jadaPrec!=NULL)

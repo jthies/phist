@@ -21,6 +21,7 @@
 #include "phist_blockedgmres.h"
 #include "phist_blockedminres.h"
 #include "phist_blockedqmr.h"
+#include "phist_blockedbicgstab.h"
 #include "phist_carp_cg.h"
 #include "phist_jadaOpts.h"
 

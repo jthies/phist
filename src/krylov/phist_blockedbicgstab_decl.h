@@ -10,14 +10,14 @@
 //! \ingroup linear_solvers
 //@{
 
-//! \defgroup blockedQMR blocked QMR solver for symmetric or general linear systems
+//! \defgroup blockedBiCGStab blocked BiCGStab solver for symmetric or general linear systems
 //@{
 
 //!
-//! a simple QMR implementation that works on several vectors simultaneously,
+//! a simple BiCGStab implementation that works on several vectors simultaneously,
 //! building a separate Krylov subspace for each of them.
 //! For more information on blocked solvers see phist_blockedgmres_decl.h
-//! In contrast to our GMRES solver, QMR does not work with a state object but simply runs
+//! In contrast to our GMRES solver, BiCGStab does not work with a state object but simply runs
 //! until convergence (of one of the systems) or failure.
 //!
 //! On input, *nIter indicates the total max number of iterations allowed, maxIter, for any system.
@@ -35,10 +35,10 @@
 //!  0 if anyone converged and there was no error,
 //!  1 if the number of iterations was exceeded without any system converging.
 //!
-void SUBR( blockedQMR_iterate ) (TYPE(const_linearOp_ptr) Op, 
+void SUBR( blockedBiCGStab_iterate ) (TYPE(const_linearOp_ptr) Op, 
                 TYPE(const_linearOp_ptr) rightPreconOp,
                 TYPE(const_mvec_ptr) rhs, TYPE(mvec_ptr) sol, TYPE(const_mvec_ptr) V,
-                int numSys, int *nIter, _MT_ const tol[], int symmetry, int* iflag);
+                int numSys, int *nIter, _MT_ const tol[], int* iflag);
 
 //@}
 //@}
