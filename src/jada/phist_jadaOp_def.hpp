@@ -499,9 +499,9 @@ extern "C" void SUBR(jadaPrec_create)(TYPE(const_linearOp_ptr) P_op,
     PHIST_CHK_IERR(SUBR(mvecT_times_mvec)(st::one(),BV,PV,st::zero(),BVtPV,iflag),*iflag);
 
     // compute the *transposed* pseudo-inverse of V'K\V in place
-    PHIST_CHK_IERR(SUBR(sdMat_from_device)(BVtpV,iflag),*iflag);    int rank;
+    PHIST_CHK_IERR(SUBR(sdMat_from_device)(BVtPV,iflag),*iflag);    int rank;
     PHIST_CHK_IERR(SUBR(sdMat_pseudo_inverse)(BVtPV,&rank,iflag),*iflag);
-    PHIST_CHK_IERR(SUBR(sdMat_to_device)(BVtpV,iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(sdMat_to_device)(BVtPV,iflag),*iflag);
     // explicitly transpose the result
     PHIST_CHK_IERR(SUBR(sdMatT_add_sdMat)(st::one(),BVtPV,st::zero(),M,iflag),*iflag);
 
