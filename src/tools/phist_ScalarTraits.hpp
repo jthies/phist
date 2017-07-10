@@ -218,7 +218,7 @@ class ScalarTraits< float >
   //! singular value of a matrix M, a singular value s(M) is considered to be 0 if s_max<rankTol or s<rankTol*s_max.
   //! If the high_prec argument is true (default false), it is asusmed that M is stored in double double precision 
   //! and a value <eps will be returned.
-  static inline magn_t rankTol(bool high_prec=false) {return high_prec? 1.0f-12: 10.0f*eps();}
+  static inline magn_t rankTol(bool high_prec=false) {return high_prec? (magn_t)1.0e-12: 10.0f*eps();}
 
 };
 #endif
@@ -399,7 +399,7 @@ class ScalarTraits< double >
   //! singular value of a matrix M, a singular value s(M) is considered to be 0 if s_max<rankTol or s<rankTol*s_max.
   //! If the high_prec argument is true (default false), it is asusmed that M is stored in double double precision 
   //! and a value <eps will be returned.
-  static inline magn_t rankTol(bool high_prec=false) {return high_prec? 1.0e-25: 10.0f*eps();}
+  static inline magn_t rankTol(bool high_prec=false) {return high_prec? 1.0e-25: 10.0*eps();}
 };
 
 
