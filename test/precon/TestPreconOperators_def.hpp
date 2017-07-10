@@ -399,14 +399,17 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,_N_,MATNAME>,
   // test if q is orthonormal (prerequisite for other tests, although it does not have anything to do with preconditioning)
   TEST_F(CLASSNAME, q_is_orthonormal)
   {
-    _ST_* q_vp=NULL;
-    phist_lidx ldq;
-    SUBR(mvec_extract_view)(q_,&q_vp,&ldq,&iflag_);
-    ASSERT_EQ(0,iflag_);
-    SUBR(mvec_from_device)(q_,&iflag_);
-    ASSERT_EQ(0,iflag_);
-    EXPECT_NEAR(mt::one(),QTest::ColsAreNormalized(q_vp,nloc_,ldq,QTest::stride_,mpi_comm_),(MT)100.*QTest::releps(q_));
-    EXPECT_NEAR(mt::one(),QTest::ColsAreOrthogonal(q_vp,nloc_,ldq,QTest::stride_,mpi_comm_),(MT)100.*QTest::releps(q_));
+    if( typeImplemented_ && !problemTooSmall_ )
+    {
+      _ST_* q_vp=NULL;
+      phist_lidx ldq;
+      SUBR(mvec_extract_view)(q_,&q_vp,&ldq,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(mvec_from_device)(q_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      EXPECT_NEAR(mt::one(),QTest::ColsAreNormalized(q_vp,nloc_,ldq,QTest::stride_,mpi_comm_),(MT)100.*QTest::releps(q_));
+      EXPECT_NEAR(mt::one(),QTest::ColsAreOrthogonal(q_vp,nloc_,ldq,QTest::stride_,mpi_comm_),(MT)100.*QTest::releps(q_));
+    }
   }
 
   // apply wrapped projected preconditioner and check PJD\Q = (I-(P\Q)inv(Q'P\Q)Q')P\Q = 0
