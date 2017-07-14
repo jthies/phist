@@ -421,7 +421,7 @@ int SpinChainSZ( ghost_gidx row, ghost_lidx *nnz, ghost_gidx *cols, void *vals, 
 
 
 
-int crsSpinChain( ghost_gidx row, ghost_lidx *nnz, ghost_gidx *cols, void *vals, void* data ){
+int SpinChain( ghost_gidx row, ghost_lidx *nnz, ghost_gidx *cols, void *vals, void* data ){
 
 	static ghost_gidx L   = 1;
 	static double Jx = 1.;

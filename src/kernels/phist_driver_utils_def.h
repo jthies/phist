@@ -83,7 +83,8 @@ void SUBR(create_matrix_usage)(void)
 PHIST_SOUT(PHIST_INFO,"\n\nInstead of a matrix file you can also specify a string describing\n"
                       "one of our scalable test problems, e.g. \n"
                       "graphene<L> or graphene<M>x<N> for an L times L (M times N) graphene sheet\n"
-                      "spinSZ<L> for a spin chain of L spins\n"
+                      "spin<L> for a spin chain of L spins\n"
+                      "spinSZ<L> for a spin chain of L spins with SZ-symmetry\n"
                       "matpde<L> for an L^2 eigenproblem from a scalar elliptic partial differential equation\n"
                       "TriToeplitz<L> for an 2^L tridiagonal Toeplitz matrix (e.g. 1D Poisson, spd, diagonal dominant)\n"
                       "Brussolator<L> for an L^1 eigenproblem from a Brussolator wave model in chemical reaction (MVMBWM)\n"
@@ -117,6 +118,7 @@ FROM_FILE,
 FROM_BAPPS,
 FROM_BENCH3D,
 GRAPHENE,
+SPIN,
 SPINSZ,
 MATPDE,
 TRITOEPLITZ,
@@ -181,6 +183,11 @@ void SUBR(create_matrix)(TYPE(sparseMat_ptr)* mat, phist_const_comm_ptr comm,
   {
     mat_type=SPINSZ;
     pos=strlen("spinSZ");
+  }
+  else if( str_starts_with(problem,"spin") )
+  {
+    mat_type=SPIN;
+    pos=strlen("spin");
   }
   else if( str_starts_with(problem,"graphene") )
   {
@@ -276,6 +283,23 @@ void SUBR(create_matrix)(TYPE(sparseMat_ptr)* mat, phist_const_comm_ptr comm,
     PHIST_CHK_IERR(SUBR(sparseMat_create_fromRowFunc)(mat,comm,
         (phist_gidx)info.nrows, (phist_gidx)info.ncols, (phist_lidx)info.row_nnz,
         &crsGraphene, NULL, iflag), *iflag);
+  }
+  else if (mat_type==SPIN)
+  {
+  //TODO!!!
+    PHIST_SOUT(outlev,"problem type: spin[%d]\n",L);
+
+    ghost_lidx conf_spinZ[3] = {L,0};
+    SpinChain( -2, conf_spinZ, &DIM, NULL, NULL);
+
+    matfuncs_info_t info;
+    SpinChainSZ( -1, NULL, NULL, &info, NULL);
+
+    PHIST_CHK_IERR(SUBR(sparseMat_create_fromRowFunc)(mat,comm,
+        (phist_gidx)info.nrows, (phist_gidx)info.ncols, (phist_lidx)info.row_nnz,
+        &SpinChainSZ, NULL, iflag), *iflag);
+    // clean up internal memory allocated by the function
+    SpinChainSZ( -3, conf_spinZ, &DIM, NULL, NULL);
   }
   else if (mat_type==SPINSZ)
   {

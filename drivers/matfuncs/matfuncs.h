@@ -57,6 +57,7 @@ typedef struct {
 extern "C" {
 #endif
 
+int SpinChain  (   ghost_gidx row, ghost_lidx *nnz, ghost_gidx *cols, void *vals, void* data);
 int SpinChainSZ(   ghost_gidx row, ghost_lidx *nnz, ghost_gidx *cols, void *vals, void* data);
 int crsGraphene(   ghost_gidx row, ghost_lidx *nnz, ghost_gidx *cols, void *vals, void* data);
 int MATPDE_rowFunc(   ghost_gidx row, ghost_lidx *nnz, ghost_gidx *cols, void *vals, void* data);
