@@ -18,7 +18,9 @@
 #ifdef PHIST_HAVE_BELOS
 
 #include <ghost.h>
+#include "phist_config.h"
 #include "phist_typedefs.h"
+#include "phist_kernels.h"
 #include "phist_ScalarTraits.hpp"
 #include "./typedefs.hpp"
 #include "phist_tools.h"
@@ -88,21 +90,26 @@ using ::phist::GhostMV;
       ghost_densemat* mv_clone=NULL;
       int iflag=0;
       // dispatch to correct data type here, just to be sure
+#ifdef PHIST_HAVE_SP
       if (st::type_char()=='S')
       {
         phist_Smvec_get_map((const void*)_mv,&map,&iflag);
         phist_Smvec_create((void**)&mv_clone,map,numvecs,&iflag);
       }
-      else if (st::type_char()=='D')
+      else 
+#endif
+      if (st::type_char()=='D')
       {
         phist_Dmvec_get_map((const void*)_mv,&map,&iflag);
         phist_Dmvec_create((void**)&mv_clone,map,numvecs,&iflag);
       }
+#ifdef PHIST_HAVE_SP
       else if (st::type_char()=='C')
       {
         phist_Cmvec_get_map((const void*)_mv,&map,&iflag);
         phist_Cmvec_create((void**)&mv_clone,map,numvecs,&iflag);
       }
+#endif
       else if (st::type_char()=='Z')
       {
         phist_Zmvec_get_map((const void*)_mv,&map,&iflag);
@@ -122,21 +129,26 @@ using ::phist::GhostMV;
       int ncols;
       phist_Dmvec_num_vectors(_mv,&ncols,&iflag);
       // dispatch to correct data type here, just to be sure
+#ifdef PHIST_HAVE_SP
       if (st::type_char()=='S')
       {
         phist_Smvec_clone_shape((void**)&mv_clone,(const void*)_mv,&iflag);
         phist_Smvec_get_block((const void*)_mv,(void*)mv_clone,0,ncols-1,&iflag);
       }
-      else if (st::type_char()=='D')
+      else 
+#endif
+      if (st::type_char()=='D')
       {
         phist_Dmvec_clone_shape((void**)&mv_clone,(const void*)_mv,&iflag);
         phist_Dmvec_get_block((const void*)_mv,(void*)mv_clone,0,ncols-1,&iflag);
       }
+#ifdef PHIST_HAVE_SP
       else if (st::type_char()=='C')
       {
         phist_Cmvec_clone_shape((void**)&mv_clone,(const void*)_mv,&iflag);
         phist_Cmvec_get_block((const void*)_mv,(void*)mv_clone,0,ncols-1,&iflag);
       }
+#endif
       else if (st::type_char()=='Z')
       {
         phist_Zmvec_clone_shape((void**)(void**)&mv_clone,(const void*)_mv,&iflag);
@@ -695,7 +707,8 @@ using ::phist::GhostMV;
       int ncols=M.numCols();
 
       ghost_densemat* Mghost=NULL;
-      int iflag=0;
+      int iflag=0;      
+#ifdef PHIST_HAVE_SP
       if (st::type_char()=='S')
       {
         phist_SsdMat_create((void**)&Mghost,nrows,ncols,NULL,&iflag);
@@ -704,7 +717,9 @@ using ::phist::GhostMV;
       {
         phist_CsdMat_create((void**)&Mghost,nrows,ncols,NULL,&iflag);
       }
-      else if (st::type_char()=='D')
+      else 
+#endif
+      if (st::type_char()=='D')
       {
         phist_DsdMat_create((void**)&Mghost,nrows,ncols,NULL,&iflag);
       }
