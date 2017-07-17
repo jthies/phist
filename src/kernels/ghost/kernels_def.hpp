@@ -1918,7 +1918,7 @@ extern "C" void SUBR(mvec_QR)(TYPE(mvec_ptr) vV, TYPE(sdMat_ptr) vR, int* iflag)
   PHIST_CAST_PTR_FROM_VOID(ghost_densemat,R,vR,*iflag);
 
   int rank;
-  MT rankTol=1000*mt::eps();
+  MT rankTol=mt::rankTol();
   int ncols=V->traits.ncols;
   if (ncols==1)
   {
