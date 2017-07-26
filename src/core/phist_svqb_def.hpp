@@ -35,7 +35,7 @@ void SUBR(svqb)(TYPE(mvec_ptr) V, TYPE(sdMat_ptr) B, _MT_* D, int* iflag)
     if( robust )
     {
       int rank;
-      SUBR(sdMat_qb)(B,NULL,&rank,iflag);
+      SUBR(sdMat_qb)(B,NULL,&rank,rankTol,iflag);
       if (*iflag!=PHIST_NOT_IMPLEMENTED)
       {
         PHIST_CHK_IERR(PHIST_TOUCH(*iflag),*iflag);
@@ -100,7 +100,7 @@ for (int i=0;i<m;i++) PHIST_SOUT(PHIST_DEBUG,"%24.16e\n",sqrt(E[i]));
     MT emax=mt::abs(E[m-1]); 
     rank=m;
     
-    if (emax<rankTol)
+    if (emax<=rankTol)
     {
       rank=0;
       for(int i = 0; i < m; i++)
@@ -113,7 +113,7 @@ for (int i=0;i<m;i++) PHIST_SOUT(PHIST_DEBUG,"%24.16e\n",sqrt(E[i]));
     {
       for(int i=0; i<m; i++)
       {
-        if ( mt::abs(E[i]) < emax*rankTol )
+        if ( mt::abs(E[i]) <= emax*rankTol )
         {
           rank--;
           E[i]=mt::zero();

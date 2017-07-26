@@ -140,7 +140,8 @@ PHIST_MAIN_TASK_BEGIN
 
     // beta_i = rho_i / rho_(i-1)
     int perm[nvecs], rank;
-    PHIST_ICHK_IERR(SUBR(sdMat_cholesky)(rho_prev, perm, &rank, &iflag),iflag);
+    _MT_ rankTol=mt::zero();
+    PHIST_ICHK_IERR(SUBR(sdMat_cholesky)(rho_prev, perm, &rank, rankTol,&iflag),iflag);
     PHIST_ICHK_IERR(SUBR(sdMat_add_sdMat)(st::one(),rho,st::zero(),beta,&iflag),iflag);
     PHIST_ICHK_IERR(SUBR(sdMat_backwardSubst_sdMat)(rho_prev,perm,rank,beta,&iflag),iflag);
     PHIST_ICHK_IERR(SUBR(sdMat_forwardSubst_sdMat)(rho_prev,perm,rank,beta,&iflag),iflag);
@@ -157,7 +158,7 @@ PHIST_MAIN_TASK_BEGIN
     // alpha_(i+1) = rho_i / p_(i+1)^T q_(i+1)
     iflag = high_prec;
     PHIST_ICHK_IERR(SUBR(mvecT_times_mvec)(st::one(),p,q,st::zero(),qTp,&iflag),iflag);
-    PHIST_ICHK_IERR(SUBR(sdMat_cholesky)(qTp, perm, &rank, &iflag),iflag);
+    PHIST_ICHK_IERR(SUBR(sdMat_cholesky)(qTp, perm, &rank, rankTol, &iflag),iflag);
     PHIST_ICHK_IERR(SUBR(sdMat_add_sdMat)(st::one(),rho,st::zero(),alpha,&iflag),iflag);
     PHIST_ICHK_IERR(SUBR(sdMat_backwardSubst_sdMat)(qTp,perm,rank,alpha,&iflag),iflag);
     PHIST_ICHK_IERR(SUBR(sdMat_forwardSubst_sdMat)(qTp,perm,rank,alpha,&iflag),iflag);

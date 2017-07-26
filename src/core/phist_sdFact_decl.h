@@ -24,7 +24,7 @@
 //! returns column-permuted upper triangular cholesky factor R in M s.t. M=R'*R.        
 //! If M is singular with rank(M)=r<m (M being m x m), the last m-r rows of R will be 0.
 //! On exit, *rank=r is returned.
-void SUBR(sdMat_cholesky)(TYPE(sdMat_ptr) M, int* perm, int* rank, int* iflag);
+void SUBR(sdMat_cholesky)(TYPE(sdMat_ptr) M, int* perm, int* rank, _MT_ rankTol, int* iflag);
 
 //! backward substitution. \ingroup sdFact
 
@@ -41,12 +41,12 @@ void SUBR(sdMat_forwardSubst_sdMat)(const TYPE(sdMat_ptr) R, int* perm, int rank
 //! rank of V in *rank.
 //! If V does not have full rank, the last n-*rank columns of B and B_1
 //! will be zero.
-void SUBR(sdMat_qb)(TYPE(sdMat_ptr) B, TYPE(sdMat_ptr) B_1,int* rank, int* iflag);
+void SUBR(sdMat_qb)(TYPE(sdMat_ptr) B, TYPE(sdMat_ptr) B_1,int* rank, _MT_ rankTol, int* iflag);
 
 //! computes in-place the inverse of a Hermitian and positive semi-definite matrix using Cholesky factorization.
 //! If A is singular (actually semi-definite, that is), the pseudo-inverse is computed using rank-revealing Cholesky.
 //! The rank of A on input is returned as *rank.
-void SUBR(sdMat_inverse)(TYPE(sdMat_ptr) A_hpd, int* rank, int* iflag);
+void SUBR(sdMat_inverse)(TYPE(sdMat_ptr) A_hpd, int* rank, _MT_ rankTol, int* iflag);
 
 //! computes in-place the (transposed) Moore-Penrose pseudo-inverse A+ of an arbitrary n x m matrix A.
 //! The rank of A on input is returned as *rank.
@@ -56,7 +56,7 @@ void SUBR(sdMat_inverse)(TYPE(sdMat_ptr) A_hpd, int* rank, int* iflag);
 //! 2. B'AB'= B'
 //! 3. (AB')'=AB'
 //! 4. (B'A)'=B'A
-void SUBR(sdMat_pseudo_inverse)(TYPE(sdMat_ptr) A_gen, int* rank, int* iflag);
+void SUBR(sdMat_pseudo_inverse)(TYPE(sdMat_ptr) A_gen, int* rank, _MT_ rankTol, int* iflag);
 
 //! singular value decomposition, A = U*Sigma*Vt
 

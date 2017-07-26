@@ -79,7 +79,8 @@ public:
       SUBR(sdMat_from_device)(mat1_,&iflag_);
       ASSERT_EQ(0,iflag_);
       iflag_=iflag_in;
-      SUBR(sdMat_cholesky)(mat1_,perm,&rank,&iflag_);
+      _MT_ rankTol=mt::rankTol(iflag_in==PHIST_ROBUST_REDUCTIONS);
+      SUBR(sdMat_cholesky)(mat1_,perm,&rank,rankTol,&iflag_);
       ASSERT_EQ(0,iflag_);
       SUBR(sdMat_to_device)(mat1_,&iflag_);
       ASSERT_EQ(0,iflag_);
@@ -126,7 +127,7 @@ public:
       // cholesky
       rank = 0;
       iflag_=iflag_in;
-      SUBR(sdMat_cholesky)(mat1_,perm,&rank,&iflag_);
+      SUBR(sdMat_cholesky)(mat1_,perm,&rank,rankTol,&iflag_);
       ASSERT_EQ(0,iflag_);
 //SUBR(sdMat_print)(mat1_,&iflag_);
       ASSERT_EQ(0,iflag_);
@@ -188,7 +189,7 @@ MTest::PrintSdMat(PHIST_DEBUG,"M",mat2_vp_,m_lda_,1,mpi_comm_);
       // cholesky
       rank = 0;
       iflag_=iflag_in;
-      SUBR(sdMat_cholesky)(mat1_,perm,&rank,&iflag_);
+      SUBR(sdMat_cholesky)(mat1_,perm,&rank,rankTol,&iflag_);
       ASSERT_EQ(0,iflag_);
       SUBR(sdMat_to_device)(mat1_,&iflag_);
       ASSERT_EQ(0,iflag_);
@@ -262,7 +263,7 @@ PrintSdMat(PHIST_DEBUG,"M",mat2_vp_,m_lda_,1,mpi_comm_);
       ASSERT_EQ(0,iflag_);
       rank = 0;
       iflag_=iflag_in;
-      SUBR(sdMat_cholesky)(mat1_,perm,&rank,&iflag_);
+      SUBR(sdMat_cholesky)(mat1_,perm,&rank,rankTol,&iflag_);
       ASSERT_EQ(0,iflag_);
       SUBR(sdMat_to_device)(mat1_,&iflag_);
       ASSERT_EQ(0,iflag_);
@@ -562,7 +563,9 @@ PrintSdMat(PHIST_DEBUG,"reconstructed X",mat2_vp_,m_lda_,1,mpi_comm_);
       TYPE(sdMat_ptr) A = mat2_, AplusT=mat1_, A_chk=mat3_;
 
       int rank;
-      SUBR(sdMat_pseudo_inverse)(AplusT,&rank,&iflag_);
+      _MT_ rankTol=mt::rankTol(iflag_in==PHIST_ROBUST_REDUCTIONS);
+      iflag_=iflag_in;
+      SUBR(sdMat_pseudo_inverse)(AplusT,&rank,rankTol,&iflag_);
       ASSERT_EQ(0,iflag_);
       // for a random n x m matrix, we expect min(n,m) to be the rank
       ASSERT_EQ(std::min(nrows_,ncols_),rank);

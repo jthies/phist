@@ -6,7 +6,8 @@
 /* Contact: Jonas Thies (Jonas.Thies@DLR.de)                                               */
 /*                                                                                         */
 /*******************************************************************************************/
-static void SUBR(orthogrrfused_cholrr)(TYPE(sdMat_ptr) RR, TYPE(sdMat_ptr) R_1, TYPE(sdMat_ptr) WR_1, int* rank, int* iflag)
+static void SUBR(orthogrrfused_cholrr)(TYPE(sdMat_ptr) RR, TYPE(sdMat_ptr) R_1, TYPE(sdMat_ptr) WR_1, 
+        int* rank, _MT_ rankTol, int* iflag)
 {
 #include "phist_std_typedefs.hpp"
   int m = 0, n = 0;
@@ -16,7 +17,7 @@ static void SUBR(orthogrrfused_cholrr)(TYPE(sdMat_ptr) RR, TYPE(sdMat_ptr) R_1, 
   {
     // stable rank-revealing cholesky
     int perm[m];
-    PHIST_CHK_IERR(SUBR(sdMat_cholesky)(RR,perm,rank,iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(sdMat_cholesky)(RR,perm,rank,rankTol,iflag),*iflag);
     PHIST_CHK_IERR(SUBR(sdMat_identity)(R_1,iflag),*iflag);
     PHIST_CHK_IERR(SUBR(sdMat_backwardSubst_sdMat)(RR,perm,*rank,R_1,iflag),*iflag);
 
@@ -45,7 +46,8 @@ static void SUBR(orthogrrfused_cholrr)(TYPE(sdMat_ptr) RR, TYPE(sdMat_ptr) R_1, 
 // from
 // (V-W*WtV)'*(V-W*WtV) = VtV - VtW*WtV - VtW*WtV + VtW*WtW*WtV = VtV - 2 VtW*WtV + VtW*WtV = VtV - VtW*WtV
 // for previously orthog. V (wrt. itself) -> I - WtV'*WtV
-void SUBR(orthogrrfused)(TYPE(const_mvec_ptr) W, TYPE(mvec_ptr) V, TYPE(sdMat_ptr) R2, TYPE(sdMat_ptr) R1, TYPE(const_sdMat_ptr) VtV, int* iflag)
+void SUBR(orthogrrfused)(TYPE(const_mvec_ptr) W, TYPE(mvec_ptr) V, TYPE(sdMat_ptr) R2, TYPE(sdMat_ptr) R1, 
+        TYPE(const_sdMat_ptr) VtV, _MT_ rankTol, int* iflag)
 {
 #include "phist_std_typedefs.hpp"
     PHIST_ENTER_FCN(__FUNCTION__);
@@ -70,7 +72,7 @@ void SUBR(orthogrrfused)(TYPE(const_mvec_ptr) W, TYPE(mvec_ptr) V, TYPE(sdMat_pt
     // calculate first R factor
     PHIST_CHK_IERR(SUBR(sdMat_add_sdMat)(st::one(),VtV,st::zero(),R,iflag),*iflag);
     int Vrank = 0;
-    PHIST_CHK_IERR(SUBR(orthogrrfused_cholrr)(R,R_1,NULL,&Vrank,iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(orthogrrfused_cholrr)(R,R_1,NULL,&Vrank,rankTol,iflag),*iflag);
 
     // calculate WtV, orthog V
     if( robust )
@@ -88,7 +90,7 @@ void SUBR(orthogrrfused)(TYPE(const_mvec_ptr) W, TYPE(mvec_ptr) V, TYPE(sdMat_pt
     PHIST_CHK_IERR(SUBR(sdMat_identity)(R,iflag),*iflag);
     PHIST_CHK_IERR(SUBR(sdMatT_times_sdMat)(-st::one(),WtV,WtV,st::one(),R,iflag),*iflag);
     PHIST_CHK_IERR(SUBR(sdMat_add_sdMat)(st::one(),WtV,st::zero(),WtV_,iflag),*iflag);
-    PHIST_CHK_IERR(SUBR(orthogrrfused_cholrr)(R,R_1,WtV_,&WVrank,iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(orthogrrfused_cholrr)(R,R_1,WtV_,&WVrank,rankTol,iflag),*iflag);
 
     // respect R_1 and sign in WtV
     //PHIST_CHK_IERR(SUBR(sdMat_times_sdMat)(-st::one(),WtV,R_1,st::zero(),WtV_,iflag),*iflag);

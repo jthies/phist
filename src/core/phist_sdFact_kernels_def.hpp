@@ -23,14 +23,14 @@
 
 // calculates a possibly low rank approximation of a lower cholesky factor of an spd matrix
 // higher-precision + pivoting + stable low rank approximation
-extern "C" void SUBR(cholesky)(_ST_ *__restrict__ a, phist_lidx n, phist_lidx lda, phist_lidx *perm, int *rank, int* iflag)
+extern "C" void SUBR(cholesky)(_ST_ *__restrict__ a, phist_lidx n, phist_lidx lda, phist_lidx *perm, int *rank, 
+        _MT_ rankTol, int* iflag)
 {
 #include "phist_std_typedefs.hpp"
   PHIST_ENTER_FCN(__FUNCTION__);
 
   // permutation
   int p[n];
-  MT rankTol = mt::rankTol();
   
   for(int i = 0; i < n; i++)
     p[i] = i;
@@ -48,7 +48,7 @@ extern "C" void SUBR(cholesky)(_ST_ *__restrict__ a, phist_lidx n, phist_lidx ld
     d[i]=a[i*lda+i];
     diagNorm = std::max(diagNorm,st::abs(d[i]));
   }
-  if( diagNorm < rankTol )
+  if( diagNorm <= rankTol )
   {
     PHIST_OUT(PHIST_WARNING,"all diagonal entries tiny in %s\n", __FUNCTION__);
     // use absolute criterion for small diagonals (will give rank 0 below)
@@ -65,7 +65,7 @@ extern "C" void SUBR(cholesky)(_ST_ *__restrict__ a, phist_lidx n, phist_lidx ld
       err = std::max(err,st::abs(d[p[i]]));
     }
 //printf("step %d, err %e\n", *rank, err);
-    if( err < rankTol*diagNorm ) break;
+    if( err <= rankTol*diagNorm ) break;
 
     int m = *rank;
     *rank = *rank + 1;
@@ -209,7 +209,7 @@ extern "C" void SUBR(forwardSubst)(const _ST_ *__restrict__ r, phist_lidx n, phi
 
 extern "C" void SUBR(qb)(_ST_ *__restrict__ a,
                     _ST_ *__restrict__ bi,
-                    phist_lidx n, phist_lidx lda, int *rank, int* iflag)
+                    phist_lidx n, phist_lidx lda, int *rank, _MT_ rankTol, int* iflag)
 {
   *iflag=-99;
 }

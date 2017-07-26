@@ -7,7 +7,7 @@
 /*                                                                                         */
 /*******************************************************************************************/
 
-static void SUBR(orthogrr_cholrr)(TYPE(sdMat_ptr) RR, TYPE(sdMat_ptr) R_1, int* rank, int* iflag)
+static void SUBR(orthogrr_cholrr)(TYPE(sdMat_ptr) RR, TYPE(sdMat_ptr) R_1, int* rank, _MT_ rankTol, int* iflag)
 {
   PHIST_ENTER_FCN(__FUNCTION__);
   int m = 0;
@@ -17,7 +17,7 @@ static void SUBR(orthogrr_cholrr)(TYPE(sdMat_ptr) RR, TYPE(sdMat_ptr) R_1, int* 
   {
     // stable rank-revealing cholesky
     int perm[m];
-    PHIST_CHK_IERR(SUBR(sdMat_cholesky)(RR,perm,rank,iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(sdMat_cholesky)(RR,perm,rank,rankTol,iflag),*iflag);
     PHIST_CHK_IERR(SUBR(sdMat_identity)(R_1,iflag),*iflag);
     PHIST_CHK_IERR(SUBR(sdMat_backwardSubst_sdMat)(RR,perm,*rank,R_1,iflag),*iflag);
   }
@@ -34,8 +34,9 @@ static void SUBR(orthogrr_svqb)(TYPE(sdMat_ptr) RR, TYPE(sdMat_ptr) R_1, int* ra
   
   // we first copy the input matrix because B and B_1 are exchanged in the definition of
   // the kernel routine sdMat_qb:
+  _MT_ rankTol=mt::zero();
   PHIST_CHK_IERR(SUBR(sdMat_add_sdMat)(st::one(),RR,st::zero(),R_1,iflag),*iflag);
-  PHIST_CHK_IERR(SUBR(sdMat_qb)(R_1,RR,rank,iflag),*iflag);
+  PHIST_CHK_IERR(SUBR(sdMat_qb)(R_1,RR,rank,rankTol,iflag),*iflag);
   
 }
 
@@ -55,16 +56,18 @@ static void SUBR(sdMat_rank_identity)(TYPE(sdMat_ptr) I, const int k, int* iflag
 }
 
 //
-void SUBR(orthogrr)(TYPE(const_mvec_ptr) W, TYPE(mvec_ptr) V, TYPE(sdMat_ptr) R2, TYPE(sdMat_ptr) R1, TYPE(const_sdMat_ptr) WtW_I, TYPE(sdMat_ptr) VtV, _MT_ desiredEps, int maxIter, int* iflag)
+void SUBR(orthogrr)(TYPE(const_mvec_ptr) W, TYPE(mvec_ptr) V, TYPE(sdMat_ptr) R2, TYPE(sdMat_ptr) R1, TYPE(const_sdMat_ptr) WtW_I, TYPE(sdMat_ptr) VtV, 
+_MT_ desiredEps, int maxIter, _MT_ rankTol, int* iflag)
 {
-  SUBR(orthogrrB)(W,V,V,NULL,R2,R1,WtW_I,VtV,desiredEps,maxIter,iflag);
+  SUBR(orthogrrB)(W,V,V,NULL,R2,R1,WtW_I,VtV,desiredEps,maxIter,rankTol,iflag);
 }
 
 // Q*R_1 = V - W*R_2 with R_2=W'*V
 // result returned in place as V
 // correct V'V must be supplied and is returned!
 void SUBR(orthogrrB)(TYPE(const_mvec_ptr) W, TYPE(mvec_ptr) V, TYPE(mvec_ptr) BV, TYPE(const_linearOp_ptr) B_op,
-        TYPE(sdMat_ptr) R2, TYPE(sdMat_ptr) R1, TYPE(const_sdMat_ptr) WtW_I, TYPE(sdMat_ptr) VtV, _MT_ desiredEps, int maxIter, int* iflag)
+        TYPE(sdMat_ptr) R2, TYPE(sdMat_ptr) R1, TYPE(const_sdMat_ptr) WtW_I, TYPE(sdMat_ptr) VtV, \
+        _MT_ desiredEps, int maxIter, _MT_ rankTol, int* iflag)
 {
 #include "phist_std_typedefs.hpp"
     PHIST_ENTER_FCN(__FUNCTION__);
@@ -105,7 +108,7 @@ void SUBR(orthogrrB)(TYPE(const_mvec_ptr) W, TYPE(mvec_ptr) V, TYPE(mvec_ptr) BV
       PHIST_CHK_IERR(SUBR(sdMat_add_sdMat)(st::one(),WtW_I,st::one(),WtW_inv,iflag),*iflag);
       permWtW = new int[k];
       rankWtW = 0;
-      PHIST_CHK_IERR(SUBR(sdMat_cholesky)(WtW_inv,permWtW,&rankWtW,iflag),*iflag);
+      PHIST_CHK_IERR(SUBR(sdMat_cholesky)(WtW_inv,permWtW,&rankWtW,rankTol,iflag),*iflag);
     }
 
     int rank = m;
@@ -128,10 +131,11 @@ void SUBR(orthogrrB)(TYPE(const_mvec_ptr) W, TYPE(mvec_ptr) V, TYPE(mvec_ptr) BV
       // so calculate first "R" factor
       int Vrank = 0;
       PHIST_CHK_IERR(SUBR(sdMat_add_sdMat)(st::one(),VtV,st::zero(),R,iflag),*iflag);
+*iflag=robust?PHIST_ROBUST_REDUCTIONS:0;
 #ifdef ORTHOGRR_USE_SVQB
-      PHIST_CHK_IERR(SUBR(orthogrr_svqb)(R,R_1,&Vrank,iflag),*iflag);
+      PHIST_CHK_IERR(SUBR(orthogrr_svqb)(R,R_1,&Vrank,rankTol,iflag),*iflag);
 #else
-      PHIST_CHK_IERR(SUBR(orthogrr_cholrr)(R,R_1,&Vrank,iflag),*iflag);
+      PHIST_CHK_IERR(SUBR(orthogrr_cholrr)(R,R_1,&Vrank,rankTol,iflag),*iflag);
 #endif
       rank = std::min(rank,Vrank);
       if( k == 0 )
@@ -214,10 +218,11 @@ void SUBR(orthogrrB)(TYPE(const_mvec_ptr) W, TYPE(mvec_ptr) V, TYPE(mvec_ptr) BV
       int WVrank = 0;
       PHIST_CHK_IERR(SUBR(sdMat_from_device)(VtV,iflag),*iflag);
       PHIST_CHK_IERR(SUBR(sdMat_add_sdMat)(st::one(),VtV,st::zero(),R,iflag),*iflag);
+      *iflag=robust?PHIST_ROBUST_REDUCTIONS:0;
 #ifdef ORTHOGRR_USE_SVQB
-      PHIST_CHK_IERR(SUBR(orthogrr_svqb)(R,R_1,&WVrank,iflag),*iflag);
+      PHIST_CHK_IERR(SUBR(orthogrr_svqb)(R,R_1,&WVrank,rankTol,iflag),*iflag);
 #else
-      PHIST_CHK_IERR(SUBR(orthogrr_cholrr)(R,R_1,&WVrank,iflag),*iflag);
+      PHIST_CHK_IERR(SUBR(orthogrr_cholrr)(R,R_1,&WVrank,rankTol,iflag),*iflag);
 #endif
       rank = std::min(rank,WVrank);
 
@@ -287,10 +292,11 @@ void SUBR(orthogrrB)(TYPE(const_mvec_ptr) W, TYPE(mvec_ptr) V, TYPE(mvec_ptr) BV
       // calculate new R factor
       int Vrank = 0;
       PHIST_CHK_IERR(SUBR(sdMat_add_sdMat)(st::one(),VtV,st::zero(),R,iflag),*iflag);
+      *iflag=robust?PHIST_ROBUST_REDUCTIONS:0;
 #ifdef ORTHOGRR_USE_SVQB
-      PHIST_CHK_IERR(SUBR(orthogrr_svqb)(R,R_1,&Vrank,iflag),*iflag);
+      PHIST_CHK_IERR(SUBR(orthogrr_svqb)(R,R_1,&Vrank,rankTol,iflag),*iflag);
 #else
-      PHIST_CHK_IERR(SUBR(orthogrr_cholrr)(R,R_1,&Vrank,iflag),*iflag);
+      PHIST_CHK_IERR(SUBR(orthogrr_cholrr)(R,R_1,&Vrank,rankTol,iflag),*iflag);
 #endif
       rank = std::min(rank,Vrank);
 
