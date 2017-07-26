@@ -27,7 +27,7 @@ extern "C" void SUBR(orthog)(TYPE(const_mvec_ptr) V,
   // randomization to avoid losing directions due to the 'rankTol'.
   _MT_ rankTol=randomize?mt::rankTol(robust):mt::zero();
   
-  _MT_ orthoEps = mt::zero(); //(_MT_)10.0*mt::eps();
+  _MT_ orthoEps = mt::eps();
   
   PHIST_CHK_IERR(SUBR(mvec_num_vectors)(W,&k,iflag),*iflag);
   if (V!=NULL) PHIST_CHK_IERR(SUBR(mvec_num_vectors)(V,&m,iflag),*iflag);

@@ -922,7 +922,6 @@ PHIST_SOUT(PHIST_VERBOSE,"\n");
       PHIST_CHK_IERR(SUBR( sdMat_view_block ) (R_H_,&R_H, 0,     nV-1,      0,     k-1,       iflag), *iflag);
       PHIST_CHK_IERR(SUBR( sdMat_view_block ) (R_H_,&Rr_H,nV,    nV+k-1,    nV,    nV+k-1,    iflag), *iflag);
       int rankV;
-      *iflag=PHIST_ORTHOG_RANDOMIZE_NULLSPACE;
       PHIST_CHK_NEG_IERR(SUBR( orthog ) (Vful, Vv, B_op, Rr_H, R_H, 5, &rankV, iflag), *iflag);
       // TODO: only take non-random vector if *iflag > 0
       // calculate AVv, BVv
