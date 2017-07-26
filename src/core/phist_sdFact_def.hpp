@@ -20,17 +20,12 @@
 // implementation of public interface to kernels in prec_kernels.c                            //
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
-extern "C" void SUBR(sdMat_cholesky)(TYPE(sdMat_ptr) M, int* perm, int* rank, int* iflag)
+extern "C" void SUBR(sdMat_cholesky)(TYPE(sdMat_ptr) M, int* perm, int* rank, _MT_ rankTol, int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   PHIST_PERFCHECK_VERIFY_SMALL;
   phist_lidx ldM, n,m;
   _ST_ *Mval, *Merr=NULL;
-#if PHIST_HIGH_PRECISION_KERNELS_FORCE
-  bool robust=true;
-#else
-  bool robust=(*iflag&PHIST_ROBUST_REDUCTIONS);
-#endif
   *iflag=0;
   PHIST_CHK_IERR(SUBR(sdMat_get_nrows)(M,&n,iflag),*iflag);
   PHIST_CHK_IERR(SUBR(sdMat_get_ncols)(M,&m,iflag),*iflag);
@@ -38,14 +33,14 @@ extern "C" void SUBR(sdMat_cholesky)(TYPE(sdMat_ptr) M, int* perm, int* rank, in
   PHIST_CHK_IERR(SUBR(sdMat_extract_view)(M,&Mval,&ldM,iflag),*iflag);
 #ifdef PHIST_HIGH_PRECISION_KERNELS
   SUBR(sdMat_extract_error)(M,&Merr,iflag);
-  if (robust&&Merr!=NULL)
+  if (Merr!=NULL)
   {
-    PHIST_CHK_IERR(SUBR(prec_cholesky)(Mval,Merr,m,ldM,perm,rank,iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(prec_cholesky)(Mval,Merr,m,ldM,perm,rank,rankTol,iflag),*iflag);
   }
   else
 #endif
   {
-    PHIST_CHK_IERR(SUBR(cholesky)(Mval,m,ldM,perm,rank,iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(cholesky)(Mval,m,ldM,perm,rank,rankTol,iflag),*iflag);
   }
 }
 
@@ -55,11 +50,6 @@ extern "C" void SUBR(sdMat_backwardSubst_sdMat)(const TYPE(sdMat_ptr) R, int* pe
   PHIST_PERFCHECK_VERIFY_SMALL;
   phist_lidx ldR, n, m, ldX, k;
   _ST_ *Rval, *Rerr=NULL, *Xval, *Xerr=NULL;
-#if PHIST_HIGH_PRECISION_KERNELS_FORCE
-  bool robust=true;
-#else
-  bool robust=(*iflag&PHIST_ROBUST_REDUCTIONS);
-#endif
   *iflag=0;
   PHIST_CHK_IERR(SUBR(sdMat_get_nrows)(R,&n,iflag),*iflag);
   PHIST_CHK_IERR(SUBR(sdMat_get_ncols)(R,&m,iflag),*iflag);
@@ -73,7 +63,7 @@ extern "C" void SUBR(sdMat_backwardSubst_sdMat)(const TYPE(sdMat_ptr) R, int* pe
   SUBR(sdMat_extract_error)(R,&Rerr,iflag);
   SUBR(sdMat_extract_error)(X,&Xerr,iflag);
 
-  if (robust&&(Rerr!=NULL)&&(Xerr!=NULL))
+  if ((Rerr!=NULL)&&(Xerr!=NULL))
   {
     PHIST_CHK_IERR(SUBR(prec_backwardSubst)(Rval,Rerr,n,ldR,perm,rank,Xval,Xerr,k,ldX,iflag),*iflag);
   }
@@ -93,11 +83,6 @@ extern "C" void SUBR(sdMat_forwardSubst_sdMat)(const TYPE(sdMat_ptr) R, int* per
   PHIST_PERFCHECK_VERIFY_SMALL;
   phist_lidx ldR, n, m, ldX, k;
   _ST_ *Rval, *Rerr=NULL, *Xval, *Xerr=NULL;
-#if PHIST_HIGH_PRECISION_KERNELS_FORCE
-  bool robust=true;
-#else
-  bool robust=(*iflag&PHIST_ROBUST_REDUCTIONS);
-#endif
   *iflag=0;
   PHIST_CHK_IERR(SUBR(sdMat_get_nrows)(R,&n,iflag),*iflag);
   PHIST_CHK_IERR(SUBR(sdMat_get_ncols)(R,&m,iflag),*iflag);
@@ -113,7 +98,7 @@ extern "C" void SUBR(sdMat_forwardSubst_sdMat)(const TYPE(sdMat_ptr) R, int* per
   SUBR(sdMat_extract_error)(R,&Rerr,iflag);
   SUBR(sdMat_extract_error)(X,&Xerr,iflag);
 
-  if (robust&&(Rerr!=NULL)&&(Xerr!=NULL))
+  if ((Rerr!=NULL)&&(Xerr!=NULL))
   {
     PHIST_CHK_IERR(SUBR(prec_forwardSubst)(Rval,Rerr,n,ldR,perm,rank,Xval,Xerr,k,ldX,iflag),*iflag);
   }
@@ -127,7 +112,7 @@ extern "C" void SUBR(sdMat_forwardSubst_sdMat)(const TYPE(sdMat_ptr) R, int* per
 //! given B=V'V, compute (in place) B^ s.t. V*B^ is orthonormal. The rank of V is returned in *rank.
 extern "C" void SUBR(sdMat_qb)(TYPE(sdMat_ptr) B, 
                     TYPE(sdMat_ptr) B_1, 
-                    int* rank, int* iflag)
+                    int* rank, _MT_ rankTol, int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   PHIST_PERFCHECK_VERIFY_SMALL;
@@ -135,11 +120,6 @@ extern "C" void SUBR(sdMat_qb)(TYPE(sdMat_ptr) B,
   _ST_ *Bval, *B_1val, *Berr=NULL, *B_1err=NULL;
   PHIST_TOUCH(Berr);
   PHIST_TOUCH(B_1err);
-#if PHIST_HIGH_PRECISION_KERNELS_FORCE
-  bool robust=true;
-#else
-  bool robust=(*iflag&PHIST_ROBUST_REDUCTIONS);
-#endif
   *iflag=0;
   
   PHIST_CHK_IERR(SUBR(sdMat_get_nrows)(B,&n,iflag),*iflag);
@@ -165,21 +145,21 @@ extern "C" void SUBR(sdMat_qb)(TYPE(sdMat_ptr) B,
     B_1err=NULL;
   }
 #ifdef PHIST_HIGH_PRECISION_KERNELS
-  if (robust&&(Berr!=NULL))
+  if ((Berr!=NULL))
   {
-    PHIST_CHK_IERR(SUBR(prec_qb)(Bval,Berr,B_1val,B_1err,n,ldB,rank,iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(prec_qb)(Bval,Berr,B_1val,B_1err,n,ldB,rank,rankTol,iflag),*iflag);
   }
   else
 #endif
   {
-    PHIST_CHK_IERR(SUBR(qb)(Bval,B_1val,n,ldB,rank,iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(qb)(Bval,B_1val,n,ldB,rank,rankTol,iflag),*iflag);
   }
 }
 
 //! computes in-place the inverse of a Hermitian and positive semi-definite matrix using Cholesky factorization.
 //! If A is singular (actually semi-definite, that is), the pseudo-inverse is computed using rank-revealing Cholesky.
 //! The rank of A on input is returned as *rank.
-void SUBR(sdMat_inverse)(TYPE(sdMat_ptr) A_hpd, int* rank, int* iflag)
+void SUBR(sdMat_inverse)(TYPE(sdMat_ptr) A_hpd, int* rank, _MT_ rankTol, int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   PHIST_PERFCHECK_VERIFY_SMALL;
@@ -198,7 +178,7 @@ void SUBR(sdMat_inverse)(TYPE(sdMat_ptr) A_hpd, int* rank, int* iflag)
   
   int perm[m];
   *iflag=iflag_in;
-  PHIST_CHK_IERR(SUBR(sdMat_cholesky)(RR,perm,rank,iflag),*iflag);
+  PHIST_CHK_IERR(SUBR(sdMat_cholesky)(RR,perm,rank,rankTol,iflag),*iflag);
   PHIST_CHK_IERR(SUBR(sdMat_identity)(A_hpd,iflag),*iflag);
   *iflag=iflag_in;
   // compute A^{-1} = (R'R)\I= R'\ R\ I
@@ -210,7 +190,7 @@ void SUBR(sdMat_inverse)(TYPE(sdMat_ptr) A_hpd, int* rank, int* iflag)
 //! computes in-place the (transpose of the Moore-Penrose)
 //! pseudo-inverse of an arbitrary m x n matrix. The rank
 //! of A on input is returned as *rank.
-void SUBR(sdMat_pseudo_inverse)(TYPE(sdMat_ptr) A_gen, int* rank, int* iflag)
+void SUBR(sdMat_pseudo_inverse)(TYPE(sdMat_ptr) A_gen, int* rank, _MT_ rankTol, int* iflag)
 {
 #include "phist_std_typedefs.hpp"
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
@@ -276,7 +256,7 @@ void SUBR(sdMat_pseudo_inverse)(TYPE(sdMat_ptr) A_gen, int* rank, int* iflag)
     else
 #endif
     {
-      if (st::abs(sval)<sval_max*mt::rankTol())
+      if (st::abs(sval)<sval_max*rankTol)
       {
         Sigma_raw[i*ldS+i]=st::zero();
         (*rank)--;

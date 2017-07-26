@@ -121,9 +121,9 @@ PHIST_MAIN_TASK_BEGIN
   if( argc >= 8 )
     pertFactorV = atof(argv[7]);
   MT desiredEps = 100*mt::eps();
+  MT rankTol = mt::rankTol(high_prec);
   if( argc >= 9 )
     desiredEps = atof(argv[8]);
-
 
   PHIST_ICHK_IERR(phist_map_create(&map,comm,n,&ierr),ierr);
   PHIST_ICHK_IERR(SUBR(sdMat_create)(&VtV_I,k,k,comm,&ierr),ierr);
@@ -176,19 +176,19 @@ PHIST_MAIN_TASK_BEGIN
     {
       if( high_prec )
         ierr = PHIST_ROBUST_REDUCTIONS;
-      PHIST_ICHK_NEG_IERR(SUBR(orthogrrfused)(V,Q,VtX,QtX,QtQ,&ierr),ierr);
+      PHIST_ICHK_NEG_IERR(SUBR(orthogrrfused)(V,Q,VtX,QtX,QtQ,rankTol,&ierr),ierr);
     }
     else
     {
       if( high_prec )
       {
         ierr = PHIST_ROBUST_REDUCTIONS;
-        PHIST_ICHK_NEG_IERR(SUBR(orthogrr)(V,Q,VtX,QtX,VtV_I,QtQ,desiredEps,maxIter,&ierr),ierr);
+        PHIST_ICHK_NEG_IERR(SUBR(orthogrr)(V,Q,VtX,QtX,VtV_I,QtQ,desiredEps,maxIter,rankTol,&ierr),ierr);
       }
       else
       {
         // only with high_prec we can really provice a useful VtV_I
-        PHIST_ICHK_NEG_IERR(SUBR(orthogrr)(V,Q,VtX,QtX,NULL,QtQ,desiredEps,maxIter,&ierr),ierr);
+        PHIST_ICHK_NEG_IERR(SUBR(orthogrr)(V,Q,VtX,QtX,NULL,QtQ,desiredEps,maxIter,rankTol,&ierr),ierr);
       }
     }
     int rank = m-ierr;

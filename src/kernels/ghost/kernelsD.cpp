@@ -36,7 +36,7 @@
 #ifdef PHIST_HAVE_BELOS
 #include "phist_trilinos_macros.h"
 #include "Belos_GhostAdapter.hpp"
-# ifdef BELOS_HAVE_TSQR
+# ifdef HAVE_BELOS_TSQR
 # include "BelosTsqrOrthoManager.hpp"
 # endif
 #endif

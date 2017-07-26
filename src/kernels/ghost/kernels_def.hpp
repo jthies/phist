@@ -1918,7 +1918,7 @@ extern "C" void SUBR(mvec_QR)(TYPE(mvec_ptr) vV, TYPE(sdMat_ptr) vR, int* iflag)
   PHIST_CAST_PTR_FROM_VOID(ghost_densemat,R,vR,*iflag);
 
   int rank;
-  MT rankTol=1000*mt::eps();
+  MT rankTol=mt::rankTol();
   int ncols=V->traits.ncols;
   if (ncols==1)
   {
@@ -1947,7 +1947,7 @@ extern "C" void SUBR(mvec_QR)(TYPE(mvec_ptr) vV, TYPE(sdMat_ptr) vR, int* iflag)
 
   PHIST_DEB("mvec_QR: multi-vector case\n");
 
-#if defined(PHIST_HAVE_TEUCHOS)&&defined(PHIST_HAVE_KOKKOS)&&defined(BELOS_HAVE_TSQR)
+#if defined(PHIST_HAVE_TEUCHOS)&&defined(PHIST_HAVE_KOKKOS)&&defined(HAVE_BELOS_TSQR)
 
 #ifdef GHOST_HAVE_CUDA
   static int any_cuda=-1;
@@ -1960,8 +1960,7 @@ extern "C" void SUBR(mvec_QR)(TYPE(mvec_ptr) vV, TYPE(sdMat_ptr) vR, int* iflag)
   }
   if (any_cuda)
   {
-    *iflag=PHIST_NOT_IMPLEMENTED;
-    return;
+    PHIST_CHK_IERR(*iflag=PHIST_NOT_IMPLEMENTED,*iflag);
   }
 #endif
 
@@ -1984,7 +1983,7 @@ extern "C" void SUBR(mvec_QR)(TYPE(mvec_ptr) vV, TYPE(sdMat_ptr) vR, int* iflag)
     vtraits.storage=GHOST_DENSEMAT_COLMAJOR;  
     vtraits.flags = (ghost_densemat_flags)((int)vtraits.flags & ~(int)GHOST_DENSEMAT_VIEW);
     //vtraits.flags = (ghost_densemat_flags)((int)vtraits.flags & ~(int)GHOST_DENSEMAT_PERMUTED); // melven: do we need this?
-    vtraits.ncolsorig=vtraits.ncols;
+    //vtraits.ncolsorig=vtraits.ncols;
     //vtraits.nrowsorig=vtraits.nrows;
   ghost_densemat_create(&Vcopy,V->map,vtraits);
   ghost_densemat_create(&Qcopy,V->map,vtraits);
@@ -2003,7 +2002,7 @@ extern "C" void SUBR(mvec_QR)(TYPE(mvec_ptr) vV, TYPE(sdMat_ptr) vR, int* iflag)
   phist::GhostMV mv_V(Vcopy,false);
   phist::GhostMV mv_Q(Qcopy,false);
     
-  int nrows = R->traits.nrows;
+  int nrows = R->map->dim;
   ncols = R->traits.ncols;
     
   PHIST_CHK_IERR(*iflag=nrows-ncols,*iflag);
@@ -2052,10 +2051,10 @@ extern "C" void SUBR(mvec_QR)(TYPE(mvec_ptr) vV, TYPE(sdMat_ptr) vR, int* iflag)
   ghost_densemat_destroy(Vcopy);
   ghost_densemat_destroy(Qcopy);
   *iflag = ncols-rank;// return positive number if rank not full.
-#else
-  *iflag=PHIST_NOT_IMPLEMENTED; // no Trilinos, no TSQR, no mvec_QR (right now)
-#endif
   return;
+#else
+  PHIST_CHK_IERR(*iflag=PHIST_NOT_IMPLEMENTED,*iflag); // no Trilinos, no TSQR, no mvec_QR (right now)
+#endif
 }
 
 

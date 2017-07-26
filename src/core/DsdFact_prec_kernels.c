@@ -39,7 +39,7 @@
 #ifdef SINGTOL
 #undef SINGTOL
 #endif
-#define SINGTOL 1.0e-25
+#define SINGTOL rankTol
 
 // calculates a possibly low rank approximation of a lower cholesky factor of an spd matrix
 // higher-precision + pivoting + stable low rank approximation
@@ -84,7 +84,7 @@ void phist_Dprec_cholesky(double *__restrict__ a, double *__restrict__ aC, phist
     for(int i = *rank; i < n; i++)
       err = err + d[p[i]];
 //printf("step %d, err %e\n", *rank, err);
-    if( err < SINGTOL*diagNorm )
+    if( err <= SINGTOL*diagNorm )
       break;
 
     int m = *rank;
@@ -273,7 +273,7 @@ void phist_Dprec_forwardSubst(const double *__restrict__ r, const double *__rest
 // s.t. Q has exactly rank *rank.
 void phist_Dprec_qb(double *__restrict__ a, double *__restrict__ aC, 
                     double *__restrict__ bi, double *__restrict__ biC,
-                    phist_lidx n, phist_lidx lda, int *rank, int* iflag)
+                    phist_lidx n, phist_lidx lda, int *rank, double rankTol, int* iflag)
 {
 #ifdef PHIST_HAVE_MPACK_QD
   // compute sqrt(diag(A)) and its inverse
@@ -281,7 +281,7 @@ void phist_Dprec_qb(double *__restrict__ a, double *__restrict__ aC,
   for (int i=0; i<n; i++)
   {
     // prevent nans
-    if( a[i*lda+i] < SINGTOL )
+    if( a[i*lda+i] <= SINGTOL )
     {
       d[i] = dC[i] = 0.;
       di[i] = diC[i] = 0.;

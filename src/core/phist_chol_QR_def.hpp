@@ -72,7 +72,7 @@ PHIST_SOUT(PHIST_INFO,"];\n");
 #endif
     int rank;
     if (robust) *iflag = PHIST_ROBUST_REDUCTIONS;
-    PHIST_CHK_IERR(SUBR(sdMat_cholesky)(R,perm,&rank,iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(sdMat_cholesky)(R,perm,&rank,rankTol,iflag),*iflag);
     // since R is output, sync it with devices
     PHIST_CHK_IERR(SUBR(sdMat_to_device)(R,iflag),*iflag);
 #if PHIST_OUTLEV>=PHIST_DEBUG

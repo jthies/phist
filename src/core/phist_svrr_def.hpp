@@ -44,9 +44,9 @@ PHIST_CHK_IERR(SUBR(sdMat_add_sdMat)(st::one(),R,st::zero(),B,iflag),*iflag);
     {
       // stable rank-revealing cholesky
       int perm[m];
-      if( robust )
-        *iflag = PHIST_ROBUST_REDUCTIONS;
-      PHIST_CHK_IERR(SUBR(sdMat_cholesky)(R,perm,&rank,iflag),*iflag);
+      _MT_ rankTol=mt::rankTol(robust);
+      if( robust ) *iflag = PHIST_ROBUST_REDUCTIONS;
+      PHIST_CHK_IERR(SUBR(sdMat_cholesky)(R,perm,&rank,rankTol,iflag),*iflag);
 #if PHIST_OUTLEV>=PHIST_DEBUG
 PHIST_SOUT(PHIST_INFO,"R^T:\n");
 PHIST_CHK_IERR(SUBR(sdMat_print)(R,iflag),*iflag);

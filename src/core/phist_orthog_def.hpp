@@ -21,8 +21,13 @@ extern "C" void SUBR(orthog)(TYPE(const_mvec_ptr) V,
   int robust    =(*iflag&PHIST_ROBUST_REDUCTIONS);
   int randomize =(*iflag&PHIST_ORTHOG_RANDOMIZE_NULLSPACE);
   int m=0,k;
+  // our current behavior is that if the user asks us to randomize the nullspace
+  // explicitly, we try to determine the rank of the input [V, W]. Otherwise, we
+  // just iterate until it has full rank. In JD, we do not explicitly ask for
+  // randomization to avoid losing directions due to the 'rankTol'.
+  _MT_ rankTol=randomize?mt::rankTol(robust):mt::zero();
   
-  _MT_ orthoEps = mt::zero(); //(_MT_)10.0*mt::eps();
+  _MT_ orthoEps = mt::eps();
   
   PHIST_CHK_IERR(SUBR(mvec_num_vectors)(W,&k,iflag),*iflag);
   if (V!=NULL) PHIST_CHK_IERR(SUBR(mvec_num_vectors)(V,&m,iflag),*iflag);
@@ -59,7 +64,7 @@ extern "C" void SUBR(orthog)(TYPE(const_mvec_ptr) V,
     if (robust) *iflag=PHIST_ROBUST_REDUCTIONS;
 // the fused variant currently doesn't detect the rank of [V W] correctly in all cases, see issue #188
 //    PHIST_CHK_NEG_IERR(SUBR(orthogrrfused)(V, BW, R2, R1, WtW, iflag),*iflag);
-    PHIST_CHK_NEG_IERR(SUBR(orthogrrB)(V, W, BW, B, R2, R1, NULL,WtW, orthoEps,numSweeps,iflag),*iflag);
+    PHIST_CHK_NEG_IERR(SUBR(orthogrrB)(V, W, BW, B, R2, R1, NULL,WtW, orthoEps,numSweeps,rankTol,iflag),*iflag);
     dim0=*iflag; // return value of orthog is rank of null space of [V W] on entry
     *rankVW=m+k-dim0;
   }
@@ -67,7 +72,7 @@ extern "C" void SUBR(orthog)(TYPE(const_mvec_ptr) V,
   {
     // fused orthog core doesn't allow V==NULL, so use orthogrr instead
     if (robust) *iflag=PHIST_ROBUST_REDUCTIONS;
-    PHIST_CHK_NEG_IERR(SUBR(orthogrrB)(V, W, BW, B, R2, R1, NULL,WtW, orthoEps,numSweeps,iflag),*iflag);
+    PHIST_CHK_NEG_IERR(SUBR(orthogrrB)(V, W, BW, B, R2, R1, NULL,WtW, orthoEps,numSweeps,rankTol,iflag),*iflag);
     dim0=*iflag; // return value of orthog is rank of null space of [V W] on entry
     *rankVW=k-dim0;
   }
@@ -112,14 +117,14 @@ extern "C" void SUBR(orthog)(TYPE(const_mvec_ptr) V,
     if (V!=NULL && false)
     {
       if (robust) *iflag=PHIST_ROBUST_REDUCTIONS;
-      SUBR(orthogrrfused)(V, BW, R2p, R1p, WtW, iflag);
+      SUBR(orthogrrfused)(V, BW, R2p, R1p, WtW, rankTol, iflag);
       dim0=*iflag;
     }
     else
     {
       // fused orthog core doesn't allow V==NULL, so use orthogrr instead
       if (robust) *iflag=PHIST_ROBUST_REDUCTIONS;
-      SUBR(orthogrrB)(V, W,BW,B,R2p, R1p, NULL,WtW, orthoEps,numSweeps,iflag);
+      SUBR(orthogrrB)(V, W,BW,B,R2p, R1p, NULL,WtW, orthoEps,numSweeps,rankTol,iflag);
       dim0=*iflag; // return value of orthog is rank of null space of [V W] on entry
     }
 
