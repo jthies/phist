@@ -34,7 +34,6 @@ void SUBR(svqb)(TYPE(mvec_ptr) V, TYPE(sdMat_ptr) B, _MT_* D, int* iflag)
     // try to call high-precision variant
     if( robust )
     {
-      int rank;
       SUBR(sdMat_qb)(B,NULL,&rank,rankTol,iflag);
       if (*iflag!=PHIST_NOT_IMPLEMENTED)
       {
@@ -145,10 +144,8 @@ for (int i=0;i<m;i++) PHIST_SOUT(PHIST_DEBUG,"%24.16e\n",sqrt(E[i]));
 
     // compute V <- V*B to get an orthogonal V (up to the first (m-rank) columns,
     // which will be exactly zero)
-    if( robust )
-      *iflag = PHIST_ROBUST_REDUCTIONS;
+    if( robust ) *iflag = PHIST_ROBUST_REDUCTIONS;
     PHIST_CHK_IERR(SUBR(mvec_times_sdMat_inplace)(V,B,iflag),*iflag);
-
 // the return value of this function is the rank of the null space of V on entry
 *iflag=m-rank;
 }
