@@ -189,8 +189,6 @@ public:
       ASSERT_EQ(0,iflag_);
 
       SUBR(svqb)(vec2_,mat1_,nrms_,&iflag_);
-      std::cout << "TROET with rank def:\n";
-      SUBR(sdMat_print)(mat1_,&iflag_);
       // check that the rank deficiency was detected
       ASSERT_EQ(std::max(nvec_-1,0), iflag_);
       // check norms

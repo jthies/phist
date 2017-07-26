@@ -31,8 +31,6 @@ extern "C" void SUBR(sdMat_cholesky)(TYPE(sdMat_ptr) M, int* perm, int* rank, _M
   PHIST_CHK_IERR(SUBR(sdMat_get_ncols)(M,&m,iflag),*iflag);
   PHIST_CHK_IERR(*iflag=(n==m)?0:PHIST_INVALID_INPUT,*iflag);
   PHIST_CHK_IERR(SUBR(sdMat_extract_view)(M,&Mval,&ldM,iflag),*iflag);
-  PHIST_SOUT(PHIST_INFO,"TROET: in sdMat_cholesky:\n");
-  SUBR(sdMat_print)(M,iflag);
 #ifdef PHIST_HIGH_PRECISION_KERNELS
   SUBR(sdMat_extract_error)(M,&Merr,iflag);
   if (Merr!=NULL)
@@ -44,7 +42,6 @@ extern "C" void SUBR(sdMat_cholesky)(TYPE(sdMat_ptr) M, int* perm, int* rank, _M
   {
     PHIST_CHK_IERR(SUBR(cholesky)(Mval,m,ldM,perm,rank,rankTol,iflag),*iflag);
   }
-  PHIST_SOUT(PHIST_INFO,"TROET: returning rank %d with tol %e\n",*rank,rankTol);
 }
 
 extern "C" void SUBR(sdMat_backwardSubst_sdMat)(const TYPE(sdMat_ptr) R, int* perm, int rank, TYPE(sdMat_ptr) X, int* iflag)
