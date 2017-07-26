@@ -34,6 +34,9 @@ extern "C" {
 #endif
 #include "phist_gen_d.h"
 #include "phist_feastCorrectionSolver_decl.h"
+
+#include "phist_gen_clean.h"
+
 #ifdef __cplusplus
 }
 #endif
