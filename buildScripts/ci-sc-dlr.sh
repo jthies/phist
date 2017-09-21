@@ -116,9 +116,8 @@ module list
 # be verbose from here on
 set -x
 
-# use ccache to speed up build
 if [[ "$PRGENV" =~ gcc* ]]; then
-  export FC="ccache gfortran" CC="ccache gcc" CXX="ccache g++"
+  export FC=gfortran CC=gcc CXX=g++
 elif [[ "$PRGENV" =~ intel* ]]; then
   export FC=ifort CC=icc CXX=icpc
 fi

@@ -107,6 +107,18 @@ option(PHIST_USE_CRAFT
 		OFF)
 
 ########################################################################
+# try to enable CCache as a 'compiler launcher'
+########################################################################
+
+if (CMAKE_C_COMPILER_ID STREQUAL "GNU")
+  find_program(CCACHE_FOUND ccache)
+  if(CCACHE_FOUND)
+    set_property(GLOBAL PROPERTY RULE_LAUNCH_COMPILE ccache)
+    set_property(GLOBAL PROPERTY RULE_LAUNCH_LINK ccache)
+  endif(CCACHE_FOUND)
+endif()
+
+########################################################################
 # Lists of libraries, executables, tests
 ########################################################################
 set(library_list)
