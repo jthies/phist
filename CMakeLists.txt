@@ -1419,28 +1419,25 @@ if (PHIST_KERNEL_LIB_GHOST AND GCC_SANITIZE )
   message(WARNING "Disabling Python tests with GHOST+GCC sanitizer, cf. issue #165")
   set(DISABLE_PYTHON_TESTS 1)
 endif()
-# Test python interface if this is an integration build.
-# The reason why this test is only included in integration builds is that it requires
-# py.test, which is included in phist but currently with a hard-coded interpreter from
-# the module system (anaconda module). We can't just load the module because it brings its own
-# MPI installation which breaks the rest of PHIST.
-if(INTEGRATION_BUILD AND NOT DISABLE_PYTHON_TESTS)
-  configure_file(${PROJECT_SOURCE_DIR}/python/py.test ${CMAKE_CURRENT_BINARY_DIR}/ COPYONLY)
-  # note: we can do system-specific stuff like chmod here because we know that it's an integration build
-  # and no one should run it except for ourselves
-  execute_process(COMMAND "chmod" "u+x" "${CMAKE_CURRENT_BINARY_DIR}/py.test")
-  foreach(pyt ${PYTHON_TESTS})
+# Test python interface. This requires pytest, which can be found in the python/ subdirectory.
+if(NOT DISABLE_PYTHON_TESTS)
+  
+  set(PYSTDIR "${PROJECT_SOURCE_DIR}/python/")
+  set(PYTESTDIR "${PROJECT_SOURCE_DIR}/python/pytest-3.2.2/")
+  file(COPY ${PYSTDIR}/py.test DESTINATION ${CMAKE_CURRENT_BINARY_DIR} USE_SOURCE_PERMISSIONS)
+  
+foreach(pyt ${PYTHON_TESTS})
     get_filename_component(pyt_name ${pyt} NAME_WE)
     set(pyt_name "${pyt_name}_py")
-    message(STATUS "add python test '${pyt_name}'")
     set(TEST_OUTPUT_DIR ${PROJECT_BINARY_DIR}/test_output_np1/${pyt_name})
     file(MAKE_DIRECTORY ${TEST_OUTPUT_DIR})
-    set(TEST_COMMAND ${CMAKE_CURRENT_BINARY_DIR}/py.test -s -v --junitxml ${TEST_OUTPUT_DIR}/xunit.xml --junit-prefix=${CMAKE_BUILD_TYPE} ${pyt})
+    set(TEST_COMMAND py.test -s -v --junitxml ${TEST_OUTPUT_DIR}/xunit.xml --junit-prefix=${CMAKE_BUILD_TYPE} ${pyt})
     add_test(NAME ${pyt_name} COMMAND ${TEST_COMMAND})
     if(INTEGRATION_BUILD AND PHIST_KERNEL_LIB STREQUAL "ghost" AND CUDA_LIBRARIES)
-      set_tests_properties(${pyt_name} PROPERTIES ENVIRONMENT "LD_LIBRARY_PATH=${CMAKE_CURRENT_BINARY_DIR}:$ENV{LD_LIBRARY_PATH} PYTHONPATH=${PYSTDIR}:$ENV{PYTHONPATH} ${MPIEXEC_ENVIRONMENT} PHIST_NUM_THREADS=12 OMP_NUM_THREADS=12 OMP_SCHEDULE=dynamic,8 GHOST_TYPE=cuda")
+      set_tests_properties(${pyt_name} PROPERTIES ENVIRONMENT 
+      "LD_LIBRARY_PATH=${CMAKE_CURRENT_BINARY_DIR}:$ENV{LD_LIBRARY_PATH} PYTHONPATH=${PYSTDIR}:${PYTESTDIR}:$ENV{PYTHONPATH} ${MPIEXEC_ENVIRONMENT} PHIST_NUM_THREADS=12 OMP_NUM_THREADS=12 OMP_SCHEDULE=dynamic,8 GHOST_TYPE=cuda")
     else()
-      set_tests_properties(${pyt_name} PROPERTIES ENVIRONMENT "LD_LIBRARY_PATH=${CMAKE_CURRENT_BINARY_DIR}:$ENV{LD_LIBRARY_PATH} PYTHONPATH=${PYSTDIR}:$ENV{PYTHONPATH} ${MPIEXEC_ENVIRONMENT} PHIST_NUM_THREADS=12 OMP_NUM_THREADS=12 OMP_SCHEDULE=dynamic,8")
+      set_tests_properties(${pyt_name} PROPERTIES ENVIRONMENT "LD_LIBRARY_PATH=${CMAKE_CURRENT_BINARY_DIR}:$ENV{LD_LIBRARY_PATH} PYTHONPATH=${PYSTDIR}:${PYTESTDIR}:$ENV{PYTHONPATH} ${MPIEXEC_ENVIRONMENT} PHIST_NUM_THREADS=12 OMP_NUM_THREADS=12 OMP_SCHEDULE=dynamic,8")
     endif()
   
     if( GCC_SANITIZE )

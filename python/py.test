@@ -1,6 +1,6 @@
-#!/tools/modulesystem/tools/anaconda/anaconda-2.0.1/install/sled11.x86_64.gcc-4.3.4.release/bin/python
+#!/usr/bin/python
 if __name__ == '__main__':
     import sys
-    from py.test import main
+    import pytest
 
-    sys.exit(main())
+    sys.exit(pytest.main())
