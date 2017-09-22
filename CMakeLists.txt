@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.2.0)
+cmake_minimum_required(VERSION 3.5.0)
 
 # some guidelines for extending/modifying the PHIST CMakeLists.txt file. 
 # Things may not be handled this way everywhere yet, but you should keep these
@@ -127,129 +127,37 @@ set(test_list)
 
 ########################################################################
 # List of external libraries for executables and tests to link, e.g.
-# GHOST, LAPACK. TODO: also for essex-physics?
+# GHOST, LAPACK.
 ########################################################################
 set(external_libs)
 set(PHIST_PKG_CONFIG_REQUIRE)
 set(PHIST_PKG_CONFIG_CFLAGS)
 
 ########################################################################
-# Deal with LAPACK and LAPACKe
-# Specify paths in CMAKE_PREFIX_PATH.
+# Deal with BLAS, LAPACK and LAPACKe
+# We first of all trust the CMake FindLAPACK module here.
+# In order to use a specific blas/lapack, e.g. set the variable
+# BLA_VENDOR="Intel10_64lp" (note that you have to be rather specific here
+# due to the FindBLAS module!).
+# There is no FindLAPACKe module as of CMake 3.8, so I added one in phist/cmake/
+# If MKL is used, skip lapacke (because it is included in MKL) but explicitly add 
+# the include directory.
 ########################################################################
-find_path(LAPACKE_INCL NAMES "lapacke.h" "mkl_lapacke.h" PATHS $ENV{MKLROOT}/include /usr/include/lapacke)
-if(LAPACKE_INCL STREQUAL "LAPACKE_INCL-NOTFOUND")
-  message(FATAL_ERROR "LAPACKe include file not found. Add the proper path to CMAKE_PREFIX_PATH.")
-else()
-  message(STATUS "LAPACKe include file found in: ${LAPACKE_INCL}")
-  include_directories(${LAPACKE_INCL})
-endif()
 
-# Try to find an MKL header in the default location. Do this first, so
-# in case the MKL is available but no Intel compiler is used, not
-# finding LAPACK(e)/BLAS later on is not an error.
-if (NOT MKL_INCLUDE_DIR)
-  message(STATUS "Try to find MKL in default paths and via MKLROOT")
-  find_path(MKL_INCLUDE_DIR mkl.h PATHS $ENV{MKLROOT}/include)
-endif()
-if (MKL_INCLUDE_DIR)
+find_package(LAPACK REQUIRED)
+
+if (LAPACK_LIBRARIES MATCHES "mkl")
+  message(STATUS "found Intel(R) MKL")
   set(PHIST_HAVE_MKL 1)
-  include_directories(${MKL_INCLUDE_DIR})
+  include_directories($ENV{MKLROOT}/include)
+  link_libraries(${LAPACK_LIBRARIES})
+else()
+  find_package(LAPACKE REQUIRED)
+  include_directories(${LAPACKE_INCLUDE_DIRS})
+  link_libraries(${LAPACKE_LIBRARIES})
 endif()
+  
 
-# For non-Intel compilers, check for additional LAPACK(e)/BLAS libraries.
-# If the MKL is present, not finding the required libs is not an error.
-# TODO Always prefer MKL over others?
-if(NOT CMAKE_C_COMPILER_ID STREQUAL "Intel")
-# TODO: this assumes that if you use the intel compilers, you also have MKL (!)
-#=======================================================================
-  if(PHIST_HAVE_MKL)
-    # TODO write a module for that
-#-----------------------------------------------------------------------
-    # interface
-    unset(MKL_INTERFACE_LIBS CACHE)
-    find_library(MKL_INTERFACE_LIBS NAMES mkl_intel_lp64 PATHS "$ENV{MKLROOT}/lib/intel64")
-    if(MKL_INTERFACE_LIBS STREQUAL "MKL_INTERFACE_LIBS-NOTFOUND")
-      message(FATAL_ERROR "Could not find MKL interface library. Is the MKLROOT environment variable set properly?")
-    else()
-      message(STATUS "MKL interface library found: ${MKL_INTERFACE_LIBS}")
-      LIST(APPEND external_libs ${MKL_INTERFACE_LIBS})
-    endif()
-#-----------------------------------------------------------------------
-    # threading or sequential
-    unset(MKL_THREADING_LIBS CACHE)
-    if( PHIST_ENABLE_OPENMP )
-      # linking the GNU variant, we shouldn't need libiomp5.
-      find_library(MKL_THREADING_LIBS NAMES mkl_gnu_thread PATHS "$ENV{MKLROOT}/lib/intel64")
-    else()
-      find_library(MKL_THREADING_LIBS NAMES mkl_sequential PATHS "$ENV{MKLROOT}/lib/intel64")
-    endif()
-    if(MKL_THREADING_LIBS STREQUAL "MKL_THREADING_LIBS-NOTFOUND")
-      message(FATAL_ERROR "Could not find MKL threading library. Is the MKLROOT environment variable set properly?")
-    else()
-      message(STATUS "MKL threading library found: ${MKL_THREADING_LIBS}")
-      LIST(APPEND external_libs ${MKL_THREADING_LIBS})
-    endif()
-#-----------------------------------------------------------------------
-    # core libs
-    unset(MKL_COMPUTING_LIBS CACHE)
-    find_library(MKL_COMPUTING_LIBS NAMES mkl_core PATHS "$ENV{MKLROOT}/lib/intel64")
-    if(MKL_COMPUTING_LIBS STREQUAL "MKL_COMPUTING_LIBS-NOTFOUND")
-      message(FATAL_ERROR "Could not find MKL computing library. Is the MKLROOT environment variable set properly?")
-    else()
-      message(STATUS "MKL computing library found: ${MKL_COMPUTING_LIBS}")
-      LIST(APPEND external_libs ${MKL_COMPUTING_LIBS})
-    endif()
-  else()
-#=======================================================================
-    # First search external non-system paths to allow the use of 
-    # non-default libraries. Only if nothing is found there also search
-    # system paths.
-    # Maybe even add a special variable for LAPACK, LAPACKe and BLAS
-    # paths.
-
-    # LAPACKe
-    unset(LAPACKE_LIBS CACHE)
-    find_library(LAPACKE_LIBS NAMES "liblapacke.so" "liblapacke.a" NO_CMAKE_SYSTEM_PATH NO_SYSTEM_ENVIRONMENT_PATH)
-    if(LAPACKE_LIBS STREQUAL "LAPACKE_LIBS-NOTFOUND")
-      # we could add NO_CMAKE_PATH and NO_CMAKE_ENVIRONMENT_PATH because we already searched there
-      find_library(LAPACKE_LIBS NAMES "liblapacke.so" "liblapacke.a")
-    endif()
-    if(LAPACKE_LIBS STREQUAL "LAPACKE_LIBS-NOTFOUND")
-      message(FATAL_ERROR "LAPACKe libraries not found. Add the proper path to CMAKE_PREFIX_PATH.")
-    else()
-      message(STATUS "LAPACKe libraries found: ${LAPACKE_LIBS}")
-      LIST(APPEND external_libs ${LAPACKE_LIBS})
-    endif()
-#-----------------------------------------------------------------------
-    # LAPACK
-    unset(LAPACK_LIBS CACHE)
-    find_library(LAPACK_LIBS NAMES "liblapack.so" "liblapack.a" NO_CMAKE_SYSTEM_PATH NO_SYSTEM_ENVIRONMENT_PATH)
-    if(LAPACK_LIBS STREQUAL "LAPACK_LIBS-NOTFOUND")
-      find_library(LAPACK_LIBS NAMES "liblapack.so" "liblapack.a")
-    endif()
-    if(LAPACK_LIBS STREQUAL "LAPACK_LIBS-NOTFOUND")
-      message(FATAL_ERROR "LAPACK libraries not found. Add the proper path to CMAKE_PREFIX_PATH.")
-    else()
-      message(STATUS "LAPACK libraries found: ${LAPACK_LIBS}")
-      LIST(APPEND external_libs ${LAPACK_LIBS})
-    endif()
-#-----------------------------------------------------------------------
-    # BLAS
-    unset(BLAS_LIBS CACHE)
-    find_library(BLAS_LIBS NAMES "libblas.so" "libblas.a" NO_CMAKE_SYSTEM_PATH NO_SYSTEM_ENVIRONMENT_PATH)
-    if(BLAS_LIBS STREQUAL "BLAS_LIBS-NOTFOUND")
-      find_library(BLAS_LIBS NAMES "libblas.so" "libblas.a")
-    endif()
-    if(BLAS_LIBS STREQUAL "BLAS_LIBS-NOTFOUND")
-      message(FATAL_ERROR "BLAS libraries not found. Add the proper path to CMAKE_PREFIX_PATH.")
-    else()
-      message(STATUS "BLAS libraries found: ${BLAS_LIBS}")
-      LIST(APPEND external_libs ${BLAS_LIBS})
-    endif()
-#=======================================================================
-  endif()
-endif()
 ########################################################################
 
 # output behavior
