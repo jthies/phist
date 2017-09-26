@@ -1386,7 +1386,10 @@ foreach(pyt ${PYTHON_TESTS})
     set(TEST_COMMAND ${CMAKE_CURRENT_BINARY_DIR}/py.test --junitxml ${TEST_OUTPUT_DIR}/xunit.xml ./test_phist_drivers.py)
     set(pyt_name "phist_test_drivers_np${PHIST_TEST_DRIVERS_NUM_PROCS}") 
     add_test(NAME ${pyt_name} COMMAND ${TEST_COMMAND})
-    set_tests_properties(${pyt_name} PROPERTIES ENVIRONMENT "${MPIEXEC_ENVIRONMENT} PHIST_NUM_THREADS=2 OMP_NUM_THREADS=2 OMP_SCHEDULE=dynamic,8")
+    set_tests_properties(${pyt_name} PROPERTIES ENVIRONMENT "${MPIEXEC_ENVIRONMENT}; PHIST_NUM_THREADS=2; OMP_NUM_THREADS=2 OMP_SCHEDULE=dynamic,8")
+
+    set_property(TEST ${pyt_name} APPEND PROPERTY ENVIRONMENT "LD_LIBRARY_PATH=${CMAKE_CURRENT_BINARY_DIR}:$ENV{LD_LIBRARY_PATH}")
+    set_property(TEST ${pyt_name} APPEND PROPERTY ENVIRONMENT "PYTHONPATH=${PYSTDIR}:${PYTESTDIR}:$ENV{PYTHONPATH}")
   endif()
 endif()
 
