@@ -1004,31 +1004,6 @@ foreach(dir ${dirs})
   set(INCLUDE_FLAGS "${INCLUDE_FLAGS} -I${dir}")
 endforeach()
 
-set(PHIST_PKG_CONFIG_LIBRARIES "")
-foreach(lib ${library_list})
-  set(PHIST_PKG_CONFIG_LIBRARIES "${PHIST_PKG_CONFIG_LIBRARIES} -l${lib}")
-endforeach()
-
-###########################################################################################
-# workaround for tpetra and pkg-config (probably anyone using tpetra will use CMake       
-# directly, but it should still work with pkg-config anyway)                              
-if (PHIST_KERNEL_LIB_TPETRA)
-  set(PHIST_PKG_CONFIG_LIBRARIES "${PHIST_PKG_CONFIG_LIBRARIES} -lteuchoscore")
-endif()
-
-
-
-configure_file ("${PROJECT_SOURCE_DIR}/phist.pc.in" "${PROJECT_BINARY_DIR}/phist.pc" @ONLY)
-configure_file ("${PROJECT_SOURCE_DIR}/src/phist_config.h.in" "${PROJECT_BINARY_DIR}/phist_config.h")
-configure_file ("${PROJECT_SOURCE_DIR}/doc/phist.doxyfile.in" "${PROJECT_BINARY_DIR}/phist.doxyfile")
-include(CMakePackageConfigHelpers)
-set(INCLUDE_INSTALL_DIR include)
-set(LIBRARY_INSTALL_DIR lib)
-configure_package_config_file("${PROJECT_SOURCE_DIR}/phistConfig.cmake.in" "${PROJECT_BINARY_DIR}/phistConfig.cmake" INSTALL_DESTINATION ${LIBRARY_INSTALL_DIR}/cmake/phist
-  PATH_VARS INCLUDE_INSTALL_DIR)# LIBRARY_INSTALL_DIR)
-write_basic_package_version_file("${PROJECT_BINARY_DIR}/phistConfigVersion.cmake" VERSION ${PHIST_VERSION} COMPATIBILITY SameMajorVersion)
-
-
 if(NOT GHOST_FOUND) #use MPI libs as found by GHOST in this case. otherwise, a clash between thread-safe and normal MPI will occur
   target_link_libraries(phist_tools ${MPI_CXX_LIBRARIES} ${MPI_C_LIBRARIES} ${MPI_Fortran_LIBRARIES})
 endif()
@@ -1152,6 +1127,38 @@ install(TARGETS phist_carp_cg RUNTIME DESTINATION bin OPTIONAL)
 
 LIST(APPEND driver_list phist_carp_cg)
 
+######################################################################################
+# setup pkg-config and cmake package files to find phist and dependencies            #
+######################################################################################
+
+get_target_property(library_list phist_Dsubspacejada INTERFACE_LINK_LIBRARIES)
+
+set(PHIST_PKG_CONFIG_LIBRARIES "")
+foreach(lib ${library_list})
+  set(PHIST_PKG_CONFIG_LIBRARIES "${PHIST_PKG_CONFIG_LIBRARIES} -l${lib}")
+endforeach()
+
+###########################################################################################
+# workaround for tpetra and pkg-config (probably anyone using tpetra will use CMake       
+# directly, but it should still work with pkg-config anyway)                              
+if (PHIST_KERNEL_LIB_TPETRA)
+  set(PHIST_PKG_CONFIG_LIBRARIES "${PHIST_PKG_CONFIG_LIBRARIES} -lteuchoscore")
+endif()
+
+configure_file ("${PROJECT_SOURCE_DIR}/phist.pc.in" "${PROJECT_BINARY_DIR}/phist.pc" @ONLY)
+configure_file ("${PROJECT_SOURCE_DIR}/src/phist_config.h.in" "${PROJECT_BINARY_DIR}/phist_config.h")
+configure_file ("${PROJECT_SOURCE_DIR}/doc/phist.doxyfile.in" "${PROJECT_BINARY_DIR}/phist.doxyfile")
+include(CMakePackageConfigHelpers)
+set(INCLUDE_INSTALL_DIR include)
+set(LIBRARY_INSTALL_DIR lib)
+
+configure_package_config_file("${PROJECT_SOURCE_DIR}/phistConfig.cmake.in" "${PROJECT_BINARY_DIR}/phistConfig.cmake" INSTALL_DESTINATION ${LIBRARY_INSTALL_DIR}/cmake/phist
+  PATH_VARS INCLUDE_INSTALL_DIR)# LIBRARY_INSTALL_DIR)
+write_basic_package_version_file("${PROJECT_BINARY_DIR}/phistConfigVersion.cmake" VERSION ${PHIST_VERSION} COMPATIBILITY SameMajorVersion)
+
+#######################################################################################
+# INSTALL                                                                             #
+#######################################################################################
 if (${BUILD_SHARED_LIBS})
   install(TARGETS phist_kernels_${PHIST_KERNEL_LIB} EXPORT phistLibraries LIBRARY DESTINATION ${LIBRARY_INSTALL_DIR})
   install(TARGETS phist_tools EXPORT phistLibraries LIBRARY DESTINATION ${LIBRARY_INSTALL_DIR})
