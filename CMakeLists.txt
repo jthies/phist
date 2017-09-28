@@ -1135,7 +1135,11 @@ get_target_property(library_list phist_Dsubspacejada INTERFACE_LINK_LIBRARIES)
 
 set(PHIST_PKG_CONFIG_LIBRARIES "")
 foreach(lib ${library_list})
-  set(PHIST_PKG_CONFIG_LIBRARIES "${PHIST_PKG_CONFIG_LIBRARIES} -l${lib}")
+  if (IS_ABSOLUTE ${lib})
+    set(PHIST_PKG_CONFIG_LIBRARIES "${PHIST_PKG_CONFIG_LIBRARIES} ${lib}")
+  else()
+    set(PHIST_PKG_CONFIG_LIBRARIES "${PHIST_PKG_CONFIG_LIBRARIES} -l${lib}")
+  endif()
 endforeach()
 
 ###########################################################################################
