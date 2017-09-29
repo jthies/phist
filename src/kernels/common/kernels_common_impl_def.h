@@ -69,11 +69,13 @@ extern "C" void SUBR(sparseMat_times_mvec_add_mvec)(_ST_ alpha, TYPE(const_spars
 // on input.
 extern "C" void SUBR(mvec_clone_shape)(TYPE(mvec_ptr)* V, TYPE(const_mvec_ptr) V_in, int* iflag)
 {
+  int iflag_in=*iflag;
   *iflag=0;
   phist_const_map_ptr map=NULL;
 PHIST_CHK_IERR(SUBR(mvec_get_map)(V_in,&map,iflag),*iflag);
 int nvecs;
 PHIST_CHK_IERR(SUBR(mvec_num_vectors)(V_in,&nvecs,iflag),*iflag);
+*iflag=iflag_in;
 PHIST_CHK_IERR(SUBR(mvec_create)(V,map,nvecs,iflag),*iflag);
 }
 

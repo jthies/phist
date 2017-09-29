@@ -258,7 +258,7 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,_N_,MATNAME>,
           ASSERT_EQ(0,iflag_);
           // left-precondition the rhs
           Prhs=NULL;
-          SUBR(mvec_clone_shape)(&Prhs,rhs,&iflag_);
+          PHISTTEST_MVEC_CLONE_SHAPE(&Prhs,rhs,&iflag_);
           _Prhs.set(Prhs);
           ASSERT_EQ(0,iflag_);
           SUBR(linearOp_apply)(st::one(),leftPrec,rhs,st::zero(),Prhs,&iflag_);
@@ -418,7 +418,8 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,_N_,MATNAME>,
     if( typeImplemented_ && !problemTooSmall_ )
     {
       TYPE(mvec_ptr) pq=NULL;
-      SUBR(mvec_clone_shape)(&pq,q_,&iflag_);
+      iflag_=
+      PHISTTEST_MVEC_CLONE_SHAPE(&pq,q_,&iflag_);
       ASSERT_EQ(0,iflag_);
       MvecOwner<_ST_> _pq(pq);
       SUBR(linearOp_apply)(st::one(),jdPrec_,q_,st::zero(),pq,&iflag_);

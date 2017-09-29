@@ -45,7 +45,10 @@ void SUBR(mvec_get_comm)(TYPE(const_mvec_ptr) V, phist_const_comm_ptr* comm, int
 //! distribution (map)  as an existing one. The values of the new object are not
 //! initialized explicitly, so if you want to clone the vector contents as well,
 //! you will have to call mvec_set_block afterwards (or similar). *V must be NULL
-//! on input.
+//! on input. The function accepts the same input values for iflag as mvec_create 
+//! and will simply pass them on to the mvec_create function for the new object, so
+//! in order to clone an mvec with exactly the same properties it may  be necessary
+//! to manually add flags here like MVEC_REPLICATE_DEVICE_MEM
 void SUBR(mvec_clone_shape)(TYPE(mvec_ptr)* V, TYPE(const_mvec_ptr) V_in, int* iflag);
 
 //! y[i]=alpha*(A*x+shift*x) + beta*y
