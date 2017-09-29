@@ -4,9 +4,13 @@
     <testcase name="no_tests_ran" status="failure" time="0" classname="${CURRENT_TESTNAME}.no tests ran">
       <failure type="NoTestsRan"> 
       
-      This is the default output of the test that is overwritten when the actual test runs. 
-      The executable may not be available due to a previous build error or could not be run,
-      see the test log file or try to manually run 'make check'.
+      This is the default message for the test that is overwritten when the actual test completes. 
+      Seeing this message may indicate either that
+      - the executable is not available due to a previous build error,
+      - the executable could not be run for some other reason,
+      - or some error (e.g. a segmentation fault) occurred before the test output was written.
+      
+      See the build and test log files or try to manually run 'make check' for more details.
       
       </failure>
     </testcase>
