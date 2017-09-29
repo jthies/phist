@@ -1,7 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <testsuites tests="1" failures="1" disabled="0" errors="1" timestamp="" time="0.0" name="${CURRENT_TESTNAME}">
   <testsuite name="${CURRENT_TESTNAME}.all_testcases" tests="1" failures="1" disabled="0" errors="1" time="0">
-    <testcase name="no_tests_ran" status="notrun" time="0" classname="${CURRENT_TESTNAME}.no tests ran" />
+    <testcase name="no_tests_ran" status="failure" time="0" classname="${CURRENT_TESTNAME}.no tests ran">
+      <failure type="NoTestsRan"> 
+      
+      This is the default output of the test that is overwritten when the actual test runs. 
+      The executable may not be available due to a previous build error or could not be run,
+      see the test log file or try to manually run 'make check'.
+      
+      </failure>
+    </testcase>
   </testsuite>
 </testsuites>
 
