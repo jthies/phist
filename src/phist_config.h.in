@@ -166,9 +166,11 @@ kernel libs) ?
 # endif
 
 /* some more sanity checks */
+/*
 # ifndef PHIST_HAVE_MPI
 # error "MPI is currently a prereq of phist, primarily because of tests. If you need phist without MPI, please contact the developers."
-# endif
+# endif\
+*/
 
 # ifdef PHIST_HAVE_GHOST
 # include "ghost/config.h"
