@@ -438,7 +438,7 @@ static int global_prec_sum(ST* value, ST* err, int count, MPI_Comm mpi_comm)
           err[i]=st::zero();
         }
         prec_reduction_k(nproc,count,gvalue,gerr,value,err);
-  std::cout << "global_prec_sum global value[0]: "<<value[0] << " " << gvalue[0]<<std::endl;
+  std::cout << "global_prec_sum global value[0]: "<<gvalue[0] << " + " << gerr[0]<<std::endl;
   return iflag;
 }
 
