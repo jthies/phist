@@ -191,26 +191,26 @@ class ScalarTraits< float >
   }
     
   //! scalar 0
-  static inline scalar_t zero()
+  static inline constexpr scalar_t zero()
   {
     return 0.0f;
   }
     
   //! scalar 1
-  static inline scalar_t one()
+  static inline constexpr scalar_t one()
   {
     return 1.0f;
   }
     
   //! imaginary unit
-  static inline scalar_t cmplx_I()
+  static inline constexpr scalar_t cmplx_I()
   {
     return 0.0f;
   }
   
   //! machine epsilon around 1.0 (distance between
   //! 1.0 and the next floating point number)
-  static inline magn_t eps(){return std::numeric_limits<magn_t>::epsilon();}
+  static inline constexpr magn_t eps(){return std::numeric_limits<magn_t>::epsilon();}
 
   //! suggested criterion for determining the rank of a matrix.
   
@@ -218,7 +218,7 @@ class ScalarTraits< float >
   //! singular value of a matrix M, a singular value s(M) is considered to be 0 if s_max<rankTol or s<rankTol*s_max.
   //! If the high_prec argument is true (default false), it is asusmed that M is stored in double double precision 
   //! and a value <eps will be returned.
-  static inline magn_t rankTol(bool high_prec=false) {return high_prec? (magn_t)1.0e-12: 10.0f*eps();}
+  static inline constexpr magn_t rankTol(bool high_prec=false) {return high_prec? (magn_t)1.0e-12: 10.0f*eps();}
 
 };
 #endif
@@ -372,26 +372,26 @@ class ScalarTraits< double >
   }
     
   //! scalar 0
-  static inline scalar_t zero()
+  static inline constexpr scalar_t zero()
   {
     return 0.0;
   }
     
   //! scalar 1
-  static inline scalar_t one()
+  static inline constexpr scalar_t one()
   {
     return 1.0;
   }
     
   //! imaginary unit
-  static inline scalar_t cmplx_I()
+  static inline constexpr scalar_t cmplx_I()
   {
     return 0.0;
   }
   
   //! machine epsilon around 1.0 (distance between
   //! 1.0 and the next floating point number)
-  static inline magn_t eps(){return std::numeric_limits<magn_t>::epsilon();}
+  static inline constexpr magn_t eps(){return std::numeric_limits<magn_t>::epsilon();}
 
   //! suggested criterion for determining the rank of a matrix.
   
@@ -399,7 +399,7 @@ class ScalarTraits< double >
   //! singular value of a matrix M, a singular value s(M) is considered to be 0 if s_max<rankTol or s<rankTol*s_max.
   //! If the high_prec argument is true (default false), it is asusmed that M is stored in double double precision 
   //! and a value <eps will be returned.
-  static inline magn_t rankTol(bool high_prec=false) {return high_prec? 1.0e-25: 10.0*eps();}
+  static inline constexpr magn_t rankTol(bool high_prec=false) {return high_prec? 1.0e-25: 10.0*eps();}
 };
 
 
@@ -530,26 +530,26 @@ class ScalarTraits< std::complex<MT> >
   }
     
   //! scalar 0
-  static inline scalar_t zero()
+  static inline constexpr scalar_t zero()
   {
     return scalar_t(ScalarTraits<MT>::zero(),ScalarTraits<MT>::zero());
   }
     
   //! scalar 1
-  static inline scalar_t one()
+  static inline constexpr scalar_t one()
   {
     return scalar_t(ScalarTraits<MT>::one(),ScalarTraits<MT>::zero());
   }
     
   //! imaginary unit
-  static inline scalar_t cmplx_I()
+  static inline constexpr scalar_t cmplx_I()
   {
     return scalar_t(ScalarTraits<MT>::zero(),ScalarTraits<MT>::one());
   }
   
   //! machine epsilon around 1.0 (distance between
   //! 1.0 and the next floating point number)
-  static inline magn_t eps(){return ScalarTraits<MT>::eps();}
+  static inline constexpr magn_t eps(){return ScalarTraits<MT>::eps();}
 
   //! suggested criterion for determining the rank of a matrix.
   
@@ -557,7 +557,7 @@ class ScalarTraits< std::complex<MT> >
   //! singular value of a matrix M, a singular value s(M) is considered to be 0 if s_max<rankTol or s<rankTol*s_max.
   //! If the high_prec argument is true (default false), it is asusmed that M is stored in double double precision 
   //! and a value <eps will be returned.
-  static inline magn_t rankTol(bool high_prec=false) {return ScalarTraits<MT>::rankTol(high_prec);}
+  static inline constexpr magn_t rankTol(bool high_prec=false) {return ScalarTraits<MT>::rankTol(high_prec);}
 };
 
   
