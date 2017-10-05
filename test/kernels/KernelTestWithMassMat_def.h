@@ -24,7 +24,10 @@ class KernelTestWithMassMat<_ST_, _Nglob> : public virtual TestWithType< _ST_ >,
     // of the base class (cf. KernelTestWithMap::SetUpTestCaseWithMap).
     // Otherwise (if the context comes, sy, from a KernelTestWithSparseMat),
     // the mass matrix will be made compatible to that class' sparseMat A_.
-    static void SetUpTestCase(phist_const_context_ptr ctx=NULL)
+    static void SetUpTestCase(phist_const_context_ptr ctx=NULL,
+                              phist_sparseMat_rowFunc rowFuncPtr=phist::testing::PHIST_TG_PREFIX(hpd_tridiag),
+                              void* rowFuncArg=NULL
+                              )
     {
       TestWithType<_ST_>::SetUpTestCase();
       KernelTest::SetUpTestCase();
@@ -40,11 +43,11 @@ class KernelTestWithMassMat<_ST_, _Nglob> : public virtual TestWithType< _ST_ >,
         // create B_ as a tridiagonal hpd matrix
         ghost_gidx gnrows=_Nglob;
         // initialize rowFunc
-        iflag_=phist::testing::PHIST_TG_PREFIX(hpd_tridiag)(-1,NULL,&gnrows,NULL,NULL);
+        rowFuncPtr(-1,NULL,&gnrows,NULL,NULL);
         ASSERT_EQ(0,iflag_);
         if (ctx==NULL)
         {
-          SUBR(sparseMat_create_fromRowFunc)(&B_,comm_,gnrows,gnrows,3,&phist::testing::PHIST_TG_PREFIX(hpd_tridiag),NULL,&iflag_);
+          SUBR(sparseMat_create_fromRowFunc)(&B_,comm_,gnrows,gnrows,3,rowFuncPtr,rowFuncArg,&iflag_);
           ASSERT_EQ(0,iflag_);
           phist_const_map_ptr domain_map=NULL;
           SUBR(sparseMat_get_domain_map)(B_,&domain_map,&iflag_);
@@ -54,7 +57,7 @@ class KernelTestWithMassMat<_ST_, _Nglob> : public virtual TestWithType< _ST_ >,
         }
         else
         {
-          SUBR(sparseMat_create_fromRowFuncAndContext)(&B_,ctx,3,&phist::testing::PHIST_TG_PREFIX(hpd_tridiag),NULL,&iflag_);
+          SUBR(sparseMat_create_fromRowFuncAndContext)(&B_,ctx,3,rowFuncPtr,rowFuncArg,&iflag_);
           ASSERT_EQ(0,iflag_);
         }
 
