@@ -41,13 +41,15 @@ class KernelTestWithMassMat<_ST_, _Nglob> : public virtual TestWithType< _ST_ >,
       {
         iflag_ = 0;
         // create B_ as a tridiagonal hpd matrix
-        ghost_gidx gnrows=_Nglob;
+        ghost_gidx nmglob[2];
+        nmglob[0]=_Nglob; // gnrows
+        nmglob[1]=_Nglob; // gncols
         // initialize rowFunc
-        rowFuncPtr(-1,NULL,&gnrows,NULL,NULL);
+        rowFuncPtr(-1,NULL,nmglob,NULL,NULL);
         ASSERT_EQ(0,iflag_);
         if (ctx==NULL)
         {
-          SUBR(sparseMat_create_fromRowFunc)(&B_,comm_,gnrows,gnrows,3,rowFuncPtr,rowFuncArg,&iflag_);
+          SUBR(sparseMat_create_fromRowFunc)(&B_,comm_,nmglob[0],nmglob[1],3,rowFuncPtr,rowFuncArg,&iflag_);
           ASSERT_EQ(0,iflag_);
           phist_const_map_ptr domain_map=NULL;
           SUBR(sparseMat_get_domain_map)(B_,&domain_map,&iflag_);
