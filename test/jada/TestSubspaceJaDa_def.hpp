@@ -25,6 +25,7 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,_N_,MATNAME>,
     typedef KernelTestWithMassMat<_ST_,_N_>               BTest;
     typedef KernelTestWithVectors<_ST_,_N_,_M_,0,3>       VTest;
     typedef KernelTestWithSdMats<_ST_,_M_,_M_>            MTest;
+    typedef TestWithType<_MT_>                            RTest;
 
     static constexpr _ST_ BmatScaling_=(_ST_)8;
     static const int  blockSize_=_K_;
@@ -210,9 +211,9 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,_N_,MATNAME>,
       
       for (int i=0; i<nEig; i++) evb[i]/BmatScaling_;
       // check real parts
-      ASSERT_NEAR(mt::one(),ArraysEqual((_MT_*)ev,(_MT_*)evb,nEig,1,1,2),jadaOpts_.convTol);
+      ASSERT_NEAR(mt::one(),RTest::ArraysEqual((_MT_*)ev,(_MT_*)evb,nEig,1,1,2),jadaOpts_.convTol);
       // check imaginary parts
-      ASSERT_NEAR(mt::one(),ArraysEqual(((_MT_*)ev)+1,((_MT_*)evb)+1,nEig,1,1,2),(_MT_)(8*jadaOpts_.convTol));
+      ASSERT_NEAR(mt::one(),RTest::ArraysEqual(((_MT_*)ev)+1,((_MT_*)evb)+1,nEig,1,1,2),(_MT_)(8*jadaOpts_.convTol));
     
     }
   }
