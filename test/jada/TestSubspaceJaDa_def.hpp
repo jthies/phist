@@ -30,9 +30,9 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,_N_,MATNAME>,
     static constexpr _ST_ BmatScaling_=(_ST_)8;
     static const int  blockSize_=_K_;
     static const int  nEig_=_M_-_K_+1;
-    static const int minBas_=_M_;
+    static const int minBas_=2*_M_;
     static const int maxBas_=minBas_+8*blockSize_;
-    static const int maxIters_=20*(maxBas_-minBas_+1);
+    static const int maxIters_=20*(int)((maxBas_-minBas_+1)/blockSize_);
     static constexpr _MT_ convTol_=std::sqrt(mt::eps());
 
     static void SetUpTestCase()
@@ -59,6 +59,7 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,_N_,MATNAME>,
       jadaOpts_.maxBas=maxBas_;
       jadaOpts_.convTol=convTol_;
       jadaOpts_.maxIters=maxIters_;
+      jadaOpts_.blockSize=blockSize_;
 
       if( typeImplemented_ && !problemTooSmall_ )
       {
@@ -193,8 +194,8 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,_N_,MATNAME>,
       TYPE(sdMat_ptr) R = MTest::mat1_;
       int nEig=nEig_;
       int nIter;
-      _CT_ ev[nEig_+blockSize_-1];
-      _MT_ resNorm[nEig_+blockSize_-1];
+      _CT_ ev[_M_];
+      _MT_ resNorm[_M_];
       SUBR(subspacejada)(opA_, NULL, jadaOpts_,
                      Q, R, ev, resNorm, &nEig, &nIter, &iflag_);
       ASSERT_EQ(0,iflag_);
@@ -213,7 +214,7 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,_N_,MATNAME>,
       // check real parts
       ASSERT_NEAR(mt::one(),RTest::ArraysEqual((_MT_*)ev,(_MT_*)evb,nEig,1,1,2),jadaOpts_.convTol);
       // check imaginary parts
-      ASSERT_NEAR(mt::one(),RTest::ArraysEqual(((_MT_*)ev)+1,((_MT_*)evb)+1,nEig,1,1,2),(_MT_)(8*jadaOpts_.convTol));
+      ASSERT_NEAR(mt::one(),RTest::ArraysEqual(((_MT_*)ev)+1,((_MT_*)evb)+1,nEig,1,1,2),(_MT_)(12*jadaOpts_.convTol));
     
     }
   }
