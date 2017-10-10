@@ -85,7 +85,9 @@ int PHIST_TG_PREFIX(idfunc)(ghost_gidx row, ghost_lidx *len, ghost_gidx* cols, v
   }
   *len=1;
   _ST_* val = (_ST_*)vval;
-  val[0]=(_ST_)1.0;
+  _ST_* diagp= (_ST_*)arg;
+  _ST_ diag=(diagp==NULL)? (_ST_)1.0: (*diagp);
+  val[0]=diag;
   cols[0]=row;
   return 0;
 }

@@ -22,6 +22,7 @@ void SUBR(read_mat)(const char* filebase,phist_const_comm_ptr comm,int nglob, in
   //! If called with row=-2, the function is "un-initialized" (the global sizes are reset).
   //! If gnrows>gncols, creates [speye(gncols);zeros(gnrows-gncols,gncols)].
   //! If gncols>gnrows, creates [speye(gnrows),zeros(gnrows,gncols-gnrows)].
+  //! If arg!=NULL, the entries are scaled by *((_ST_*)arg)
   int PHIST_TG_PREFIX(idfunc)(ghost_gidx row, ghost_lidx *len, ghost_gidx* cols, void* vval, void *arg);
 
   //! creates a simple tridiagonal Hermitian and positive definite matrix. Before passing this function to
