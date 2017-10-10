@@ -212,7 +212,7 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,_N_,MATNAME>,
 
       for (int i=0; i<nEig; i++) evb[i]*=BmatScaling_;
 
-      _MT_ tol=(_MT_)2.0*st::real(BmatScaling_)*jadaOpts_.convTol;
+      _MT_ tol=(_MT_)2.5*st::real(BmatScaling_)*jadaOpts_.convTol;
 
       // check real parts
       ASSERT_NEAR(mt::one(),RTest::ArraysEqual((_MT_*)ev,(_MT_*)evb,nEig,1,nEig,2),tol);
