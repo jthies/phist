@@ -132,6 +132,18 @@ namespace phist
 # endif
 #endif
       Teuchos::RCP<Isorropia::Epetra::Partitioner> partitioner=Teuchos::null;
+      
+      // check for the combination 64-bit gids + Isorropia, this tends to cause an exception
+      // even if Zoltan is compiled with 64-bit IDs. Since the resulting error message may be
+      // hard to fathom, we warn the user ahead of time here.
+#if defined(PHIST_HAVE_ISORROPIA)
+      if (sizeof(phist_gidx)!=sizeof(int))
+      {
+        PHIST_SOUT(PHIST_WARNING,"WARNING: You are not using 32-bit integers as gids, Isorropia may run \n"
+                                 "         into trouble and cause an obscure exception in Epetra.\n"
+                                 "         To use 32-bit gids, pass -DPHIST_FORCE_INT_GIDX=ON to cmake.");
+      }
+#endif
 
 #if 0
 
