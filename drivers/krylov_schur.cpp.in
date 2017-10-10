@@ -12,6 +12,8 @@
 #include <mpi.h>
 #endif
 
+#include <cstring>
+
 #include "phist_macros.h"
 #include "phist_get_arg.hpp"
 #include "phist_kernels.h"
@@ -32,7 +34,7 @@ void SUBR(print_usage)(char* argv[],int pos)
     {
     PHIST_SOUT(PHIST_ERROR,"argument %d had an invalid value (%s)\n",pos,argv[pos]);
     }
-    PHIST_SOUT(PHIST_ERROR,"Usage: %s <matrix A> <symmetric/hermitian> <how many> <which> <tol>\n"
+    PHIST_SOUT(PHIST_ERROR,"Usage: %s <matrix A> <matrix B> <symmetric/hermitian> <how many> <which> <tol>\n"
                            "          <max iters> <block size> <num blocks>\n"
                            "(all but the first argument get default values if omitted)\n"
                            "Which may be of the form \"TARGET\" <real value>\n",
@@ -47,7 +49,7 @@ int main(int argc, char** argv)
   int i, iflag;
 
   comm_ptr comm;
-  sparseMat_ptr A;
+  sparseMat_ptr A=NULL, B=NULL;
   linearOp_ptr A_op, B_op; // this is a wrapper for the CRS matrix which we pass to the actual solver
   linearOp_ptr Ainv_op; // wrapper for an iterative linear solver for computing interior 
                     // eigenvalues (used if which=TARGET)
@@ -56,7 +58,7 @@ int main(int argc, char** argv)
                        // the distribution of matrix rows
   mvec_ptr X,R;// multivectors for eigenvectors and residuals
 
-  char* matname;
+  char *matname,*matBname;
     
   // default input parameters:
   MT tol=1.0e-6;
@@ -77,15 +79,16 @@ PHIST_MAIN_TASK_BEGIN
 
   PHIST_ICHK_IERR(phist_comm_create(&comm,&iflag),iflag);
 
-  if (argc<2)
+  if (argc<3)
   {
     SUBR(print_usage)(argv,0);
     return 1;
   }
 
   matname = argv[1];
+  matBname = argv[2];
   
-  int p=2;
+  int p=3;
   GET_ARG(sym,p++,sym==0||sym==1);
   GET_ARG(how_many,p++,how_many>0);
   GET_ARG(which,p++,true);
@@ -103,8 +106,14 @@ PHIST_MAIN_TASK_BEGIN
     num_blocks=(how_many+10)/block_size;
   }
 
-  iflag=PHIST_SPARSEMAT_PERM_GLOBAL;
+  iflag=0;//PHIST_SPARSEMAT_PERM_GLOBAL;
   PHIST_ICHK_IERR(SUBR(create_matrix)(&A,comm,matname,&iflag),iflag);
+
+  if (matBname!=NULL && strcmp(matBname,"I"))
+  {
+    iflag=0;
+    PHIST_ICHK_IERR(SUBR(create_matrix)(&B,comm,matBname,&iflag),iflag);
+  }
   
   /* we assume domain map = range map here, which is reasonable for something
      you want to put into a linear solver */
@@ -116,9 +125,13 @@ PHIST_MAIN_TASK_BEGIN
   
   /* create operator wrapper for computing Y=A*X using a CRS matrix */
   A_op = new TYPE(linearOp);
-  B_op = NULL;
   Ainv_op = NULL;
   PHIST_ICHK_IERR(SUBR(linearOp_wrap_sparseMat)(A_op,A,&iflag),iflag);
+  if (B!=NULL)
+  {
+    B_op = new TYPE(linearOp);
+    PHIST_ICHK_IERR(SUBR(linearOp_wrap_sparseMat)(B_op,B,&iflag),iflag);
+  }
  
   bool shift_invert=false; 
   if (which==phist_TARGET)
