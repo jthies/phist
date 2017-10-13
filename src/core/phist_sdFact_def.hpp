@@ -238,7 +238,7 @@ void SUBR(sdMat_pseudo_inverse)(TYPE(sdMat_ptr) A_gen, int* rank, _MT_ rankTol, 
     if (high_prec)
     {
       _ST_ serr = Sigma_err[i*ldS+i];
-      if (st::abs(sval)<sval_max*mt::rankTol(high_prec))
+      if (st::abs(sval+serr)<(sval_max+sval_max_err)*mt::rankTol(high_prec))
       {
         Sigma_raw[i*ldS+i]=st::zero();
         Sigma_err[i*ldS+i]=st::zero();
