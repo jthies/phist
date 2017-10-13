@@ -418,7 +418,6 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,_N_,MATNAME>,
     if( typeImplemented_ && !problemTooSmall_ )
     {
       TYPE(mvec_ptr) pq=NULL;
-      iflag_=
       PHISTTEST_MVEC_CLONE_SHAPE(&pq,q_,&iflag_);
       ASSERT_EQ(0,iflag_);
       MvecOwner<_ST_> _pq(pq);
