@@ -442,7 +442,8 @@ extern "C" void SUBR(mvec_norm2)(TYPE(const_mvec_ptr) V,
   }
   else // *iflag==PHIST_NOT_IMPLEMENTED
   {
-    PHIST_SOUT(PHIST_WARNING,"WARNING: try to use slow fallback version of %s\n",__FUNCTION__);
+    static bool first_time=true;
+    if (first_time) {PHIST_SOUT(PHIST_WARNING,"WARNING: try to use slow fallback version of %s\n",__FUNCTION__); first_time=false;}
     phist_Dmvec_ptr vtmp=NULL;
     *iflag=0;
     int nvec;
@@ -599,7 +600,8 @@ extern "C" void SUBR(mvec_dot_mvec)(TYPE(const_mvec_ptr) v,
   SUBR(mvec_dot_mvec_f)(v,w,s,iflag);
   if (*iflag==PHIST_NOT_IMPLEMENTED)
   {
-    PHIST_SOUT(PHIST_WARNING,"WARNING: try to use slow fallback version of %s\n",__FUNCTION__);
+    static bool first_time=true;
+    if (first_time) {PHIST_SOUT(PHIST_WARNING,"WARNING: try to use slow fallback version of %s\n",__FUNCTION__); first_time=false;}
     phist_Dmvec_ptr vtmp=NULL,wtmp=NULL;
     *iflag=0;
     int nvec;
@@ -655,7 +657,8 @@ extern "C" void SUBR(mvec_times_sdMat)(_ST_ alpha, TYPE(const_mvec_ptr) V,
   }
   else // *iflag==PHIST_NOT_IMPLEMENTED
   {
-    PHIST_SOUT(PHIST_WARNING,"WARNING: try to use slow fallback version of %s\n",__FUNCTION__);
+    static bool first_time=true;
+    if (first_time) {PHIST_SOUT(PHIST_WARNING,"WARNING: try to use slow fallback version of %s\n",__FUNCTION__); first_time=false;}
     phist_const_comm_ptr comm=NULL;
     phist_const_map_ptr map=NULL;
     phist_Dmvec_ptr wtmp=NULL;
@@ -801,7 +804,8 @@ extern "C" void SUBR(mvecT_times_mvec)(_ST_ alpha, TYPE(const_mvec_ptr) V,
   }
   else // *iflag==PHIST_NOT_IMPLEMENTED
   {
-    PHIST_SOUT(PHIST_WARNING,"WARNING: try to use slow fallback version of %s\n",__FUNCTION__);
+    static bool first_time=true;
+    if (first_time) {PHIST_SOUT(PHIST_WARNING,"WARNING: try to use slow fallback version of %s\n",__FUNCTION__); first_time=false;}
     phist_const_comm_ptr comm=NULL;
     phist_const_map_ptr map=NULL;
     phist_Dmvec_ptr vtmp=NULL, wtmp=NULL;
