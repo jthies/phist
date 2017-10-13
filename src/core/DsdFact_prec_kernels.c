@@ -65,13 +65,13 @@ void phist_Dprec_cholesky(double *__restrict__ a, double *__restrict__ aC, phist
   for(int i = 0; i < n; i++)
   {
     DOUBLE_FAST2SUM(a[i*lda+i],aC[i*lda+i],d[i],dC[i]);
-    diagNorm += d[i]*d[i];
+    diagNorm = fmax(d[i],diagNorm);
   }
-  diagNorm = sqrt(diagNorm);
-  if( diagNorm == 0 )
+  if( diagNorm <= rankTol )
   {
     printf("Warning zero diagonal in %s\n", __FUNCTION__);
-    diagNorm = 1.e-32;
+    // use absolute criterion for small diagonals (will give rank 0 below)
+    diagNorm = 1.0;
   }
 
   // keep order of upper left part locked, if requested
