@@ -199,6 +199,9 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,_N_,MATNAME>,
         }
         PHIST_CHK_IERR(SUBR(mvec_from_device)(V_,&iflag_),iflag_);
 
+  VTest::PrintVector(PHIST_DEBUG, "V after Arnoldi",
+          vec1_vp_, nloc_, lda_, stride_,mpi_comm_);
+
         // check orthogonality of V_
         ASSERT_NEAR(mt::one(),VTest::ColsAreNormalized(V_vp_,nloc_,ldaV_,stride_,mpi_comm_),(MT)200.*releps(V_));
         ASSERT_NEAR(mt::one(),VTest::ColsAreOrthogonal(V_vp_,nloc_,ldaV_,stride_,mpi_comm_),(MT)300.*releps(V_));
@@ -296,8 +299,8 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,_N_,MATNAME>,
   
   SUBR(mvec_from_device)(V_,&iflag_);
   ASSERT_EQ(0,iflag_);
-//  VTest::PrintVector(PHIST_DEBUG, "V after Arnoldi",
-//          vec1_vp_, nloc_, lda_, stride_,mpi_comm_);
+  VTest::PrintVector(PHIST_DEBUG, "V after Arnoldi",
+          vec1_vp_, nloc_, lda_, stride_,mpi_comm_);
 
         // check orthogonality of V_
         ASSERT_NEAR(mt::one(),VTest::ColsAreNormalized(V_vp_,nloc_,ldaV_,stride_,mpi_comm_),(MT)250.*releps(V_));

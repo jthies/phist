@@ -130,7 +130,7 @@ TEST_F(CLASSNAME,mvec_normalize)
   {
     if (typeImplemented_ && !problemTooSmall_)
     {
-//      PrintVector(*cout,"QR_Test V",vec2_vp_,nloc_,lda_,stride_,mpi_comm_);
+      PrintVector(PHIST_DEBUG,"QR_Test V",vec2_vp_,nloc_,lda_,stride_,mpi_comm_);
       MVEC_QR(vec2_,mat1_,&iflag_);
 #ifdef TEST_MVEC_QR
       if (iflag_==PHIST_NOT_IMPLEMENTED) return;
@@ -143,7 +143,7 @@ TEST_F(CLASSNAME,mvec_normalize)
       // doing a QR decomp must not relocate data:
       ASSERT_EQ(true,MTest::pointerUnchanged(mat1_,mat1_vp_,m_lda_));
       ASSERT_EQ(true,VTest::pointerUnchanged(vec2_,vec2_vp_,lda_));
-//      PrintVector(*cout,"QR_Test Q",vec2_vp_,nloc_,lda_,stride_,mpi_comm_);
+      PrintVector(PHIST_DEBUG,"QR_Test Q",vec2_vp_,nloc_,lda_,stride_,mpi_comm_);
       ASSERT_NEAR(mt::one(),ColsAreNormalized(vec2_vp_,nloc_,lda_,stride_,mpi_comm_),(MT)100.*releps(vec1_));
       ASSERT_NEAR(mt::one(),ColsAreOrthogonal(vec2_vp_,nloc_,lda_,stride_,mpi_comm_),(MT)100.*releps(vec1_));
 
@@ -197,14 +197,14 @@ TEST_F(CLASSNAME,mvec_normalize)
       ASSERT_EQ(0,iflag_);
       SUBR(sdMat_from_device)(mat1_,&iflag_);
       ASSERT_EQ(0,iflag_);
-      // check that we anyway got something orthogonal back
-      ASSERT_NEAR(mt::one(),ColsAreNormalized(vec2_vp_,nloc_,lda_,stride_,mpi_comm_),(MT)100.*releps(vec1_));
-      // the factor 2 in releps here is because otherwise fails the test by a fraction of releps
-      ASSERT_NEAR(mt::one(),ColsAreOrthogonal(vec2_vp_,nloc_,lda_,stride_,mpi_comm_),(MT)100.0*releps(vec1_));
 
         PrintVector(PHIST_DEBUG,"original V:\n",vec1_vp_,nloc_,lda_,stride_,mpi_comm_);
         PrintVector(PHIST_DEBUG,"computed Q:\n",vec1_vp_,nloc_,lda_,stride_,mpi_comm_);
         PrintSdMat(PHIST_DEBUG,"computed R:\n",mat1_vp_,m_lda_,stride_,mpi_comm_);
+
+      // check that we anyway got something orthogonal back
+      ASSERT_NEAR(mt::one(),ColsAreNormalized(vec2_vp_,nloc_,lda_,stride_,mpi_comm_),(MT)100.*releps(vec1_));
+      ASSERT_NEAR(mt::one(),ColsAreOrthogonal(vec2_vp_,nloc_,lda_,stride_,mpi_comm_),(MT)100.0*releps(vec1_));
 
       // check Q*R=V
       SUBR(mvec_times_sdMat)(-st::one(),vec2_,mat1_,st::one(),vec1_,&iflag_);
