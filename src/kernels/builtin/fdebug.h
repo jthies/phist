@@ -8,6 +8,6 @@
 /*******************************************************************************************/
 #include "phist_config.h"
 
-#if defined(PHIST_TESTING) && PHIST_OUTLEV >= 5
+#if defined(PHIST_TESTING) && PHIST_OUTLEV >= 6
 #define F_DEBUG 1
 #endif
