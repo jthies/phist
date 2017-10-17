@@ -348,6 +348,36 @@ public:
     }
   }
 
+  // check augmented kernel with result 0
+  TEST_F(CLASSNAME, fused_mvsd_mvTmv_result_zero)
+  {
+    if (typeImplemented_ && !problemTooSmall_)
+    {
+      // fill W, V, M, N with random data
+      SUBR(mvec_random)(W1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(mvec_random)(V1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(mvec_random)(W2_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(mvec_random)(V2_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(sdMat_put_value)(M1_,st::zero(),&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(sdMat_put_value)(N1_,st::zero(),&iflag_);
+      ASSERT_EQ(0,iflag_);
+
+      // actually call augmented kernel: W1=alpha*V1*M1+beta*W1 (=0), N1=W1'*W1(=0)
+      _ST_ alpha=st::prand(),beta=st::zero();
+      SUBR(fused_mvsd_mvTmv)(alpha,V1_,M1_,beta,W1_,N1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+
+      // Compare results
+      ASSERT_REAL_EQ(mt::one(), MvecEqual(W1_,st::zero()));
+      ASSERT_REAL_EQ(mt::one(), SdMatEqual(N1_,st::zero()));
+    }
+  }
+
 
   // check augmented kernel with random data
   TEST_F(CLASSNAME, fused_mvsd_mvTmv_nt) 
