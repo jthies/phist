@@ -418,7 +418,10 @@ static int global_prec_sum(ST* value, ST* err, int count, MPI_Comm mpi_comm)
 {
   std::cout << "global_prec_sum local value[0]: "<<value[0] << " + " << err[0]<<std::endl;
 # ifndef PHIST_HAVE_MPI
-      // not implemented
+      // return "not implemented" because the kernel lib may be using some other communication interface
+      // which we are not aware of. If there is no distributed memory communication going on, this function
+      // could just return 0 here, but we have no way of checking. Preferably, a kernel lib using e.g. GPI
+      // should be compatible with MPI to the extend that our tests can still use MPI.
       return -99;
 # endif
   int iflag=0;
