@@ -378,6 +378,33 @@ public:
     }
   }
 
+  // check augmented kernel with result 0 but including an actual vector update (beta!=0)
+  TEST_F(CLASSNAME, fused_mvsd_mvTmv_update_with_result_zero)
+  {
+    if (typeImplemented_ && !problemTooSmall_)
+    {
+      // fill W, V, M, N with random data
+      SUBR(mvec_random)(V1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(sdMat_identity)(M1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(mvec_times_sdMat)(st::one(),V1_,M1_,st::zero(),W1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      // input data should be ignored by this kernel
+      SUBR(sdMat_put_value)(N1_,st::one(),&iflag_);
+      ASSERT_EQ(0,iflag_);
+
+      // actually call augmented kernel: W1=alpha*V1(*I)-alpha*W1 (=0), N1=W1'*W1(=0)
+      _ST_ alpha=st::prand(),beta=-alpha;
+      SUBR(fused_mvsd_mvTmv)(alpha,V1_,M1_,beta,W1_,N1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+
+      // Compare results
+      ASSERT_REAL_EQ(mt::one(), MvecEqual(W1_,st::zero()));
+      ASSERT_REAL_EQ(mt::one(), SdMatEqual(N1_,st::zero()));
+    }
+  }
+
 
   // check augmented kernel with random data
   TEST_F(CLASSNAME, fused_mvsd_mvTmv_nt) 
@@ -468,7 +495,6 @@ public:
   }
 
 
-#if( ( _K_ == 1 || _K_ == 2 || _K_ == 4 ) && !USE_VIEWS )
   // check augmented kernel with random data
 #ifdef PHIST_HIGH_PRECISION_KERNELS
   TEST_F(CLASSNAME, fused_mvsdi_mvTmv_prec)
@@ -519,10 +545,9 @@ public:
       ASSERT_REAL_EQ(mt::one(), SdMatsEqual(M1_,M2_));
     }
   }
-#endif
 
+#if (_M_==_K_)
 
-#if( ( _K_ == 1 || _K_ == 2 || _K_ == 4 ) && _K_ == _M_ && !USE_VIEWS )
   // check augmented kernel with random data
 #ifdef PHIST_HIGH_PRECISION_KERNELS
   TEST_F(CLASSNAME, fused_mvsdi_mvTmv_prec_self)
@@ -568,10 +593,9 @@ public:
       ASSERT_REAL_EQ(mt::one(), ArraysEqual(M1_vp_,M2_vp_,m_,k_,ldaM1_,stride_,mflag_));
     }
   }
+
 #endif
 
-
-#if( ( _K_ == 1 || _K_ == 2 || _K_ == 4 ) && !USE_VIEWS )
   // check augmented kernel with random data
 #ifdef PHIST_HIGH_PRECISION_KERNELS
   TEST_F(CLASSNAME, fused_mvsd_mvTmv_prec)
@@ -622,10 +646,8 @@ public:
       ASSERT_NEAR(mt::one(), SdMatsEqual(N1_,N2_), 100*mt::eps());
     }
   }
-#endif
 
 
-#if( ( _K_ == 1 || _K_ == 2 || _K_ == 4 ) && !USE_VIEWS )
   // check augmented kernel with random data
 #ifdef PHIST_HIGH_PRECISION_KERNELS
   TEST_F(CLASSNAME, mvec_times_sdMat_add_mvec_times_sdMat_prec)
@@ -675,9 +697,7 @@ public:
       ASSERT_REAL_EQ(mt::one(), SdMatsEqual(N1_,N2_));
     }
   }
-#endif
 
-#if( ( _K_ == 1 || _K_ == 2 || _K_ == 4 ) && !USE_VIEWS )
   // check augmented kernel with random data
 #ifdef PHIST_HIGH_PRECISION_KERNELS
   TEST_F(CLASSNAME, mvec_times_sdMat_add_mvec_times_sdMat_prec_N0)
@@ -727,10 +747,8 @@ public:
       ASSERT_REAL_EQ(mt::one(), SdMatsEqual(N1_,N2_));
     }
   }
-#endif
 
 
-#if( ( _K_ == 1 || _K_ == 2 || _K_ == 4 ) && !USE_VIEWS )
   // check augmented kernel with random data
 #ifdef PHIST_HIGH_PRECISION_KERNELS
   TEST_F(CLASSNAME, mvec_times_sdMat_add_mvec_times_sdMat_prec_M0)
@@ -780,7 +798,6 @@ public:
       ASSERT_REAL_EQ(mt::one(), SdMatsEqual(N1_,N2_));
     }
   }
-#endif
 
 
 
