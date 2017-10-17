@@ -13,6 +13,7 @@
 #include "phist_orthogrr.h"
 #include "phist_normF.h"
 #include "phist_sdFact.h"
+#include "phist_MemOwner.hpp"
 
 #ifdef PHIST_HAVE_SP
 #include "phist_gen_s.h"

@@ -111,6 +111,9 @@ void SUBR(orthogrrB)(TYPE(const_mvec_ptr) W, TYPE(mvec_ptr) V, TYPE(mvec_ptr) BV
       PHIST_CHK_IERR(SUBR(sdMat_cholesky)(WtW_inv,permWtW,&rankWtW,rankTol,iflag),*iflag);
     }
 
+    // memory management
+    SdMatOwner<_ST_> _R(R),_R1_tmp(R1_tmp),_R_1(R_1),_WtV(WtV),_VtV_I(VtV_I),_WtW_inv(WtW_inv),_EWtV(EWtV);
+
     int rank = m;
     MT VtV_err = mt::zero();
     MT WtV_err = mt::zero();
@@ -233,7 +236,7 @@ void SUBR(orthogrrB)(TYPE(const_mvec_ptr) W, TYPE(mvec_ptr) V, TYPE(mvec_ptr) BV
       PHIST_CHK_IERR(SUBR(sdMat_add_sdMat)(st::one(),VtV,-st::one(),VtV_I,iflag),*iflag);
       PHIST_CHK_IERR(SUBR(sdMat_normF)(VtV_I,&VtV_err,iflag),*iflag);
 
-      // possibly perform another full sweep with W, if R_1 is too badly conditioned
+      // possibly perform another full sweep with W, if R_1 is too badly conditioned.
       PHIST_SOUT(PHIST_EXTREME, "orthogRR: iter %d phase 2, desired eps %8.4e, (est.) WtV err. %8.4e, VtV err. %8.4e\n", iter, desiredEps, WtV_err, VtV_err);
       if( WtV_err <= desiredEps )
       {
@@ -306,15 +309,6 @@ void SUBR(orthogrrB)(TYPE(const_mvec_ptr) W, TYPE(mvec_ptr) V, TYPE(mvec_ptr) BV
       PHIST_CHK_IERR(SUBR(sdMat_normF)(VtV_I,&VtV_err,iflag),*iflag);
       PHIST_SOUT(PHIST_EXTREME, "orthogRR: iter %d phase 3, desired eps %8.4e, VtV err. %8.4e\n", iter-1, desiredEps, VtV_err);
     }
-
-
-    PHIST_CHK_IERR(SUBR(sdMat_delete)(R,iflag),*iflag);
-    PHIST_CHK_IERR(SUBR(sdMat_delete)(R1_tmp,iflag),*iflag);
-    PHIST_CHK_IERR(SUBR(sdMat_delete)(R_1,iflag),*iflag);
-    if( WtV )     {PHIST_CHK_IERR(SUBR(sdMat_delete)(WtV,    iflag),*iflag);}
-    if( EWtV )    {PHIST_CHK_IERR(SUBR(sdMat_delete)(EWtV,   iflag),*iflag);}
-    if( WtW_inv ) {PHIST_CHK_IERR(SUBR(sdMat_delete)(WtW_inv,iflag),*iflag);}
-    PHIST_CHK_IERR(SUBR(sdMat_delete)(VtV_I,iflag),*iflag);
 
     // upload resulting sdMats
     PHIST_CHK_IERR(SUBR(sdMat_to_device)(R1,iflag),*iflag);
