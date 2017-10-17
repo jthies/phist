@@ -28,6 +28,7 @@ extern "C" void SUBR(orthog)(TYPE(const_mvec_ptr) V,
   _MT_ rankTol=randomize?mt::rankTol(robust):mt::zero();
   
   _MT_ orthoEps = mt::eps();
+  if (robust) orthoEps*=std::sqrt(mt::eps());
   
   PHIST_CHK_IERR(SUBR(mvec_num_vectors)(W,&k,iflag),*iflag);
   if (V!=NULL) PHIST_CHK_IERR(SUBR(mvec_num_vectors)(V,&m,iflag),*iflag);
