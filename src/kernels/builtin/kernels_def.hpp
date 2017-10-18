@@ -721,6 +721,14 @@ extern "C" void SUBR(fused_mvsd_mvTmv)(_ST_ alpha,  TYPE(const_mvec_ptr)  V,
   SUBR(mvec_times_sdMat_augmented_f)(alpha,V,C,beta,W,D,iflag);
   if( *iflag == PHIST_NOT_IMPLEMENTED )
   {
+    // call separatee kernels, not that this introduces intermediate roundoff that is avoided by the fused kernel
+    static bool first_time=true;
+    if (first_time) 
+    {
+      PHIST_SOUT(PHIST_WARNING,"WARNING: using less accurate fallback implementtion of fused "
+                                             "high precision kernel (file %s, line %d)\n",__FILE__,__LINE__);
+      first_time=false;
+    }                                             
     int iflag1 = iflag_;
     SUBR(mvec_times_sdMat)(alpha,V,C,beta,W,&iflag1);
     int iflag2 = iflag_;
@@ -844,7 +852,6 @@ extern "C" void SUBR(mvecT_times_mvec)(_ST_ alpha, TYPE(const_mvec_ptr) V,
         }
         PHIST_CHK_IERR(SUBR(mvec_get_block)(V,vtmp,i,i+istep-1,iflag),*iflag);
         PHIST_CHK_IERR(SUBR(mvec_get_block)(W,wtmp,j,j+jstep-1,iflag),*iflag);
-        PHIST_SOUT(PHIST_DEBUG,"compute C(%d:%d,%d:%d)\n",i,i+istep-1,j,j+jstep-1);
         PHIST_CHK_IERR(SUBR(sdMat_get_block)(C,ctmp,i,i+istep-1,j,j+jstep-1,iflag),*iflag);
         *iflag=iflag0;
         PHIST_CHK_IERR(SUBR(mvecT_times_mvec_f)(alpha,vtmp,wtmp,beta,ctmp,iflag),*iflag);
@@ -879,6 +886,14 @@ extern "C" void SUBR(fused_mvsdi_mvTmv)(_ST_ alpha, TYPE(const_mvec_ptr)  V,
   SUBR(mvecT_times_mvec_times_sdMat_inplace_f)(alpha,V,W,C,beta,D,iflag);
   if( *iflag == PHIST_NOT_IMPLEMENTED )
   {
+    // call separatee kernels, not that this introduces intermediate roundoff that is avoided by the fused kernel
+    static bool first_time=false;
+    if (first_time) 
+    {
+      PHIST_SOUT(PHIST_WARNING,"WARNING: using less accurate fallback implementtion of fused "
+                                             "high precision kernel (file %s, line %d)\n",__FILE__,__LINE__);
+      first_time=false;
+    }                                             
     int iflag1 = iflag_;
     SUBR(mvec_times_sdMat_inplace)(W,C,&iflag1);
     int iflag2 = iflag_;
