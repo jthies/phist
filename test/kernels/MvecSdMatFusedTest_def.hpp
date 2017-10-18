@@ -364,7 +364,8 @@ public:
       ASSERT_EQ(0,iflag_);
       SUBR(sdMat_put_value)(M1_,st::zero(),&iflag_);
       ASSERT_EQ(0,iflag_);
-      SUBR(sdMat_put_value)(N1_,st::zero(),&iflag_);
+      // input data should be ignored by this kernel
+      SUBR(sdMat_put_value)(N1_,(_ST_)42.0,&iflag_);
       ASSERT_EQ(0,iflag_);
 
       // actually call augmented kernel: W1=alpha*V1*M1+beta*W1 (=0), N1=W1'*W1(=0)
@@ -391,7 +392,7 @@ public:
       SUBR(mvec_times_sdMat)(st::one(),V1_,M1_,st::zero(),W1_,&iflag_);
       ASSERT_EQ(0,iflag_);
       // input data should be ignored by this kernel
-      SUBR(sdMat_put_value)(N1_,st::one(),&iflag_);
+      SUBR(sdMat_put_value)(N1_,(_ST_)42,&iflag_);
       ASSERT_EQ(0,iflag_);
 
       // actually call augmented kernel: W1=alpha*V1(*I)-alpha*W1 (=0), N1=W1'*W1(=0)
