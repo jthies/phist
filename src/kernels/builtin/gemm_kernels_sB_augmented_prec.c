@@ -365,13 +365,14 @@ void dgemm_sb_augmented_prec_strided_k_1(int nrows, int k, double alpha, const d
   // buffer rows of r and multiply by alpha
   __m256d r_[k], rC_[k];
   __m256d alpha_ = _mm256_set1_pd(alpha);
-  for(int i = 0; i < k; i++)
+  for(int j = 0; j < k; j++)
   {
-    __m256d tmp = _mm256_set1_pd(r[i]);
-    __m256d tmpC = _mm256_set1_pd(rC[i]);
-    __m256d pi;
-    MM256_2MULTFMA(alpha_,tmp,r_[i],pi);
-    rC_[i] = _mm256_fmadd_pd(alpha_,tmpC,pi);
+    __m256d tmp = _mm256_set1_pd(r[j]);
+    __m256d tmpC = _mm256_set1_pd(rC[j]);
+    __m256d pj;
+    // r_[j]+rC_[j] = alpha*(r[j]+rC[j])
+    MM256_2MULTFMA(alpha_,tmp,r_[j],pj);
+    rC_[j] = _mm256_fmadd_pd(alpha_,tmpC,pj);
   }
   __m256d beta_ = _mm256_set1_pd(beta);
 
@@ -392,14 +393,18 @@ void dgemm_sb_augmented_prec_strided_k_1(int nrows, int k, double alpha, const d
       {
         __m256d yi = _mm256_load_pd(&y[i]);
         __m256d s, t;
+        //s+t=beta*y
         MM256_2MULTFMA(beta_,yi,s,t);
+        // this loop computes s+t = beta*y[i] + alpha*x(i,:)*r(:) (x is N x k, r is k x 1, y is N x 1)
         for(int j = 0; j < k; j++)
         {
           __m256d xi = _mm256_set_pd(x[ldx*i+3*k+j],x[ldx*i+2*k+j],x[ldx*i+k+j],x[ldx*i+j]);
           __m256d xij, xijC;
+          // xij+xijC = x[i:i+3]*r[j]*alpha
           MM256_2MULTFMA(xi,r_[j],xij,xijC);
           __m256d xijC_ = _mm256_fmadd_pd(xi,rC_[j],xijC);
           __m256d oldS = s, t_;
+          //s+t += alpha*(x[i,j]+xC[i,j])
           MM256_2SUM(oldS,xij,s,t_);
           __m256d tmp = _mm256_add_pd(xijC_,t_);
           t = _mm256_add_pd(t,tmp);
@@ -531,7 +536,7 @@ void dgemm_sb_augmented_prec_strided_k_4_nt(int nrows, int k, double alpha, cons
 
         for(int j = 1; j < k; j++)
         {
-          __m256d xi = _mm256_broadcast_sd(&x[k*i+j]);
+          __m256d xi = _mm256_broadcast_sd(&x[ldx*i+j]);
           __m256d xij, xijC;
           MM256_2MULTFMA(xi,r_[j],xij,xijC);
           __m256d xijC_ = _mm256_fmadd_pd(xi,rC_[j],xijC);
@@ -691,8 +696,8 @@ void dgemm_sb_augmented_prec_strided_k_2_nt(int nrows, int k, double alpha, cons
       {
         __m256d s, t;
         // j = 0
-        __m128d xil = _mm_load1_pd(&x[k*i+0]);
-        __m128d xih = _mm_load1_pd(&x[k*(i+1)+0]);
+        __m128d xil = _mm_load1_pd(&x[ldx*i+0]);
+        __m128d xih = _mm_load1_pd(&x[ldx*(i+1)+0]);
         __m256d xi  = _mm256_set_m128d(xih,xil);
         __m256d pi;
         MM256_2MULTFMA(xi,r_[0],s,pi);
@@ -842,7 +847,7 @@ void dgemm_sb_augmented_prec_strided_k_1_nt(int nrows, int k, double alpha, cons
       {
         __m256d s, t;
         // j = 0
-        __m256d xi = _mm256_set_pd(x[k*i+3*k+0],x[k*i+2*k+0],x[k*i+k+0],x[k*i+0]);
+        __m256d xi = _mm256_set_pd(x[ldx*i+3*k+0],x[ldx*i+2*k+0],x[ldx*i+k+0],x[ldx*i+0]);
         __m256d pi;
         MM256_2MULTFMA(xi,r_[0],s,pi);
         t = _mm256_fmadd_pd(xi,rC_[0],pi);
