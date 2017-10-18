@@ -845,8 +845,8 @@ extern "C" void SUBR(sdMat_identity)(TYPE(sdMat_ptr) V, int* iflag)
   PHIST_CHK_IERR(SUBR(sdMat_extract_view)(V, &V_raw, &lda, iflag), *iflag);
   PHIST_CHK_IERR(SUBR(sdMat_get_nrows)(V, &m, iflag), *iflag);
   PHIST_CHK_IERR(SUBR(sdMat_get_ncols)(V, &n, iflag), *iflag);
-  for(int i = 0; i < m; i++)
-    for(int j = 0; j < n; j++)
+  for(int i = 0; i < n; i++)
+    for(int j = 0; j < m; j++)
       V_raw[lda*i+j] = (i==j) ? st::one() : st::zero();
 }
 

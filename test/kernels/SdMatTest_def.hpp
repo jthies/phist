@@ -129,7 +129,6 @@ public:
     }
   }
 
-#if _NROWS_==_NCOLS_
   TEST_F(CLASSNAME, identity_done_on_host_and_device)
   {
     if (typeImplemented_)
@@ -141,7 +140,7 @@ public:
       ASSERT_EQ(0,iflag_);
       SUBR(sdMat_from_device)(mat2_,&iflag_);
       ASSERT_EQ(0,iflag_);
-      for (int i=0; i<nrows_; i++)
+      for (int i=0; i<std::min(nrows_,ncols_); i++)
       {
         mat1_vp_[i*m_lda_+i] -= st::one();
         mat2_vp_[i*m_lda_+i] -= st::one();
@@ -150,7 +149,6 @@ public:
       ASSERT_REAL_EQ(mt::one(),ArrayEqual(mat2_vp_,nrows_,ncols_,m_lda_,stride,st::zero(),mflag_));
     }
   }
-#endif /* square? */
 
   TEST_F(CLASSNAME, sync_values)
   {
@@ -770,7 +768,7 @@ public:
   // check if we can construct an identity matrix
   TEST_F(CLASSNAME, identity)
   {
-    if( typeImplemented_ && nrows_ == ncols_ )
+    if( typeImplemented_ )
     {
       SUBR(sdMat_identity)(mat1_,&iflag_);
       ASSERT_EQ(0,iflag_);
