@@ -398,9 +398,10 @@ void dgemm_sb_augmented_prec_strided_k_1(int nrows, int k, double alpha, const d
         // this loop computes s+t = beta*y[i] + alpha*x(i,:)*r(:) (x is N x k, r is k x 1, y is N x 1)
         for(int j = 0; j < k; j++)
         {
-          __m256d xi = _mm256_set_pd(x[ldx*i+3*k+j],x[ldx*i+2*k+j],x[ldx*i+k+j],x[ldx*i+j]);
+          // xi <- x(i+3:-1:i,j). JT: I don't understand why the values are set in reverse order?
+          __m256d xi = _mm256_set_pd(x[ldx*(i+3)+j],x[ldx*(i+2)+j],x[ldx*(i+1)+j],x[ldx*i+j]);
           __m256d xij, xijC;
-          // xij+xijC = x[i:i+3]*r[j]*alpha
+          // xij+xijC = xi*r[j]*alpha
           MM256_2MULTFMA(xi,r_[j],xij,xijC);
           __m256d xijC_ = _mm256_fmadd_pd(xi,rC_[j],xijC);
           __m256d oldS = s, t_;
