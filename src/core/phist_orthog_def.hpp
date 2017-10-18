@@ -18,7 +18,11 @@ extern "C" void SUBR(orthog)(TYPE(const_mvec_ptr) V,
 {
   PHIST_ENTER_FCN(__FUNCTION__);
 #include "phist_std_typedefs.hpp"
+#ifdef PHIST_HIGH_PRECISION_KERNELS_FORCE
+  int robust=1;
+#else
   int robust    =(*iflag&PHIST_ROBUST_REDUCTIONS);
+#endif
   int randomize =(*iflag&PHIST_ORTHOG_RANDOMIZE_NULLSPACE);
   int m=0,k;
   // our current behavior is that if the user asks us to randomize the nullspace
