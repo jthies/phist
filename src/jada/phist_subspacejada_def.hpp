@@ -571,7 +571,7 @@ PHIST_CHK_IERR(SUBR( sdMat_view_block ) (R_,  &R, 0, nEig_-1, 0, nEig_-1, iflag)
 {
   // check that the residual is orthogonal to Q (should be by construction!)
   PHIST_CHK_IERR( SUBR( sdMat_view_block ) (Htmp_, &Htmp, 0, nEig_-1, nConvEig, nEig_-1, iflag), *iflag);
-  PHIST_CHK_IERR( SUBR( mvecT_times_mvec ) (st::one(), Q, t_res, st::zero(), Htmp, iflag), *iflag);
+  PHIST_CHK_IERR( SUBR( mvecT_times_mvec ) (st::one(), BQ, t_res, st::zero(), Htmp, iflag), *iflag);
   PHIST_CHK_IERR(SUBR(sdMat_from_device)(Htmp_,iflag),*iflag);
   _MT_ equalEps = st::abs(Htmp_raw[0]);
   for(int i = 0; i < nEig_; i++)
