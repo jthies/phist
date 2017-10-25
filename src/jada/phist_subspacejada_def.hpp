@@ -333,24 +333,50 @@ PHIST_CHK_IERR(*iflag=(nQ_in==nR_in && nR_in==mR_in)?0:PHIST_INVALID_INPUT,*ifla
     PHIST_CHK_IERR(SUBR( mvec_view_block  ) (AV_,     &AV,                      0,     nV,        iflag), *iflag);
     PHIST_CHK_IERR(SUBR( mvec_view_block  ) (BV_,     &BV,                      0,     nV,        iflag), *iflag);
     PHIST_CHK_IERR(SUBR( sdMat_view_block ) (H_,      &H,     0,      minBase,  0,     nV-1,      iflag), *iflag);
+
+    // build an initial space of opts.minBas vectors by an Arnoldi proces. The operator we pass
+    // to the Arnoldi process depends on wether a preconditioner is available. If not, we just use
+    // arno_op=A_op. Otherwise, we use arno_op=B*inv(P) to hopefully get a subspace rich in the   
+    // directions of the eigenmodes near the target tau, because inv(P) should approximate A-tau*B
+    // in some sense.
+    // Inside the Arnoldi process, use the B-inner product to get V'*B*V=I on output.
+
+      // note: we're discarding the const qualifier here, knowing that the simple_arnoldi
+      // only calls op->apply.
+    TYPE(linearOp_ptr) arno_op=(TYPE(linearOp_ptr))AB_op;
+    if (opts.preconOp!=NULL)
+    {
+      TYPE(linearOp_ptr) P_op=(TYPE(linearOp_ptr))opts.preconOp;
+      arno_op=P_op;
+      if (B_op!=NULL)
+      {
+        // construct the operator B*P^{-1}. Note that a preconditioner's "apply" function actually means "apply inverse".
+        arno_op=new TYPE(linearOp);
+        PHIST_CHK_IERR(SUBR(linearOp_wrap_linearOp_product)(arno_op,B_op,P_op,iflag),*iflag);
+      }
+    }
+
     // calculates A*V(:,1:m) = V(:,1:m+1)*H(1:m+1,1:m)
     // also outputs A*V (DON'T recalculate it from V*H, because this may not be accurate enough!)
     // block Arnoldi seems numerically less useful than single-vector, so we accept these first few
     // steps to be less computationally efficient.
-    //PHIST_CHK_IERR(SUBR( simple_arnoldi ) (AB_op, B_op, v0, V, AV, B_op ? BV : NULL, H, nV, iflag), *iflag);
-    if (opts.preconOp!=NULL)
+    PHIST_CHK_IERR(SUBR( simple_arnoldi ) (arno_op, B_op, v0, V, AV, B_op ? BV : NULL, H, nV, iflag), *iflag);
+
+    if (arno_op!=AB_op)
     {
-      PHIST_CHK_IERR(SUBR( simple_arnoldi ) ((TYPE(const_linearOp_ptr))opts.preconOp, B_op, v0, V, AV, B_op ? BV : NULL, H, nV, iflag), *iflag);
+      // AV will not contain A*V at this point, so explicitly compute it and form the projected matrix H=V'AV.
       PHIST_CHK_IERR(SUBR(linearOp_apply)(st::one(),AB_op,V,st::zero(),AV,iflag),*iflag);
       PHIST_CHK_IERR(SUBR(sdMat_view_block)(H_, &H, 0, nV, 0, nV, iflag), *iflag);
       PHIST_CHK_IERR(SUBR(mvecT_times_mvec)(st::one(),V,AV,st::zero(),H,iflag),*iflag);
-    }
-    else
-    {
-      PHIST_CHK_IERR(SUBR( simple_arnoldi ) (AB_op, B_op, v0, V, AV, B_op ? BV : NULL, H, nV, iflag), *iflag);
+      if (arno_op!=opts.preconOp)
+      {
+        // delete product wrapper
+        PHIST_CHK_IERR(SUBR(linearOp_destroy)(arno_op,iflag),*iflag);
+        delete arno_op;
+      }
     }
   }
-
+  
   // set views
   int nConvEig = 0;
 #ifdef UPDATE_SUBSPACE_VIEWS
