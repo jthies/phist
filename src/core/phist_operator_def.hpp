@@ -18,6 +18,14 @@ typedef struct TYPE(private_sparseMat_pair)
   TYPE(const_sparseMat_ptr) B;
 } TYPE(private_sparseMat_pair);
 
+// same with linearOps instead of sparseMats
+typedef struct TYPE(private_linearOp_pair)
+{
+  TYPE(const_linearOp_ptr) A;
+  TYPE(const_linearOp_ptr) B;
+  mutable TYPE(mvec_ptr) Xtmp;
+} TYPE(private_linearOp_pair);
+
 //! just to have some function to point to
 void SUBR(private_linearOp_destroy_nothing)(TYPE(linearOp_ptr) op, int* iflag)
 {
@@ -29,6 +37,15 @@ void SUBR(private_linearOp_destroy_sparseMat_pair_wrapper)(TYPE(linearOp_ptr) op
 {
   TYPE(private_sparseMat_pair)* pair = (TYPE(private_sparseMat_pair)*)(op->A);
   delete pair; // delete the struct, not the matrices
+  *iflag=0;
+}
+
+//! just to have some function to point to
+void SUBR(private_linearOp_destroy_linearOp_pair_wrapper)(TYPE(linearOp_ptr) op, int* iflag)
+{
+  TYPE(private_linearOp_pair)* pair = (TYPE(private_linearOp_pair)*)(op->A);
+  if (pair->Xtmp!=NULL) PHIST_CHK_IERR(SUBR(mvec_delete)(pair->Xtmp,iflag),*iflag);
+  delete pair; // delete the struct, not the wrapped operators
   *iflag=0;
 }
 
@@ -82,6 +99,35 @@ void SUBR(private_linearOp_apply_sparseMat_pair_shifted)
   }
   PHIST_CHK_IERR(SUBR(fused_spmv_pair)(alpha,shift1,A,shift2,B,X,beta,Y,iflag),*iflag);
 }
+
+// helper function to compute Y=beta*Y + alpha*A*B*X (apply function ofor linearOp_product)
+void SUBR(private_linearOp_apply_linearOp_product)
+(_ST_ alpha, const void* AB, TYPE(const_mvec_ptr) X, _ST_ beta, TYPE(mvec_ptr) Y, int* iflag)
+{
+#include "phist_std_typedefs.hpp"
+  // get separate pointers to A and B
+  TYPE(private_linearOp_pair) *_AB = (TYPE(private_linearOp_pair)*)AB;
+  TYPE(const_linearOp_ptr) A = _AB->A;
+  TYPE(const_linearOp_ptr) B = _AB->B;
+  
+  // check if Xtmp needs reallocation
+  int nvX, nvXtmp=-1;
+  PHIST_CHK_IERR(SUBR(mvec_num_vectors)(X,&nvX,iflag),*iflag);
+  if (_AB->Xtmp!=NULL)
+  {
+    PHIST_CHK_IERR(SUBR(mvec_num_vectors)(_AB->Xtmp,&nvXtmp,iflag),*iflag);
+  }
+  
+  if (nvX!=nvXtmp)
+  {
+    PHIST_CHK_IERR(SUBR(mvec_clone_shape)(&(_AB->Xtmp),X,iflag),*iflag);
+  }
+  
+  TYPE(mvec_ptr) BX = _AB->Xtmp;
+  PHIST_CHK_IERR(SUBR(linearOp_apply)(st::one(),B,X,st::zero(),BX,iflag),*iflag);
+  PHIST_CHK_IERR(SUBR(linearOp_apply)(alpha,A,BX,beta,Y,iflag),*iflag);  
+}
+
 //
 void SUBR(linearOp_wrap_sparseMat_pair)(TYPE(linearOp_ptr) op, 
         TYPE(const_sparseMat_ptr) A, TYPE(const_sparseMat_ptr) B, int *iflag)
@@ -98,6 +144,23 @@ void SUBR(linearOp_wrap_sparseMat_pair)(TYPE(linearOp_ptr) op,
   op->update=NULL;
   op->destroy=&SUBR(private_linearOp_destroy_sparseMat_pair_wrapper);
 }
+
+void SUBR(linearOp_wrap_linearOp_product)(TYPE(linearOp_ptr) op,
+TYPE(const_linearOp_ptr) A, TYPE(const_linearOp_ptr) B, int* iflag)
+{
+  // setup maps etc.
+  TYPE(private_linearOp_pair) *pair=new TYPE(private_linearOp_pair);
+  pair->A=A;
+  pair->B=B;
+  pair->Xtmp=NULL;
+  op->A=(void*)(pair);
+  op->aux=NULL;
+  op->apply=&SUBR(private_linearOp_apply_linearOp_product);
+  op->apply_shifted=NULL;
+  op->update=NULL;
+  op->destroy=&SUBR(private_linearOp_destroy_linearOp_pair_wrapper);
+}
+
 
 //
 void SUBR(private_idOp_apply)(_ST_ alpha, const void* A, TYPE(const_mvec_ptr) X,

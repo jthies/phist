@@ -13,14 +13,14 @@
 
 /*! Test fixure. */
 class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,_N_,MATNAME>,
-                 public virtual KernelTestWithVectors<_ST_,_N_,_NV_,0,3>, 
+                 public virtual KernelTestWithVectors<_ST_,_N_,_NV_,0,4>, 
                  public virtual KernelTestWithSdMats<_ST_,_NV_,_NV_,0,4>
   {
 
 public:
 
   typedef KernelTestWithSparseMat<_ST_,_N_,_N_,MATNAME> SparseMatTest;
-  typedef KernelTestWithVectors<_ST_,_N_,_NV_,0,3> VTest;
+  typedef KernelTestWithVectors<_ST_,_N_,_NV_,0,4> VTest;
   typedef KernelTestWithSdMats<_ST_,_NV_,_NV_,0,4> MTest;
 
   static void SetUpTestCase()
@@ -335,5 +335,34 @@ public:
         
     // clean up the operator
     I_op.destroy(&I_op,&iflag_);
+    ASSERT_EQ(0,iflag_);
+  }
+
+  // test wrapping AA_op=A_op*A_op (TODO: a test with two operators A!=B)
+  TEST_F(CLASSNAME,linearOp_wrap_linearOp_product_apply)
+  {
+    if (!typeImplemented_ || problemTooSmall_)
+      return;
+
+    TYPE(linearOp) AA_op;
+    SUBR(linearOp_wrap_linearOp_product)(&AA_op,&A_op,&A_op,&iflag_);
+    ASSERT_EQ(0,iflag_);
+
+    // we have v1, v2 random and v3=v2 from SetUp()
+
+    _ST_ alpha=st::prand();
+    _ST_ beta=st::prand();
+    AA_op.apply(alpha,AA_op.A,vec1_,beta,vec2_,&iflag_);
+    ASSERT_EQ(0,iflag_);
+    // step-by-step to create a reference solution
+    A_op.apply(alpha,A_op.A,vec1_,st::zero(),vec4_,&iflag_);
+    ASSERT_EQ(0,iflag_);
+    A_op.apply(st::one(),A_op.A,vec4_,beta,vec3_,&iflag_);
+    ASSERT_EQ(0,iflag_);
+
+    ASSERT_NEAR(mt::one(),MvecsEqual(vec2_,vec3_),100*VTest::releps());
+        
+    // clean up the operator
+    SUBR(linearOp_destroy)(&AA_op,&iflag_);
     ASSERT_EQ(0,iflag_);
   }

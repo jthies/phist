@@ -66,6 +66,19 @@ void SUBR(linearOp_wrap_sparseMat_pair)(TYPE(linearOp_ptr) op,
                                         TYPE(const_sparseMat_ptr) A, TYPE(const_sparseMat_ptr) B, 
                                         int* iflag);
 
+//! create a 'product operator' from opA and opB which acts as Y <- alpha*A*B*X + beta*Y (apply).
+//! The other functions will at the moment return an error (-99, not implemented) because they are
+//! typically not needed and their behavior has not been defined yet for product operators.
+//! An exception is 'destroy', which will delete temporary storage used by the operator but not the
+//! operators A and B, which are only wrapped and not owned.
+//!
+//! CAVEAT: as the resulting wrapped operator cannot access details of the implementation of A and B,
+//!         we cannot use a fused kernel here. For optimal performance e.g. if A and B are sparse row
+//!         matrices, a fused kernel should be used.
+//!
+void SUBR(linearOp_wrap_linearOp_product)(TYPE(linearOp_ptr) op,
+        TYPE(const_linearOp_ptr) A, TYPE(const_linearOp_ptr) B, int* iflag);
+
 #if defined(__cplusplus)&&defined(PHIST_KERNEL_LIB_EPETRA)&&defined(IS_DOUBLE)&&!defined(IS_COMPLEX)
 // forward declaration
 class Epetra_Operator;
