@@ -120,7 +120,12 @@ void SUBR(private_linearOp_apply_linearOp_product)
   
   if (nvX!=nvXtmp)
   {
-    PHIST_CHK_IERR(SUBR(mvec_clone_shape)(&(_AB->Xtmp),X,iflag),*iflag);
+    if (_AB->Xtmp!=NULL)
+    {
+      PHIST_CHK_IERR(SUBR(mvec_delete)(_AB->Xtmp,iflag),*iflag);
+      _AB->Xtmp=NULL;
+    }
+    PHIST_CHK_IERR(SUBR(mvec_create)(&(_AB->Xtmp),B->range_map,nvX,iflag),*iflag);
   }
   
   TYPE(mvec_ptr) BX = _AB->Xtmp;
@@ -155,6 +160,10 @@ TYPE(const_linearOp_ptr) A, TYPE(const_linearOp_ptr) B, int* iflag)
   pair->Xtmp=NULL;
   op->A=(void*)(pair);
   op->aux=NULL;
+  
+  op->range_map=A->range_map;
+  op->domain_map=B->domain_map;
+  
   op->apply=&SUBR(private_linearOp_apply_linearOp_product);
   op->apply_shifted=NULL;
   op->update=NULL;
