@@ -193,7 +193,7 @@ PHIST_ENTER_FCN("phist_jadaOp_mvec_times_sdMat");
     *iflag);
 }
 
-    // apply shifted A and post-project
+    // apply shifted A and preconditioner
     PHIST_CHK_IERR(SUBR(jadaOp_apply_project_none)(alpha, op, X_proj,beta, Y, iflag), *iflag);
     if (X_proj && X_proj != jadaOp->X_proj)
     {
@@ -282,62 +282,64 @@ void SUBR(jadaOp_apply_project_pre_post)(_ST_ alpha, const void* op, TYPE(const_
   if( alpha == st::zero() )
   {
     PHIST_CHK_IERR( SUBR( mvec_scale       ) (Y, beta, iflag), *iflag);
+    return;
   }
-  else
+
+  // pre-project X_proj <- (I-VV'B)X
+  TYPE(mvec_ptr) X_proj = jadaOp->X_proj;
+  int nvec, nvecp, nvec_tmp=0;
+  PHIST_CHK_IERR( SUBR( mvec_num_vectors ) (X,             &nvec,     iflag), *iflag);
+  if (jadaOp->X_proj)
   {
+    PHIST_CHK_IERR( SUBR( mvec_num_vectors ) (jadaOp->X_proj, &nvec_tmp, iflag), *iflag);
+  }
+  PHIST_CHK_IERR( SUBR( mvec_num_vectors ) (jadaOp->V,     &nvecp,    iflag), *iflag);
 
-    // pre-project X_proj <- (I-VV'B)X
-    TYPE(mvec_ptr) X_proj = jadaOp->X_proj;
-    int nvec, nvecp, nvec_tmp=0;
-    PHIST_CHK_IERR( SUBR( mvec_num_vectors ) (X,             &nvec,     iflag), *iflag);
-    if (jadaOp->X_proj)
-    {
-      PHIST_CHK_IERR( SUBR( mvec_num_vectors ) (jadaOp->X_proj, &nvec_tmp, iflag), *iflag);
-    }
-    PHIST_CHK_IERR( SUBR( mvec_num_vectors ) (jadaOp->V,     &nvecp,    iflag), *iflag);
+    phist_const_map_ptr map=NULL;
+    PHIST_CHK_IERR(SUBR(mvec_get_map)(X,&map,iflag),*iflag);
+  phist_const_comm_ptr comm=NULL;
+  PHIST_CHK_IERR(phist_map_get_comm(map, &comm, iflag), *iflag);
+  
+  if (nvec!=nvec_tmp || X_proj==NULL)
+  {
+    // can not use the temporary vector in the jadaOp
+    PHIST_CHK_IERR(SUBR(mvec_create)(&X_proj,map,nvec,iflag),*iflag);
+  }
 
-      phist_const_map_ptr map=NULL;
-      PHIST_CHK_IERR(SUBR(mvec_get_map)(X,&map,iflag),*iflag);
-    phist_const_comm_ptr comm=NULL;
-    PHIST_CHK_IERR(phist_map_get_comm(map, &comm, iflag), *iflag);
-    
-    if (nvec!=nvec_tmp || X_proj==NULL)
-    {
-      // can not use the temporary vector in the jadaOp
-      PHIST_CHK_IERR(SUBR(mvec_create)(&X_proj,map,nvec,iflag),*iflag);
-    }
-    
-    TYPE(sdMat_ptr) tmp;
-    PHIST_CHK_IERR( SUBR( sdMat_create ) (&tmp, nvecp, nvec, comm, iflag), *iflag);
+  TYPE(sdMat_ptr) tmp;
+  PHIST_CHK_IERR( SUBR( sdMat_create ) (&tmp, nvecp, nvec, comm, iflag), *iflag);
 
-    // for now we have BV, but in the long run I think we should get rid of that extra vector block (cf. #
+  MvecOwner<_ST_> _X_proj( (X_proj==jadaOp->X_proj)?NULL: X_proj);
+  SdMatOwner<_ST_> _tmp(tmp);
 
-    // using a fused kernel here would save some data traffic, but the corresponding kernel doesn't exist right now:
-    // X_proj = X - V*(BV'X)
+  // for now we have BV, but in the long run I think we should get rid of that extra vector block (cf. #
 
-    // tmp <- (BV)'*X and X_proj = X
+  // using a fused kernel here would save some data traffic, but the corresponding kernel doesn't exist right now:
+  // X_proj = X - V*(BV'X)
+
+  // tmp <- (BV)'*X and X_proj = X
 {
-PHIST_ENTER_FCN("phist_jadaOp_mvecT_times_mvec_and_copy_x");
-    PHIST_CHK_IERR( SUBR( mvecT_times_mvec ) (st::one(),  jadaOp->BV,  X,   st::zero(), tmp, iflag), *iflag);
-    PHIST_CHK_IERR( SUBR( mvec_add_mvec ) (st::one(), X, st::zero(), X_proj, iflag), *iflag);
+  PHIST_ENTER_FCN("phist_jadaOp_mvecT_times_mvec_and_copy_x");
+  PHIST_CHK_IERR( SUBR( mvecT_times_mvec ) (st::one(),  jadaOp->BV,  X,   st::zero(), tmp, iflag), *iflag);
+  PHIST_CHK_IERR( SUBR( mvec_add_mvec ) (st::one(), X, st::zero(), X_proj, iflag), *iflag);
 }
-    // X_proj <- X - V*tmp
+    // X_proj <- X - V*tm
 {
-PHIST_ENTER_FCN("phist_jadaOp_mvec_times_sdMat");
-    PHIST_CHK_IERR( SUBR( mvec_times_sdMat ) (-st::one(), jadaOp->V, tmp, st::one(),  X_proj,   iflag), 
-    *iflag);
+  PHIST_ENTER_FCN("phist_jadaOp_mvec_times_sdMat");
+  PHIST_CHK_IERR( SUBR( mvec_times_sdMat ) (-st::one(), jadaOp->V, tmp, st::one(),  X_proj,   iflag), *iflag);
 }
 
-    // apply shifted A and post-project
-    PHIST_CHK_IERR(SUBR(jadaOp_apply_project_post)(alpha, op, X_proj,beta, Y, iflag), *iflag);
-    if (X_proj && X_proj != jadaOp->X_proj)
-    {
-      PHIST_CHK_IERR(SUBR(mvec_delete)(X_proj,iflag),*iflag);
-    }
-    PHIST_CHK_IERR(SUBR(sdMat_delete)(tmp,iflag),*iflag);
+  // apply shifted A and post-project
+  PHIST_CHK_IERR(SUBR(jadaOp_apply_project_post)(alpha, op, X_proj,beta, Y, iflag), *iflag);
+
+  // note: the preconditioner may carry its own post-projection, too
+  if (jadaOp->leftPrecon_op!=NULL)
+  {
+      PHIST_CHK_IERR(*iflag = (alpha==st::one() && beta==st::zero())?0: PHIST_NOT_IMPLEMENTED,*iflag);
+      PHIST_CHK_IERR(SUBR(mvec_add_mvec)(st::one(),Y,st::zero(),X_proj,iflag),*iflag);
+      PHIST_CHK_IERR(SUBR(linearOp_apply)(st::one(), jadaOp->leftPrecon_op, X_proj, st::zero(), Y, iflag),*iflag);
   }
 }
-
 
 // allocate and initialize the jadaOp struct
 extern "C" void SUBR(jadaOp_create)(TYPE(const_linearOp_ptr)    AB_op,
@@ -543,11 +545,9 @@ extern "C" void SUBR(jadaOp_set_leftPrecond)(TYPE(linearOp_ptr) jdOp, TYPE(const
   else
   { 
     PHIST_CAST_PTR_FROM_VOID(const TYPE(jadaOp_data), jdPrec, jadaPrec->A, *iflag);
-    if (jdDat->B_op!=NULL) PHIST_SOUT(PHIST_WARNING,"left preconditioning and B!=I is untested\n");
-    // We pre- and postproject with (I-Z(Z'BQ)^{-1}BQ^T), Z=P\Q. The post-projection
+    // We pre-project with (I-(BV)V') and
+    // postproject with (I-Z(Z'BQ)^{-1}BQ^T), Z=P\Q. The post-projection
     // is handled by the preconditioner wrapper (see jadaPrec_create)
-    jdOp->apply=SUBR(jadaOp_apply_project_none);
-    jdDat->V=jdPrec->V;
-    jdDat->BV=jdPrec->BV;
+    jdOp->apply=SUBR(jadaOp_apply_project_pre_post);
   }
 }
