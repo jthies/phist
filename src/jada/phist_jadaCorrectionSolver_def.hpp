@@ -157,6 +157,28 @@ void SUBR(jadaCorrectionSolver_run)(TYPE(jadaCorrectionSolver_ptr) me,
       PHIST_CHK_IERR(me->customSolver_run(me->customSolver_,AB_op,B_op,Qtil,BQtil,sr,si,res,resIndex,
         dtol,maxIter,t,useIMGS,abortAfterFirstConvergedInBlock,iflag),*iflag);
     }
+    else if (me->customSolver_run1!=NULL)
+    {
+      static bool first_time=true;
+      if (first_time)
+      {
+        PHIST_SOUT(PHIST_WARNING,"custom solver requested for block size %d. As you provided only\n"
+                                 "a function for a single system, I will use it one-by-one.\n",totalNumSys);
+        first_time=false;
+      }
+      TYPE(mvec_ptr) resj=NULL,tj=NULL;
+      for (int j=0; j<totalNumSys; j++)
+      {
+        int jres = (resIndex==0)? j: resIndex[j];
+        PHIST_CHK_IERR(SUBR(mvec_view_block)((TYPE(mvec_ptr))res,&resj,jres,jres,iflag),*iflag);
+        PHIST_CHK_IERR(SUBR(mvec_view_block)((TYPE(mvec_ptr))t,&tj,j,j,iflag),*iflag);
+        
+        PHIST_CHK_IERR(me->customSolver_run1(me->customSolver_,AB_op,B_op,Qtil,BQtil,(double)st::real(sigma[j]),
+        (double)st::imag(sigma[j]), resj, (double)tol[0],maxIter,tj,useIMGS,iflag),*iflag);
+      }
+      if (resj!=NULL) PHIST_CHK_IERR(SUBR(mvec_delete)(resj,iflag),*iflag);
+      if (  tj!=NULL) PHIST_CHK_IERR(SUBR(mvec_delete)(  tj,iflag),*iflag);
+    }
     else
     {
       PHIST_SOUT(PHIST_ERROR,"custom solver requested but function not set in jadaOpts struct\n");
