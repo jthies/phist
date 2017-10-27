@@ -33,7 +33,11 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,_N_,MATNAME>,
     static const int minBas_=2*_M_;
     static const int maxBas_=minBas_+8*blockSize_;
     static const int maxIters_=20*(int)((maxBas_-minBas_+1)/blockSize_);
-    static constexpr _MT_ convTol_=std::sqrt(mt::eps());
+#ifdef IS_DOUBLE
+    static constexpr double convTol_=1.0e-8;
+#else
+   static constexpr float convTol_=1.0e-4;
+#endif
 
     static void SetUpTestCase()
     {
