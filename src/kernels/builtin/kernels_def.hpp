@@ -443,7 +443,7 @@ extern "C" void SUBR(mvec_norm2)(TYPE(const_mvec_ptr) V,
   else // *iflag==PHIST_NOT_IMPLEMENTED
   {
     static bool first_time=true;
-    if (first_time) {PHIST_SOUT(PHIST_WARNING,"WARNING: try to use slow fallback version of %s\n",__FUNCTION__); first_time=false;}
+    if (first_time) {PHIST_SOUT(PHIST_WARNING,"Warning: try to use slow fallback version of %s\n",__FUNCTION__); first_time=false;}
     phist_Dmvec_ptr vtmp=NULL;
     *iflag=0;
     int nvec;
@@ -601,7 +601,7 @@ extern "C" void SUBR(mvec_dot_mvec)(TYPE(const_mvec_ptr) v,
   if (*iflag==PHIST_NOT_IMPLEMENTED)
   {
     static bool first_time=true;
-    if (first_time) {PHIST_SOUT(PHIST_WARNING,"WARNING: try to use slow fallback version of %s\n",__FUNCTION__); first_time=false;}
+    if (first_time) {PHIST_SOUT(PHIST_WARNING,"Warning: try to use slow fallback version of %s\n",__FUNCTION__); first_time=false;}
     phist_Dmvec_ptr vtmp=NULL,wtmp=NULL;
     *iflag=0;
     int nvec;
@@ -658,7 +658,7 @@ extern "C" void SUBR(mvec_times_sdMat)(_ST_ alpha, TYPE(const_mvec_ptr) V,
   else // *iflag==PHIST_NOT_IMPLEMENTED
   {
     static bool first_time=true;
-    if (first_time) {PHIST_SOUT(PHIST_WARNING,"WARNING: try to use slow fallback version of %s\n",__FUNCTION__); first_time=false;}
+    if (first_time) {PHIST_SOUT(PHIST_WARNING,"Warning: try to use slow fallback version of %s\n",__FUNCTION__); first_time=false;}
     phist_const_comm_ptr comm=NULL;
     phist_const_map_ptr map=NULL;
     phist_Dmvec_ptr wtmp=NULL;
@@ -725,7 +725,7 @@ extern "C" void SUBR(fused_mvsd_mvTmv)(_ST_ alpha,  TYPE(const_mvec_ptr)  V,
     static bool first_time=true;
     if (first_time) 
     {
-      PHIST_SOUT(PHIST_WARNING,"WARNING: using less accurate fallback implementtion of fused "
+      PHIST_SOUT(PHIST_WARNING,"Warning: using less accurate fallback implementtion of fused "
                                              "high precision kernel (file %s, line %d)\n",__FILE__,__LINE__);
       first_time=false;
     }                                             
@@ -813,7 +813,7 @@ extern "C" void SUBR(mvecT_times_mvec)(_ST_ alpha, TYPE(const_mvec_ptr) V,
   else // *iflag==PHIST_NOT_IMPLEMENTED
   {
     static bool first_time=true;
-    if (first_time) {PHIST_SOUT(PHIST_WARNING,"WARNING: try to use slow fallback version of %s\n",__FUNCTION__); first_time=false;}
+    if (first_time) {PHIST_SOUT(PHIST_WARNING,"Warning: try to use slow fallback version of %s\n",__FUNCTION__); first_time=false;}
     phist_const_comm_ptr comm=NULL;
     phist_const_map_ptr map=NULL;
     phist_Dmvec_ptr vtmp=NULL, wtmp=NULL;
@@ -890,7 +890,7 @@ extern "C" void SUBR(fused_mvsdi_mvTmv)(_ST_ alpha, TYPE(const_mvec_ptr)  V,
     static bool first_time=false;
     if (first_time) 
     {
-      PHIST_SOUT(PHIST_WARNING,"WARNING: using less accurate fallback implementtion of fused "
+      PHIST_SOUT(PHIST_WARNING,"Warning: using less accurate fallback implementtion of fused "
                                              "high precision kernel (file %s, line %d)\n",__FILE__,__LINE__);
       first_time=false;
     }                                             
