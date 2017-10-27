@@ -20,6 +20,11 @@
 
 using namespace testing;
 
+#if defined(PHIST_HIGH_PRECISION_KERNELS_FORCE)&&!defined(PHIST_HAVE_MPACK_QD)
+// SVQB won't work with the required accuracy
+#define DISABLE_TESTCASE
+#endif
+
 #define _BASENAME_ SVQB_Test
 
 #define _N_ 24
