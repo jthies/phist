@@ -364,6 +364,7 @@ SUBR(sdMat_print)(R2,&iflag_);
       TYPE(sdMat_ptr) VtQ=NULL;
       SUBR(sdMat_create)(&VtQ,nvec_V,nvec_Q,comm_,&iflag_);
       ASSERT_EQ(0,iflag_);
+      SdMatOwner<_ST_> _VtQ(VtQ);
 
       iflag_=iflag_in;
       SUBR(mvecT_times_mvec)(st::one(),V,BQ,st::zero(),VtQ,&iflag_);

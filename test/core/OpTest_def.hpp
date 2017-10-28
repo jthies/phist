@@ -110,6 +110,7 @@ public:
 
   static void TearDownTestCase()
   {
+    MTest::TearDownTestCase();
     VTest::TearDownTestCase();
     SparseMatTest::TearDownTestCase();
   }
