@@ -1,0 +1,28 @@
+#ifndef SCAMACTOOLS_H
+#define SCAMACTOOLS_H
+
+/** \file 
+ *  \author Andreas Alvermann (<alvermann@physik.uni-greifswald.de>)
+ *  \date   October 2017
+ *  \brief  ScaMaC toolkit top-level header file
+ */
+
+#cmakedefine SCAMAC_USE_PNG
+#cmakedefine SCAMAC_USE_BLAS
+#cmakedefine SCAMAC_USE_LAPACK
+
+#include "scamac_statistics.h"
+#include "scamac_sparsemat.h"
+#include "scamac_sparsemat_io.h"
+
+#ifdef SCAMAC_USE_PNG
+ #include "scamac_plot.h"
+#endif
+
+#ifdef SCAMAC_USE_LAPACK
+ #include "scamac_lanczos.h"
+ #include "scamac_spectrum.h"
+#endif
+
+
+#endif /* SCAMACTOOLS_H */

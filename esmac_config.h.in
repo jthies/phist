@@ -1,6 +1,0 @@
-#cmakedefine ESMAC_USE_PNG
-#cmakedefine ESMAC_USE_BLAS
-#cmakedefine ESMAC_USE_LAPACK
-
-#cmakedefine ESMAC_INDEX_TYPE_int64
-#cmakedefine ESMAC_INDEX_TYPE_int32

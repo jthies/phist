@@ -1,0 +1,13 @@
+SCAMAC_INCDIR = @SCAMAC_INCDIR@
+SCAMAC_LIBDIR = @SCAMAC_LIBDIR@
+
+
+CFLAGS     = -I${SCAMAC_INCDIR}
+LDFLAGS    = -L${SCAMAC_LIBDIR} -lscamac
+
+include @SLEPC_DIR@/lib/slepc/conf/slepc_common
+
+mwe_slepc: mwe_slepc.o chkopts
+	-${CLINKER} -o mwe_slepc mwe_slepc.o ${SLEPC_EPS_LIB} ${LDFLAGS} 
+	${RM} mwe_slepc.o
+

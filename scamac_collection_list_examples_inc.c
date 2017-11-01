@@ -1,0 +1,11 @@
+my_string = malloc(120* sizeof *my_string);
+strncpy(&my_string[0], "FreeBosonChain ",15);
+strncpy(&my_string[15], "FreeFermionChain ",17);
+strncpy(&my_string[32], "Harmonic ",9);
+strncpy(&my_string[41], "Hubbard ",8);
+strncpy(&my_string[49], "OneFermion ",11);
+strncpy(&my_string[60], "SpinChainXXZ ",13);
+strncpy(&my_string[73], "Tridiagonal ",12);
+strncpy(&my_string[85], "TridiagonalComplex ",19);
+strncpy(&my_string[104], "TridiagonalReal ",16);
+my_string[119] = 0;
