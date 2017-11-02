@@ -45,7 +45,7 @@ The git repository can be checked out using the command
 
   git clone git@bitbucket.org:essex/phist
 
-Instructions for compiling PHIST can be found [ here ](https://bitbucket.org/essex/phist/wiki/User_Guide/00 Installation.md)
+Instructions for compiling PHIST can be found [ here ](https://bitbucket.org/essex/phist/wiki/User_Guide/00 Installation.wiki)
 
 Contact
 =======
