@@ -55,7 +55,7 @@ src_dir="../src/"
 modules=[x[1] for x in os.walk(src_dir)][0]
 for mod_name in modules:
     # skip a bunch of subdirectories
-    if (mod_name=="support"):
+    if (mod_name=="support" or mod_name=="craft"):
         continue;
         
     print "module "+mod_name
@@ -88,6 +88,8 @@ namespace phist
 
         if (c_file_name.find("_decl") == -1):
             continue
+        if (c_file_name.find("phist_MemOwner") != -1):
+            continue
         print "    - process file '"+c_file_name+"'"
 
         whole_file = open(mod_dir + "/" + c_file_name, 'rU').read()
@@ -106,11 +108,9 @@ namespace phist
             arg_names=''
             for arg in arg_list:
                 arg_name=arg.strip().split(" ")[1]
-                print "arg_name '"+arg_name+"'"
                 arg_names = arg_names+", "+arg_name
             
             arg_names=arg_names[2:len(arg_names)]
-            print arg_names
             
             module_impl_file.write(\
             "    void "+name+"("+args+")\n    {\n"+\
