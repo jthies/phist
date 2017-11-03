@@ -1163,6 +1163,12 @@ configure_package_config_file("${PROJECT_SOURCE_DIR}/phistConfig.cmake.in" "${PR
 write_basic_package_version_file("${PROJECT_BINARY_DIR}/phistConfigVersion.cmake" VERSION ${PHIST_VERSION} COMPATIBILITY SameMajorVersion)
 
 #######################################################################################
+# C++ BINDINGS                                                                        #
+#######################################################################################
+add_subdirectory(cxx_bindings)
+
+
+#######################################################################################
 # INSTALL                                                                             #
 #######################################################################################
 if (${BUILD_SHARED_LIBS})

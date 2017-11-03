@@ -50,7 +50,7 @@ template<typename ST>
 
 # loop over all subdirectories in src/ (aka modules)
 
-src_dir="../src/"
+src_dir="@PROJECT_SOURCE_DIR@/src/"
 modules=[x[1] for x in os.walk(src_dir)][0]
 for mod_name in modules:
     # skip a bunch of subdirectories
