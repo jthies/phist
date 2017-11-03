@@ -18,9 +18,6 @@ header  = \
 
 def class_template(class_name):
     return '''
-#include \"phist_config.h\"
-#include \"phist_ScalarTraits.hpp\"
-
 namespace phist {
 
 template<typename ST>
@@ -30,9 +27,11 @@ template<typename ST>
   typedef ST::MissingSpecializationForClass_'''+class_name+' error;\n'+\
 '''};
 }//namespace phist
+
 '''+\
 '#define CLASS_IMPL_HPP '+'\"phist_'+class_name+'_impl.hpp\"\n'+\
-'''#ifdef PHIST_HAVE_SP
+'''
+#ifdef PHIST_HAVE_SP
 #include \"phist_gen_s.h\"
 #include CLASS_IMPL_HPP
 #endif
@@ -55,20 +54,33 @@ src_dir="../src/"
 modules=[x[1] for x in os.walk(src_dir)][0]
 for mod_name in modules:
     # skip a bunch of subdirectories
-    if (mod_name=="support" or mod_name=="craft"):
+    if (mod_name=="support" or mod_name=="craft" or mod_name=="tools"):
         continue;
+
+    mod_dir = src_dir+"/"+mod_name
+    files = [x[2] for x in os.walk(mod_dir)][0]
         
     print "module "+mod_name
     
     # write the class template (module.hpp file) which is specialized in the module_impl.hpp file.
     module_hpp_file = open("phist_"+mod_name+".hpp", "w")
     module_hpp_file.write(header)
+
+    module_includes='''
+#include \"phist_config.h\"
+#include \"phist_exceptions.hpp\"
+'''
+    for file in files:
+        print file[len(file)-2:len(file)]
+        if (file.find("_decl")!=-1 or file.find("_def")!=-1 or file[len(file)-2:len(file)]!=".h"):
+            continue;
+        print file
+        module_includes=module_includes+'\n#include \"'+file+'"'
+    
+    module_hpp_file.write(module_includes+'\n\n')
     module_hpp_file.write(class_template(mod_name))
     module_hpp_file.close()
      
-    mod_dir = src_dir+"/"+mod_name
-    files = [x[2] for x in os.walk(mod_dir)][0]
-
     module_impl_file = open("phist_"+mod_name+"_impl.hpp", "w")
     module_impl_file.write(header)
     module_impl_file.write(\
