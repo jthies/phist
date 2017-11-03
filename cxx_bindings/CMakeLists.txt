@@ -26,6 +26,9 @@ configure_file(${PROJECT_SOURCE_DIR}/cxx_bindings/make_cxx_bindings.py.in ${CMAK
 
 add_custom_target(cxx_headers DEPENDS ${HPP_FILES})
 
+include_directories(${CMAKE_CURRENT_SOURCE_DIR})
+include_directories(${CMAKE_CURRENT_BINARY_DIR})
+
 add_executable(test_cxx_bindings test_cxx_bindings.cpp)
 target_link_libraries(test_cxx_bindings ${library_list})
 
