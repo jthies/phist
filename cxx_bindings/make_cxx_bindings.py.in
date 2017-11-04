@@ -28,23 +28,27 @@ template<typename ST>
 '''};
 }//namespace phist
 
+#ifdef CLASS_DECL_HPP
+#undef CLASS_DECL_HPP
+#endif
+
 '''+\
-'#define CLASS_IMPL_HPP '+'\"phist_'+class_name+'_impl.hpp\"\n'+\
+'#define CLASS_DECL_HPP '+'\"phist_'+class_name+'_decl.hpp\"\n'+\
 '''
 #ifdef PHIST_HAVE_SP
 #include \"phist_gen_s.h\"
-#include CLASS_IMPL_HPP
+#include CLASS_DECL_HPP
 #endif
 #include "phist_gen_d.h"
-#include CLASS_IMPL_HPP
+#include CLASS_DECL_HPP
 
 #ifdef PHIST_HAVE_CMPLX
 #ifdef PHIST_HAVE_SP
 #include "phist_gen_c.h"
-#include CLASS_IMPL_HPP
+#include CLASS_DECL_HPP
 #endif
 #include "phist_gen_z.h"
-#include CLASS_IMPL_HPP
+#include CLASS_DECL_HPP
 #endif
 '''
 
@@ -62,7 +66,7 @@ for mod_name in modules:
         
     print "module "+mod_name
     
-    # write the class template (module.hpp file) which is specialized in the module_impl.hpp file.
+    # write the class template (module.hpp file) which is specialized in the module_decl.hpp file.
     module_hpp_file = open("phist_"+mod_name+".hpp", "w")
     module_hpp_file.write(header)
 
@@ -71,19 +75,21 @@ for mod_name in modules:
 #include \"phist_exceptions.hpp\"
 '''
     for file in files:
-        print file[len(file)-2:len(file)]
         if (file.find("_decl")!=-1 or file.find("_def")!=-1 or file[len(file)-2:len(file)]!=".h"):
-            continue;
-        print file
+            continue
+        if (file.find("driver_utils")!=-1):
+            continue
+        if (file.find("simple_lanczos_ft")!=-1):
+            continue
         module_includes=module_includes+'\n#include \"'+file+'"'
     
     module_hpp_file.write(module_includes+'\n\n')
     module_hpp_file.write(class_template(mod_name))
     module_hpp_file.close()
      
-    module_impl_file = open("phist_"+mod_name+"_impl.hpp", "w")
-    module_impl_file.write(header)
-    module_impl_file.write(\
+    module_decl_file = open("phist_"+mod_name+"_decl.hpp", "w")
+    module_decl_file.write(header)
+    module_decl_file.write(\
     """
 namespace phist 
 {
@@ -124,14 +130,14 @@ namespace phist
             
             arg_names=arg_names[2:len(arg_names)]
             
-            module_impl_file.write(\
+            module_decl_file.write(\
             "    void "+name+"("+args+")\n    {\n"+\
-            "      SUBR("+name+")("+arg_names+");\n"+\
-            """      if (*iflag<0) throw phist::Error(phist_retcode2str(*iflag));
-      else if (*iflag>0) throw phist::Warning(phist_retcode2str(*iflag));
+            "      SUBR("+name+")("+arg_names+");"+\
+            """
+      if (*iflag<0) throw phist::Exception(*iflag);
     }\n\n""")
                   
     
-    module_impl_file.write("   };\n}")
-    module_impl_file.close()
+    module_decl_file.write("   };\n}")
+    module_decl_file.close()
             
