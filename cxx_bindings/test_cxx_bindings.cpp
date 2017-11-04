@@ -30,7 +30,10 @@ bool phist_foo()
     phist::kernels<ST>::mvec_delete(&V,map,m,&iflag);
   } catch (phist::Exception e)
   {
-    if (phist::kernels<ST>>::type_avail()==PHIST_NOT_IMPLEMENTED) return true;
+    int iflag=e.iflag();
+    if (phist::kernels<ST>>::type_avail()==PHIST_NOT_IMPLEMENTED &&iflag==PHIST_NOT_IMPLEMENTED) return true;
+    std::cerr << "caught phist exception: '" << e.what() << "'"<<std::endl
+              << "(phist iflag="<<iflag<<")"<<std::endl;
     return false;
   }
 }
@@ -38,12 +41,17 @@ bool phist_foo()
 int main(int argc, char* argv[])
 {
   phist_kernels_init(&argc,&argv);
-  if (
-  phist_foo<float>() &&
-  phist_foo<double>() &&
-  phist_foo<phist_Scomplex>() &&
-  phist_foo<phist_Scomplex>()) error=0;
-  else error=-1;
+
+  int error=0;
+
+  if (!phist_foo<double>()) error|=1;
+  if (!phist_foo<phist_Dcomplex>()) error|=2;
+
+#ifdef PHIST_HAVE_SP
+  if (!phist_foo<float>()) error|=4;
+  if (!phist_foo<phist_Scomplex>()) error|=8;
+#endif
+
   phist_kernels_finalize();
-  return error;
+  return -error;
 }

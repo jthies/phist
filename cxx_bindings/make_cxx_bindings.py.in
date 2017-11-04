@@ -24,32 +24,32 @@ template<typename ST>
 '''+\
 'class '+class_name+'\n'\
 '''{
-  typedef ST::MissingSpecializationForClass_'''+class_name+' error;\n'+\
+  typedef typename ST::MissingSpecializationForClass_'''+class_name+' error;\n'+\
 '''};
 }//namespace phist
-
-#ifdef CLASS_DECL_HPP
-#undef CLASS_DECL_HPP
-#endif
 
 '''+\
 '#define CLASS_DECL_HPP '+'\"phist_'+class_name+'_decl.hpp\"\n'+\
 '''
+
 #ifdef PHIST_HAVE_SP
+
 #include \"phist_gen_s.h\"
 #include CLASS_DECL_HPP
+
+#include "phist_gen_c.h"
+#include CLASS_DECL_HPP
+
 #endif
+
 #include "phist_gen_d.h"
 #include CLASS_DECL_HPP
 
-#ifdef PHIST_HAVE_CMPLX
-#ifdef PHIST_HAVE_SP
-#include "phist_gen_c.h"
-#include CLASS_DECL_HPP
-#endif
 #include "phist_gen_z.h"
 #include CLASS_DECL_HPP
-#endif
+
+#include "phist_gen_clean.h"
+#undef CLASS_DECL_HPP
 '''
 
 # loop over all subdirectories in src/ (aka modules)
@@ -105,7 +105,7 @@ namespace phist
 
     for c_file_name in files:
 
-        if (c_file_name.find("_decl") == -1):
+        if (c_file_name.find("_decl") == -1 or c_file_name[len(c_file_name)-1]=='~'):
             continue
         if (c_file_name.find("phist_MemOwner") != -1):
             continue
@@ -131,13 +131,21 @@ namespace phist
             
             arg_names=arg_names[2:len(arg_names)]
             
+            # special treatment for some functions that are encapsulated in #ifdef ... #endif
+            need_endif=False
+            if (name=="sdMat_extract_error"):
+                need_endif=True
+                module_decl_file.write("#ifdef PHIST_HIGH_PRECISION_KERNELS\n")
+            
             module_decl_file.write(\
-            "    void "+name+"("+args+")\n    {\n"+\
+            "    static void "+name+"("+args+")\n    {\n"+\
             "      SUBR("+name+")("+arg_names+");"+\
             """
       if (*iflag<0) throw phist::Exception(*iflag);
     }\n\n""")
-                  
+            
+            if (need_endif):
+                module_decl_file.write("#endif\n");                  
     
     module_decl_file.write("   };\n}")
     module_decl_file.close()
