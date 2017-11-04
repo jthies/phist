@@ -11,7 +11,7 @@
 #include "phist_typedefs.h"
 #include "phist_tpetra_typedefs.hpp"
 #include "../phist_kernels.h"
-#include "phist_trilinos_macros.h"
+#include "phist_trilinos_macros.hpp"
 
 #include "Teuchos_StandardCatchMacros.hpp"
 #include "Teuchos_DefaultComm.hpp"

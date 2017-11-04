@@ -15,7 +15,7 @@
 #include "phist_typedefs.h"
 #include "phist_tpetra_typedefs.hpp"
 #include "../phist_kernels.h"
-#include "phist_trilinos_macros.h"
+#include "phist_trilinos_macros.hpp"
 #include "phist_ScalarTraits.hpp"
 #include "../common/default_context.h"
 
