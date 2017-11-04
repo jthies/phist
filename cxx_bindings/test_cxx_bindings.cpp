@@ -30,7 +30,7 @@ bool phist_foo()
     phist::kernels<ST>::mvec_delete(&V,map,m,&iflag);
   } catch (phist::Exception e)
   {
-#if (phist::kernels<ST>>::type_avail()==PHIST_NOT_IMPLEMENTED) return true;
+    if (phist::kernels<ST>>::type_avail()==PHIST_NOT_IMPLEMENTED) return true;
     return false;
   }
 }

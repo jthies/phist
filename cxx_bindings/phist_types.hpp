@@ -17,20 +17,20 @@ class types
   public:
   
     typedef ScalarTraits<ST> st;
-    typedef ScalarTraits<ST>::magn_t MT;
+    typedef typename ScalarTraits<ST>::magn_t MT;
     typedef ScalarTraits<MT> mt;
     
-    typedef st::mvec_t* mvec_ptr;
-    typedef st::mvec_t const* const_mvec_ptr;
+    typedef typename st::mvec_t* mvec_ptr;
+    typedef typename st::mvec_t const* const_mvec_ptr;
 
-    typedef st::sdMat_t* sdMat_ptr;
-    typedef st::sdMat_t const* const_sdMat_ptr;
+    typedef typename st::sdMat_t* sdMat_ptr;
+    typedef typename st::sdMat_t const* const_sdMat_ptr;
 
-    typedef st::sparseMat_t* sparseMat_ptr;
-    typedef st::sparseMat_t const* const_sparseMat_ptr;
+    typedef typename st::sparseMat_t* sparseMat_ptr;
+    typedef typename st::sparseMat_t const* const_sparseMat_ptr;
 
-    typedef st::linearOp_t* linearOp_ptr;
-    typedef st::linearOp_t const* const_linearOp_ptr;
+    typedef typename st::linearOp_t* linearOp_ptr;
+    typedef typename st::linearOp_t const* const_linearOp_ptr;
 };
 
 }

@@ -77,6 +77,7 @@ for mod_name in modules:
     for file in files:
         if (file.find("_decl")!=-1 or file.find("_def")!=-1 or file[len(file)-2:len(file)]!=".h"):
             continue
+        # skip a number of files that cause trouble
         if (file.find("driver_utils")!=-1):
             continue
         if (file.find("simple_lanczos_ft")!=-1):

@@ -8,24 +8,26 @@
 /*******************************************************************************************/
 
 #include <exception>
+#include "phist_tools.h"
 
 namespace phist
 {
-  //! class for reporting an error (negative iflag on return)
-  class Erro: public std::exception<const char*>
+  //! class for reporting an error (negative) or warning (positive) iflag on return
+  class Exception : public std::exception
   {
     public:
     
     //!
-    Error(const char* message) : std::exception(message) {}
+    Exception(int iflag) : std::exception(), iflag_(iflag) {}
+ 
+   //!
+   ~Exception(){}
+   
+   //!
+   const char* what() const noexcept {return phist_retcode2str(iflag_);}
+  
+    //!
+    int iflag_;
+  
   };
 
-  //! class for reporting a warning (positive iflag on return)
-  class Erro: public std::exception<const char*>
-  {
-    public:
-    
-    //!
-    Warning(const char* message) : std::exception(message) {}
-  };
-}
