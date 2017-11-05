@@ -7,6 +7,9 @@
 /*                                                                                         */
 /*******************************************************************************************/
 
+#ifndef PHIST_EXCEPTION_HPP
+#define PHIST_EXCEPTION_HPP
+
 #include <exception>
 #include "phist_tools.h"
 
@@ -32,3 +35,5 @@ namespace phist
   };
 
 }
+
+#endif
