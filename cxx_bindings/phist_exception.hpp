@@ -28,6 +28,11 @@ namespace phist
    
    //!
    const char* what() const noexcept {return phist_retcode2str(iflag_);}
+   
+   //!
+   inline int iflag() const noexcept {return iflag_;}
+
+  protected:
   
     //!
     int iflag_;

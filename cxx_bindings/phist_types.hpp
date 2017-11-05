@@ -7,6 +7,7 @@
 /*                                                                                         */
 /*******************************************************************************************/
 
+#include "phist_typedefs.h"
 #include "phist_ScalarTraits.hpp"
 
 namespace phist {
