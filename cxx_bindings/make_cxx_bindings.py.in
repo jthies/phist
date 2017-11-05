@@ -126,7 +126,10 @@ namespace phist
             arg_list=args.split(",");
             arg_names=''
             for arg in arg_list:
-                arg_name=arg.strip().split(" ")[1]
+                # argument name is the last token, excluding asterisks (*) and brackets ([]):
+                arg_name=arg.strip().split(" ")[-1]
+                arg_name=re.sub('[*]+',' ',arg_name)
+                arg_name=re.sub('[\[\]]+',' ',arg_name)
                 arg_names = arg_names+", "+arg_name
             
             arg_names=arg_names[2:len(arg_names)]
