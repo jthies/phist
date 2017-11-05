@@ -72,7 +72,7 @@ for mod_name in modules:
 
     module_includes='''
 #include \"phist_config.h\"
-#include \"phist_exceptions.hpp\"
+#include \"phist_exception.hpp\"
 '''
     for file in files:
         if (file.find("_decl")!=-1 or file.find("_def")!=-1 or file[len(file)-2:len(file)]!=".h"):
