@@ -140,6 +140,14 @@ namespace phist
             if (name=="linearOp_wrap_epetra"):
                 need_endif=True
                 module_decl_file.write("#ifdef PHIST_KERNEL_LIB_EPETRA\n")
+
+            if (name=="anasazi"):
+                need_endif=True
+                module_decl_file.write("#ifdef PHIST_HAVE_ANASAZI\n")
+
+            if (name=="belos"):
+                need_endif=True
+                module_decl_file.write("#ifdef PHIST_HAVE_BELOS\n")
             
             module_decl_file.write(\
             "    static void "+name+"("+args+")\n    {\n"+\
