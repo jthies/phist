@@ -137,6 +137,10 @@ namespace phist
                 need_endif=True
                 module_decl_file.write("#ifdef PHIST_HIGH_PRECISION_KERNELS\n")
 
+            if (name=="mvec_gather_mvecs" or name=="mvec_scatter_mvecs"):
+                need_endif=True
+                module_decl_file.write("#ifdef PHIST_KERNEL_LIB_BUILTIN\n")
+
             if (name=="linearOp_wrap_epetra"):
                 need_endif=True
                 module_decl_file.write("#ifdef PHIST_KERNEL_LIB_EPETRA\n")
