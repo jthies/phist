@@ -75,7 +75,7 @@ for mod_name in modules:
 #include \"phist_exception.hpp\"
 '''
     for file in files:
-        if (file.find("_decl")!=-1 or file.find("_def")!=-1 or file[len(file)-2:len(file)]!=".h"):
+        if (file.find("_decl")!=-1 or file.find("_def")!=-1 or file[-1]!='h'):
             continue
         # skip a number of files that cause trouble
         if (file.find("driver_utils")!=-1):
@@ -107,7 +107,9 @@ namespace phist
 
         if (c_file_name.find("_decl") == -1 or c_file_name[-1]!='h'):
             continue
-        if (c_file_name.find("carp_cg_kernels") != -1):
+        # the CARP-CG implementation mixes real and complex numbers and requires some #ifdefs to work,
+        # we skip it for now completely.
+        if (c_file_name.find("carp") != -1):
             continue
         print "    - process file '"+c_file_name+"'"
 

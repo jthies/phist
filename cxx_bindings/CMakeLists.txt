@@ -33,3 +33,5 @@ add_executable(test_cxx_bindings test_cxx_bindings.cpp)
 target_link_libraries(test_cxx_bindings ${library_list})
 
 add_dependencies(test_cxx_bindings cxx_headers)
+
+install(FILES ${HPP_FILES} DESTINATION include)
