@@ -30,7 +30,7 @@ bool phist_foo()
   typename phist::types<ST>::mvec_ptr V=NULL;
   try {
     phist::kernels<ST>::mvec_create(&V,map,m,&iflag);
-    phist::kernels<ST>::mvec_delete(&V,map,m,&iflag);
+    phist::kernels<ST>::mvec_delete(V,&iflag);
   } catch (phist::Exception e)
   {
   int iflag=e.iflag();
