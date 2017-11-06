@@ -546,11 +546,12 @@ option(PHIST_TIMINGS_FULL_TRACE "Try to print full call trace in the TimeMonitor
 # test cases SpinSZ and Graphene for testing purposes.
 find_package(ESSEX-PHYSICS CONFIG QUIET)
 if (ESSEX-PHYSICS_FOUND)
-  message(STATUS "Found ESSEX-Physics ${ESSEX-PHYSICS_VERSION}")
-  set(PHIST_HAVE_ESSEX_PHYSICS 1)
-  include_directories(${ESSEX-PHYSICS_INCLUDE_DIRS})
+  message(STATUS "Found ESSEX-Physics ${ESSEX-PHYSICS_VERSION}. We currently do NOT use matfuncs from this"
+                 "library because it will be superseded by the ESSEX Matrix Collection eventually.")
+  set(PHIST_HAVE_ESSEX_PHYSICS 0)
+#  include_directories(${ESSEX-PHYSICS_INCLUDE_DIRS})
 else()
-  message(STATUS "ESSEX-Physics not found, will use supplementary implementation")
+#  message(STATUS "ESSEX-Physics not found, will use supplementary implementation")
   include_directories(${PROJECT_SOURCE_DIR}/drivers/matfuncs)
 endif()
 
