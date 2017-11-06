@@ -3,15 +3,15 @@ find_package(PythonInterp REQUIRED)
 file(GLOB INPUT_FILES ${PROJECT_SOURCE_DIR}/src/*/*.h*)
 
 set(HPP_FILES phist_kernels.hpp
-phist_kernels_impl.hpp
+phist_kernels_decl.hpp
 phist_core.hpp
-phist_core_impl.hpp
+phist_core_decl.hpp
 phist_jada.hpp
-phist_jada_impl.hpp
+phist_jada_decl.hpp
 phist_krylov.hpp
-phist_krylov_impl.hpp
+phist_krylov_decl.hpp
 phist_precon.hpp
-phist_precon_impl.hpp)
+phist_precon_decl.hpp)
 
 # put correct path into py-script and copy it
 configure_file(${PROJECT_SOURCE_DIR}/cxx_bindings/make_cxx_bindings.py.in ${CMAKE_CURRENT_BINARY_DIR}/make_cxx_bindings.py)
@@ -40,4 +40,8 @@ set_tests_properties(cxx_bindings PROPERTIES PASS_REGULAR_EXPRESSION "[. \n]*PAS
 set_tests_properties(cxx_bindings PROPERTIES FAIL_REGULAR_EXPRESSION ". \n]*FAILED[. \n]*")
 set_tests_properties(cxx_bindings PROPERTIES TIMEOUT 30)
 
-install(FILES ${HPP_FILES} DESTINATION include)
+# install all generated headers
+foreach (hpp_file ${HPP_FILES})
+    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/${hpp_file} DESTINATION include)
+endforeach()
+
