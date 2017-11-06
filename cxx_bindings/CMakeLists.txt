@@ -34,4 +34,10 @@ target_link_libraries(test_cxx_bindings ${library_list})
 
 add_dependencies(test_cxx_bindings cxx_headers)
 
+enable_testing()
+add_test(NAME cxx_bindings COMMAND test_cxx_bindings)
+set_tests_properties(cxx_bindings PROPERTIES PASS_REGULAR_EXPRESSION "[. \n]*PASSED[. \n]*")
+set_tests_properties(cxx_bindings PROPERTIES FAIL_REGULAR_EXPRESSION ". \n]*FAILED[. \n]*")
+set_tests_properties(cxx_bindings PROPERTIES TIMEOUT 30)
+
 install(FILES ${HPP_FILES} DESTINATION include)

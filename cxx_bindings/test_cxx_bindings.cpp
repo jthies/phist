@@ -19,7 +19,10 @@ template<typename ST>
 bool phist_foo()
 {
   int type_avail=0;
-  phist::kernels<ST>::type_avail(&type_avail);
+  try {
+    // this function throws an exception if the underlying C function sets iflag=-99 (NOT_IMPLEMENTED)
+    phist::kernels<ST>::type_avail(&type_avail);
+  } catch (phist::Exception e){}
   phist_gidx n=42;
   int m=5;
   int iflag=0;
@@ -33,12 +36,13 @@ bool phist_foo()
     phist::kernels<ST>::mvec_delete(V,&iflag);
   } catch (phist::Exception e)
   {
-  int iflag=e.iflag();
+    int iflag=e.iflag();
     if (type_avail==PHIST_NOT_IMPLEMENTED &&iflag==PHIST_NOT_IMPLEMENTED) return true; // correct behavior
     std::cerr << "caught phist exception: '" << e.what() << "'"<<std::endl
               << "(phist iflag="<<iflag<<")"<<std::endl;
     return false;
   }
+  return true;
 }
 
 int main(int argc, char* argv[])
@@ -55,6 +59,9 @@ int main(int argc, char* argv[])
   if (!phist_foo<float>()) error|=4;
   if (!phist_foo<phist_s_complex>()) error|=8;
 #endif
+
+  if (error==0) {PHIST_SOUT(PHIST_INFO,"ALL TESTS PASSED\n");}
+  else          {PHIST_SOUT(PHIST_INFO,"SOME TESTS FAILED\n");}
 
   phist_kernels_finalize(&iflag);
   return -error;
