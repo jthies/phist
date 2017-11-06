@@ -143,7 +143,7 @@ namespace phist
 
             if (name=="linearOp_wrap_epetra"):
                 need_endif=True
-                module_decl_file.write("#ifdef PHIST_KERNEL_LIB_EPETRA\n")
+                module_decl_file.write("#if defined(PHIST_KERNEL_LIB_EPETRA)&&defined(IS_DOUBLE)&&!defined(IS_COMPLEX)\n")
 
             if (name=="anasazi"):
                 need_endif=True
