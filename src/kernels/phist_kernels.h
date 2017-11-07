@@ -223,7 +223,7 @@ void phist_Cmvec_split(phist_Cconst_mvec_ptr V, phist_Smvec* reV, phist_Smvec* i
 
 //! mixed real/complex operation: copy separate real and imaginary part into complex vector
 //! if either reV or imV are NULL, it is not touched.
-void phist_Cmvec_combine)(phist_Cmvec_ptr V, phist_Sconst_mvec_ptr reV, phist_Sconst_mvec_ptr imV, int *iflag);
+void phist_Cmvec_combine(phist_Cmvec_ptr V, phist_Sconst_mvec_ptr reV, phist_Sconst_mvec_ptr imV, int *iflag);
 
 #ifdef __cplusplus
 } //extern "C"
