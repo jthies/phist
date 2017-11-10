@@ -699,14 +699,14 @@ static int global_msum(MT* value, int count, MPI_Comm mpi_comm)
   //! if _useViews=true, these are larger memory blocks
   //! holding vecX_ as an inner view. Otherwise they are NULL.
 private:
-  static TYPE(mvec_ptr) mem1_, mem2_, mem3_, mem4_;
-  ST *mem1_vp_ = NULL, *mem2_vp_ = NULL, *mem3_vp_ = NULL, *mem4_vp_;
+  static TYPE(mvec_ptr) mem1_, mem2_, mem3_, mem4_, mem5_;
+  ST *mem1_vp_ = NULL, *mem2_vp_ = NULL, *mem3_vp_ = NULL, *mem4_vp_=NULL, *mem5_vp_=NULL;
   static int nvecPadded_, pad_pre_, pad_post_;
 
 public:
 
-  static TYPE(mvec_ptr) vec1_, vec2_, vec3_, vec4_;
-  ST *vec1_vp_ = NULL, *vec2_vp_ = NULL, *vec3_vp_ = NULL, *vec4_vp_=NULL;
+  static TYPE(mvec_ptr) vec1_, vec2_, vec3_, vec4_, vec5_;
+  ST *vec1_vp_ = NULL, *vec2_vp_ = NULL, *vec3_vp_ = NULL, *vec4_vp_=NULL, *vec5_vp_=NULL;
   static const int nvec_=_Nvec;
   static const int useViews_=_useViews;
   phist_lidx lda_, stride_;
