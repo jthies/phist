@@ -367,3 +367,34 @@ public:
     SUBR(linearOp_destroy)(&AA_op,&iflag_);
     ASSERT_EQ(0,iflag_);
   }
+  
+    // test wrapping AAA_op=A_op*A_op*A_op (TODO: a test with two operators A!=B)
+  TEST_F(CLASSNAME,linearOp_wrap_linearOp_product_triple_apply)
+  {
+    if (!typeImplemented_ || problemTooSmall_)
+      return;
+
+    TYPE(linearOp) AAA_op;
+    SUBR(linearOp_wrap_linearOp_product_triple)(&AAA_op,&A_op,&A_op,&A_op,&iflag_);
+    ASSERT_EQ(0,iflag_);
+
+    // we have v1, v2 random and v3=v2 from SetUp()
+
+    _ST_ alpha=st::prand();
+    _ST_ beta=st::prand();
+    AAA_op.apply(alpha,AAA_op.A,vec1_,beta,vec2_,&iflag_);
+    ASSERT_EQ(0,iflag_);
+    // step-by-step to create a reference solution
+    A_op.apply(alpha,A_op.A,vec1_,st::zero(),vec4_,&iflag_);
+    ASSERT_EQ(0,iflag_);
+	A_op.apply(st::one(),A_op.A,vec4_,st::zero(),vec5_,&iflag_);
+    ASSERT_EQ(0,iflag_);
+    A_op.apply(st::one(),A_op.A,vec5_,beta,vec3_,&iflag_);
+    ASSERT_EQ(0,iflag_);
+
+    ASSERT_NEAR(mt::one(),MvecsEqual(vec2_,vec3_),1000*VTest::releps());
+        
+    // clean up the operator
+    SUBR(linearOp_destroy)(&AAA_op,&iflag_);
+    ASSERT_EQ(0,iflag_);
+  }

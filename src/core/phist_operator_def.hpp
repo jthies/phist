@@ -27,7 +27,6 @@ typedef struct TYPE(private_linearOp_pair)
 } TYPE(private_linearOp_pair);
 
 // same with triple of linearOps
-//todo: was brauchen wir noch?
 typedef struct TYPE(private_linearOp_triple)
 {
   TYPE(const_linearOp_ptr) A;
