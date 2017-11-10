@@ -67,10 +67,16 @@ static void SetUpTestCase()
       ASSERT_EQ(0,iflag_);
     }
 
+    if( _numberOfVectorsInitialized >= 5 )
+    {
+      PHISTTEST_MVEC_CREATE(&mem5_,map_,nvecPadded_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+    }
+
     // if requested, set vecX to views of memX
     if (useViews_)
     {
-      vec1_=NULL; vec2_=NULL; vec3_=NULL, vec4_=NULL;
+      vec1_=NULL; vec2_=NULL; vec3_=NULL, vec4_=NULL, vec5_=NULL;
       if( _numberOfVectorsInitialized >= 1 )
       {
         SUBR(mvec_view_block)(mem1_,&vec1_,pad_pre_,pad_pre_+nvec_-1,&iflag_);
@@ -91,6 +97,11 @@ static void SetUpTestCase()
         SUBR(mvec_view_block)(mem4_,&vec4_,pad_pre_,pad_pre_+nvec_-1,&iflag_);
         ASSERT_EQ(0,iflag_);
       }
+      if( _numberOfVectorsInitialized >= 5 )
+      {
+        SUBR(mvec_view_block)(mem5_,&vec5_,pad_pre_,pad_pre_+nvec_-1,&iflag_);
+        ASSERT_EQ(0,iflag_);
+      }
     }
     else
     {
@@ -98,6 +109,7 @@ static void SetUpTestCase()
       vec2_=mem2_;
       vec3_=mem3_;
       vec4_=mem4_;
+      vec5_=mem5_;
     }
   }
 }
@@ -130,7 +142,12 @@ virtual void SetUp()
       }
       if( _numberOfVectorsInitialized >= 4 )
       {
-        SUBR(mvec_put_value)(mem3_,(_ST_)-104.,&iflag_);
+        SUBR(mvec_put_value)(mem4_,(_ST_)-104.,&iflag_);
+        ASSERT_EQ(0,iflag_);
+      }
+      if( _numberOfVectorsInitialized >= 5 )
+      {
+        SUBR(mvec_put_value)(mem5_,(_ST_)-104.,&iflag_);
         ASSERT_EQ(0,iflag_);
       }
     }
@@ -153,6 +170,11 @@ virtual void SetUp()
     if( _numberOfVectorsInitialized >= 4 )
     {
       SUBR(mvec_put_value)(vec4_,st::zero(),&iflag_);
+      ASSERT_EQ(0,iflag_);
+    }
+    if( _numberOfVectorsInitialized >= 5 )
+    {
+      SUBR(mvec_put_value)(vec5_,st::zero(),&iflag_);
       ASSERT_EQ(0,iflag_);
     }
 
@@ -184,6 +206,12 @@ virtual void SetUp()
       ASSERT_EQ(0,iflag_);
       ASSERT_EQ(lda_,lda);
     }
+    if( _numberOfVectorsInitialized >= 5 )
+    {
+      SUBR(mvec_extract_view)(mem5_,&mem5_vp_,&lda,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      ASSERT_EQ(lda_,lda);
+    }
 
 
     // extract raw data of viewed block
@@ -209,6 +237,12 @@ virtual void SetUp()
     if( _numberOfVectorsInitialized >= 4 )
     {
       SUBR(mvec_extract_view)(vec4_,&vec4_vp_,&lda2,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      ASSERT_EQ(lda,lda2);
+    }
+    if( _numberOfVectorsInitialized >= 5 )
+    {
+      SUBR(mvec_extract_view)(vec5_,&vec5_vp_,&lda2,&iflag_);
       ASSERT_EQ(0,iflag_);
       ASSERT_EQ(lda,lda2);
     }
@@ -264,6 +298,10 @@ virtual void TearDown()
       {
         SUBR(mvec_from_device)((void*)mem4_,&iflag_);
       }
+      if( _numberOfVectorsInitialized >= 5 )
+      {
+        SUBR(mvec_from_device)((void*)mem5_,&iflag_);
+      }
 
       // check pre padding is still the same
       if( _numberOfVectorsInitialized >= 1 )
@@ -281,6 +319,10 @@ virtual void TearDown()
       if( _numberOfVectorsInitialized >= 4 )
       {
         ASSERT_REAL_EQ(mt::one(), ArrayEqual(mem4_vp_,nloc_,pad_pre_,lda_,stride_,(_ST_)-104.,vflag_));
+      }
+      if( _numberOfVectorsInitialized >= 5 )
+      {
+        ASSERT_REAL_EQ(mt::one(), ArrayEqual(mem5_vp_,nloc_,pad_pre_,lda_,stride_,(_ST_)-105.,vflag_));
       }
 
       // check post padding is still the same
@@ -301,6 +343,10 @@ virtual void TearDown()
       {
         ASSERT_REAL_EQ(mt::one(), ArrayEqual(mem4_vp_+pad_pre_+nvec_,nloc_,pad_post_,lda_,stride_,(_ST_)-104.,vflag_));
       }
+      if( _numberOfVectorsInitialized >= 5 )
+      {
+        ASSERT_REAL_EQ(mt::one(), ArrayEqual(mem5_vp_+pad_pre_+nvec_,nloc_,pad_post_,lda_,stride_,(_ST_)-105.,vflag_));
+      }
 #else
       if( _numberOfVectorsInitialized >= 1 )
       {
@@ -313,6 +359,14 @@ virtual void TearDown()
       if( _numberOfVectorsInitialized >= 3 )
       {
         ASSERT_REAL_EQ(mt::one(), ArrayEqual(mem3_vp_+(pad_pre_+nvec_)*lda_,nloc_,pad_post_,lda_,stride_,(_ST_)-103.,vflag_));
+      }
+      if( _numberOfVectorsInitialized >= 4 )
+      {
+        ASSERT_REAL_EQ(mt::one(), ArrayEqual(mem4_vp_+(pad_pre_+nvec_)*lda_,nloc_,pad_post_,lda_,stride_,(_ST_)-104.,vflag_));
+      }
+      if( _numberOfVectorsInitialized >= 5 )
+      {
+        ASSERT_REAL_EQ(mt::one(), ArrayEqual(mem5_vp_+(pad_pre_+nvec_)*lda_,nloc_,pad_post_,lda_,stride_,(_ST_)-105.,vflag_));
       }
 #endif
     }
@@ -344,6 +398,11 @@ static void TearDownTestCase()
       SUBR(mvec_delete)(vec4_,&iflag_);
       ASSERT_EQ(0,iflag_);
     }
+    if( _numberOfVectorsInitialized >= 5 )
+    {
+      SUBR(mvec_delete)(vec5_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+    }
 
     // delete memory blocks if vecX are views
     if (useViews_)
@@ -368,10 +427,15 @@ static void TearDownTestCase()
         SUBR(mvec_delete)(mem4_,&iflag_);
         ASSERT_EQ(0,iflag_);
       }
+      if( _numberOfVectorsInitialized >= 5 )
+      {
+        SUBR(mvec_delete)(mem5_,&iflag_);
+        ASSERT_EQ(0,iflag_);
+      }
     }
 
-    vec1_ = vec2_ = vec3_ = NULL;
-    mem1_ = mem2_ = mem3_ = NULL;
+    vec1_ = vec2_ = vec3_ = vec4_ = vec5_ = NULL;
+    mem1_ = mem2_ = mem3_ = mem4_ = mem5_ = NULL;
   }
 
   KernelTestWithMap<_Nglob>::TearDownTestCase();
@@ -660,6 +724,9 @@ TYPE(mvec_ptr) KernelTestWithVectors<_ST_,_Nglob,_Nvec, _useViews, _numberOfVect
 template<phist_gidx _Nglob, int _Nvec, int _useViews, int _numberOfVectorsInitialized, int _multipleDefinitionCounter>
 TYPE(mvec_ptr) KernelTestWithVectors<_ST_,_Nglob,_Nvec, _useViews, _numberOfVectorsInitialized, _multipleDefinitionCounter>::mem4_ = NULL;
 
+template<phist_gidx _Nglob, int _Nvec, int _useViews, int _numberOfVectorsInitialized, int _multipleDefinitionCounter>
+TYPE(mvec_ptr) KernelTestWithVectors<_ST_,_Nglob,_Nvec, _useViews, _numberOfVectorsInitialized, _multipleDefinitionCounter>::mem5_ = NULL;
+
 
 template<phist_gidx _Nglob, int _Nvec, int _useViews, int _numberOfVectorsInitialized, int _multipleDefinitionCounter>
 int KernelTestWithVectors<_ST_,_Nglob,_Nvec, _useViews, _numberOfVectorsInitialized, _multipleDefinitionCounter>::nvecPadded_;
@@ -682,6 +749,9 @@ TYPE(mvec_ptr) KernelTestWithVectors<_ST_,_Nglob,_Nvec, _useViews, _numberOfVect
 
 template<phist_gidx _Nglob, int _Nvec, int _useViews, int _numberOfVectorsInitialized, int _multipleDefinitionCounter>
 TYPE(mvec_ptr) KernelTestWithVectors<_ST_,_Nglob,_Nvec, _useViews, _numberOfVectorsInitialized, _multipleDefinitionCounter>::vec4_ = NULL;
+
+template<phist_gidx _Nglob, int _Nvec, int _useViews, int _numberOfVectorsInitialized, int _multipleDefinitionCounter>
+TYPE(mvec_ptr) KernelTestWithVectors<_ST_,_Nglob,_Nvec, _useViews, _numberOfVectorsInitialized, _multipleDefinitionCounter>::vec5_ = NULL;
 
 
 template<phist_gidx _Nglob, int _Nvec, int _useViews, int _numberOfVectorsInitialized, int _multipleDefinitionCounter>
