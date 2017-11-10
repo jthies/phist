@@ -9,7 +9,7 @@
 #include "phist_config.h"
 #include "phist_tools.h"
 #include "../phist_kernels.h"
-#include "phist_trilinos_macros.h"
+#include "phist_trilinos_macros.hpp"
 #include "Epetra_config.h"
 #ifdef PHIST_HAVE_MPI
 #include "Epetra_MpiComm.h"

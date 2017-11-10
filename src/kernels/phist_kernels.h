@@ -212,6 +212,23 @@ typedef int (*phist_mvec_elemFunc)(ghost_gidx, ghost_lidx, void *, void *);
 #include "phist_kernels_common_decl.h"
 #include "phist_kernels_fused_decl.h"
 #include "phist_kernels_carp_decl.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+//! mixed real/complex operation: split mvec into real and imag part.
+//! if either reV or imV are NULL, it is not touched.
+void phist_Cmvec_split(phist_Cconst_mvec_ptr V, phist_Smvec* reV, phist_Smvec* imV, int *iflag);
+
+//! mixed real/complex operation: copy separate real and imaginary part into complex vector
+//! if either reV or imV are NULL, it is not touched.
+void phist_Cmvec_combine(phist_Cmvec_ptr V, phist_Sconst_mvec_ptr reV, phist_Sconst_mvec_ptr imV, int *iflag);
+
+#ifdef __cplusplus
+} //extern "C"
+#endif
+
 //!@}
 #endif /* PHIST_HAVE_SP */
 
@@ -230,9 +247,27 @@ typedef int (*phist_mvec_elemFunc)(ghost_gidx, ghost_lidx, void *, void *);
 #include "phist_kernels_common_decl.h"
 #include "phist_kernels_fused_decl.h"
 #include "phist_kernels_carp_decl.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+//! mixed real/complex operation: split mvec into real and imag part.
+//! if either reV or imV are NULL, it is not touched.
+void phist_Zmvec_split(phist_Zconst_mvec_ptr V, phist_Dmvec* reV, phist_Dmvec* imV, int *iflag);
+
+//! mixed real/complex operation: copy separate real and imaginary part into complex vector
+//! if either reV or imV are NULL, it is not touched.
+void phist_Zmvec_combine(phist_Zmvec_ptr V, phist_Dconst_mvec_ptr reV, phist_Dconst_mvec_ptr imV, int *iflag);
+
+
 //!@}
 #include "phist_gen_clean.h"
 #endif /* DOXYGEN_NO_TG */
+
+#ifdef __cplusplus
+} //extern "C"
+#endif
 
 //@}
 

@@ -15,7 +15,7 @@
 #endif
 
 #include "phist_void_aliases.h"
-#include "phist_trilinos_macros.h"
+#include "phist_trilinos_macros.hpp"
 #include "phist_macros.h"
 #include "../../kernels/epetra/epetra_helpers.h"
 

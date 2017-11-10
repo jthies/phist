@@ -17,9 +17,6 @@
 
 #include "phist_tools.h"
 #include "phist_kernel_perfmodels.hpp"
-//#ifdef PHIST_HAVE_TEUCHOS
-//#include "phist_trilinos_macros.h"
-//#endif
 
 #include "phist_typedefs.h"
 #include "phist_MemOwner.hpp"

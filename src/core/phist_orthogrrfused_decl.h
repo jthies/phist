@@ -6,7 +6,8 @@
 /* Contact: Jonas Thies (Jonas.Thies@DLR.de)                                               */
 /*                                                                                         */
 /*******************************************************************************************/
-//! internal implementation of the orthog function, the regular SUBR(orthog) should be used instead in actual algorithms.
+
+//! internal implementation of the orthog function, the regular orthog should be used as a frontend in actual algorithms.
 
 //! Does not randomize the null space (if any). Note that the arguments are renamed and reordered, this should 
 //! eventually be adjusted to avoid confusion. Here, W is the orthogonal space, V is orthogonalized against W, and the

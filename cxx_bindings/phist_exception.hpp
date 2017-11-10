@@ -6,21 +6,39 @@
 /* Contact: Jonas Thies (Jonas.Thies@DLR.de)                                               */
 /*                                                                                         */
 /*******************************************************************************************/
-#include "phist_config.h"
-#ifdef PHIST_HAVE_SP
+
+#ifndef PHIST_EXCEPTION_HPP
+#define PHIST_EXCEPTION_HPP
+
+#include <exception>
 #include "phist_tools.h"
-#include "phist_kernels.h"
-#include "phist_harmonicjada.h"
-#include "phist_orthog.h"
 
-#include "phist_schur_decomp.h"
-#include "phist_simple_arnoldi.h"
-#include "phist_transform_searchspace.h"
-#include "phist_jadaCorrectionSolver.h"
-#include "phist_core_flags.h"
+namespace phist
+{
+  //! class for reporting an error (negative) or warning (positive) iflag on return
+  class Exception : public std::exception
+  {
+    public:
+    
+    //!
+    Exception(int iflag) : std::exception(), iflag_(iflag) {}
+ 
+   //!
+   ~Exception(){}
+   
+   //!
+   const char* what() const noexcept {return phist_retcode2str(iflag_);}
+   
+   //!
+   inline int iflag() const noexcept {return iflag_;}
 
+  protected:
+  
+    //!
+    int iflag_;
+  
+  };
 
-#include "phist_gen_s.h"
-#include "phist_harmonicjada_def.hpp"
+}
 
 #endif

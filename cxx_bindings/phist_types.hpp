@@ -6,21 +6,32 @@
 /* Contact: Jonas Thies (Jonas.Thies@DLR.de)                                               */
 /*                                                                                         */
 /*******************************************************************************************/
-#include "phist_config.h"
-#ifdef PHIST_HAVE_SP
-#include "phist_tools.h"
-#include "phist_kernels.h"
-#include "phist_harmonicjada.h"
-#include "phist_orthog.h"
 
-#include "phist_schur_decomp.h"
-#include "phist_simple_arnoldi.h"
-#include "phist_transform_searchspace.h"
-#include "phist_jadaCorrectionSolver.h"
-#include "phist_core_flags.h"
+#include "phist_typedefs.h"
+#include "phist_ScalarTraits.hpp"
 
+namespace phist {
 
-#include "phist_gen_s.h"
-#include "phist_harmonicjada_def.hpp"
+template<typename ST>
+class types
+{
+  public:
+  
+    typedef ScalarTraits<ST> st;
+    typedef typename ScalarTraits<ST>::magn_t MT;
+    typedef ScalarTraits<MT> mt;
+    
+    typedef typename st::mvec_t* mvec_ptr;
+    typedef typename st::mvec_t const* const_mvec_ptr;
 
-#endif
+    typedef typename st::sdMat_t* sdMat_ptr;
+    typedef typename st::sdMat_t const* const_sdMat_ptr;
+
+    typedef typename st::sparseMat_t* sparseMat_ptr;
+    typedef typename st::sparseMat_t const* const_sparseMat_ptr;
+
+    typedef typename st::linearOp_t* linearOp_ptr;
+    typedef typename st::linearOp_t const* const_linearOp_ptr;
+};
+
+}
