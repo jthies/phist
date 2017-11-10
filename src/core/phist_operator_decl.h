@@ -78,6 +78,20 @@ void SUBR(linearOp_wrap_sparseMat_pair)(TYPE(linearOp_ptr) op,
 //!
 void SUBR(linearOp_wrap_linearOp_product)(TYPE(linearOp_ptr) op,
         TYPE(const_linearOp_ptr) A, TYPE(const_linearOp_ptr) B, int* iflag);
+		
+//! create a 'product triple operator' from opA, opB and opC which acts as Y <- alpha*A*B*C*X + beta*Y (apply).
+//! The other functions will at the moment return an error (-99, not implemented) because they are
+//! typically not needed and their behavior has not been defined yet for product operators.
+//! An exception is 'destroy', which will delete temporary storage used by the operator but not the
+//! operators A, B and C, which are only wrapped and not owned.
+//!
+//! CAVEAT: as the resulting wrapped operator cannot access details of the implementation of A, B and C,
+//!         we cannot use a fused kernel here. For optimal performance e.g. if A, B and C are sparse row
+//!         matrices, a fused kernel should be used.
+//!
+void SUBR(linearOp_wrap_linearOp_product_triple)(TYPE(linearOp_ptr) op,
+        TYPE(const_linearOp_ptr) A, TYPE(const_linearOp_ptr) B, TYPE(const_linearOp_ptr) C, int* iflag);
+		
 
 #if defined(__cplusplus)&&defined(PHIST_KERNEL_LIB_EPETRA)&&defined(IS_DOUBLE)&&!defined(IS_COMPLEX)
 // forward declaration
