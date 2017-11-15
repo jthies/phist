@@ -56,7 +56,7 @@
 #ifdef PHIST_HAVE_SP
 #include "phist_gen_c.h"
 
-#include "../common/kernels_no_impl.cpp"
+//#include "../common/kernels_no_impl.cpp"
 /*
 #include "../common/kernels_no_io.cpp"
 #include "../common/kernels_no_inplace_VC.cpp"
