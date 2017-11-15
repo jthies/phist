@@ -7,7 +7,10 @@
 /*                                                                                         */
 /*******************************************************************************************/
 
+#include "../common/kernels_no_impl.cpp"
 
+
+/*
 extern "C"
 {
 
@@ -38,7 +41,7 @@ void SUBR(sparse_mat_read_mm)(TYPE(sparseMat_ptr)* matrixPtr,
 }
 
 } // extern "C"
-
+*/
 
 
 

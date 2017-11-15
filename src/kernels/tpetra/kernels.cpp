@@ -6,7 +6,6 @@
 /* Contact: Jonas Thies (Jonas.Thies@DLR.de)                                               */
 /*                                                                                         */
 /*******************************************************************************************/
-
 #include "phist_config.h"
 #include "phist_tools.h"
 #include "phist_typedefs.h"
@@ -33,3 +32,118 @@
 
 
 //using namespace phist::tpetra;
+
+namespace {
+static int myMpiSession=0;
+}
+
+// This function creates the default compute node to be used for vectors and matrices.
+// It is not exposed to the user because the Kokkos node concept is specific for Tpetra
+// and doesn't have a direct equivalent in epetra or ghost. The function checks if a file
+// node.xml exists in which the node parameters like "Num Threads" can be set, otherwise
+// it just uses default parameters.
+/*
+extern "C" void phist_tpetra_node_create(node_type** node, phist_const_comm_ptr vcomm, int* iflag)
+{
+  *iflag = PHIST_NOT_IMPLEMENTED;
+} */
+
+// initialize kernel library. Should at least call MPI_Init if it has not been called
+// but is required.
+extern "C" void phist_kernels_init(int* argc, char*** argv, int* iflag)
+{
+  *iflag = PHIST_NOT_IMPLEMENTED;
+}
+      
+  // finalize kernel library. Should at least call MPI_Finalize if it has not been called
+  // but is required.
+extern "C" void phist_kernels_finalize(int* iflag)
+{
+  *iflag = PHIST_NOT_IMPLEMENTED;
+}
+            
+
+//!
+extern "C" void phist_comm_create(phist_comm_ptr* vcomm, int* iflag)
+{
+  *iflag = PHIST_NOT_IMPLEMENTED;
+}
+
+//!
+extern "C" void phist_comm_delete(phist_comm_ptr vcomm, int* iflag)
+{
+  *iflag = PHIST_NOT_IMPLEMENTED;
+}
+
+#ifdef PHIST_HAVE_MPI
+void phist_comm_get_mpi_comm(phist_const_comm_ptr vcomm, MPI_Comm* mpiComm, int* iflag)
+{
+  *iflag = PHIST_NOT_IMPLEMENTED;
+}
+#endif
+
+//!
+extern "C" void phist_comm_get_rank(phist_const_comm_ptr vcomm, int* rank, int* iflag)
+{
+  *iflag = PHIST_NOT_IMPLEMENTED;
+}
+//!
+extern "C" void phist_comm_get_size(phist_const_comm_ptr vcomm, int* size, int* iflag)
+{
+  *iflag = PHIST_NOT_IMPLEMENTED;
+}
+
+//!
+extern "C" void phist_map_create(phist_map_ptr* vmap, phist_const_comm_ptr vcomm, phist_gidx nglob, int *iflag)
+{
+  *iflag = PHIST_NOT_IMPLEMENTED;
+}
+
+//!
+extern "C" void phist_map_delete(phist_map_ptr vmap, int *iflag)
+{
+  *iflag = PHIST_NOT_IMPLEMENTED;
+}
+
+//!
+extern "C" void phist_map_get_comm(phist_const_map_ptr vmap, phist_const_comm_ptr* vcomm, int* iflag)
+{
+  *iflag = PHIST_NOT_IMPLEMENTED;
+}
+
+//!
+extern "C" void phist_map_get_local_length(phist_const_map_ptr vmap, phist_lidx* nloc, int* iflag)
+{
+  *iflag = PHIST_NOT_IMPLEMENTED;
+}
+
+//!
+extern "C" void phist_map_get_global_length(phist_const_map_ptr vmap, phist_gidx* nglob, int* iflag)
+{
+  *iflag = PHIST_NOT_IMPLEMENTED;
+}
+
+//! returns the smallest global index in the map appearing on my partition. iflag is set to 1
+//! in case the map is not contiguous, because in that case it may be that the
+//! caller falsely assumes global elements [ilower ... iupper] are actually on this partition.
+extern "C" void phist_map_get_ilower(phist_const_map_ptr vmap, phist_gidx* ilower, int* iflag)
+{
+  *iflag = PHIST_NOT_IMPLEMENTED;
+}
+//! returns the largest global index in the map appearing on my partition. iflag is set to 1
+//! in case the map is not contiguous, because in that case it may be that the
+//! caller falsely assumes global elements [ilower ... iupper] are actually on this partition.
+extern "C" void phist_map_get_iupper(phist_const_map_ptr vmap, phist_gidx* iupper, int* iflag)
+{
+  *iflag = PHIST_NOT_IMPLEMENTED;
+}
+
+// allow verifying that maps are compatible (the same or permuted)
+extern "C" void phist_maps_compatible(phist_const_map_ptr vmap1, phist_const_map_ptr vmap2, int* iflag)
+{
+  *iflag = PHIST_NOT_IMPLEMENTED;
+}
+
+
+#include "../common/default_context.cpp"
+#include "../common/phist_bench_kernels.cpp"
