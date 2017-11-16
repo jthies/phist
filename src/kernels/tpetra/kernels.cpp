@@ -59,7 +59,10 @@ extern "C" void phist_kernels_init(int* argc, char*** argv, int* iflag)
     MPI_Initialized(&mpiInitialized);
     myMpiSession = mpiInitialized ? true : false;
     if (not mpiInitialized)
+    {
       *iflag = MPI_Init(argc, argv);
+      return;
+    }
   #endif
   *iflag = PHIST_SUCCESS;
 }

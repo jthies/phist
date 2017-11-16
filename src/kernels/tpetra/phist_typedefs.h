@@ -20,7 +20,8 @@
 
 #ifdef __cplusplus
 //#include <cinttypes>
-#include <complex>
+//#include <complex>
+#include <Kokkos_Complex.hpp>
 #include <cstddef>
 #else
 //#include <inttypes.h>
@@ -31,8 +32,8 @@
 
 #ifdef __cplusplus
 //! single precision complex type
-using phist_s_complex = std::complex<float>;
-using phist_d_complex = std::complex<double>;
+using phist_s_complex = Kokkos::complex<float>;
+using phist_d_complex = Kokkos::complex<double>;
 //! type of global indices
 using phist_gidx = std::ptrdiff_t;
 #else

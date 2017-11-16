@@ -49,18 +49,18 @@
 #include <sstream>
 
 
-//using namespace phist::tpetra;
+using namespace phist::tpetra;
 
 //extern "C" void phist_tpetra_node_create(node_type** node, phist_const_comm_ptr vcomm, int* iflag);
 
 #ifdef PHIST_HAVE_SP
 #include "phist_gen_c.h"
 
-//#include "../common/kernels_no_impl.cpp"
-/*
+#include "kernels_def.hpp"
+#include "carp_def.hpp" /*
 #include "../common/kernels_no_io.cpp"
 #include "../common/kernels_no_inplace_VC.cpp"
 #include "../common/kernels_no_VC_add_WD.cpp"
 #include "../common/kernels_no_fused.cpp"
-#include "../common/kernels_no_gpu.cpp" */
+#include "../common/kernels_no_gpu.cpp"  */
 #endif
