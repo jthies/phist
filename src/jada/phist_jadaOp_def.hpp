@@ -551,3 +551,111 @@ extern "C" void SUBR(jadaOp_set_leftPrecond)(TYPE(linearOp_ptr) jdOp, TYPE(const
     jdOp->apply=SUBR(jadaOp_apply_project_pre_post);
   }
 }
+
+
+// todo: write projektions as operators
+
+// (I-QQ')(A-sigma_j I)               for standard EVP, and     
+// (I-(BQ)Q')(A-sigma_j B)(I-Q(BQ)')  for generalized EVP with  
+//                              hpd B. Here Q'BQ=I.   
+
+// The general form is:                             
+//                                                              
+// post-project:   y <- (I - W V')*Op          * x  (1)         
+// pre-/post:      y <- (I - W V')*Op*(I-V W') * x  (2)   
+
+
+
+
+
+//applies the pre-projection:
+//for B==NULL: y <- alpha*(I-VV')*X + beta*Y
+//for B!=NULL: y <- alpha*(I-V(VB)')*X + beta*Y
+void SUBR(pre_projection_Op_apply)(_ST_ alpha, const void* op, TYPE(const_mvec_ptr) X, _ST_ beta, TYPE(mvec_ptr) Y, int* iflag)
+{
+#include "phist_std_typedefs.hpp"
+	PHIST_ENTER_FCN(__FUNCTION__);
+	PHIST_CAST_PTR_FROM_VOID(const TYPE(jadaOp_data), jadaOp, op, *iflag);
+	
+	if( alpha == st::zero() ) {
+		PHIST_CHK_IERR( SUBR( mvec_scale)(Y, beta, iflag), *iflag);
+	}
+	else {
+		int nvec, nvecp = 0;
+		PHIST_CHK_IERR( SUBR( mvec_num_vectors ) (X, &nvec, iflag), *iflag);
+		PHIST_CHK_IERR( SUBR( mvec_num_vectors ) (jadaOp->V, &nvecp, iflag), *iflag);
+
+		phist_const_map_ptr map=NULL;
+		PHIST_CHK_IERR(SUBR(mvec_get_map)(X,&map,iflag),*iflag);
+		phist_const_comm_ptr comm=NULL;
+		PHIST_CHK_IERR(phist_map_get_comm(map, &comm, iflag), *iflag);
+		
+		TYPE(sdMat_ptr) tmp;
+		PHIST_CHK_IERR( SUBR( sdMat_create)(&tmp, nvecp, nvec, comm, iflag), *iflag);
+		
+		//todo: implementation without BV
+		// tmp <- -(BV)'*X
+{		
+PHIST_ENTER_FCN("phist_jadaOp_mvecT_times_mvec");
+	PHIST_CHK_IERR( SUBR( mvecT_times_mvec)(-st::one(), jadaOp->BV, X, st::zero(), tmp, iflag), *iflag);
+}
+		// Y <- alpha*X + beta*Y
+		PHIST_CHK_IERR( SUBR(mvec_add_mvec)(alpha, X, beta, Y, iflag), *iflag);
+		
+		// Y <- Y + alpha*V*tmp
+{
+PHIST_ENTER_FCN("phist_jadaOp_mvec_times_sdMat");
+	PHIST_CHK_IERR(SUBR(mvec_times_sdMat)(alpha,jadaOp->V,tmp,st::one(),Y,iflag),*iflag);
+}
+
+		//clean up
+		PHIST_CHK_IERR(SUBR(sdMat_delete)(tmp,iflag),*iflag);
+	}	
+}
+
+extern "C" void SUBR(pre_projection_Op_create)(TYPE(const_linearOp_ptr) B_op, TYPE(const_mvec_ptr) V,
+	TYPE(const_mvec_ptr) BV, TYPE(linearOp_ptr) pre_proj_Op, int* iflag)
+{
+#include "phist_std_typedefs.hpp"
+	PHIST_ENTER_FCN(__FUNCTION__);	//wofür
+	*iflag = 0;
+
+	// allocate jadaOp struct
+	TYPE(jadaOp_data) *myOp = new TYPE(jadaOp_data);
+  
+	if (B_op!=NULL && B_op->apply==NULL)
+	{
+		PHIST_SOUT(PHIST_ERROR, "operator passed to %s does not support apply\n"
+                            "(file %s, line %d)\n",__FUNCTION__,__FILE__,__LINE__);
+	*iflag=-1;
+	return;
+	}
+
+	// setup jadaOp members
+	myOp->AB_op   = NULL;
+	myOp->B_op   = B_op;
+	myOp->leftPrecon_op = NULL;
+	myOp->V      = V;
+	myOp->BV     = (BV != NULL ? BV     : V);
+	myOp->num_shifts = 0;
+	myOp->sigma  = NULL;
+	myOp->X_proj = NULL;
+	
+	pre_proj_Op->A     = (const void*)myOp;
+	
+	pre_proj_Op->apply = SUBR(pre_projection_Op_apply);
+	pre_proj_Op->applyT = NULL;
+	pre_proj_Op->apply_shifted = NULL;
+
+	pre_proj_Op->destroy = SUBR(jadaOp_delete);
+	if (B_op!=NULL) {
+		pre_proj_Op->range_map = B_op->domain_map;
+		pre_proj_Op->domain_map = B_op->range_map;	
+	}	
+	else {
+		phist_const_map_ptr map=NULL;
+		PHIST_CHK_IERR(SUBR(mvec_get_map)(V,&map,iflag),*iflag)
+		pre_proj_Op->range_map = map;
+		pre_proj_Op->domain_map = map;
+	}
+}

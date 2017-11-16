@@ -58,3 +58,14 @@ void SUBR(jadaPrec_create)(TYPE(const_linearOp_ptr) P_op,
 //! the projections used are determined by the AB_op and jadaPrec operators. If jadaPrec==NULL, 
 //! the operator is reset to it's original effect.
 void SUBR(jadaOp_set_leftPrecond)(TYPE(linearOp_ptr) jadaOp, TYPE(const_linearOp_ptr) jadaPrec, int* iflag);
+
+//! create pre projection operator for Jacobi-Davidson,
+//! op*X = (I-V*BV')X
+//! For B_op==NULL we get op*X = (I-VV')X
+//! 
+//! We make use of the apply function in the given B_op object.
+void SUBR(pre_projection_Op_create)(TYPE(const_linearOp_ptr) B_op, 
+                                    TYPE(const_mvec_ptr) V,
+	                                TYPE(const_mvec_ptr) BV, 
+									TYPE(linearOp_ptr) pre_proj_Op, 
+									int* iflag);
