@@ -571,7 +571,7 @@ class ScalarTraits< Kokkos::complex<MT> >
 #ifdef PHIST_HAVE_GHOST
   static const ghost_datatype ghost_dt = ScalarTraits<MT>::c_ghost_dt;
 #endif
-  using linearOp_t = typename ScalarTraits<MT>::c_linearOp_t linearOp_t; 
+  using linearOp_t = typename ScalarTraits<MT>::c_linearOp_t; 
   using mvec_t = typename ScalarTraits<MT>::c_mvec_t; 
   using sparseMat_t = typename ScalarTraits<MT>::c_sparseMat_t; 
   using sdMat_t = typename ScalarTraits<MT>::c_sdMat_t; 

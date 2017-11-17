@@ -99,7 +99,7 @@ extern "C" void SUBR(sparseMat_get_row_map)(TYPE(const_sparseMat_ptr) A, phist_c
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   PHIST_CAST_PTR_FROM_VOID(const Traits<_ST_>::sparseMat_t, mat, A, *iflag);
-  *map = (phist_const_map_ptr)(A->getRowMap().get());
+  *map = (phist_const_map_ptr)(mat->getRowMap().get());
   *iflag = PHIST_SUCCESS;
 }
 
@@ -107,7 +107,7 @@ extern "C" void SUBR(sparseMat_get_col_map)(TYPE(const_sparseMat_ptr) A, phist_c
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   PHIST_CAST_PTR_FROM_VOID(const Traits<_ST_>::sparseMat_t, mat, A, *iflag);
-  *map = (phist_const_map_ptr)(A->getColMap().get());
+  *map = (phist_const_map_ptr)(mat->getColMap().get());
   *iflag = PHIST_SUCCESS;
 }
 
@@ -115,7 +115,7 @@ extern "C" void SUBR(sparseMat_get_domain_map)(TYPE(const_sparseMat_ptr) A, phis
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   PHIST_CAST_PTR_FROM_VOID(const Traits<_ST_>::sparseMat_t, mat, A, *iflag);
-  *map = (phist_const_map_ptr)(A->getDomainMap().get());
+  *map = (phist_const_map_ptr)(mat->getDomainMap().get());
   *iflag = PHIST_SUCCESS;
 }
 
@@ -123,7 +123,7 @@ extern "C" void SUBR(sparseMat_get_range_map)(TYPE(const_sparseMat_ptr) A, phist
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   PHIST_CAST_PTR_FROM_VOID(const Traits<_ST_>::sparseMat_t, mat, A, *iflag);
-  *map = (phist_const_map_ptr)(A->getRangeMap().get());
+  *map = (phist_const_map_ptr)(mat->getRangeMap().get());
   *iflag = PHIST_SUCCESS;
 }
 
@@ -133,7 +133,7 @@ extern "C" void SUBR(mvec_create)(TYPE(mvec_ptr)* vec,
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   PHIST_CAST_PTR_FROM_VOID(const map_type, inMap, map, *iflag);
   
-  auto map_ptr = Teuchos::rcp(map, false);
+  auto map_ptr = Teuchos::rcp(inMap, false);
   auto result = new Traits<_ST_>::mvec_t(map_ptr, nvec);
   *vec = (TYPE(mvec_ptr))(result);
 
@@ -149,9 +149,9 @@ extern "C" void SUBR(sdMat_create)(TYPE(sdMat_ptr)* mat,
   auto phistCommPtr = localComm == nullptr ? 
         Teuchos::DefaultComm<int>::getDefaultSerialComm(Teuchos::null)
       :
-        Teuchos::rcp(comm, false);
+        Teuchos::rcp(localComm, false);
 
-  auto localMap = Teuchos::rcp(new map_type(nrows, 0, phistCommPtr, Tpetra::LocallyReplicated))
+  auto localMap = Teuchos::rcp(new map_type(nrows, 0, phistCommPtr, Tpetra::LocallyReplicated));
   auto matrix = new Traits<_ST_>::mvec_t(localMap, ncols);
 
   *iflag = PHIST_SUCCESS;
@@ -160,15 +160,15 @@ extern "C" void SUBR(sdMat_create)(TYPE(sdMat_ptr)* mat,
 extern "C" void SUBR(mvec_get_map)(TYPE(const_mvec_ptr) V, phist_const_map_ptr* map, int* iflag)
 {
   PHIST_CAST_PTR_FROM_VOID(const Traits<_ST_>::mvec_t, mVec, V, *iflag);
-  *vmap = (phist_const_map_ptr)(mVec->getMap().get());
+  *map = (phist_const_map_ptr)(mVec->getMap().get());
   *iflag = PHIST_SUCCESS;
 }
 
 extern "C" void SUBR(mvec_num_vectors)(TYPE(const_mvec_ptr) V, int* nvec, int* iflag)
 {
   PHIST_CAST_PTR_FROM_VOID(const Traits<_ST_>::mvec_t, mVec, V, *iflag);
-  *nrows = mVec->getNumVectors();
-  *iflag = PHIST_SUCCES;
+  *nvec = mVec->getNumVectors();
+  *iflag = PHIST_SUCCESS;
 }
 
 extern "C" void SUBR(sdMat_get_nrows)(TYPE(const_sdMat_ptr) M, int* nrows, int* iflag)
@@ -197,7 +197,7 @@ extern "C" void SUBR(mvec_extract_view)(TYPE(mvec_ptr) V, _ST_** val, phist_lidx
   PHIST_CAST_PTR_FROM_VOID(Traits<_ST_>::mvec_t, mVec, V, *iflag);
 
   auto val_ptr = mVec->getLocalView<Kokkos::DefaultHostExecutionSpace>();
-  *val = val_ptr.ptr_on_device();
+  *val = (_ST_*)(val_ptr.ptr_on_device());
 
   *lda = mVec->getStride();
 
@@ -210,7 +210,7 @@ extern "C" void SUBR(sdMat_extract_view)(TYPE(sdMat_ptr) V, _ST_** val, phist_li
   PHIST_CAST_PTR_FROM_VOID(Traits<_ST_>::sdMat_t, sdMat, V, *iflag);
 
   auto val_ptr = sdMat->getLocalView<Kokkos::DefaultHostExecutionSpace>();
-  *val = val_ptr.ptr_on_device();
+  *val = (_ST_*)(val_ptr.ptr_on_device());
 
   *lda = sdMat->getStride();
 
@@ -313,7 +313,7 @@ extern "C" void SUBR(mvec_print)(TYPE(const_mvec_ptr) vec, int* iflag)
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   PHIST_CAST_PTR_FROM_VOID(const Traits<_ST_>::mvec_t, mvec, vec, *iflag);
 
-  mat.print(std::cout);
+  mvec->print(std::cout);
 
   *iflag = PHIST_SUCCESS;
 }
@@ -323,13 +323,15 @@ extern "C" void SUBR(sdMat_print)(TYPE(const_sdMat_ptr) mat, int* iflag)
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   PHIST_CAST_PTR_FROM_VOID(const Traits<_ST_>::sdMat_t, sdMat, mat, *iflag);
 
-  mat.print(std::cout);
+  sdMat->print(std::cout);
 
   *iflag = PHIST_SUCCESS;
 }
 
 extern "C" void SUBR(sdMat_identity)(TYPE(sdMat_ptr) mat, int* iflag)
 {
+  *iflag = PHIST_NOT_IMPLEMENTED;
+  /*
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
 
   _ST_* raw_values = nullptr; 
@@ -348,19 +350,20 @@ extern "C" void SUBR(sdMat_identity)(TYPE(sdMat_ptr) mat, int* iflag)
   {
     for (int row = 0; row != numRows; ++row)
     { // Branch predictor should do well enough here, [[unlikely]] attribute in c++20?
-      raw_values[lda * i + j] = col == row ? st::one() : st::zero();
+      raw_values[lda * col + row] = col == row ? phist::st::one() : phist::st::zero();
     }
   }
 
   *iflag = PHIST_SUCCESS;
+  */
 }
 
 extern "C" void SUBR(mvec_norm2)(TYPE(const_mvec_ptr) vec,
-    _MT_* vnrm, int* iflag)
+                                 _MT_* vnrm, int* iflag)
 { 
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
 
-  PHIST_CAST_PTR_FROM_VOID(Traits<_ST_::mvec_t, mvec, vec, *iflag);
+  PHIST_CAST_PTR_FROM_VOID(Traits<_ST_>::mvec_t, mvec, vec, *iflag);
 
   int nvec = mvec->getNumVectors();
   Teuchos::ArrayView<_MT_> norms{vnrm, nvec};
@@ -369,13 +372,15 @@ extern "C" void SUBR(mvec_norm2)(TYPE(const_mvec_ptr) vec,
 
   *iflag = PHIST_SUCCESS;
 }
-
+// All the functions that call Tpetra::MultiVector::scale()
+// should use Kokkos views instead of Teuchos ArrayViews
 extern "C" void SUBR(mvec_normalize)(TYPE(mvec_ptr) vec,
                                      _MT_* vnrm, int* iflag)
-{
+{ *iflag = PHIST_NOT_IMPLEMENTED;
+  /*
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
 
-  PHIST_CAST_PTR_FROM_VOID(const Traits<_ST_>::mvec_t, mvec, vec, *iflag);
+  PHIST_CAST_PTR_FROM_VOID(Traits<_ST_>::mvec_t, mvec, vec, *iflag);
 
   int nvec = mvec->getNumVectors();
   Teuchos::ArrayView<_MT_> norms{vnrm, nvec};
@@ -386,25 +391,27 @@ extern "C" void SUBR(mvec_normalize)(TYPE(mvec_ptr) vec,
   for (int idx = 0; idx != nvec; ++idx)
     scaling[idx] = norms[idx] == mt::zero() ? mt::one() : mt::one() / norms[idx];
   
-  PHIST_TRY_CATCH(mvec->scale(scaling), *iflag);
+  PHIST_TRY_CATCH(mvec->scale(norms), *iflag);
 
-  *iflag = PHIST_SUCCESS;
+  *iflag = PHIST_SUCCESS; */
 }
 
 extern "C" void SUBR(mvec_scale)(TYPE(mvec_ptr) vec, 
                                  _ST_ scalar, int* iflag)
-{
+{ *iflag = PHIST_NOT_IMPLEMENTED;
+  /*
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
 
   PHIST_CAST_PTR_FROM_VOID(Traits<_ST_>::mvec_t, mvec, vec, *iflag);
   PHIST_TRY_CATCH(mvec->scale(scalar), *iflag);
 
-  *iflag = PHIST_SUCCESS;
+  *iflag = PHIST_SUCCESS; */
 }
 
 extern "C" void SUBR(mvec_vscale)(TYPE(mvec_ptr) vec, 
                                   const _ST_* scalar, int* iflag)
-{
+{ *iflag = PHIST_NOT_IMPLEMENTED;
+  /*
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
 
   PHIST_CAST_PTR_FROM_VOID(Traits<_ST_>::mvec_t, mvec, vec, *iflag);
@@ -414,13 +421,15 @@ extern "C" void SUBR(mvec_vscale)(TYPE(mvec_ptr) vec,
 
   PHIST_TRY_CATCH(mvec->scale(scalars), *iflag);
 
-  *iflag = PHIST_SUCCESS;
+  *iflag = PHIST_SUCCESS; */
 }
 
 extern "C" void SUBR(mvec_add_mvec)(_ST_ alpha, TYPE(const_mvec_ptr) X,
                                     _ST_ beta,  TYPE(mvec_ptr) Y, 
                                     int* iflag)
 {
+
+
   *iflag=PHIST_NOT_IMPLEMENTED;
 }
 

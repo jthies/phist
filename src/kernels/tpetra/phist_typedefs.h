@@ -32,8 +32,8 @@
 
 #ifdef __cplusplus
 //! single precision complex type
-using phist_s_complex = Kokkos::complex<float>;
-using phist_d_complex = Kokkos::complex<double>;
+using phist_s_complex = std::complex<float>;
+using phist_d_complex = std::complex<double>;
 //! type of global indices
 using phist_gidx = std::ptrdiff_t;
 #else
