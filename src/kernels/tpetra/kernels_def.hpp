@@ -21,7 +21,7 @@ extern "C"
 void SUBR(sparseMat_read_mm)(TYPE(sparseMat_ptr)* matrixPtr,
                               phist_const_comm_ptr vcomm,
                               const char* fileName, int* iflag)
-{ /*
+{ 
     PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
     if (fileName == nullptr)
     {
@@ -44,7 +44,7 @@ void SUBR(sparseMat_read_mm)(TYPE(sparseMat_ptr)* matrixPtr,
     auto resultMatrixPtr = resultMatrix.release();
     //a  *matrixPtr = static_cast<TYPE(sparseMat_ptr)>(resultMatrixPtr);
 
-    *matrixPtr = (TYPE(sparseMat_ptr))(resultMatrixPtr.get()); */
+    *matrixPtr = (TYPE(sparseMat_ptr))(resultMatrixPtr.get()); 
     *iflag = PHIST_NOT_IMPLEMENTED;
 }
 
@@ -330,8 +330,6 @@ extern "C" void SUBR(sdMat_print)(TYPE(const_sdMat_ptr) mat, int* iflag)
 
 extern "C" void SUBR(sdMat_identity)(TYPE(sdMat_ptr) mat, int* iflag)
 {
-  *iflag = PHIST_NOT_IMPLEMENTED;
-  /*
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
 
   _ST_* raw_values = nullptr; 
@@ -350,12 +348,11 @@ extern "C" void SUBR(sdMat_identity)(TYPE(sdMat_ptr) mat, int* iflag)
   {
     for (int row = 0; row != numRows; ++row)
     { // Branch predictor should do well enough here, [[unlikely]] attribute in c++20?
-      raw_values[lda * col + row] = col == row ? phist::st::one() : phist::st::zero();
+      raw_values[lda * col + row] = col == row ? st::one() : st::zero();
     }
   }
 
   *iflag = PHIST_SUCCESS;
-  */
 }
 
 extern "C" void SUBR(mvec_norm2)(TYPE(const_mvec_ptr) vec,
@@ -372,8 +369,8 @@ extern "C" void SUBR(mvec_norm2)(TYPE(const_mvec_ptr) vec,
 
   *iflag = PHIST_SUCCESS;
 }
-// All the functions that call Tpetra::MultiVector::scale()
-// should use Kokkos views instead of Teuchos ArrayViews
+// TODO: All the functions that call Tpetra::MultiVector::scale()
+//       should use Kokkos views instead of Teuchos ArrayViews
 extern "C" void SUBR(mvec_normalize)(TYPE(mvec_ptr) vec,
                                      _MT_* vnrm, int* iflag)
 { *iflag = PHIST_NOT_IMPLEMENTED;
