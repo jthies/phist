@@ -13,6 +13,8 @@
 #include "../phist_kernels.h"
 #include "phist_trilinos_macros.hpp"
 
+#include <Kokkos_Core.hpp>
+
 #include "Teuchos_StandardCatchMacros.hpp"
 #include "Teuchos_DefaultComm.hpp"
 #ifdef PHIST_HAVE_MPI
@@ -64,6 +66,7 @@ extern "C" void phist_kernels_init(int* argc, char*** argv, int* iflag)
       return;
     }
   #endif
+  Kokkos::initialize(*argc, *argv);
   *iflag = PHIST_SUCCESS;
 }
       
@@ -71,6 +74,7 @@ extern "C" void phist_kernels_init(int* argc, char*** argv, int* iflag)
   // but is required.
 extern "C" void phist_kernels_finalize(int* iflag)
 {
+  Kokkos::finalize();
   #ifdef PHIST_HAVE_MPI
     if (myMpiSession)
     {

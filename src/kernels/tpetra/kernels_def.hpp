@@ -328,8 +328,13 @@ extern "C" void SUBR(sdMat_print)(TYPE(const_sdMat_ptr) mat, int* iflag)
   *iflag = PHIST_SUCCESS;
 }
 
+// TODO: Maybe utilize a Kokkos::View and nested parallel_for
+//       or has phist some parallelism on its own?
+//       Depends on the size if it is worth to use parallelism,
+//       so we need to benchmark it to see what is best.
 extern "C" void SUBR(sdMat_identity)(TYPE(sdMat_ptr) mat, int* iflag)
 {
+  #include "phist_std_typedefs.hpp"
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
 
   _ST_* raw_values = nullptr; 
@@ -373,8 +378,8 @@ extern "C" void SUBR(mvec_norm2)(TYPE(const_mvec_ptr) vec,
 //       should use Kokkos views instead of Teuchos ArrayViews
 extern "C" void SUBR(mvec_normalize)(TYPE(mvec_ptr) vec,
                                      _MT_* vnrm, int* iflag)
-{ *iflag = PHIST_NOT_IMPLEMENTED;
-  /*
+{ 
+  #include "phist_std_typedefs.hpp"
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
 
   PHIST_CAST_PTR_FROM_VOID(Traits<_ST_>::mvec_t, mvec, vec, *iflag);
@@ -388,27 +393,23 @@ extern "C" void SUBR(mvec_normalize)(TYPE(mvec_ptr) vec,
   for (int idx = 0; idx != nvec; ++idx)
     scaling[idx] = norms[idx] == mt::zero() ? mt::one() : mt::one() / norms[idx];
   
-  PHIST_TRY_CATCH(mvec->scale(norms), *iflag);
+  PHIST_TRY_CATCH(mvec->scale(scaling), *iflag);
 
-  *iflag = PHIST_SUCCESS; */
+  *iflag = PHIST_SUCCESS; 
 }
 
 extern "C" void SUBR(mvec_scale)(TYPE(mvec_ptr) vec, 
                                  _ST_ scalar, int* iflag)
-{ *iflag = PHIST_NOT_IMPLEMENTED;
-  /*
+{  
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
 
   PHIST_CAST_PTR_FROM_VOID(Traits<_ST_>::mvec_t, mvec, vec, *iflag);
   PHIST_TRY_CATCH(mvec->scale(scalar), *iflag);
-
-  *iflag = PHIST_SUCCESS; */
 }
 
 extern "C" void SUBR(mvec_vscale)(TYPE(mvec_ptr) vec, 
                                   const _ST_* scalar, int* iflag)
-{ *iflag = PHIST_NOT_IMPLEMENTED;
-  /*
+{
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
 
   PHIST_CAST_PTR_FROM_VOID(Traits<_ST_>::mvec_t, mvec, vec, *iflag);
@@ -418,23 +419,48 @@ extern "C" void SUBR(mvec_vscale)(TYPE(mvec_ptr) vec,
 
   PHIST_TRY_CATCH(mvec->scale(scalars), *iflag);
 
-  *iflag = PHIST_SUCCESS; */
+  *iflag = PHIST_SUCCESS; 
 }
 
-extern "C" void SUBR(mvec_add_mvec)(_ST_ alpha, TYPE(const_mvec_ptr) X,
-                                    _ST_ beta,  TYPE(mvec_ptr) Y, 
+// vecOut = alpha * vecIn + beta * vecOut
+extern "C" void SUBR(mvec_add_mvec)(_ST_ alpha, TYPE(const_mvec_ptr) vecIn,
+                                    _ST_ beta, TYPE(mvec_ptr) vecOut, 
                                     int* iflag)
 {
+  #include "phist_std_typedefs.hpp"
+  PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
 
+  PHIST_CAST_PTR_FROM_VOID(const Traits<_ST_>::mvec_t, vec, vecIn, *iflag);
+  PHIST_CAST_PTR_FROM_VOID(Traits<_ST_>::mvec_t, resultVec, vecOut, *iflag);
 
-  *iflag=PHIST_NOT_IMPLEMENTED;
+  // Check if we only want to copy vec into resultVec
+  if (alpha == st::one() and beta == st::zero())
+    *resultVec = *vec; 
+  else
+    PHIST_TRY_CATCH(resultVec->update(alpha, *vec, beta), *iflag);
+
+  *iflag = PHIST_SUCCESS;
 }
 
-extern "C" void SUBR(mvec_vadd_mvec)(const _ST_ alpha[], TYPE(const_mvec_ptr) X,
-                                     _ST_ beta,  TYPE(mvec_ptr) Y, 
+// vecOut[i] = alpha[i] * vecIn[i] + beta * vecOut[i]
+extern "C" void SUBR(mvec_vadd_mvec)(const _ST_ alpha[], TYPE(const_mvec_ptr) vecIn,
+                                     _ST_ beta, TYPE(mvec_ptr) vecOut, 
                                      int* iflag)
 {
-  *iflag=PHIST_NOT_IMPLEMENTED;
+  PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
+
+  PHIST_CAST_PTR_FROM_VOID(const Traits<_ST_>::mvec_t, vec, vecIn, *iflag);
+  PHIST_CAST_PTR_FROM_VOID(Traits<_ST_>::mvec_t, resultVec, vecOut, *iflag);
+
+  // Kokkos::parallel_for?
+  for (int idx = 0; idx != vec->getNumVectors(); ++idx)
+  {
+    PHIST_TRY_CATCH(resultVec->getVectorNonConst(idx)->update(alpha[idx], 
+                                                           *vec->getVector(idx), 
+                                                           beta),
+                    *iflag);
+  }
+  *iflag = PHIST_SUCCESS;
 }
 
 

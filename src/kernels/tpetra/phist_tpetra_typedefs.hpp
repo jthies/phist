@@ -12,6 +12,7 @@
 #include <Tpetra_Map_decl.hpp>
 #include <Tpetra_MultiVector_decl.hpp>
 #include <Tpetra_CrsMatrix_decl.hpp>
+#include <Tpetra_Import_decl.hpp>
 
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_Comm.hpp>
@@ -23,6 +24,7 @@ namespace tpetra
 {
 using map_type = Tpetra::Map<phist_lidx, phist_gidx>;
 using comm_type =  Teuchos::Comm<int>;
+using import_type = Tpetra::Import<phist_lidx, phist_gidx>;
 
 template<typename ST>
 class Traits
