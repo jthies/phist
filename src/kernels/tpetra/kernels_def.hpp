@@ -74,28 +74,37 @@ extern "C" void SUBR(sparseMat_read_bin_with_context)(TYPE(sparseMat_ptr)* A, ph
   *iflag=PHIST_NOT_IMPLEMENTED;
 }
 
-extern "C" void SUBR(sparseMat_read_hb_with_context)(TYPE(sparseMat_ptr)* A, phist_const_context_ptr ctx,
-        const char* filename,int* iflag)
+extern "C" void SUBR(sparseMat_read_hb_with_context)(TYPE(sparseMat_ptr)* A, 
+                                                     phist_const_context_ptr ctx,
+                                                     const char* filename, int* iflag)
 {
   *iflag=PHIST_NOT_IMPLEMENTED;
 }
 
-extern "C" void SUBR(sparseMat_create_fromRowFunc)(TYPE(sparseMat_ptr) *A, phist_const_comm_ptr comm,
-        phist_gidx nrows, phist_gidx ncols, phist_lidx maxnne,
-        phist_sparseMat_rowFunc rowFunPtr, void* last_arg, int *iflag)
+extern "C" void SUBR(sparseMat_create_fromRowFunc)(TYPE(sparseMat_ptr) *A, 
+                                                   phist_const_comm_ptr comm,
+                                                   phist_gidx nrows, 
+                                                   phist_gidx ncols, 
+                                                   phist_lidx maxnne,
+                                                   phist_sparseMat_rowFunc rowFunPtr, 
+                                                   void* last_arg, int *iflag)
 {
   *iflag=PHIST_NOT_IMPLEMENTED;
 }
 
-extern "C" void SUBR(sparseMat_create_fromRowFuncAndContext)(TYPE(sparseMat_ptr) *vA, phist_const_context_ptr ctx,
-        phist_lidx maxnne,phist_sparseMat_rowFunc rowFunPtr,void* last_arg,
-        int *iflag)
+extern "C" void SUBR(sparseMat_create_fromRowFuncAndContext)(TYPE(sparseMat_ptr) *vA, 
+                                                             phist_const_context_ptr ctx,
+                                                             phist_lidx maxnne, 
+                                                             phist_sparseMat_rowFunc rowFunPtr, 
+                                                             void* last_arg, int *iflag)
 {
   *iflag=PHIST_NOT_IMPLEMENTED;
 }
 
 
-extern "C" void SUBR(sparseMat_get_row_map)(TYPE(const_sparseMat_ptr) A, phist_const_map_ptr* map, int* iflag)
+extern "C" void SUBR(sparseMat_get_row_map)(TYPE(const_sparseMat_ptr) A, 
+                                            phist_const_map_ptr* map, 
+                                            int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   PHIST_CAST_PTR_FROM_VOID(const Traits<_ST_>::sparseMat_t, mat, A, *iflag);
@@ -103,7 +112,9 @@ extern "C" void SUBR(sparseMat_get_row_map)(TYPE(const_sparseMat_ptr) A, phist_c
   *iflag = PHIST_SUCCESS;
 }
 
-extern "C" void SUBR(sparseMat_get_col_map)(TYPE(const_sparseMat_ptr) A, phist_const_map_ptr* map, int* iflag)
+extern "C" void SUBR(sparseMat_get_col_map)(TYPE(const_sparseMat_ptr) A, 
+                                            phist_const_map_ptr* map, 
+                                            int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   PHIST_CAST_PTR_FROM_VOID(const Traits<_ST_>::sparseMat_t, mat, A, *iflag);
@@ -111,7 +122,9 @@ extern "C" void SUBR(sparseMat_get_col_map)(TYPE(const_sparseMat_ptr) A, phist_c
   *iflag = PHIST_SUCCESS;
 }
 
-extern "C" void SUBR(sparseMat_get_domain_map)(TYPE(const_sparseMat_ptr) A, phist_const_map_ptr* map, int* iflag)
+extern "C" void SUBR(sparseMat_get_domain_map)(TYPE(const_sparseMat_ptr) A, 
+                                               phist_const_map_ptr* map, 
+                                               int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   PHIST_CAST_PTR_FROM_VOID(const Traits<_ST_>::sparseMat_t, mat, A, *iflag);
@@ -119,7 +132,9 @@ extern "C" void SUBR(sparseMat_get_domain_map)(TYPE(const_sparseMat_ptr) A, phis
   *iflag = PHIST_SUCCESS;
 }
 
-extern "C" void SUBR(sparseMat_get_range_map)(TYPE(const_sparseMat_ptr) A, phist_const_map_ptr* map, int* iflag)
+extern "C" void SUBR(sparseMat_get_range_map)(TYPE(const_sparseMat_ptr) A, 
+                                              phist_const_map_ptr* map, 
+                                              int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   PHIST_CAST_PTR_FROM_VOID(const Traits<_ST_>::sparseMat_t, mat, A, *iflag);
@@ -128,7 +143,8 @@ extern "C" void SUBR(sparseMat_get_range_map)(TYPE(const_sparseMat_ptr) A, phist
 }
 
 extern "C" void SUBR(mvec_create)(TYPE(mvec_ptr)* vec, 
-    phist_const_map_ptr map, phist_lidx nvec, int* iflag)
+                                  phist_const_map_ptr map, 
+                                  phist_lidx nvec, int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   PHIST_CAST_PTR_FROM_VOID(const map_type, inMap, map, *iflag);
@@ -185,9 +201,19 @@ extern "C" void SUBR(sdMat_get_ncols)(TYPE(const_sdMat_ptr) M, int* ncols, int* 
   *iflag = PHIST_SUCCESS;
 }
 
-extern "C" void SUBR(mvec_to_mvec)(TYPE(const_mvec_ptr) v_in, TYPE(mvec_ptr) v_out, int* iflag)
+extern "C" void SUBR(mvec_to_mvec)(TYPE(const_mvec_ptr) v_sourceVec, 
+                                   TYPE(mvec_ptr) v_targetVec, int* iflag)
 {
-  *iflag=PHIST_NOT_IMPLEMENTED;
+  PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
+
+  PHIST_CAST_PTR_FROM_VOID(const Traits<_ST_>::mvec_t, sourceVec, v_sourceVec, *iflag);
+  PHIST_CAST_PTR_FROM_VOID(Traits<_ST_>::mvec_t, targetVec, v_targetVec, *iflag);
+
+  auto import = Teuchos::rcp(new import_type(targetVec->getMap(), sourceVec->getMap()));
+
+  PHIST_TRY_CATCH(targetVec->doImport(*sourceVec, *import, Tpetra::INSERT), *iflag);
+
+  *iflag = PHIST_SUCCESS;
 }
 
 
@@ -200,7 +226,10 @@ extern "C" void SUBR(mvec_extract_view)(TYPE(mvec_ptr) V, _ST_** val, phist_lidx
   *val = (_ST_*)(val_ptr.ptr_on_device());
 
   *lda = mVec->getStride();
-
+/*
+  auto valptr = mVec->get1dViewNonConst();
+  *val = valptr.getRawPtr();
+  *lda = mVec->getStride();*/
   *iflag = PHIST_SUCCESS;
 }
 
@@ -211,7 +240,10 @@ extern "C" void SUBR(sdMat_extract_view)(TYPE(sdMat_ptr) V, _ST_** val, phist_li
 
   auto val_ptr = sdMat->getLocalView<Kokkos::DefaultHostExecutionSpace>();
   *val = (_ST_*)(val_ptr.ptr_on_device());
-
+/*
+  auto valptr = sdMat->get1dViewNonConst();
+  *val = valptr.getRawPtr();
+*/
   *lda = sdMat->getStride();
 
   *iflag = PHIST_SUCCESS;
@@ -225,45 +257,176 @@ extern "C" void SUBR(sdMat_extract_error)(TYPE(sdMat_ptr) M, _ST_** MC_raw, int*
 #endif
 
 extern "C" void SUBR(mvec_view_block)(TYPE(mvec_ptr) V,
-    TYPE(mvec_ptr)* Vblock,
-    int jmin, int jmax, int* iflag)
+                                      TYPE(mvec_ptr)* Vblock,
+                                      int jmin, int jmax, int* iflag)
 {
-  *iflag=PHIST_NOT_IMPLEMENTED;
+  PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
+  PHIST_CAST_PTR_FROM_VOID(Traits<_ST_>::mvec_t, mvec, V, *iflag);
+
+  Teuchos::RCP<Traits<_ST_>::mvec_t > block;
+  PHIST_TRY_CATCH(block = mvec->subViewNonConst(Teuchos::Range1D(jmin, jmax)), *iflag);
+
+  // check if Vblock already has data and if so delete it
+  if (*Vblock != nullptr)
+  {
+    PHIST_CAST_PTR_FROM_VOID(Traits<_ST_>::mvec_t, tmp, *Vblock, *iflag);
+    delete tmp;
+  }
+  *Vblock = (TYPE(mvec_ptr))(block.release().get());
+  *iflag = PHIST_SUCCESS;
 }
 
 extern "C" void SUBR(mvec_get_block)(TYPE(const_mvec_ptr) V,
-    TYPE(mvec_ptr) Vblock,
-    int jmin, int jmax, int* iflag)
+                                     TYPE(mvec_ptr) Vblock,
+                                     int jmin, int jmax, int* iflag)
 {
-  *iflag=PHIST_NOT_IMPLEMENTED;
+  PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
+
+  PHIST_CAST_PTR_FROM_VOID(const Traits<_ST_>::mvec_t, mvecIn, V, *iflag);
+  PHIST_CAST_PTR_FROM_VOID(Traits<_ST_>::mvec_t, mvecOut, Vblock, *iflag);
+
+  Teuchos::RCP<const Traits<_ST_>::mvec_t> cols;
+  PHIST_TRY_CATCH(cols = mvecIn->subView(Teuchos::Range1D(jmin, jmax)), *iflag);
+
+  PHIST_TRY_CATCH(Tpetra::deep_copy(*mvecOut, *cols), *iflag);
+
+  *iflag = PHIST_SUCCESS;
 }
 
 extern "C" void SUBR(mvec_set_block)(TYPE(mvec_ptr) V,
-    TYPE(const_mvec_ptr) Vblock,
-    int jmin, int jmax, int* iflag)
+                                     TYPE(const_mvec_ptr) Vblock,
+                                     int jmin, int jmax, int* iflag) 
 {
-  *iflag=PHIST_NOT_IMPLEMENTED;
+  PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
+
+  PHIST_CAST_PTR_FROM_VOID(Traits<_ST_>::mvec_t, mvecDest, V, *iflag);
+  PHIST_CAST_PTR_FROM_VOID(const Traits<_ST_>::mvec_t, mvecSrc, Vblock, *iflag);
+
+  Teuchos::RCP<Traits<_ST_>::mvec_t> cols;
+  PHIST_TRY_CATCH(cols = mvecDest->subViewNonConst(Teuchos::Range1D(jmin, jmax)), *iflag);
+
+  PHIST_TRY_CATCH(Tpetra::deep_copy(*cols, *mvecSrc), *iflag);
+
+  *iflag = PHIST_SUCCESS;  
 }
 
 extern "C" void SUBR(sdMat_view_block)(TYPE(mvec_ptr) M, 
-    TYPE(mvec_ptr)* Mblock,
-    int imin, int imax, int jmin, int jmax, int* iflag)
+                                       TYPE(mvec_ptr)* Mblock,
+                                       int rmin, int rmax, 
+                                       int cmin, int cmax, int* iflag)
 {
-  *iflag=PHIST_NOT_IMPLEMENTED;
+  PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
+
+  PHIST_CAST_PTR_FROM_VOID(Traits<_ST_>::sdMat_t, sdmatSrc, M, *iflag);
+
+  if (*Mblock != nullptr)
+  {
+    PHIST_CAST_PTR_FROM_VOID(Traits<_ST_>::sdMat_t, tmp, *Mblock, *iflag);
+    delete tmp;
+  }
+
+  int nrows = rmax - rmin + 1;
+  int ncols = cmax - cmin + 1;
+
+  Teuchos::RCP<Traits<_ST_>::sdMat_t> block;
+
+  if (nrows == sdmatSrc->getLocalLength())
+  { // If we want all the rows, take a normal view
+    PHIST_TRY_CATCH(block = sdmatSrc->subViewNonConst(Teuchos::Range1D(cmin, cmax)),
+                    *iflag);
+  } else
+  {
+    auto smap = Teuchos::rcp(new map_type(nrows, 0, sdmatSrc->getMap()->getComm()),
+                             Tpetra::LocallyReplicated);
+    if (ncols == sdmatSrc->getNumVectors())
+    { // If we want all columns
+      PHIST_TRY_CATCH(block = sdmatSrc->offsetViewNonConst(smap, cmin), *iflag);
+    } else
+    {
+      Teuchos::RCP<Traits<_ST_>::sdMat_t> tmp;
+      PHIST_TRY_CATCH(tmp = sdmatSrc->offsetViewNonConst(smap, cmin), *iflag);
+      PHIST_TRY_CATCH(block = tmp->subViewNonConst(Teuchos::Range1D(cmin, cmax)), *iflag);
+    }
+  }
+
+  *Mblock = (TYPE(sdMat_ptr))(block.release().get());
+  *iflag = PHIST_SUCCESS;
 }
 
 extern "C" void SUBR(sdMat_get_block)(TYPE(const_mvec_ptr) M, 
-    TYPE(mvec_ptr) Mblock,
-    int imin, int imax, int jmin, int jmax, int* iflag)
+                                      TYPE(mvec_ptr) Mblock,
+                                      int rmin, int rmax,
+                                      int cmin, int cmax, int* iflag)
 {
-  *iflag=PHIST_NOT_IMPLEMENTED;
+  PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
+
+  PHIST_CAST_PTR_FROM_VOID(const Traits<_ST_>::sdMat_t, sdmat, M, *iflag);
+  PHIST_CAST_PTR_FROM_VOID(Traits<_ST_>::sdMat_t, block, Mblock, *iflag);
+
+  Teuchos::RCP<const Traits<_ST_>::sdMat_t> view;
+
+  int nrows = rmax - rmin + 1;
+  int ncols = cmax - cmin + 1;
+
+  if (nrows == sdmat->getLocalLength())
+  {
+    PHIST_TRY_CATCH(view = sdmat->subView(Teuchos::Range1D(cmin, cmax)),
+                    *iflag)
+  } else
+  {
+    auto smap = Teuchos::rcp(new map_type(nrows, 0, sdmat->getMap()->getComm()),
+                             Tpetra::LocallyReplicated);
+    if (ncols == sdmat->getNumVectors())
+    {
+      PHIST_TRY_CATCH(view = sdmat->offsetView(smap, cmin), *iflag);
+    } else
+    {
+      Teuchos::RCP<const Traits<_ST_>::sdMat_t> tmp;
+      PHIST_TRY_CATCH(tmp = sdmat->offsetView(smap, cmin), *iflag);
+      PHIST_TRY_CATCH(view = tmp->subView(Teuchos::Range1D(cmin, cmax)), *iflag);
+    }
+  }
+
+  PHIST_TRY_CATCH(Tpetra::deep_copy(*block, *view), *iflag);
+  *iflag = PHIST_SUCCESS;
 }
 
 extern "C" void SUBR(sdMat_set_block)(TYPE(sdMat_ptr) M, 
-    TYPE(const_sdMat_ptr) Mblock,
-    int imin, int imax, int jmin, int jmax, int* iflag)
+                                      TYPE(const_sdMat_ptr) Mblock,
+                                      int rmin, int rmax, 
+                                      int cmin, int cmax, int* iflag)
 {
-  *iflag=PHIST_NOT_IMPLEMENTED;
+  PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
+
+  PHIST_CAST_PTR_FROM_VOID(Traits<_ST_>::sdMat_t, sdmat, M, *iflag);
+  PHIST_CAST_PTR_FROM_VOID(const Traits<_ST_>::sdMat_t, block, Mblock, *iflag);
+
+  Teuchos::RCP<Traits<_ST_>::sdMat_t> view;
+
+  int nrows = rmax - rmin + 1;
+  int ncols = cmax - cmin + 1;
+
+  if (nrows == sdmat->getLocalLength())
+  {
+    PHIST_TRY_CATCH(view = sdmat->subViewNonConst(Teuchos::Range1D(cmin, cmax)),
+                    *iflag)
+  } else
+  {
+    auto smap = Teuchos::rcp(new map_type(nrows, 0, sdmat->getMap()->getComm()),
+                             Tpetra::LocallyReplicated);
+    if (ncols == sdmat->getNumVectors())
+    {
+      PHIST_TRY_CATCH(view = sdmat->offsetViewNonConst(smap, cmin), *iflag);
+    } else
+    {
+      Teuchos::RCP<Traits<_ST_>::sdMat_t> tmp;
+      PHIST_TRY_CATCH(tmp = sdmat->offsetViewNonConst(smap, cmin), *iflag);
+      PHIST_TRY_CATCH(view = tmp->subViewNonConst(Teuchos::Range1D(cmin, cmax)), *iflag);
+    }
+  }
+
+  PHIST_TRY_CATCH(Tpetra::deep_copy(*view, *block), *iflag);
+  *iflag = PHIST_SUCCESS;
 }
 
 extern "C" void SUBR(sparseMat_delete)(TYPE(sparseMat_ptr) A, int* iflag)
@@ -281,9 +444,15 @@ extern "C" void SUBR(sdMat_delete)(TYPE(sdMat_ptr) M, int* iflag)
   *iflag=PHIST_NOT_IMPLEMENTED;
 }
 
-extern "C" void SUBR(mvec_put_value)(TYPE(mvec_ptr) V, _ST_ value, int* iflag)
+extern "C" void SUBR(mvec_put_value)(TYPE(mvec_ptr) vec, _ST_ value, int* iflag)
 {
-  *iflag=PHIST_NOT_IMPLEMENTED;
+  PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
+
+  PHIST_CAST_PTR_FROM_VOID(Traits<_ST_>::mvec_t, mvec, vec, *iflag);
+
+  PHIST_TRY_CATCH(mvec->putScalar(value), *iflag);
+
+  *iflag = PHIST_SUCCESS;
 }
 
 extern "C" void SUBR(mvec_put_func)(TYPE(mvec_ptr) V,
@@ -293,9 +462,15 @@ extern "C" void SUBR(mvec_put_func)(TYPE(mvec_ptr) V,
 }
 
 
-extern "C" void SUBR(sdMat_put_value)(TYPE(mvec_ptr) V, _ST_ value, int* iflag)
+extern "C" void SUBR(sdMat_put_value)(TYPE(sdMat_ptr) sdMat, _ST_ value, int* iflag)
 {
-  *iflag=PHIST_NOT_IMPLEMENTED;
+  PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
+
+  PHIST_CAST_PTR_FROM_VOID(Traits<_ST_>::sdMat_t, sdmat, sdMat, *iflag);
+
+  PHIST_TRY_CATCH(sdmat->putScalar(value), *iflag);
+
+  *iflag = PHIST_SUCCESS;
 }
 
 #ifndef PHIST_BUILTIN_RNG
