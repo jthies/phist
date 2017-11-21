@@ -434,14 +434,36 @@ extern "C" void SUBR(sparseMat_delete)(TYPE(sparseMat_ptr) A, int* iflag)
   *iflag=PHIST_NOT_IMPLEMENTED;
 }
 
-extern "C" void SUBR(mvec_delete)(TYPE(mvec_ptr) V, int* iflag)
+extern "C" void SUBR(mvec_delete)(TYPE(mvec_ptr) mvec, int* iflag)
 {
-  *iflag=PHIST_NOT_IMPLEMENTED;
+  PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
+
+  if (mvec == nullptr)
+  {
+    *iflag = PHIST_SUCCESS;
+    return;
+  }
+
+  PHIST_CAST_PTR_FROM_VOID(Traits<_ST_>::mvec_t, mVec, mvec, *iflag);
+  delete mVec;
+
+  *iflag = PHIST_SUCCESS;
 }
 
-extern "C" void SUBR(sdMat_delete)(TYPE(sdMat_ptr) M, int* iflag)
+extern "C" void SUBR(sdMat_delete)(TYPE(sdMat_ptr) sdmat, int* iflag)
 {
-  *iflag=PHIST_NOT_IMPLEMENTED;
+  PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
+
+  if (sdmat == nullptr)
+  {
+    *iflag = PHIST_SUCCESS;
+    return;
+  }
+
+  PHIST_CAST_PTR_FROM_VOID(Traits<_ST_>::sdMat_t, sdMat, sdmat, *iflag);
+  delete sdMat;
+
+  *iflag = PHIST_SUCCESS;
 }
 
 extern "C" void SUBR(mvec_put_value)(TYPE(mvec_ptr) vec, _ST_ value, int* iflag)
@@ -456,7 +478,8 @@ extern "C" void SUBR(mvec_put_value)(TYPE(mvec_ptr) vec, _ST_ value, int* iflag)
 }
 
 extern "C" void SUBR(mvec_put_func)(TYPE(mvec_ptr) V,
-        phist_mvec_elemFunc funPtr, void* last_arg, int *iflag)
+                                    phist_mvec_elemFunc funPtr, 
+                                    void* last_arg, int *iflag)
 {
   *iflag=PHIST_NOT_IMPLEMENTED;
 }
@@ -638,11 +661,18 @@ extern "C" void SUBR(mvec_vadd_mvec)(const _ST_ alpha[], TYPE(const_mvec_ptr) ve
   *iflag = PHIST_SUCCESS;
 }
 
-
-extern "C" void SUBR(sdMat_add_sdMat)(_ST_ alpha, TYPE(const_sdMat_ptr) A,
-                                      _ST_ beta,  TYPE(sdMat_ptr) B, 
+// 
+extern "C" void SUBR(sdMat_add_sdMat)(_ST_ alpha, TYPE(const_sdMat_ptr) matIn,
+                                      _ST_ beta,  TYPE(sdMat_ptr) matOut, 
                                       int* iflag)
 {
+  PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
+
+  PHIST_CAST_PTR_FROM_VOID(const Traits<_ST_>::sdMat_t, sdMatIn, matIn, *iflag);
+  PHIST_CAST_PTR_FROM_VOID(Traits<_ST_>::sdMat_t, sdMatOut, matOut, *iflag);
+
+  PHIST_TRY_CATCH(sdMatOut->update(alpha, *sdMatIn, beta), *iflag);
+
   *iflag=PHIST_NOT_IMPLEMENTED;
 }
 

@@ -14,6 +14,7 @@
 #include "phist_trilinos_macros.hpp"
 
 #include <Kokkos_Core.hpp>
+#include <Tpetra_Core.hpp>
 
 #include "Teuchos_StandardCatchMacros.hpp"
 #include "Teuchos_DefaultComm.hpp"
@@ -53,25 +54,39 @@ extern "C" void phist_tpetra_node_create(node_type** node, phist_const_comm_ptr 
 } */
 
 // initialize kernel library. Should at least call MPI_Init if it has not been called
-// but is required.
+// but is required. 
+/*
 extern "C" void phist_kernels_init(int* argc, char*** argv, int* iflag)
 {
   #ifdef PHIST_HAVE_MPI
     int mpiInitialized;
     MPI_Initialized(&mpiInitialized);
-    myMpiSession = mpiInitialized ? true : false;
-    if (not mpiInitialized)
+    myMpiSession = mpiInitialized ? 0 : 1;
+    if (myMpiSession == 1)
     {
       *iflag = MPI_Init(argc, argv);
       return;
     }
   #endif
+
+  phist_comm_ptr commPtr = nullptr;
+  PHIST_CHK_IERR(phist_comm_create(&commPtr, iflag), *iflag);
+
   Kokkos::initialize(*argc, *argv);
   *iflag = PHIST_SUCCESS;
+} */
+
+extern "C" void phist_kernels_init(int* argc, char*** argv, int* iflag)
+{
+  PHIST_CHK_IERR(Tpetra::initialize(argc, argv), *iflag);
+
+  PHIST_CHK_IERR(phist_kernels_common_init(argc, argv, iflag), *iflag);
 }
+
       
   // finalize kernel library. Should at least call MPI_Finalize if it has not been called
   // but is required.
+/*
 extern "C" void phist_kernels_finalize(int* iflag)
 {
   Kokkos::finalize();
@@ -81,14 +96,18 @@ extern "C" void phist_kernels_finalize(int* iflag)
       *iflag = MPI_Finalize();
     }
   #endif
-}
+} */
             
+extern "C" void phist_kernels_finalize(int* iflag)
+{
+  // Does not throw
+  Tpetra::finalize();
+}
 
 //!
 extern "C" void phist_comm_create(phist_comm_ptr* vcomm, int* iflag)
 {
-  //const_cast<Teuchos::Comm<int>* >(static_cast<const phist_comm_ptr>
-  *vcomm = (phist_comm_ptr)(Teuchos::DefaultComm<int>::getComm().get());  
+  *vcomm = (phist_comm_ptr)Tpetra::getDefaultComm().release().get();  
   *iflag = PHIST_SUCCESS;
 }
 
