@@ -8,6 +8,8 @@
 /*******************************************************************************************/
 #include "phist_config.h"
 
+#ifdef HIST_HAVE_CMPLX
+
 #include "phist_tools.h"
 #include "phist_kernels.h"
 #include "phist_operator.h"
@@ -59,3 +61,5 @@
 
 #include "phist_gen_z.h"
 #include "phist_belos_def.hpp"
+
+#endif
