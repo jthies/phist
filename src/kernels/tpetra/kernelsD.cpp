@@ -53,7 +53,6 @@ using namespace phist::tpetra;
 
 //extern "C" void phist_tpetra_node_create(node_type** node, phist_const_comm_ptr vcomm, int* iflag);
 
-#ifdef PHIST_HAVE_SP
 #include "phist_gen_d.h"
 
 #include "kernels_def.hpp"
@@ -64,4 +63,3 @@ using namespace phist::tpetra;
 #include "../common/kernels_no_VC_add_WD.cpp"
 #include "../common/kernels_no_fused.cpp"
 #include "../common/kernels_no_gpu.cpp" */
-#endif
