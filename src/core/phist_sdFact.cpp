@@ -28,16 +28,20 @@
 #include "phist_sdFact_prec_kernels_def.hpp"
 #include "phist_sdFact_def.hpp"
 
-#include "phist_gen_c.h"
-#include "phist_sdFact_kernels_def.hpp"
-#include "phist_sdFact_prec_kernels_def.hpp"
-#include "phist_sdFact_def.hpp"
+# ifdef PHIST_HAVE_CMPLX
+# include "phist_gen_c.h"
+# include "phist_sdFact_kernels_def.hpp"
+# include "phist_sdFact_prec_kernels_def.hpp"
+# include "phist_sdFact_def.hpp"
+# endif
 #endif
 
+#ifdef PHIST_HAVE_CMPLX
 #include "phist_gen_z.h"
 #include "phist_sdFact_kernels_def.hpp"
 #include "phist_sdFact_prec_kernels_def.hpp"
 #include "phist_sdFact_def.hpp"
+#endif
 
 #include "phist_gen_d.h"
 #include "phist_sdFact_kernels_def.hpp"

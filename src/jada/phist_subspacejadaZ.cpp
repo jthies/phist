@@ -8,6 +8,8 @@
 /*******************************************************************************************/
 #include "phist_config.h"
 
+#ifdef PHIST_HAVE_CMPLX
+
 #include "phist_tools.h"
 #include "phist_kernels.h"
 #include "phist_core.h"
@@ -24,3 +26,4 @@
 #include "phist_gen_z.h"
 #include "phist_subspacejada_def.hpp"
 
+#endif

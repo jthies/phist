@@ -8,7 +8,8 @@
 /*******************************************************************************************/
 #include "phist_config.h"
 
-#ifdef PHIST_HAVE_SP
+#if defined(PHIST_HAVE_SP)&&defined(PHIST_HAVE_CMPLX)
+
 #include "phist_tools.h"
 #include "phist_kernels.h"
 #include "phist_harmonicjada.h"
@@ -19,7 +20,6 @@
 #include "phist_transform_searchspace.h"
 #include "phist_jadaCorrectionSolver.h"
 #include "phist_core_flags.h"
-
 
 #include "phist_gen_c.h"
 #include "phist_harmonicjada_def.hpp"
