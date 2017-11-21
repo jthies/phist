@@ -43,10 +43,12 @@ using namespace testing;
 # include "JadaInnerGmresTest_def.hpp"
 # undef CLASSNAME
 
+# ifdef PHIST_HAVE_CMPLX
 # define CLASSNAME CJadaInnerGmresTest_25_1_2
 # include "phist_gen_c.h"
 # include "JadaInnerGmresTest_def.hpp"
 # undef CLASSNAME
+# endif
 
 #endif
 
@@ -55,11 +57,12 @@ using namespace testing;
 #include "JadaInnerGmresTest_def.hpp"
 #undef CLASSNAME
 
+#ifdef PHIST_HAVE_CMPLX
 #define CLASSNAME ZJadaInnerGmresTest_25_1_2
 #include "phist_gen_z.h"
 #include "JadaInnerGmresTest_def.hpp"
 #undef CLASSNAME
-
+#endif
 
 #undef MATNAME
 #define MATNAME MATNAME_jadaTestMat
@@ -81,10 +84,12 @@ using namespace testing;
 # include "JadaInnerGmresTest_def.hpp"
 # undef CLASSNAME
 
+#ifdef PHIST_HAVE_CMPLX
 # define CLASSNAME CJadaInnerGmresTest_512_3_7
 # include "phist_gen_c.h"
 # include "JadaInnerGmresTest_def.hpp"
 #undef CLASSNAME
+#endif
 
 #endif
 
@@ -93,6 +98,8 @@ using namespace testing;
 #include "JadaInnerGmresTest_def.hpp"
 #undef CLASSNAME
 
+#ifdef PHIST_HAVE_CMPLX
 #define CLASSNAME ZJadaInnerGmresTest_512_3_7
 #include "phist_gen_z.h"
 #include "JadaInnerGmresTest_def.hpp"
+#endif
