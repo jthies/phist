@@ -53,7 +53,7 @@ using namespace phist::tpetra;
 
 //extern "C" void phist_tpetra_node_create(node_type** node, phist_const_comm_ptr vcomm, int* iflag);
 
-#ifdef PHIST_HAVE_SP
+#if defined(PHIST_HAVE_SP)&&defined(PHIST_HAVE_CMPLX)
 #include "phist_gen_c.h"
 
 #include "kernels_def.hpp"
