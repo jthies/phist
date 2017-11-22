@@ -168,7 +168,9 @@ extern "C" void SUBR(sdMat_create)(TYPE(sdMat_ptr)* mat,
         Teuchos::rcp(localComm, false);
 
   auto localMap = Teuchos::rcp(new map_type(nrows, 0, phistCommPtr, Tpetra::LocallyReplicated));
-  auto matrix = new Traits<_ST_>::mvec_t(localMap, ncols);
+  auto matrix = new Traits<_ST_>::sdMat_t(localMap, ncols);
+
+  *mat = (TYPE(sdMat_ptr))(matrix);
 
   *iflag = PHIST_SUCCESS;
 }
