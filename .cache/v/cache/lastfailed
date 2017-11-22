@@ -1,5 +1,0 @@
-{
-  "python/test_phist_core.py::PhistCoreTest::test_orthog": true, 
-  "python/test_phist_kernels.py::PhistKernelsTest::test_some_kernels": true, 
-  "python/test_phist_solvers.py::PhistSolversTest::test_subspacejada_on_spinSZ": true
-}
