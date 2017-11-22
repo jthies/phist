@@ -69,3 +69,22 @@ void SUBR(pre_projection_Op_create)(TYPE(const_linearOp_ptr) B_op,
 	                                TYPE(const_mvec_ptr) BV, 
 									TYPE(linearOp_ptr) pre_proj_Op, 
 									int* iflag);
+									
+//! create post projection operator for Jacobi-Davidson,
+//! op*X = (I-BV*V')X
+//! For B_op==NULL we get op*X = (I-VV')X
+//! 
+//! We make use of the apply function in the given B_op object.
+void SUBR(post_projection_Op_create)(TYPE(const_linearOp_ptr) B_op, 
+                                    TYPE(const_mvec_ptr) V,
+	                                TYPE(const_mvec_ptr) BV, 
+									TYPE(linearOp_ptr) pre_proj_Op, 
+									int* iflag);	
+
+// shifted operator
+//for B==NULL: y <- alpha*(A + sigma*I)*X + beta*Y
+//for B!=NULL: y <- alpha*(A + sigma*B)*X + beta*Y
+extern "C" void SUBR(shifted_Op_create)(TYPE(const_linearOp_ptr)    AB_op,
+                         TYPE(const_linearOp_ptr)     B_op,
+                         const _ST_            sigma[], int                   nvec,
+                         TYPE(linearOp_ptr)          shift_Op,    int*                  iflag);									
