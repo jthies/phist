@@ -63,17 +63,18 @@ extern "C" void phist_kernels_init(int* argc, char*** argv, int* iflag)
     if (not mpiInitialized)
     {
       *iflag = MPI_Init(argc, argv);
-      return;
     }
   #endif
   Kokkos::initialize(*argc, *argv);
-  *iflag = PHIST_SUCCESS;
+  PHIST_CHK_IERR(phist_kernels_common_init(argc,argv,iflag),*iflag);
 }
       
   // finalize kernel library. Should at least call MPI_Finalize if it has not been called
   // but is required.
 extern "C" void phist_kernels_finalize(int* iflag)
 {
+  *iflag=0;
+  PHIST_CHK_IERR(phist_kernels_common_finalize(iflag),*iflag);
   Kokkos::finalize();
   #ifdef PHIST_HAVE_MPI
     if (myMpiSession)
