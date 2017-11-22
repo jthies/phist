@@ -7,6 +7,9 @@
 /*                                                                                         */
 /*******************************************************************************************/
 #include "phist_config.h"
+
+#if defined(PHIST_HAVE_SP)&&defined(PHIST_HAVE_CMPLX)
+
 /* needs to be included before system headers for some intel compilers+mpi */
 #ifdef PHIST_HAVE_MPI
 #include <mpi.h>
@@ -73,7 +76,6 @@
 # endif
 #endif
 
-#ifdef PHIST_HAVE_SP
 #include "phist_gen_c.h"
 #include "kernels_def.hpp"
 #include "carp_def.hpp"
@@ -81,4 +83,5 @@
 #include "../common/kernels_no_fused_spmv_mvTmv.cpp"
 #include "../common/kernels_no_fused_spmv_pair.cpp"
 #include "../common/kernels_no_VC_add_WD.cpp"
+
 #endif

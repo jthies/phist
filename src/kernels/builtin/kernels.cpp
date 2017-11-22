@@ -267,12 +267,16 @@ void phist_maps_compatible(phist_const_map_ptr map1, phist_const_map_ptr map2, i
 #include "phist_gen_s.h"
 #include "../common/kernels_no_impl.cpp"
 
-#include "phist_gen_c.h"
-#include "../common/kernels_no_impl.cpp"
+# ifdef PHIST_HAVE_CMPLX
+# include "phist_gen_c.h"
+# include "../common/kernels_no_impl.cpp"
+# endif
 #endif
 
+#ifdef PHIST_HAVE_CMPLX
 #include "phist_gen_z.h"
 #include "../common/kernels_no_impl.cpp"
+#endif
 
 } //extern "C"
 

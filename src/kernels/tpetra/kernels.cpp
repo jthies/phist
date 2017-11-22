@@ -65,7 +65,6 @@ extern "C" void phist_kernels_init(int* argc, char*** argv, int* iflag)
     if (myMpiSession == 1)
     {
       *iflag = MPI_Init(argc, argv);
-      return;
     }
   #endif
 
@@ -89,7 +88,9 @@ extern "C" void phist_kernels_init(int* argc, char*** argv, int* iflag)
 /*
 extern "C" void phist_kernels_finalize(int* iflag)
 {
-  Kokkos::finalize();
+  *iflag=0;
+  PHIST_CHK_IERR(phist_kernels_common_finalize(iflag),*iflag);
+  PHIST_TRY_CATCH(Kokkos::finalize(),*iflag);
   #ifdef PHIST_HAVE_MPI
     if (myMpiSession)
     {

@@ -7,6 +7,9 @@
 /*                                                                                         */
 /*******************************************************************************************/
 #include "phist_config.h"
+
+#ifdef PHIST_HAVE_CMPLX
+
 /* needs to be included before system headers for some intel compilers+mpi */
 #ifdef PHIST_HAVE_MPI
 #include <mpi.h>
@@ -81,3 +84,4 @@
 #include "../common/kernels_no_fused_spmv_pair.cpp"
 #include "../common/kernels_no_VC_add_WD.cpp"
 
+#endif
