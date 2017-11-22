@@ -735,7 +735,7 @@ extern "C" void SUBR(sparseMat_times_mvec_vadd_mvec)(_ST_ alpha, TYPE(const_spar
                                                      const _ST_ shifts[], TYPE(const_mvec_ptr) x, 
                                                      _ST_ beta, TYPE(mvec_ptr) y, int* iflag)
 {
-  #include "phist_std_typdefs.hpp"
+  #include "phist_std_typedefs.hpp"
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   // First compute the mvec_t y = alpha * A * x + beta * y
   PHIST_CHK_IERR(SUBR(sparseMat_times_mvec)(alpha, A, x, beta, y),
