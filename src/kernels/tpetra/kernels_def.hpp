@@ -221,15 +221,15 @@ extern "C" void SUBR(mvec_extract_view)(TYPE(mvec_ptr) V, _ST_** val, phist_lidx
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   PHIST_CAST_PTR_FROM_VOID(Traits<_ST_>::mvec_t, mVec, V, *iflag);
-
-  auto val_ptr = mVec->getLocalView<Kokkos::DefaultHostExecutionSpace>();
+/*
+  auto val_ptr = mVec->getLocalView<Kokkos::HostSpace>();
   *val = (_ST_*)(val_ptr.ptr_on_device());
 
   *lda = mVec->getStride();
-/*
+*/
   auto valptr = mVec->get1dViewNonConst();
   *val = valptr.getRawPtr();
-  *lda = mVec->getStride();*/
+  *lda = mVec->getStride();
   *iflag = PHIST_SUCCESS;
 }
 
@@ -237,13 +237,13 @@ extern "C" void SUBR(sdMat_extract_view)(TYPE(sdMat_ptr) V, _ST_** val, phist_li
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   PHIST_CAST_PTR_FROM_VOID(Traits<_ST_>::sdMat_t, sdMat, V, *iflag);
-
-  auto val_ptr = sdMat->getLocalView<Kokkos::DefaultHostExecutionSpace>();
-  *val = (_ST_*)(val_ptr.ptr_on_device());
 /*
+  auto val_ptr = sdMat->getLocalView<Kokkos::HostSpace>();
+  *val = (_ST_*)(val_ptr.ptr_on_device());
+*/
   auto valptr = sdMat->get1dViewNonConst();
   *val = valptr.getRawPtr();
-*/
+
   *lda = sdMat->getStride();
 
   *iflag = PHIST_SUCCESS;
@@ -481,7 +481,24 @@ extern "C" void SUBR(mvec_put_func)(TYPE(mvec_ptr) V,
                                     phist_mvec_elemFunc funPtr, 
                                     void* last_arg, int *iflag)
 {
-  *iflag=PHIST_NOT_IMPLEMENTED;
+  PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
+
+  PHIST_CAST_PTR_FROM_VOID(Traits<_ST_>::mvec_t, mvec, V, *iflag);
+
+  auto data = mvec->get2dViewNonConst();
+  phist_lidx numRow = mvec->getLocalLength();
+  phist_lidx numCol = mvec->getNumVectors();
+  for (int col = 0; col != numCol; ++col)
+  {
+    for (int row = 0; row != numRow; ++row)
+    {
+      phist_gidx globalRowIdx = mvec->getMap()->getGlobalElement(row);
+      PHIST_CHK_IERR(*iflag = funPtr(globalRowIdx, col, 
+                                     (void*)(&(data[col][row])),
+                                     last_arg), 
+                     *iflag);
+    }
+  }
 }
 
 
