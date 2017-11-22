@@ -738,7 +738,7 @@ extern "C" void SUBR(sparseMat_times_mvec_vadd_mvec)(_ST_ alpha, TYPE(const_spar
   #include "phist_std_typedefs.hpp"
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   // First compute the mvec_t y = alpha * A * x + beta * y
-  PHIST_CHK_IERR(SUBR(sparseMat_times_mvec)(alpha, A, x, beta, y),
+  PHIST_CHK_IERR(SUBR(sparseMat_times_mvec)(alpha, A, x, beta, y, iflag),
                  *iflag);
 
   int numVec;
@@ -767,9 +767,9 @@ extern "C" void SUBR(mvec_dot_mvec)(TYPE(const_mvec_ptr) v,
   PHIST_CAST_PTR_FROM_VOID(const Traits<_ST_>::mvec_t, mvec1, v, *iflag);
   PHIST_CAST_PTR_FROM_VOID(const Traits<_ST_>::mvec_t, mvec2, w, *iflag);
 
-  Teuchos::ArrayView result{s, mvec1->getNumVectors()};
+  Teuchos::ArrayView<_ST_> result{s, mvec1->getNumVectors()};
 
-  PHIST_TRY_CATCH(mvec1->dot(*mvec2, dots), *iflag);
+  PHIST_TRY_CATCH(mvec1->dot(*mvec2, result), *iflag);
 
   *iflag = PHIST_SUCCESS;
 }
