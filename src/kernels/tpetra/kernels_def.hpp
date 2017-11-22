@@ -673,7 +673,7 @@ extern "C" void SUBR(sdMat_add_sdMat)(_ST_ alpha, TYPE(const_sdMat_ptr) matIn,
 
   PHIST_TRY_CATCH(sdMatOut->update(alpha, *sdMatIn, beta), *iflag);
 
-  *iflag=PHIST_NOT_IMPLEMENTED;
+  *iflag = PHIST_SUCCESS;
 }
 
 extern "C" void SUBR(sdMatT_add_sdMat)(_ST_ alpha, TYPE(const_sdMat_ptr) A,
@@ -691,29 +691,87 @@ extern "C" void SUBR(sparseMat_times_mvec_communicate)(TYPE(const_sparseMat_ptr)
 }
 
 extern "C" void SUBR(sparseMat_times_mvec)(_ST_ alpha, TYPE(const_sparseMat_ptr) A, 
-    TYPE(const_mvec_ptr) x, _ST_ beta, TYPE(mvec_ptr) y, int* iflag)
+                                           TYPE(const_mvec_ptr) x, _ST_ beta, 
+                                           TYPE(mvec_ptr) y, int* iflag)
 {
-  *iflag=PHIST_NOT_IMPLEMENTED;
+  PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
+
+  PHIST_COUNT_MATVECS(x);
+
+  PHIST_CAST_PTR_FROM_VOID(const Traits<_ST_>::sparseMat_t, matrix, A, *iflag);
+  PHIST_CAST_PTR_FROM_VOID(const Traits<_ST_>::mvec_t, mvecIn, x, *iflag);
+  PHIST_CAST_PTR_FROM_VOID(Traits<_ST_>::mvec_t, mvecOut, y, *iflag);
+
+  PHIST_TRY_CATCH(matrix->apply(*mvecIn, *mvecOut, Teuchos::NO_TRANS, alpha, beta),
+                  *iflag);
+
+  *iflag = PHIST_SUCCESS;
 }
 
 extern "C" void SUBR(sparseMatT_times_mvec)(_ST_ alpha, TYPE(const_sparseMat_ptr) A, 
-    TYPE(const_mvec_ptr) x, _ST_ beta, TYPE(mvec_ptr) y, int* iflag)
+                                            TYPE(const_mvec_ptr) x, _ST_ beta, 
+                                            TYPE(mvec_ptr) y, int* iflag)
 {
-  *iflag=PHIST_NOT_IMPLEMENTED;
+  PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
+
+  PHIST_COUNT_MATVECS(x);
+
+  PHIST_CAST_PTR_FROM_VOID(const Traits<_ST_>::sparseMat_t, matrix, A, *iflag);
+  PHIST_CAST_PTR_FROM_VOID(const Traits<_ST_>::mvec_t, mvecIn, x, *iflag);
+  PHIST_CAST_PTR_FROM_VOID(Traits<_ST_>::mvec_t, mvecOut, y, *iflag);
+
+  #ifdef IS_COMPLEX
+    PHIST_TRY_CATCH(matrix->apply(*mvecIn, *mvecOut, Teuchos::CONJ_TRANS, alpha, beta),
+                    *iflag);
+  #else
+    PHIST_TRY_CATCH(matrix->apply(*mvecIn, *mvecOut, Teuchos::TRANS, alpha, beta),
+                    *iflag);
+  #endif
+
+  *iflag = PHIST_SUCCESS;
 }
 
 extern "C" void SUBR(sparseMat_times_mvec_vadd_mvec)(_ST_ alpha, TYPE(const_sparseMat_ptr) A,
-        const _ST_ shifts[], TYPE(const_mvec_ptr) x, _ST_ beta, TYPE(mvec_ptr) y, int* iflag)
+                                                     const _ST_ shifts[], TYPE(const_mvec_ptr) x, 
+                                                     _ST_ beta, TYPE(mvec_ptr) y, int* iflag)
 {
-  *iflag=PHIST_NOT_IMPLEMENTED;
+  #include "phist_std_typdefs.hpp"
+  PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
+  // First compute the mvec_t y = alpha * A * x + beta * y
+  PHIST_CHK_IERR(SUBR(sparseMat_times_mvec)(alpha, A, x, beta, y),
+                 *iflag);
+
+  int numVec;
+  PHIST_CHK_IERR(SUBR(mvec_num_vectors)(x, &numVec, iflag),
+                 *iflag);
+
+  _ST_ alphaShifts[numVec];
+  for(int idx = 0; idx != numVec; ++idx)
+  {
+    alphaShifts[idx] = alpha * shifts[idx];
+  }
+  // Add the shifts to y
+  PHIST_CHK_IERR(SUBR(mvec_vadd_mvec)(alphaShifts, x, st::one(), y, iflag),
+                 *iflag);
+
+  *iflag = PHIST_SUCCESS;
 }
 
 
 extern "C" void SUBR(mvec_dot_mvec)(TYPE(const_mvec_ptr) v, 
-    TYPE(const_mvec_ptr) w, 
-    _ST_* s, int* iflag)
+                                    TYPE(const_mvec_ptr) w, 
+                                    _ST_* s, int* iflag)
 {
-  *iflag=PHIST_NOT_IMPLEMENTED;
+  PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
+
+  PHIST_CAST_PTR_FROM_VOID(const Traits<_ST_>::mvec_t, mvec1, v, *iflag);
+  PHIST_CAST_PTR_FROM_VOID(const Traits<_ST_>::mvec_t, mvec2, w, *iflag);
+
+  Teuchos::ArrayView result{s, mvec1->getNumVectors()};
+
+  PHIST_TRY_CATCH(mvec1->dot(*mvec2, dots), *iflag);
+
+  *iflag = PHIST_SUCCESS;
 }
 
 extern "C" void SUBR(mvec_times_sdMat)(_ST_ alpha, TYPE(const_mvec_ptr) V, 
