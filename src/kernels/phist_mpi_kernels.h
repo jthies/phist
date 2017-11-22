@@ -37,22 +37,8 @@ extern "C" {
 @{
 */
 
-
-#ifdef PHIST_HAVE_SP
-#include "phist_gen_s.h"
-#include "phist_mpi_kernels_decl.h"
-
-#include "phist_gen_c.h"
-#include "phist_mpi_kernels_decl.h"
-#endif
-
-#include "phist_gen_d.h"
-#include "phist_mpi_kernels_decl.h"
-
-#include "phist_gen_z.h"
-#include "phist_mpi_kernels_decl.h"
-
-#include "phist_gen_clean.h"
+#define PHIST_CLASSFILE_DEF "phist_mpi_kernels_decl.h"
+#include "phist_gen_all.h"
 
 /*@}*/
 

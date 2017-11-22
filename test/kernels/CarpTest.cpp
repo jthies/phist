@@ -34,9 +34,11 @@ if the setup routine returns -99, further tests will not be run
 Other tests compare "RC" variants with complex arithmetic implementations, these are
 only run if the kernel lib supports the Z type.
 */
+#ifdef PHIST_HAVE_CMPLX
 
 double MvecsEqualZD(phist_Zmvec* zvec, phist_Dmvec* dvec_r, phist_Dmvec* dvec_i, double relTo=0.0)
 {
+
   int iflag=0;
   phist_Dmvec_from_device(dvec_r,&iflag);
   if (iflag!=PHIST_SUCCESS) return -1.0e11;
@@ -145,6 +147,7 @@ void MvecCopyX2Z(phist_Dx_mvec *xvec, phist_Zmvec *zvec, int* iflag)
   }
   PHIST_CHK_IERR(phist_Zmvec_to_device(zvec,iflag),*iflag);
 }
+#endif
 
 int zshift_bench3D(ghost_gidx row, ghost_lidx *nnz, ghost_gidx* cols, void* vals, void* data)
 {

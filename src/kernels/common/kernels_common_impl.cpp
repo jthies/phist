@@ -99,13 +99,16 @@ typedef struct {
 #include "phist_gen_s.h"
 #include "kernels_common_impl_def.h"
 
+# ifdef PHIST_HAVE_CMPLX
 #include "phist_gen_c.h"
 #include "kernels_common_impl_def.h"
+# endif
 #endif
 
 #include "phist_gen_d.h"
 #include "kernels_common_impl_def.h"
 
+#ifdef PHIST_HAVE_CMPLX
 #include "phist_gen_z.h"
 #include "kernels_common_impl_def.h"
-
+#endif

@@ -8,6 +8,9 @@
 /*******************************************************************************************/
 
 #include "phist_config.h"
+
+#ifdef PHIST_HAVE_CMPLX
+
 /* needs to be included before system headers for some intel compilers+mpi */
 #ifdef PHIST_HAVE_MPI
 #include <mpi.h>
@@ -53,7 +56,6 @@ using namespace phist::tpetra;
 
 //extern "C" void phist_tpetra_node_create(node_type** node, phist_const_comm_ptr vcomm, int* iflag);
 
-#ifdef PHIST_HAVE_CMPLX
 #include "phist_gen_z.h"
 
 #include "kernels_def.hpp"
