@@ -561,6 +561,10 @@ class ScalarTraits< std::complex<MT> >
   static inline constexpr magn_t rankTol(bool high_prec=false) {return ScalarTraits<MT>::rankTol(high_prec);}
 };
 
+#if defined(PHIST_HAVE_CMPLX)&&defined(PHIST_HAVE_KOKKOS)
+
+#include "Kokkos_Complex.hpp"
+
 template<typename MT>
 class ScalarTraits< Kokkos::complex<MT> >
 {
@@ -723,6 +727,8 @@ class ScalarTraits< Kokkos::complex<MT> >
     return ScalarTraits<MT>::rankTol(high_prec);
   }
 };
+
+#endif
   
 }//namepsace
 
