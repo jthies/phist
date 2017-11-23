@@ -156,11 +156,11 @@ extern "C" void SUBR(mvec_create)(TYPE(mvec_ptr)* vec,
   *iflag = PHIST_SUCCESS;
 }
 
-extern "C" void SUBR(sdMat_create)(TYPE(sdMat_ptr)* mat, 
-    int nrows, int ncols, phist_const_comm_ptr comm, int* iflag)
+extern "C" void SUBR(sdMat_create)(TYPE(sdMat_ptr)* mat, int nrows, int ncols, 
+                                   phist_const_comm_ptr comm, int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
-  PHIST_CAST_PTR_FROM_VOID(const comm_type, localComm, comm, *iflag);
+  const comm_type* localComm = (const comm_type*)comm;
 
   auto phistCommPtr = localComm == nullptr ? 
         Teuchos::DefaultComm<int>::getDefaultSerialComm(Teuchos::null)
@@ -699,7 +699,19 @@ extern "C" void SUBR(sdMatT_add_sdMat)(_ST_ alpha, TYPE(const_sdMat_ptr) A,
                                        _ST_ beta,  TYPE(sdMat_ptr) B, 
                                        int* iflag)
 {
-  *iflag=PHIST_NOT_IMPLEMENTED;
+  PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
+
+  // This cannot be easily done in Tpetra, so we will use a workaround
+  // alpha * X^T + beta * Y = alpha * X^T * I + beta * Y
+  TYPE(sdMat_ptr) identity= nullptr;
+  int numCols;
+  PHIST_CHK_IERR(SUBR(sdMat_get_ncols)(A, &numCols, iflag), *iflag);
+  PHIST_CHK_IERR(SUBR(sdMat_create)(&identity, numCols, numCols, nullptr, iflag), *iflag);
+  PHIST_CHK_IERR(SUBR(sdMat_identity)(identity, iflag), *iflag);
+  PHIST_CHK_IERR(SUBR(sdMatT_times_sdMat)(alpha, A, identity, beta, B, iflag), *iflag);
+  PHIST_CHK_IERR(SUBR(sdMat_delete)(identity, iflag), *iflag);
+
+  *iflag = PHIST_SUCCESS;
 }
 
 extern "C" void SUBR(sparseMat_times_mvec_communicate)(TYPE(const_sparseMat_ptr) A, 
@@ -794,40 +806,89 @@ extern "C" void SUBR(mvec_dot_mvec)(TYPE(const_mvec_ptr) v,
 }
 
 extern "C" void SUBR(mvec_times_sdMat)(_ST_ alpha, TYPE(const_mvec_ptr) V, 
-    TYPE(const_sdMat_ptr) C, 
-    _ST_ beta, TYPE(mvec_ptr) W, int* iflag)
+                                       TYPE(const_sdMat_ptr) C, 
+                                       _ST_ beta, TYPE(mvec_ptr) W, int* iflag)
 {
-  *iflag=PHIST_NOT_IMPLEMENTED;
+  PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
+
+  PHIST_CAST_PTR_FROM_VOID(const Traits<_ST_>::mvec_t, mvecIn, V, *iflag);
+  PHIST_CAST_PTR_FROM_VOID(const Traits<_ST_>::sdMat_t, sdmat, C, *iflag);
+  PHIST_CAST_PTR_FROM_VOID(Traits<_ST_>::mvec_t, mvecOut, W, *iflag);
+
+  PHIST_TRY_CATCH(mvecOut->multiply(Teuchos::NO_TRANS, Teuchos::NO_TRANS,
+                                    alpha, *mvecIn, *sdmat, beta),
+                  *iflag);
+
+  *iflag = PHIST_SUCCESS;
 }
 
 
 extern "C" void SUBR(sdMat_times_sdMat)(_ST_ alpha, TYPE(const_sdMat_ptr) V, 
-    TYPE(const_sdMat_ptr) W, 
-    _ST_ beta, TYPE(sdMat_ptr) C, int* iflag)
+                                        TYPE(const_sdMat_ptr) W, 
+                                        _ST_ beta, TYPE(sdMat_ptr) C, int* iflag)
 {
-  *iflag=PHIST_NOT_IMPLEMENTED;
+  PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
+
+  PHIST_CAST_PTR_FROM_VOID(const Traits<_ST_>::sdMat_t, sdMatIn1, V, *iflag);
+  PHIST_CAST_PTR_FROM_VOID(const Traits<_ST_>::sdMat_t, sdMatIn2, W, *iflag);
+  PHIST_CAST_PTR_FROM_VOID(Traits<_ST_>::sdMat_t, sdMatOut, C, *iflag);
+
+  PHIST_TRY_CATCH(sdMatOut->multiply(Teuchos::NO_TRANS, Teuchos::NO_TRANS,
+                                    alpha, *sdMatIn1, *sdMatIn2, beta),
+                  *iflag);
+
+  *iflag = PHIST_SUCCESS;
 }
 
 extern "C" void SUBR(sdMatT_times_sdMat)(_ST_ alpha, TYPE(const_sdMat_ptr) V, 
-    TYPE(const_sdMat_ptr) W, 
-    _ST_ beta, TYPE(sdMat_ptr) C, int* iflag)
+                                         TYPE(const_sdMat_ptr) W, 
+                                         _ST_ beta, TYPE(sdMat_ptr) C, int* iflag)
 {
-  *iflag=PHIST_NOT_IMPLEMENTED;
+  PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
+
+  PHIST_CAST_PTR_FROM_VOID(const Traits<_ST_>::sdMat_t, sdMatIn1, V, *iflag);
+  PHIST_CAST_PTR_FROM_VOID(const Traits<_ST_>::sdMat_t, sdMatIn2, W, *iflag);
+  PHIST_CAST_PTR_FROM_VOID(Traits<_ST_>::sdMat_t, sdMatOut, C, *iflag);
+
+  PHIST_TRY_CATCH(sdMatOut->multiply(Teuchos::CONJ_TRANS, Teuchos::NO_TRANS,
+                                    alpha, *sdMatIn1, *sdMatIn2, beta),
+                  *iflag);
+
+  *iflag = PHIST_SUCCESS;
 }
 
 extern "C" void SUBR(sdMat_times_sdMatT)(_ST_ alpha, TYPE(const_sdMat_ptr) V, 
-                                          TYPE(const_sdMat_ptr) W, 
-                              _ST_ beta,        TYPE(sdMat_ptr) C,
-                              int* iflag)
+                                         TYPE(const_sdMat_ptr) W, 
+                                         _ST_ beta, TYPE(sdMat_ptr) C, int* iflag)
 {
-  *iflag=PHIST_NOT_IMPLEMENTED;
+  PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
+
+  PHIST_CAST_PTR_FROM_VOID(const Traits<_ST_>::sdMat_t, sdMatIn1, V, *iflag);
+  PHIST_CAST_PTR_FROM_VOID(const Traits<_ST_>::sdMat_t, sdMatIn2, W, *iflag);
+  PHIST_CAST_PTR_FROM_VOID(Traits<_ST_>::sdMat_t, sdMatOut, C, *iflag);
+
+  PHIST_TRY_CATCH(sdMatOut->multiply(Teuchos::NO_TRANS, Teuchos::CONJ_TRANS,
+                                    alpha, *sdMatIn1, *sdMatIn2, beta),
+                  *iflag);
+
+  *iflag = PHIST_SUCCESS;
 }
 
 extern "C" void SUBR(mvecT_times_mvec)(_ST_ alpha, TYPE(const_mvec_ptr) V, 
-    TYPE(const_mvec_ptr) W, 
-    _ST_ beta, TYPE(sdMat_ptr) C, int* iflag)
+                                       TYPE(const_mvec_ptr) W, 
+                                       _ST_ beta, TYPE(sdMat_ptr) C, int* iflag)
 {
-  *iflag=PHIST_NOT_IMPLEMENTED;
+  PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
+
+  PHIST_CAST_PTR_FROM_VOID(const Traits<_ST_>::mvec_t, mvecIn1, V, *iflag);
+  PHIST_CAST_PTR_FROM_VOID(const Traits<_ST_>::mvec_t, mvecIn2, W, *iflag);
+  PHIST_CAST_PTR_FROM_VOID(Traits<_ST_>::mvec_t, mvecOut, C, *iflag);
+
+  PHIST_TRY_CATCH(mvecOut->multiply(Teuchos::CONJ_TRANS, Teuchos::NO_TRANS,
+                                    alpha, *mvecIn1, *mvecIn2, beta),
+                  *iflag);
+
+  *iflag = PHIST_SUCCESS;
 }
 
 extern "C" void SUBR(mvec_QR)(TYPE(mvec_ptr) V, TYPE(sdMat_ptr) R, int* iflag)
