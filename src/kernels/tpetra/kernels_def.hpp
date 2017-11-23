@@ -239,14 +239,22 @@ extern "C" void SUBR(sdMat_extract_view)(TYPE(sdMat_ptr) V, _ST_** val, phist_li
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   PHIST_CAST_PTR_FROM_VOID(Traits<_ST_>::sdMat_t, sdMat, V, *iflag);
-/*
+  *lda = sdMat->getStride();
+  PHIST_SOUT(PHIST_ERROR, "stride = %d\n", *lda);
+
+  //sdMat->sync<Kokkos::HostSpace>();
   auto val_ptr = sdMat->getLocalView<Kokkos::HostSpace>();
-  *val = (_ST_*)(val_ptr.ptr_on_device());
-*/
+  auto view1d = Kokkos::subview(val_ptr, Kokkos::ALL(), 0);
+  *val = (_ST_*)(view1d.data());
+
+if (val == nullptr)
+  PHIST_SOUT(PHIST_ERROR, "view is nullptr\n");
+
+/*
   auto valptr = sdMat->get1dViewNonConst();
   *val = valptr.getRawPtr();
-
-  *lda = sdMat->getStride();
+*/
+  
 
   *iflag = PHIST_SUCCESS;
 }
@@ -321,6 +329,19 @@ extern "C" void SUBR(sdMat_view_block)(TYPE(mvec_ptr) M,
 
   PHIST_CAST_PTR_FROM_VOID(Traits<_ST_>::sdMat_t, sdmatSrc, M, *iflag);
 
+  sdmatSrc->sync<Kokkos::HostSpace>();
+  auto view = sdmatSrc->getLocalView<Kokkos::HostSpace>();
+
+  auto view1d = Kokkos::subview(view, std::make_pair(rmin, rmax), std::make_pair(cmin, cmax));
+  *Mblock = (TYPE(sdMat_ptr))(view1d.data());
+
+  *iflag = PHIST_SUCCESS;
+
+
+
+
+
+/*
   if (*Mblock != nullptr)
   {
     PHIST_CAST_PTR_FROM_VOID(Traits<_ST_>::sdMat_t, tmp, *Mblock, *iflag);
@@ -353,6 +374,7 @@ extern "C" void SUBR(sdMat_view_block)(TYPE(mvec_ptr) M,
 
   *Mblock = (TYPE(sdMat_ptr))(block.release().get());
   *iflag = PHIST_SUCCESS;
+  */
 }
 
 extern "C" void SUBR(sdMat_get_block)(TYPE(const_mvec_ptr) M, 
