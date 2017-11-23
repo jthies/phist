@@ -8,7 +8,7 @@
 /*******************************************************************************************/
 #include "phist_config.h"
 
-#ifdef HIST_HAVE_CMPLX
+#ifdef PHIST_HAVE_CMPLX
 
 #include "phist_tools.h"
 #include "phist_kernels.h"
