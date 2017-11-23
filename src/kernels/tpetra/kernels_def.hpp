@@ -320,8 +320,8 @@ extern "C" void SUBR(mvec_set_block)(TYPE(mvec_ptr) V,
   *iflag = PHIST_SUCCESS;  
 }
 
-extern "C" void SUBR(sdMat_view_block)(TYPE(mvec_ptr) M, 
-                                       TYPE(mvec_ptr)* Mblock,
+extern "C" void SUBR(sdMat_view_block)(TYPE(sdMat_ptr) M, 
+                                       TYPE(sdMat_ptr)* Mblock,
                                        int rmin, int rmax, 
                                        int cmin, int cmax, int* iflag)
 {

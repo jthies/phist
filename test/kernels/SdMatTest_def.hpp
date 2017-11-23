@@ -48,10 +48,32 @@ public:
     MTest::TearDown();
   }
 
+
   /*! internal tests for forward/backward substition
    */
   void doForwardBackwardTestsWithPreparedMat3(int rank, int* perm);
 };
+
+#ifdef PHIST_KERNEL_LIB_TPETRA
+
+#include "Tpetra_MultiVector.hpp"
+#include "Kokkos_Core.hpp"
+#include "Kokkos_View.hpp"
+
+  TEST_F(CLASSNAME, tpetra_data_layout)
+  {
+    typedef Tpetra::MultiVector<_ST_,phist_lidx,phist_gidx> tpetra_mvec;
+    ASSERT_TRUE(m_lda_>=nrows_);
+    tpetra_mvec* M=(tpetra_mvec*)mat1_;
+    auto Mview = M->getLocalView<Kokkos::HostSpace>();
+    for (int i=0; i<ncols_; i++)
+    {
+      ASSERT_EQ( &(Mview(i,1)) - &(Mview(i,0)),m_lda_);
+    }
+  }
+
+#endif
+
 
   TEST_F(CLASSNAME, get_attributes)
     {
