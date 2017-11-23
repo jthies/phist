@@ -54,9 +54,9 @@ public:
 };
 
   TEST_F(CLASSNAME, get_attributes)
-    {
+  {
     if (typeImplemented_)
-      {
+    {
       int n;
       SUBR(sdMat_get_nrows)(mat1_,&n,&iflag_);
       ASSERT_EQ(0,iflag_);
@@ -64,8 +64,8 @@ public:
       SUBR(sdMat_get_ncols)(mat1_,&n,&iflag_);
       ASSERT_EQ(0,iflag_);
       ASSERT_EQ(ncols_, n); 
-      }
     }
+  }
 
   TEST_F(CLASSNAME, upload_download)
   {
