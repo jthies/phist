@@ -14,6 +14,7 @@ KERNELS="builtin" # ghost epetra tpetra
 PRGENV="gcc-5.1.0-openmpi" # intel-13.0.1-mpich gcc-4.9.2-openmpi
 FLAGS="default" # optional-libs
 ADD_CMAKE_FLAGS="-DPHIST_BENCH_LARGE_N=-1" #optional CMake flags # -1 disables benchmarks to speed up build jobs!
+WORKSPACE="$PWD/.."
 VECT_EXT="native"
 TRILINOS_VERSION="11.12.1"
 # list of modules to load
@@ -24,7 +25,7 @@ SANITIZER="address"
 
 ## parse command line arguments
 usage() { echo "Usage: $0 [-k <builtin|ghost|epetra|tpetra|petsc|Eigen>] [-e <PrgEnv/module-string>] [-f <optional-libs>]"; \
-          echo "       [-c <cmake flags to be added>] [-v <SSE|AVX|AVX2|CUDA>] [-t <trilinos version>]" 1>&2; exit 1; }
+          echo "       [-c <cmake flags to be added>] [-v <SSE|AVX|AVX2|CUDA>] [-t <trilinos version>] [-w <workspace-dir>]" 1>&2; exit 1; }
 
 function update_error { 
 if [[ "${error}" = "0" ]]; then
@@ -32,7 +33,7 @@ if [[ "${error}" = "0" ]]; then
 fi
 }
 
-while getopts "k:e:f:c:v:t:h" o; do
+while getopts "k:e:f:c:v:w:t:h" o; do
     case "${o}" in
         k)
             KERNELS=${OPTARG}
@@ -49,6 +50,9 @@ while getopts "k:e:f:c:v:t:h" o; do
             ;;
         v)
             VECT_EXT=${OPTARG}
+            ;;
+        w)
+            WORKSPACE=${OPTARG}
             ;;
         t)
             TRILINOS_VERSION=${OPTARG}
@@ -142,10 +146,10 @@ if [ "$KERNELS" = "ghost" ]; then
     POSTFIX=_optional-libs
   fi
   # this is the easiest way to make phist find ghost+dependencies
-  export CMAKE_PREFIX_PATH=$PWD/../install-${PRGENV}-Release-${VECT_EXT}${POSTFIX}/lib/ghost:$CMAKE_PREFIX_PATH
-  export PKG_CONFIG_PATH=$PWD/../install-${PRGENV}-Release-${VECT_EXT}${POSTFIX}/lib/pkgconfig:$PKG_CONFIG_PATH
+  export CMAKE_PREFIX_PATH=${WORKSPACE}/install-${PRGENV}-Release-${VECT_EXT}${POSTFIX}/lib/ghost:$CMAKE_PREFIX_PATH
+  export PKG_CONFIG_PATH=${WORKSPACE}/install-${PRGENV}-Release-${VECT_EXT}${POSTFIX}/lib/pkgconfig:$PKG_CONFIG_PATH
   # also set the LD_LIBRARY_PATH appropriately
-  export LD_LIBRARY_PATH=$PWD/../install-${PRGENV}-Release-${VECT_EXT}${POSTFIX}/lib/ghost:$PWD/../install-${PRGENV}-Release-${VECT_EXT}/lib/essex-physics:$LD_LIBRARY_PATH
+  export LD_LIBRARY_PATH=${WORKSPACE}/install-${PRGENV}-Release-${VECT_EXT}${POSTFIX}/lib/ghost:${WORKSPACE}/install-${PRGENV}-Release-${VECT_EXT}/lib/essex-physics:$LD_LIBRARY_PATH
 fi
 
 # let ctest print all output if there was an error!
@@ -185,10 +189,10 @@ cd ..
 # debug build
 if [ "$KERNELS" = "ghost" ]; then
   # this is the easiest way to make phist find ghost+dependencies
-  export CMAKE_PREFIX_PATH=$PWD/../install-${PRGENV}-Debug-${VECT_EXT}/lib/ghost:$CMAKE_PREFIX_PATH
-  export PKG_CONFIG_PATH=$PWD/../install-${PRGENV}-Debug-${VECT_EXT}/lib/pkgconfig:$PKG_CONFIG_PATH
+  export CMAKE_PREFIX_PATH=${WORKSPACE}/install-${PRGENV}-Debug-${VECT_EXT}/lib/ghost:$CMAKE_PREFIX_PATH
+  export PKG_CONFIG_PATH=${WORKSPACE}/install-${PRGENV}-Debug-${VECT_EXT}/lib/pkgconfig:$PKG_CONFIG_PATH
   # also set the LD_LIBRARY_PATH appropriately
-  export LD_LIBRARY_PATH=$PWD/../install-${PRGENV}-Debug-${VECT_EXT}/lib/ghost:$PWD/../install-${PRGENV}-Debug-${VECT_EXT}/lib/essex-physics:$LD_LIBRARY_PATH
+  export LD_LIBRARY_PATH=${WORKSPACE}/install-${PRGENV}-Debug-${VECT_EXT}/lib/ghost:${WORKSPACE}/install-${PRGENV}-Debug-${VECT_EXT}/lib/essex-physics:$LD_LIBRARY_PATH
 fi
 mkdir build_${KERNELS}_${PRGENV}_Debug_${FLAGS// /_}; cd $_
 cmake -DCMAKE_BUILD_TYPE=Debug    \
