@@ -320,61 +320,66 @@ extern "C" void SUBR(mvec_set_block)(TYPE(mvec_ptr) V,
   *iflag = PHIST_SUCCESS;  
 }
 
-extern "C" void SUBR(sdMat_view_block)(TYPE(sdMat_ptr) M, 
-                                       TYPE(sdMat_ptr)* Mblock,
-                                       int rmin, int rmax, 
-                                       int cmin, int cmax, int* iflag)
+extern "C" void SUBR(sdMat_view_block)(TYPE(sdMat_ptr) vM, 
+                                       TYPE(sdMat_ptr)* vMblock,
+                                       int imin, int imax, 
+                                       int jmin, int jmax, int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
-
-  PHIST_CAST_PTR_FROM_VOID(Traits<_ST_>::sdMat_t, sdmatSrc, M, *iflag);
-
-  sdmatSrc->sync<Kokkos::HostSpace>();
-  auto view = sdmatSrc->getLocalView<Kokkos::HostSpace>();
-
-  auto view1d = Kokkos::subview(view, std::make_pair(rmin, rmax), std::make_pair(cmin, cmax));
-  *Mblock = (TYPE(sdMat_ptr))(view1d.data());
-
-  *iflag = PHIST_SUCCESS;
-
-
-
-
-
-/*
-  if (*Mblock != nullptr)
+  *iflag=0;
+  PHIST_CAST_PTR_FROM_VOID(Traits<_ST_>::sdMat_t,M,vM,*iflag);
+  if (*vMblock!=NULL)
   {
-    PHIST_CAST_PTR_FROM_VOID(Traits<_ST_>::sdMat_t, tmp, *Mblock, *iflag);
+    PHIST_CAST_PTR_FROM_VOID(Traits<_ST_>::sdMat_t,tmp,*vMblock,*iflag);
     delete tmp;
   }
 
-  int nrows = rmax - rmin + 1;
-  int ncols = cmax - cmin + 1;
-
-  Teuchos::RCP<Traits<_ST_>::sdMat_t> block;
-
-  if (nrows == sdmatSrc->getLocalLength())
-  { // If we want all the rows, take a normal view
-    PHIST_TRY_CATCH(block = sdmatSrc->subViewNonConst(Teuchos::Range1D(cmin, cmax)),
-                    *iflag);
-  } else
+#ifdef PHIST_TESTING
+  if (jmax<jmin||imax<imin)
   {
-    auto smap = Teuchos::rcp(new map_type(nrows, 0, sdmatSrc->getMap()->getComm()),
-                             Tpetra::LocallyReplicated);
-    if (ncols == sdmatSrc->getNumVectors())
-    { // If we want all columns
-      PHIST_TRY_CATCH(block = sdmatSrc->offsetViewNonConst(smap, cmin), *iflag);
-    } else
+    PHIST_OUT(PHIST_ERROR,"in %s, given range [%d..%d]x[%d..%d] is invalid\n",__FUNCTION__,
+                          imin,imax,jmin,jmax);
+    *iflag=-1; return;
+  }
+  if (imin<0 || imax>=M->getLocalLength() || jmin<0 || jmax>=M->getNumVectors())
+  {
+    PHIST_OUT(PHIST_ERROR,"input matrix to %s is %d x %d, which does not match "
+                          "given range [%d..%d]x[%d..%d]\n",__FUNCTION__,
+                          (int)M->getLocalLength(), (int)M->getNumVectors(),
+                          imin,imax,jmin,jmax);
+    *iflag=-1; return;
+  }
+#endif
+
+  int nrows=imax-imin+1;
+  int ncols=jmax-jmin+1;
+
+  Teuchos::RCP<Traits<_ST_>::sdMat_t> Mtmp,Mblock;
+
+  if (nrows==M->getLocalLength())
+  {
+    PHIST_TRY_CATCH(Mblock = M->subViewNonConst(Teuchos::Range1D(jmin,jmax)),*iflag);
+  }
+  else
+  {
+    Teuchos::RCP<map_type> smap = Teuchos::rcp(new map_type
+        (nrows, 0, M->getMap()->getComm(),Tpetra::LocallyReplicated));
+    if (ncols==M->getNumVectors())
     {
-      Teuchos::RCP<Traits<_ST_>::sdMat_t> tmp;
-      PHIST_TRY_CATCH(tmp = sdmatSrc->offsetViewNonConst(smap, cmin), *iflag);
-      PHIST_TRY_CATCH(block = tmp->subViewNonConst(Teuchos::Range1D(cmin, cmax)), *iflag);
+      PHIST_TRY_CATCH(Mblock = M->offsetViewNonConst(smap,imin),*iflag);    
+    }
+    else
+    {
+      PHIST_TRY_CATCH(Mtmp = M->offsetViewNonConst(smap,imin),*iflag);
+      PHIST_TRY_CATCH(Mblock = Mtmp->subViewNonConst(Teuchos::Range1D(jmin,jmax)),*iflag);
+      // note: Mtmp and Mblock are 'persistent views' of the data, meaning that if the
+      //       viewed object is deleted, the view remains. So we can simply allow
+      //       Mtmp to be deleted at this point.
     }
   }
-
-  *Mblock = (TYPE(sdMat_ptr))(block.release().get());
-  *iflag = PHIST_SUCCESS;
-  */
+  // transfer memory management of Mblock to the caller
+  *vMblock = (TYPE(sdMat_ptr))(Mblock.release().get());
+  return;
 }
 
 extern "C" void SUBR(sdMat_get_block)(TYPE(const_mvec_ptr) M, 
