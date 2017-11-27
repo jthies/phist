@@ -20,8 +20,8 @@ namespace phist
     :
       row_map{row_map_in},
       col_map{col_map_in},
-      domain_map{domain_map_in},
-      range_map{range_map_in}
+      range_map{range_map_in},
+      domain_map{domain_map_in}
     {
     }
 

@@ -45,7 +45,7 @@ void SUBR(sparseMat_read_mm)(TYPE(sparseMat_ptr)* matrixPtr,
     //a  *matrixPtr = static_cast<TYPE(sparseMat_ptr)>(resultMatrixPtr);
 
     *matrixPtr = (TYPE(sparseMat_ptr))(resultMatrixPtr.get()); 
-    *iflag = PHIST_NOT_IMPLEMENTED;
+    *iflag = PHIST_SUCCESS;
 }
 
 } // extern "C"
@@ -81,6 +81,65 @@ extern "C" void SUBR(sparseMat_read_hb_with_context)(TYPE(sparseMat_ptr)* A,
   *iflag=PHIST_NOT_IMPLEMENTED;
 }
 
+// Fill the sparse matrix row by row according to the context
+extern "C" void SUBR(sparseMat_create_fromRowFuncAndContext)(TYPE(sparseMat_ptr) *vA, 
+                                                             phist_const_context_ptr vctx,
+                                                             phist_lidx maxnne, 
+                                                             phist_sparseMat_rowFunc rowFunPtr, 
+                                                             void* last_arg, int *iflag)
+{
+  int iflag_in = *iflag;
+  PHIST_CAST_PTR_FROM_VOID(const phist::internal::default_context, ctx, vctx, *iflag);
+  PHIST_CAST_PTR_FROM_VOID(const map_type, tpetraMap, ctx->row_map, *iflag);
+
+  // Check if the sparse mat may take possesion of the map
+  bool ownMap = iflag_in & PHIST_SPARSEMAT_OWN_MAPS;
+  auto mapPtr = Teuchos::rcp(tpetraMap, ownMap);
+  
+  auto sparseMat = new Traits<_ST_>::sparseMat_t(mapPtr, static_cast<int>(maxnne));
+
+  auto numRows = sparseMat->getNodeNumRows();
+
+  Kokkos::parallel_for(numRows, KOKKOS_LAMBDA (const phist_lidx idx)
+  {
+    phist_gidx cols[maxnne];
+    _ST_ vals[maxnne];
+    ghost_gidx row = tpetraMap->getGlobalElement(idx);
+    ghost_lidx row_nnz;
+
+    PHIST_CHK_IERR(*iflag = rowFunPtr(row, &row_nnz, cols, vals, last_arg),
+                   *iflag);
+
+    Teuchos::ArrayView<phist_gidx> cols_v{cols,row_nnz};
+    Teuchos::ArrayView<_ST_> vals_v{vals,row_nnz};
+    
+    PHIST_TRY_CATCH(sparseMat->insertGlobalValues(row, cols_v, vals_v),
+                    *iflag);
+  });
+
+  const auto range_map = (const phist::tpetra::map_type*)(ctx->range_map);
+  const auto domain_map = (const phist::tpetra::map_type*)(ctx->domain_map);
+
+  if (range_map != nullptr && domain_map != nullptr)
+  {
+    auto range = Teuchos::rcp(range_map, ownMap);
+    auto domain = Teuchos::rcp(domain_map, ownMap);
+    PHIST_TRY_CATCH(sparseMat->fillComplete(domain, range),*iflag);
+  }
+  else
+  {
+    PHIST_TRY_CATCH(sparseMat->fillComplete(),*iflag);
+  }
+
+  *vA = (TYPE(sparseMat_ptr))(sparseMat);
+
+  if (ownMap)
+  {
+    phist::internal::contextCollection[*vA]=(phist::internal::default_context*)ctx;
+  }
+  
+}
+
 extern "C" void SUBR(sparseMat_create_fromRowFunc)(TYPE(sparseMat_ptr) *A, 
                                                    phist_const_comm_ptr comm,
                                                    phist_gidx nrows, 
@@ -89,18 +148,21 @@ extern "C" void SUBR(sparseMat_create_fromRowFunc)(TYPE(sparseMat_ptr) *A,
                                                    phist_sparseMat_rowFunc rowFunPtr, 
                                                    void* last_arg, int *iflag)
 {
-  *iflag=PHIST_NOT_IMPLEMENTED;
-}
+  PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
 
-extern "C" void SUBR(sparseMat_create_fromRowFuncAndContext)(TYPE(sparseMat_ptr) *vA, 
-                                                             phist_const_context_ptr ctx,
-                                                             phist_lidx maxnne, 
-                                                             phist_sparseMat_rowFunc rowFunPtr, 
-                                                             void* last_arg, int *iflag)
-{
-  *iflag=PHIST_NOT_IMPLEMENTED;
-}
+  int iflag_in = *iflag;
 
+  phist_map_ptr vmap = nullptr;
+  PHIST_CHK_IERR(phist_map_create(&vmap, comm, nrows, iflag), *iflag);
+  // we have to pass in a context object, but only the row map is actually needed to create the matrix:
+  auto ctx = new phist::internal::default_context(vmap, nullptr, nullptr);
+  //The matrix will take ownership of the map and context:
+  *iflag = iflag_in | PHIST_SPARSEMAT_OWN_MAPS;
+  PHIST_CHK_IERR(SUBR(sparseMat_create_fromRowFuncAndContext)(A, ctx, maxnne, 
+                                                              rowFunPtr, last_arg, 
+                                                              iflag),
+                 *iflag);
+}
 
 extern "C" void SUBR(sparseMat_get_row_map)(TYPE(const_sparseMat_ptr) A, 
                                             phist_const_map_ptr* map, 
@@ -240,7 +302,6 @@ extern "C" void SUBR(sdMat_extract_view)(TYPE(sdMat_ptr) V, _ST_** val, phist_li
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   PHIST_CAST_PTR_FROM_VOID(Traits<_ST_>::sdMat_t, sdMat, V, *iflag);
   *lda = sdMat->getStride();
-  PHIST_SOUT(PHIST_ERROR, "stride = %d\n", *lda);
 
   //sdMat->sync<Kokkos::HostSpace>();
   auto val_ptr = sdMat->getLocalView<Kokkos::HostSpace>();
@@ -326,33 +387,16 @@ extern "C" void SUBR(sdMat_view_block)(TYPE(sdMat_ptr) vM,
                                        int jmin, int jmax, int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
-  *iflag=0;
   PHIST_CAST_PTR_FROM_VOID(Traits<_ST_>::sdMat_t,M,vM,*iflag);
-  if (*vMblock!=NULL)
+
+  if (*vMblock != nullptr)
   {
     PHIST_CAST_PTR_FROM_VOID(Traits<_ST_>::sdMat_t,tmp,*vMblock,*iflag);
     delete tmp;
   }
 
-#ifdef PHIST_TESTING
-  if (jmax<jmin||imax<imin)
-  {
-    PHIST_OUT(PHIST_ERROR,"in %s, given range [%d..%d]x[%d..%d] is invalid\n",__FUNCTION__,
-                          imin,imax,jmin,jmax);
-    *iflag=-1; return;
-  }
-  if (imin<0 || imax>=M->getLocalLength() || jmin<0 || jmax>=M->getNumVectors())
-  {
-    PHIST_OUT(PHIST_ERROR,"input matrix to %s is %d x %d, which does not match "
-                          "given range [%d..%d]x[%d..%d]\n",__FUNCTION__,
-                          (int)M->getLocalLength(), (int)M->getNumVectors(),
-                          imin,imax,jmin,jmax);
-    *iflag=-1; return;
-  }
-#endif
-
-  int nrows=imax-imin+1;
-  int ncols=jmax-jmin+1;
+  int nrows = imax - imin + 1;
+  int ncols = jmax - jmin + 1;
 
   Teuchos::RCP<Traits<_ST_>::sdMat_t> Mtmp,Mblock;
 
@@ -379,88 +423,92 @@ extern "C" void SUBR(sdMat_view_block)(TYPE(sdMat_ptr) vM,
   }
   // transfer memory management of Mblock to the caller
   *vMblock = (TYPE(sdMat_ptr))(Mblock.release().get());
-  return;
-}
-
-extern "C" void SUBR(sdMat_get_block)(TYPE(const_mvec_ptr) M, 
-                                      TYPE(mvec_ptr) Mblock,
-                                      int rmin, int rmax,
-                                      int cmin, int cmax, int* iflag)
-{
-  PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
-
-  PHIST_CAST_PTR_FROM_VOID(const Traits<_ST_>::sdMat_t, sdmat, M, *iflag);
-  PHIST_CAST_PTR_FROM_VOID(Traits<_ST_>::sdMat_t, block, Mblock, *iflag);
-
-  Teuchos::RCP<const Traits<_ST_>::sdMat_t> view;
-
-  int nrows = rmax - rmin + 1;
-  int ncols = cmax - cmin + 1;
-
-  if (nrows == sdmat->getLocalLength())
-  {
-    PHIST_TRY_CATCH(view = sdmat->subView(Teuchos::Range1D(cmin, cmax)),
-                    *iflag)
-  } else
-  {
-    auto smap = Teuchos::rcp(new map_type(nrows, 0, sdmat->getMap()->getComm()),
-                             Tpetra::LocallyReplicated);
-    if (ncols == sdmat->getNumVectors())
-    {
-      PHIST_TRY_CATCH(view = sdmat->offsetView(smap, cmin), *iflag);
-    } else
-    {
-      Teuchos::RCP<const Traits<_ST_>::sdMat_t> tmp;
-      PHIST_TRY_CATCH(tmp = sdmat->offsetView(smap, cmin), *iflag);
-      PHIST_TRY_CATCH(view = tmp->subView(Teuchos::Range1D(cmin, cmax)), *iflag);
-    }
-  }
-
-  PHIST_TRY_CATCH(Tpetra::deep_copy(*block, *view), *iflag);
   *iflag = PHIST_SUCCESS;
 }
 
-extern "C" void SUBR(sdMat_set_block)(TYPE(sdMat_ptr) M, 
-                                      TYPE(const_sdMat_ptr) Mblock,
-                                      int rmin, int rmax, 
-                                      int cmin, int cmax, int* iflag)
+extern "C" void SUBR(sdMat_get_block)(TYPE(const_sdMat_ptr) vM, 
+                             TYPE(sdMat_ptr) vMblock,
+                             int imin, int imax, int jmin, int jmax, int* iflag)
 {
+  *iflag=0;
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
+  PHIST_CAST_PTR_FROM_VOID(const Traits<_ST_>::sdMat_t,M,vM,*iflag);
+  PHIST_CAST_PTR_FROM_VOID(Traits<_ST_>::sdMat_t,Mblock,vMblock,*iflag);
+  
+  Teuchos::RCP<const Traits<_ST_>::sdMat_t> Mview,Mtmp;
 
-  PHIST_CAST_PTR_FROM_VOID(Traits<_ST_>::sdMat_t, sdmat, M, *iflag);
-  PHIST_CAST_PTR_FROM_VOID(const Traits<_ST_>::sdMat_t, block, Mblock, *iflag);
 
-  Teuchos::RCP<Traits<_ST_>::sdMat_t> view;
-
-  int nrows = rmax - rmin + 1;
-  int ncols = cmax - cmin + 1;
-
-  if (nrows == sdmat->getLocalLength())
+  if (imin==0 && imax==M->getLocalLength()-1)
   {
-    PHIST_TRY_CATCH(view = sdmat->subViewNonConst(Teuchos::Range1D(cmin, cmax)),
-                    *iflag)
-  } else
+    PHIST_TRY_CATCH(Mview = M->subView(Teuchos::Range1D(jmin,jmax)),*iflag);
+  }
+  else
   {
-    auto smap = Teuchos::rcp(new map_type(nrows, 0, sdmat->getMap()->getComm()),
-                             Tpetra::LocallyReplicated);
-    if (ncols == sdmat->getNumVectors())
+    int nrows = imax - imin + 1;
+    auto smap = Teuchos::rcp(new map_type(nrows, 0, M->getMap()->getComm(), 
+                                          Tpetra::LocallyReplicated));
+    if (imin==0 && imax==M->getNumVectors())
     {
-      PHIST_TRY_CATCH(view = sdmat->offsetViewNonConst(smap, cmin), *iflag);
-    } else
+      PHIST_TRY_CATCH(Mview = M->offsetView(smap,imin),*iflag);
+    }
+    else
     {
-      Teuchos::RCP<Traits<_ST_>::sdMat_t> tmp;
-      PHIST_TRY_CATCH(tmp = sdmat->offsetViewNonConst(smap, cmin), *iflag);
-      PHIST_TRY_CATCH(view = tmp->subViewNonConst(Teuchos::Range1D(cmin, cmax)), *iflag);
+      PHIST_TRY_CATCH(Mtmp = M->offsetView(smap,imin),*iflag);
+      PHIST_TRY_CATCH(Mview = Mtmp->subView(Teuchos::Range1D(jmin,jmax)),*iflag);
     }
   }
+  PHIST_TRY_CATCH(Tpetra::deep_copy(*Mblock,*Mview),*iflag); // copy operation
+}
 
-  PHIST_TRY_CATCH(Tpetra::deep_copy(*view, *block), *iflag);
+extern "C" void SUBR(sdMat_set_block)(TYPE(sdMat_ptr) vM, 
+                             TYPE(const_sdMat_ptr) vMblock,
+                             int imin, int imax, int jmin, int jmax, int* iflag)
+{
+  PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
+  PHIST_CAST_PTR_FROM_VOID(Traits<_ST_>::sdMat_t, M, vM,*iflag);
+  PHIST_CAST_PTR_FROM_VOID(const Traits<_ST_>::sdMat_t, Mblock, vMblock, *iflag);
+  
+  Teuchos::RCP<Traits<_ST_>::sdMat_t> Mview,Mtmp;
+
+  if (imin == 0 && imax == M->getLocalLength() - 1)
+  {
+    PHIST_TRY_CATCH(Mview = M->subViewNonConst(Teuchos::Range1D(jmin, jmax)), *iflag);
+  }
+  else
+  {
+    int nrows=imax-imin+1;
+    auto smap = Teuchos::rcp(new map_type(nrows, 0, M->getMap()->getComm(), 
+                                          Tpetra::LocallyReplicated));
+
+    if (imin == 0 && imax == M->getNumVectors())
+    {
+      PHIST_TRY_CATCH(Mview = M->offsetViewNonConst(smap, imin),*iflag);
+    }
+    else
+    {
+      PHIST_TRY_CATCH(Mtmp = M->offsetViewNonConst(smap, imin), *iflag);
+      PHIST_TRY_CATCH(Mview = Mtmp->subViewNonConst(Teuchos::Range1D(jmin, jmax)), *iflag);
+    }
+  }
+  PHIST_TRY_CATCH(Tpetra::deep_copy(*Mview, *Mblock), *iflag); // copy operation
+
   *iflag = PHIST_SUCCESS;
 }
 
 extern "C" void SUBR(sparseMat_delete)(TYPE(sparseMat_ptr) A, int* iflag)
 {
-  *iflag=PHIST_NOT_IMPLEMENTED;
+  PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
+  // this is to avoid memory leaks, the function sparseMat_get_context will create
+  // a small wrapper object and store it in a map, associated with this pointer to
+  // a sparseMat.
+  phist::internal::delete_default_context(A);
+  if (A == nullptr) 
+  {
+    return;
+  }
+  PHIST_CAST_PTR_FROM_VOID(Traits<_ST_>::sparseMat_t, mat, A, *iflag);
+  delete mat;
+  *iflag = PHIST_SUCCESS;
 }
 
 extern "C" void SUBR(mvec_delete)(TYPE(mvec_ptr) mvec, int* iflag)
@@ -555,21 +603,22 @@ extern "C" void SUBR(sdMat_random)(TYPE(sdMat_ptr) M, int* iflag)
 extern "C" void SUBR(mvec_print)(TYPE(const_mvec_ptr) vec, int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
-  PHIST_CAST_PTR_FROM_VOID(const Traits<_ST_>::mvec_t, mvec, vec, *iflag);
-
-  mvec->print(std::cout);
-
-  *iflag = PHIST_SUCCESS;
+  *iflag = 0;
+  PHIST_CAST_PTR_FROM_VOID(const Traits<_ST_>::mvec_t,V,vec,*iflag);
+  Teuchos::FancyOStream fos{Teuchos::rcp(&std::cout,false)};
+  fos << std::scientific << std::setw(16) << std::setprecision(12);
+  V->describe(fos,Teuchos::VERB_EXTREME);
 }
 
-extern "C" void SUBR(sdMat_print)(TYPE(const_sdMat_ptr) mat, int* iflag)
+extern "C" void SUBR(sdMat_print)(TYPE(const_sdMat_ptr) vM, int* iflag)
 {
+  *iflag=0;
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
-  PHIST_CAST_PTR_FROM_VOID(const Traits<_ST_>::sdMat_t, sdMat, mat, *iflag);
-
-  sdMat->print(std::cout);
-
-  *iflag = PHIST_SUCCESS;
+  PHIST_CAST_PTR_FROM_VOID(const Traits<_ST_>::sdMat_t,M,vM,*iflag);
+  Teuchos::FancyOStream fos{Teuchos::rcp(&std::cout,false)};
+  fos << std::scientific << std::setw(12) << std::setprecision(6);
+  // this hangs if the function is called by not all MPI ranks (see #108)
+  M->describe(fos,Teuchos::VERB_EXTREME);
 }
 
 // TODO: Maybe utilize a Kokkos::View and nested parallel_for
