@@ -353,6 +353,40 @@ elseif (CMAKE_C_COMPILER_ID STREQUAL "PGI")
   set (CMAKE_CXX_FLAGS_DEBUG     "-O0")#-O0 -g -Mbounds -Mdwarf3")
   set (CMAKE_Fortran_FLAGS_DEBUG "-O0 -g")#-O0 -g -Mbounds -Mdwarf3")
 
+elseif (CMAKE_C_COMPILER_ID STREQUAL "Clang")
+
+  message(STATUS "using Clang (LLVM) compiler flags")
+
+  set (CMAKE_C_FLAGS        "-std=c99")
+  set (CMAKE_CXX_FLAGS      "-std=c++11")
+  # assume we are using the LLVM Flang compiler (PGI flavour)
+  set (CMAKE_Fortran_FLAGS  "-Mpreprocess -DFLANG")
+  if( PHIST_ENABLE_OPENMP )
+    set(PHIST_HAVE_OPENMP 1)
+    set (CMAKE_C_FLAGS        "${CMAKE_C_FLAGS}       -fopenmp")
+    set (CMAKE_CXX_FLAGS      "${CMAKE_CXX_FLAGS}     -fopenmp")
+    set (CMAKE_Fortran_FLAGS  "${CMAKE_Fortran_FLAGS} -fopenmp")
+  endif()
+
+  if(PHIST_HAVE_MKL)
+    set (CMAKE_C_FLAGS        "${CMAKE_C_FLAGS}       -DMKL_LP64")
+    set (CMAKE_CXX_FLAGS      "${CMAKE_CXX_FLAGS}     -DMKL_LP64")
+  endif()
+
+  # -ffast-math kills high precision stuff!
+  set(FAST_MATH "-fno-math-errno -ffinite-math-only -fno-signed-zeros -fno-trapping-math")
+  set (CMAKE_C_FLAGS_RELEASE        "-O3 ${FAST_MATH} -march=native")
+  set (CMAKE_CXX_FLAGS_RELEASE      "-O2")
+  set (CMAKE_Fortran_FLAGS_RELEASE  "-march=native -O3 ${FAST_MATH}")
+
+  set (CMAKE_C_FLAGS_RELWITHDEBINFO       "${CMAKE_C_FLAGS_RELEASE}       -g")
+  set (CMAKE_CXX_FLAGS_RELWITHDEBINFO     "${CMAKE_CXX_FLAGS_RELEASE}     -g")
+  set (CMAKE_Fortran_FLAGS_RELWITHDEBINFO "${CMAKE_Fortran_FLAGS_RELEASE} -g")
+
+  set (CMAKE_C_FLAGS_DEBUG       "-O0 -g -Wall")
+  set (CMAKE_CXX_FLAGS_DEBUG     "-O0 -g -Wall")
+  set (CMAKE_Fortran_FLAGS_DEBUG "-O0 -g -Mbounds")
+
 else()
 
   message ("compiler ID: " ${CMAKE_C_COMPILER_ID})
