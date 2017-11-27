@@ -17,11 +17,12 @@ namespace phist
                                              phist_const_map_ptr col_map_in,
                                              phist_const_map_ptr range_map_in,
                                              phist_const_map_ptr domain_map_in)
+    :
+      row_map{row_map_in},
+      col_map{col_map_in},
+      domain_map{domain_map_in},
+      range_map{range_map_in}
     {
-      row_map=row_map_in;
-      col_map=col_map_in;
-      domain_map=domain_map_in;
-      range_map=range_map_in;
     }
 
     default_context::~default_context()
@@ -81,5 +82,5 @@ extern "C" void phist_context_create(phist_context_ptr* vctx,
 extern "C" void phist_context_delete(phist_context_ptr vctx, int* iflag)
 {
   phist::internal::default_context* ctx=(phist::internal::default_context*)vctx;
-  if (ctx!=NULL) delete ctx;
+  delete ctx;
 }
