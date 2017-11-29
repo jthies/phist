@@ -593,13 +593,42 @@ extern "C" void SUBR(sdMat_put_value)(TYPE(sdMat_ptr) sdMat, _ST_ value, int* if
 #ifndef PHIST_BUILTIN_RNG
 extern "C" void SUBR(mvec_random)(TYPE(mvec_ptr) V, int* iflag)
 {
-  *iflag=PHIST_NOT_IMPLEMENTED;
+  PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
+
+  PHIST_CAST_PTR_FROM_VOID(Traits<_ST_>::mvec_t, mvec, V, *iflag);
+
+  PHIST_TRY_CATCH(V->randomize(),*iflag);
+
+  *iflag = PHIST_SUCCESS;
 }
 extern "C" void SUBR(sdMat_random)(TYPE(sdMat_ptr) M, int* iflag)
 {
-  *iflag=PHIST_NOT_IMPLEMENTED;
+  #include "phist_std_typedefs.hpp"  
+  PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
+
+  PHIST_CAST_PTR_FROM_VOID(Traits<_ST_>::sdMat_t, mat, M, *iflag);
+
+  #ifdef PHIST_HAVE_MPI
+    // generate the same data on all processes,
+    // by using an allreduction^^ not very nice, but works
+    // TODO: improve this
+    int myRank = M->getMap()->getComm()->getRank();
+    if( myRank == 0 )
+    {
+      PHIST_TRY_CATCH(M->randomize(),*iflag);
+    }
+    else
+    {
+      PHIST_TRY_CATCH(M->putScalar(st::zero()),*iflag);
+    }
+    PHIST_TRY_CATCH(M->reduce(),*iflag);
+  #else
+    PHIST_TRY_CATCH(M->randomize(),*iflag);
+  #endif
+  *iflag = PHIST_SUCCESS;
 }
 #endif
+
 extern "C" void SUBR(mvec_print)(TYPE(const_mvec_ptr) vec, int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
@@ -607,7 +636,9 @@ extern "C" void SUBR(mvec_print)(TYPE(const_mvec_ptr) vec, int* iflag)
   PHIST_CAST_PTR_FROM_VOID(const Traits<_ST_>::mvec_t,V,vec,*iflag);
   Teuchos::FancyOStream fos{Teuchos::rcp(&std::cout,false)};
   fos << std::scientific << std::setw(16) << std::setprecision(12);
+  fos << "mvec\n";
   V->describe(fos,Teuchos::VERB_EXTREME);
+  
 }
 
 extern "C" void SUBR(sdMat_print)(TYPE(const_sdMat_ptr) vM, int* iflag)
@@ -617,8 +648,10 @@ extern "C" void SUBR(sdMat_print)(TYPE(const_sdMat_ptr) vM, int* iflag)
   PHIST_CAST_PTR_FROM_VOID(const Traits<_ST_>::sdMat_t,M,vM,*iflag);
   Teuchos::FancyOStream fos{Teuchos::rcp(&std::cout,false)};
   fos << std::scientific << std::setw(12) << std::setprecision(6);
+  fos << "sdmat\n";
   // this hangs if the function is called by not all MPI ranks (see #108)
   M->describe(fos,Teuchos::VERB_EXTREME);
+  
 }
 
 // TODO: Maybe utilize a Kokkos::View and nested parallel_for
@@ -779,7 +812,7 @@ extern "C" void SUBR(sdMatT_add_sdMat)(_ST_ alpha, TYPE(const_sdMat_ptr) A,
 
   // This cannot be easily done in Tpetra, so we will use a workaround
   // alpha * X^T + beta * Y = alpha * X^T * I + beta * Y
-  TYPE(sdMat_ptr) identity= nullptr;
+  TYPE(sdMat_ptr) identity = nullptr;
   int numCols;
   PHIST_CHK_IERR(SUBR(sdMat_get_ncols)(A, &numCols, iflag), *iflag);
   PHIST_CHK_IERR(SUBR(sdMat_create)(&identity, numCols, numCols, nullptr, iflag), *iflag);
