@@ -42,11 +42,14 @@ if (NOT BUILD_SHARED_LIBS)
 endif()
 
 set(CMAKE_C_STANDARD 99)
+set(CMAKE_C_STANDARD_REQUIRED ON)
+
 if (PHIST_KERNEL_LIB STREQUAL "tpetra")
   set(CMAKE_CXX_STANDARD 14)
 else()
   set(CMAKE_CXX_STANDARD 11)
 endif()
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 if (PHIST_KERNEL_LIB STREQUAL "Eigen")
   option(PHIST_ENABLE_MPI "Enable MPI within PHIST" OFF)
@@ -151,7 +154,7 @@ set(PHIST_PKG_CONFIG_CFLAGS)
 # the include directory.
 ########################################################################
 
-find_package(LAPACK REQUIRED)
+find_package(LAPACK REQUIRED QUIET)
 
 if (LAPACK_LIBRARIES MATCHES "mkl")
   message(STATUS "found Intel(R) MKL")
@@ -400,6 +403,9 @@ endif ()
 # try to detect if we can use C++11 Lambdas
 include(CheckCXXSourceCompiles)
 include(CheckFortranSourceCompiles)
+
+set(CMAKE_REQUIRED_FLAGS "-std=c++11")
+
 CHECK_CXX_SOURCE_COMPILES("
   int main(int argc, char** argv)
   {
