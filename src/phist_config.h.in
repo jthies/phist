@@ -2,7 +2,10 @@
 #define PHIST_CONFIG_H
 
 /*! access the version of phist: major|minor|patch */
-#cmakedefine PHIST_VERSION ${PHIST_VERSION_MAJOR} ## ${PHIST_VERSION_MINOR} ## ${PHIST_VERSION_PATCH}
+#cmakedefine PHIST_VERSION_STRING "${PHIST_VERSION_MAJOR}.${PHIST_VERSION_MINOR}.${PHIST_VERSION_PATCH}"
+
+/*! access the version of phist as a string: "major.minor.patch" */
+#cmakedefine PHIST_VERSION ((${PHIST_VERSION_MAJOR}*100+${PHIST_VERSION_MINOR})*100+${PHIST_VERSION_PATCH})
 
 /*! git revision at which cmake was invoked */
 #cmakedefine PHIST_GIT_REVISION ${PHIST_GIT_REVISION}
@@ -22,9 +25,6 @@
    CMAKE_BUILD_TYPE=Debug.
  */
 #cmakedefine PHIST_TESTING
-
-#cmakedefine PHIST_VERSION
-
 
 /* some compiler/system flags */
 #cmakedefine PHIST_HAVE_CXX11_LAMBDAS
