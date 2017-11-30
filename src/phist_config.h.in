@@ -1,6 +1,12 @@
 #ifndef PHIST_CONFIG_H
 #define PHIST_CONFIG_H
 
+/*! access the version of phist: major|minor|patch */
+#cmakedefine PHIST_VERSION ${PHIST_VERSION_MAJOR} ## ${PHIST_VERSION_MINOR} ## ${PHIST_VERSION_PATCH}
+
+/*! git revision at which cmake was invoked */
+#cmakedefine PHIST_GIT_REVISION ${PHIST_GIT_REVISION}
+
 /*! general verbosity of PHIST:
         0: only print errors
         1: errors and warnings

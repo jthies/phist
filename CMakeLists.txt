@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.5.0)
+cmake_minimum_required(VERSION 3.2.0)
 
 # some guidelines for extending/modifying the PHIST CMakeLists.txt file. 
 # Things may not be handled this way everywhere yet, but you should keep these
@@ -29,6 +29,9 @@ set(PHIST_VERSION_MINOR 3)
 set(PHIST_VERSION_PATCH 0)
 set(PHIST_VERSION ${PHIST_VERSION_MAJOR}.${PHIST_VERSION_MINOR}.${PHIST_VERSION_PATCH})
 set(PRODUCT_NAME phist-${PHIST_VERSION})
+
+execute_process(COMMAND git rev-parse --short --sq HEAD WORKING_DIRECTORY ${PROJECT_SOURCE_DIR} OUTPUT_VARIABLE rev)
+STRING(REPLACE "'" "\"" PHIST_GIT_REVISION ${rev})
 
 if("${CMAKE_BUILD_TYPE}" STREQUAL "")
   set(CMAKE_BUILD_TYPE "Release" CACHE STRING "Choose the type of build, options are: Release, RelWithDebug, Debug" FORCE)
