@@ -17,6 +17,7 @@ list (APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/")
 
 # Define some custom variables
 project(phist C CXX Fortran)
+
 SET(CMAKE_SKIP_INSTALL_ALL_DEPENDENCY TRUE)
 # here an odd version minor (e.g. 1.1.x, 1.3.x etc.) indicates a development version
 # with unstable functionality, an even version minor (1.0.x, 1.2.x etc.) a stable version.
@@ -40,6 +41,12 @@ if (NOT BUILD_SHARED_LIBS)
     set(BUILD_SHARED_LIBS ON CACHE BOOL "Set to ON/OFF for shared/static library build.")
 endif()
 
+set(CMAKE_C_STANDARD 99)
+if (PHIST_KERNEL_LIB STREQUAL "tpetra")
+  set(CMAKE_CXX_STANDARD 14)
+else()
+  set(CMAKE_CXX_STANDARD 11)
+endif()
 
 if (PHIST_KERNEL_LIB STREQUAL "Eigen")
   option(PHIST_ENABLE_MPI "Enable MPI within PHIST" OFF)
@@ -195,8 +202,6 @@ if (CMAKE_C_COMPILER_ID STREQUAL "GNU")
 
   message(STATUS "using GNU compiler flags")
 
-  set (CMAKE_C_FLAGS        "-std=c99")
-  set (CMAKE_CXX_FLAGS      "-std=c++0x")
   set (CMAKE_Fortran_FLAGS  "-cpp -ffree-line-length-none")
   if( PHIST_ENABLE_OPENMP )
     set(PHIST_HAVE_OPENMP 1)
@@ -274,8 +279,8 @@ elseif (CMAKE_C_COMPILER_ID STREQUAL "Intel")
 
   message(STATUS "using INTEL compiler flags")
 
-  set (CMAKE_C_FLAGS        "-align -Wno-unused-variable -mkl -std=c99")
-  set (CMAKE_CXX_FLAGS      "-align -Wno-unused-variable -mkl -std=c++0x")
+  set (CMAKE_C_FLAGS        "-align -Wno-unused-variable -mkl")
+  set (CMAKE_CXX_FLAGS      "-align -Wno-unused-variable -mkl")
   set (CMAKE_Fortran_FLAGS  "-fpp -mkl -align array64byte")
 
   if( PHIST_ENABLE_OPENMP )
@@ -325,8 +330,6 @@ elseif (CMAKE_C_COMPILER_ID STREQUAL "PGI")
 
   message(STATUS "using PGI compiler flags")
 
-  set (CMAKE_C_FLAGS        "-c99")
-  set (CMAKE_CXX_FLAGS      "-std=c++0x")
   set (CMAKE_Fortran_FLAGS  "-Mpreprocess")
   if( PHIST_ENABLE_OPENMP )
     set(PHIST_HAVE_OPENMP 1)
