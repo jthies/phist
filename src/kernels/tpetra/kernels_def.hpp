@@ -387,42 +387,8 @@ extern "C" void SUBR(sdMat_view_block)(TYPE(sdMat_ptr) vM,
                                        int jmin, int jmax, int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
-  PHIST_CAST_PTR_FROM_VOID(Traits<_ST_>::sdMat_t,M,vM,*iflag);
+  PHIST_CAST_PTR_FROM_VOID(Traits<_ST_>::sdMat_t, M, vM, *iflag);
 
-  if (*vMblock != nullptr)
-  {
-    PHIST_CAST_PTR_FROM_VOID(Traits<_ST_>::sdMat_t,tmp,*vMblock,*iflag);
-    delete tmp;
-  }
-
-  int nrows = imax - imin + 1;
-  int ncols = jmax - jmin + 1;
-
-  Teuchos::RCP<Traits<_ST_>::sdMat_t> Mtmp,Mblock;
-
-  if (nrows==M->getLocalLength())
-  {
-    PHIST_TRY_CATCH(Mblock = M->subViewNonConst(Teuchos::Range1D(jmin,jmax)),*iflag);
-  }
-  else
-  {
-    Teuchos::RCP<map_type> smap = Teuchos::rcp(new map_type
-        (nrows, 0, M->getMap()->getComm(),Tpetra::LocallyReplicated));
-    if (ncols==M->getNumVectors())
-    {
-      PHIST_TRY_CATCH(Mblock = M->offsetViewNonConst(smap,imin),*iflag);    
-    }
-    else
-    {
-      PHIST_TRY_CATCH(Mtmp = M->offsetViewNonConst(smap,imin),*iflag);
-      PHIST_TRY_CATCH(Mblock = Mtmp->subViewNonConst(Teuchos::Range1D(jmin,jmax)),*iflag);
-      // note: Mtmp and Mblock are 'persistent views' of the data, meaning that if the
-      //       viewed object is deleted, the view remains. So we can simply allow
-      //       Mtmp to be deleted at this point.
-    }
-  }
-  // transfer memory management of Mblock to the caller
-  *vMblock = (TYPE(sdMat_ptr))(Mblock.release().get());
   *iflag = PHIST_SUCCESS;
 }
 
@@ -636,9 +602,7 @@ extern "C" void SUBR(mvec_print)(TYPE(const_mvec_ptr) vec, int* iflag)
   PHIST_CAST_PTR_FROM_VOID(const Traits<_ST_>::mvec_t,V,vec,*iflag);
   Teuchos::FancyOStream fos{Teuchos::rcp(&std::cout,false)};
   fos << std::scientific << std::setw(16) << std::setprecision(12);
-  fos << "mvec\n";
   V->describe(fos,Teuchos::VERB_EXTREME);
-  
 }
 
 extern "C" void SUBR(sdMat_print)(TYPE(const_sdMat_ptr) vM, int* iflag)
@@ -648,10 +612,8 @@ extern "C" void SUBR(sdMat_print)(TYPE(const_sdMat_ptr) vM, int* iflag)
   PHIST_CAST_PTR_FROM_VOID(const Traits<_ST_>::sdMat_t,M,vM,*iflag);
   Teuchos::FancyOStream fos{Teuchos::rcp(&std::cout,false)};
   fos << std::scientific << std::setw(12) << std::setprecision(6);
-  fos << "sdmat\n";
   // this hangs if the function is called by not all MPI ranks (see #108)
-  M->describe(fos,Teuchos::VERB_EXTREME);
-  
+  M->describe(fos,Teuchos::VERB_EXTREME); 
 }
 
 // TODO: Maybe utilize a Kokkos::View and nested parallel_for
