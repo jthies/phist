@@ -230,7 +230,7 @@ extern "C" void phist_maps_compatible(phist_const_map_ptr vmap1, phist_const_map
   PHIST_CAST_PTR_FROM_VOID(const map_type, map2, vmap2, *iflag);
 
   // Same object or same map
-  if (map1 == map2 or *map1 == *map2)
+  if (map1 == map2 || *map1 == *map2)
   {
     *iflag = PHIST_SUCCESS;
     return;
@@ -270,7 +270,7 @@ extern "C" void phist_maps_compatible(phist_const_map_ptr vmap1, phist_const_map
                                               *iflag);
     #endif
     
-    if (isCompat and not isLocallySame)
+    if (isCompat && !isLocallySame)
     {
       *iflag = PHIST_WARNING;
       return;
@@ -285,11 +285,11 @@ extern "C" void phist_maps_compatible(phist_const_map_ptr vmap1, phist_const_map
     // TODO: Look up how Frank does this nicely
     if (
               map1->getIndexBase() == map2->getIndexBase() 
-          and
+          &&
               map1->getGlobalNumElements() == map2->getGlobalNumElements()
-          and
+          &&
               map1->getMaxGlobalIndex() == map2->getMaxGlobalIndex()
-          and
+          &&
               map1->getMinGlobalIndex() == map2->getMinGlobalIndex()
        )
     {
