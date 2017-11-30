@@ -48,7 +48,7 @@ for mod_name in modules:
     mod_dir = src_dir+"/"+mod_name
     files = [x[2] for x in os.walk(mod_dir)][0]
         
-    if (verbose) print "module "+mod_name
+    if verbose: print "module "+mod_name
     
     # write the class template (module.hpp file) which is specialized in the module_decl.hpp file.
     module_hpp_file = open("phist_"+mod_name+".hpp", "w")
@@ -90,14 +90,14 @@ namespace phist
         # this file is experimental and requires craft, we skip it for now:
         if (c_file_name.find("simple_lanczos_ft")!=-1):
             continue
-        if (verbose) print "    - process file '"+c_file_name+"'"
+        if verbose: print "    - process file '"+c_file_name+"'"
 
         whole_file = open(mod_dir + "/" + c_file_name, 'rU').read()
                 
         subroutines=re.findall("SUBR\(.*?\)\(.*?\)\;", whole_file, re.DOTALL)
         for s in subroutines:
             name=re.findall("SUBR\((.*?)\)",s,re.DOTALL)[0]
-            if (verbose) print "        - function '"+name+"'"
+            if verbose: print "        - function '"+name+"'"
             # find second parenthesis
             i0=s.find("(")
             i1=i0+s[i0+1:len(s)].find("(")+1
