@@ -124,9 +124,8 @@ if [[ "$PRGENV" =~ gcc* ]]; then
   export FC=gfortran CC=gcc CXX=g++
 elif [[ "$PRGENV" =~ intel* ]]; then
   export FC=ifort CC=icc CXX=icpc
-  # setup environment for MKL:
-  source /tools/modulesystem/tools/mkl/mkl-2017.2.174/install/sled12.x86_64/compilers_and_libraries_2017.2.174/linux/mkl/bin/mklvars.sh intel64
   
+  module load mkl
   # make CMake find and use MKL:
   ADD_CMAKE_FLAGS+="-DBLA_VENDOR=Intel10_64lp"
 fi
