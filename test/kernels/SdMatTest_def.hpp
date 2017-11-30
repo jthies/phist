@@ -13,9 +13,16 @@
 #define PHIST_HIGH_PRECISION_KERNELS
 #endif
 
+#ifdef PHIST_KERNEL_LIB_TPETRA
+#include "Tpetra_MultiVector.hpp"
+#include "Kokkos_Core.hpp"
+#include "Kokkos_View.hpp"
+#include "Teuchos_FancyOStream.hpp"
+#endif
+
 /*! Test fixure. */
 class CLASSNAME: public KernelTestWithSdMats<_ST_,_NROWS_,_NCOLS_,_USE_VIEWS_> 
-  {
+{
 
 public:
 
@@ -48,17 +55,88 @@ public:
     MTest::TearDown();
   }
 
+#ifdef PHIST_KERNEL_LIB_TPETRA
 
+  bool check_entries(TYPE(sdMat_ptr) M, int imin, int imax, int jmin, int jmax)
+  {
+    std::cout << "range: "<<imin<<":"<<imax<<","<<jmin<<":"<<jmax<<std::endl;
+    Teuchos::FancyOStream ofs(Teuchos::rcp(&std::cout,false));
+    ((Tpetra::MultiVector<_ST_,phist_lidx,phist_gidx>*)M)->describe(ofs,Teuchos::VERB_EXTREME);
+    _ST_* M_raw=NULL;
+    phist_lidx ldM;
+    int nrows, ncols;
+    int iflag;
+    SUBR(sdMat_extract_view)(M,&M_raw, &ldM, &iflag);
+    if (iflag) return false;
+    SUBR(sdMat_get_nrows)(M,&nrows,&iflag);
+    if (iflag) throw iflag;
+    SUBR(sdMat_get_ncols)(M,&ncols,&iflag);
+    if (iflag) throw iflag;
+    if (nrows!=(imax-imin+1)) return false;
+    if (ncols!=(jmax-jmin+1)) return false;
+    bool result=true;
+    for (int j=0; j<ncols; j++)
+      for (int i=0; i<nrows; i++)
+      {
+        int ii=imin+i+1;
+        int jj=jmin+j+1;
+        result &= M_raw[MIDX(i,j,ldM)]==(_ST_)(ii*1000+jj);
+      }
+#if PHIST_OUTLEV>=PHIST_DEBUG
+    if (!result) 
+    {
+      std::ostringstream os;
+      os << "Tpetra view test: M("<<imin<<":"<<imax<<","<<jmin<<":"<<jmax<<") looks incorrect:\n";
+      for (int i=0; i<nrows; i++)
+      {
+        for (int j=0; j<ncols; j++)
+        {
+          os << "\t"<<M_raw[MIDX(i,j,ldM)];
+        }
+        os << "\n";
+      }
+      std::cout << os.str()<<std::endl;
+    }
+#endif
+    return result;
+  }
+  
+  bool check_entries_recursive(TYPE(sdMat_ptr) M, int imin, int imax, int jmin, int jmax)
+  {
+    TYPE(sdMat_ptr) Msub=NULL;
+    int iflag=0;
+    bool result_this_level=check_entries(M,imin,imax,jmin,jmax);
+    if (!result_this_level || (imax-imin==1 && jmax-jmin==1)) return result_this_level;
+    bool other_results=true;
+    for (int i0=imin; i0<=imax; i0++)
+    for (int i1=i0; i1<=imax; i1++)
+    for (int j0=jmin; j0<=jmax; j0++)
+    for (int j1=j0; j1<=jmax; j1++)
+    {
+      if (i0==imin && i1==imax && j0==jmin && j1==jmax) continue;
+      int nrsub=i1-i0+1, ncsub=j1-j0+1;
+      SUBR(sdMat_view_block)(M,&Msub,i0-imin,i1-imin,j0-jmin,j1-jmin,&iflag);
+      if (iflag) throw iflag;
+      bool this_result=check_entries_recursive(Msub,i0,i1,j0,j1);
+      if (this_result==false) 
+      {
+        other_results=false;
+        PHIST_OUT(PHIST_DEBUG,"subview(%d:%d,%d:%d) was incorrect!\n",i0,i1,j0,j1);
+        break;
+      }
+    }
+    if (Msub!=NULL) SUBR(sdMat_delete)(Msub,&iflag);
+    if (iflag) throw iflag;
+    return other_results;
+  }
+#endif
   /*! internal tests for forward/backward substition
    */
   void doForwardBackwardTestsWithPreparedMat3(int rank, int* perm);
 };
 
-#ifdef PHIST_KERNEL_LIB_TPETRA
 
-#include "Tpetra_MultiVector.hpp"
-#include "Kokkos_Core.hpp"
-#include "Kokkos_View.hpp"
+#ifdef PHIST_KERNEL_LIB_TPETRA
 
   TEST_F(CLASSNAME, tpetra_data_layout)
   {
@@ -66,10 +144,33 @@ public:
     ASSERT_TRUE(m_lda_>=nrows_);
     tpetra_mvec* M=(tpetra_mvec*)mat1_;
     auto Mview = M->getLocalView<Kokkos::HostSpace>();
-    for (int i=0; i<ncols_; i++)
+    bool offsets_match_lda=true;
+    for (int j=0; j<ncols_-1; j++)
     {
-      ASSERT_EQ( &(Mview(i,1)) - &(Mview(i,0)),m_lda_);
+      for (int i=0; i<nrows_; i++)
+      {
+        offsets_match_lda &= (&(Mview(i,j+1)) - &(Mview(i,j))==m_lda_);
+      }
     }
+    ASSERT_TRUE(offsets_match_lda);
+  }
+
+  TEST_F(CLASSNAME, tpetra_nested_view_block)
+  {
+    typedef Tpetra::MultiVector<_ST_,phist_lidx,phist_gidx> tpetra_mvec;
+
+    tpetra_mvec* M=(tpetra_mvec*)mat1_;
+    auto Mkokkos = M->getLocalView<Kokkos::HostSpace>();
+    
+    for (int i=0; i<nrows_; i++)
+    {
+      for (int j=0; j<ncols_; j++)
+      {
+        Mkokkos(i,j) = (_ST_)((i+1)*1000+(j+1));
+      }
+    }
+    bool all_views_correct=check_entries_recursive(mat1_,0,nrows_-1,0,ncols_-1);
+    ASSERT_TRUE(all_views_correct);
   }
 
 #endif
