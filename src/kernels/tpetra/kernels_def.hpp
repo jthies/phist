@@ -388,7 +388,6 @@ extern "C" void SUBR(sdMat_view_block)(TYPE(sdMat_ptr) vM,
 {
   using std::make_pair;
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
-<<<<<<< HEAD
   PHIST_CAST_PTR_FROM_VOID(Traits<_ST_>::sdMat_t, mat, vM, *iflag);
 
   if (*vMblock != nullptr)
@@ -450,10 +449,6 @@ extern "C" void SUBR(sdMat_view_block)(TYPE(sdMat_ptr) vM,
   }
   // transfer memory management of Mblock to the caller
   *vMblock = (TYPE(sdMat_ptr))(Mblock.release().get());
-=======
-  PHIST_CAST_PTR_FROM_VOID(Traits<_ST_>::sdMat_t, M, vM, *iflag);
-
->>>>>>> 90fa73dff042f81c33d709e8137b99edd9088b48
   *iflag = PHIST_SUCCESS;
   */
 }
