@@ -388,6 +388,7 @@ extern "C" void SUBR(sdMat_view_block)(TYPE(sdMat_ptr) vM,
 {
   using std::make_pair;
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
+<<<<<<< HEAD
   PHIST_CAST_PTR_FROM_VOID(Traits<_ST_>::sdMat_t, mat, vM, *iflag);
 
   if (*vMblock != nullptr)
@@ -449,6 +450,10 @@ extern "C" void SUBR(sdMat_view_block)(TYPE(sdMat_ptr) vM,
   }
   // transfer memory management of Mblock to the caller
   *vMblock = (TYPE(sdMat_ptr))(Mblock.release().get());
+=======
+  PHIST_CAST_PTR_FROM_VOID(Traits<_ST_>::sdMat_t, M, vM, *iflag);
+
+>>>>>>> 90fa73dff042f81c33d709e8137b99edd9088b48
   *iflag = PHIST_SUCCESS;
   */
 }
@@ -663,9 +668,7 @@ extern "C" void SUBR(mvec_print)(TYPE(const_mvec_ptr) vec, int* iflag)
   PHIST_CAST_PTR_FROM_VOID(const Traits<_ST_>::mvec_t,V,vec,*iflag);
   Teuchos::FancyOStream fos{Teuchos::rcp(&std::cout,false)};
   fos << std::scientific << std::setw(16) << std::setprecision(12);
-  fos << "mvec\n";
   V->describe(fos,Teuchos::VERB_EXTREME);
-  
 }
 
 extern "C" void SUBR(sdMat_print)(TYPE(const_sdMat_ptr) vM, int* iflag)
@@ -675,10 +678,8 @@ extern "C" void SUBR(sdMat_print)(TYPE(const_sdMat_ptr) vM, int* iflag)
   PHIST_CAST_PTR_FROM_VOID(const Traits<_ST_>::sdMat_t,M,vM,*iflag);
   Teuchos::FancyOStream fos{Teuchos::rcp(&std::cout,false)};
   fos << std::scientific << std::setw(12) << std::setprecision(6);
-  fos << "sdmat\n";
   // this hangs if the function is called by not all MPI ranks (see #108)
-  M->describe(fos,Teuchos::VERB_EXTREME);
-  
+  M->describe(fos,Teuchos::VERB_EXTREME); 
 }
 
 // TODO: Maybe utilize a Kokkos::View and nested parallel_for

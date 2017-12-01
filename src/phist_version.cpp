@@ -4,7 +4,7 @@ namespace phist
 {
     extern "C"
     {
-        std::string version()
+        constexpr std::string version()
         {
             return std::string{"phist version "};
         }

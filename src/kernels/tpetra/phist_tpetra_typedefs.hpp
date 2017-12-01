@@ -8,15 +8,16 @@
 #endif
 
 #include "phist_typedefs.h"
+#include "phist_tpetra_sdMat.hpp"
 
-#include <Tpetra_Map_decl.hpp>
-#include <Tpetra_MultiVector_decl.hpp>
-#include <Tpetra_CrsMatrix_decl.hpp>
-#include <Tpetra_Import_decl.hpp>
+#include "Tpetra_Map_decl.hpp"
+#include "Tpetra_MultiVector_decl.hpp"
+#include "Tpetra_CrsMatrix_decl.hpp"
+#include "Tpetra_Import_decl.hpp"
 
-#include <Teuchos_RCP.hpp>
-#include <Teuchos_Comm.hpp>
-#include <Teuchos_SerialDenseMatrix.hpp>
+#include "Teuchos_RCP.hpp"
+#include "Teuchos_Comm.hpp"
+#include "Teuchos_SerialDenseMatrix.hpp"
 
 namespace phist
 {
@@ -35,7 +36,7 @@ class Traits
   using mvec_t = Tpetra::MultiVector<ST, phist_lidx, phist_gidx>;
 
   //! serial dense matrix - just a multivector with a serial map.
-  using sdMat_t = Tpetra::MultiVector<ST, phist_lidx, phist_gidx>;
+  using sdMat_t = SmallDenseMatrix<Tpetra::MultiVector<ST, phist_lidx, phist_gidx> >;
 
   //! serial dense matrix from Teuchos, we need this for e.g. the BLAS interface.
   using Teuchos_sdMat_t = Teuchos::SerialDenseMatrix<phist_lidx, ST>;
