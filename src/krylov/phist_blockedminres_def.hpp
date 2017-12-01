@@ -497,8 +497,14 @@ PHIST_TASK_END(iflag)
 
 #if PHIST_OUTLEV>=PHIST_VERBOSE
     PHIST_SOUT(PHIST_VERBOSE,"%d converged, %d need restart", anyConverged,anyFull);
-    if (anyFailed) PHIST_SOUT(PHIST_VERBOSE,", %d exceeded max iter.\n",anyFailed);
-    else PHIST_SOUT(PHIST_VERBOSE,"\n");
+    if (anyFailed)
+    {
+      PHIST_SOUT(PHIST_VERBOSE,", %d exceeded max iter.\n",anyFailed);
+    }
+    else
+    {
+      PHIST_SOUT(PHIST_VERBOSE,"\n");
+    }
     PHIST_SOUT(PHIST_VERBOSE,"---------------------------------------  \n");
 #endif
 
