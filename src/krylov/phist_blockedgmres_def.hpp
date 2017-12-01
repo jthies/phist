@@ -1002,8 +1002,12 @@ PHIST_TASK_BEGIN(ComputeTask)
   }
 PHIST_TASK_END(iflag)
 
-  PHIST_SOUT(PHIST_VERBOSE,"%d converged, %d need restart, %d failed.\n",anyConverged,anyFull,anyFailed);
-  PHIST_SOUT(PHIST_VERBOSE,"---------------------------------------  \n");
+#if PHIST_OUTLEV>=PHIST_VERBOSE
+    PHIST_SOUT(PHIST_VERBOSE,"%d converged, %d need restart", anyConverged,anyFull);
+    if (anyFailed) PHIST_SOUT(PHIST_VERBOSE,", %d exceeded max iter.\n",anyFailed);
+    else PHIST_SOUT(PHIST_VERBOSE,"\n");
+    PHIST_SOUT(PHIST_VERBOSE,"---------------------------------------  \n");
+#endif
 
   // delete remaining views (note that our mvec_GC object "work" takes care of x,y and z)
   PHIST_CHK_IERR(SUBR(mvec_delete)(Vj,     iflag), *iflag);
