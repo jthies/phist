@@ -229,7 +229,7 @@ extern "C" void SUBR(sdMat_create)(TYPE(sdMat_ptr)* mat, int nrows, int ncols,
       :
         Teuchos::rcp(localComm, false);
 
-  auto localMap = Teuchos::rcp(new map_type(nrows, 0, phistCommPtr, Tpetra::LocallyReplicated));
+  auto localMap = Teuchos::rcp(new sdMat_map_type(nrows, 0, phistCommPtr, Tpetra::LocallyReplicated));
   auto matrix = new Traits<_ST_>::sdMat_t(localMap, ncols);
 
   *mat = (TYPE(sdMat_ptr))(matrix);
@@ -396,12 +396,8 @@ extern "C" void SUBR(sdMat_view_block)(TYPE(sdMat_ptr) vM,
     delete tmp;
   }
 
-  // Sync all matrices from HostSpace
-  // probably redundant
-  mat->sync<Kokkos::HostSpace>();
-
   // Get a view of the whole matrix
-  auto view = mat->getLocalView<Kokkos::HostSpace>();
+  auto view = mat->getDualView();
 
   // Take a subview, subview = view[imin:imax ; jmin: jmax]
   // Phists wants inclusive endpoints, so we correct by adding + 1
@@ -409,54 +405,22 @@ extern "C" void SUBR(sdMat_view_block)(TYPE(sdMat_ptr) vM,
                                        make_pair(jmin, jmax + 1));
 
   // create new local map
-  auto map = Teuchos::rcp(new map_type(imax - imin + 1, 0, 
+  auto map = Teuchos::rcp(new sdMat_map_type(imax - imin + 1, 0, 
                                        mat->getMap()->getComm(),
                                        Tpetra::LocallyReplicated));
 
   // Create sdMat with this map, which views the requested rows and cols
-  auto block = new Traits<_ST_>::sdMat_t(map, subview);
+  Traits<_ST_>::sdMat_t* block = new Traits<_ST_>::sdMat_t(map, subview,view);
 
-  // uncomment results in double free (SIGABORT)
-  //*vMblock = (TYPE(sdMat_ptr))(block);
+  *vMblock = (TYPE(sdMat_ptr))block;
   *iflag = PHIST_SUCCESS;
-
-  /*
-  int nrows = imax - imin + 1;
-  int ncols = jmax - jmin + 1;
-
-  Teuchos::RCP<Traits<_ST_>::sdMat_t> Mtmp,Mblock;
-
-  if (nrows==mat->getLocalLength())
-  {
-    PHIST_TRY_CATCH(Mblock = mat->subViewNonConst(Teuchos::Range1D(jmin,jmax)),*iflag);
-  }
-  else
-  {
-    Teuchos::RCP<map_type> smap = Teuchos::rcp(new map_type
-        (nrows, 0, mat->getMap()->getComm(),Tpetra::LocallyReplicated));
-    if (ncols==mat->getNumVectors())
-    {
-      PHIST_TRY_CATCH(Mblock = mat->offsetViewNonConst(smap,imin),*iflag);    
-    }
-    else
-    {
-      PHIST_TRY_CATCH(Mtmp = mat->offsetViewNonConst(smap,imin),*iflag);
-      PHIST_TRY_CATCH(Mblock = Mtmp->subViewNonConst(Teuchos::Range1D(jmin,jmax)),*iflag);
-      // note: Mtmp and Mblock are 'persistent views' of the data, meaning that if the
-      //       viewed object is deleted, the view remains. So we can simply allow
-      //       Mtmp to be deleted at this point.
-    }
-  }
-  // transfer memory management of Mblock to the caller
-  *vMblock = (TYPE(sdMat_ptr))(Mblock.release().get());
-  *iflag = PHIST_SUCCESS;
-  */
 }
 
 extern "C" void SUBR(sdMat_get_block)(TYPE(const_sdMat_ptr) vM, 
                              TYPE(sdMat_ptr) vMblock,
                              int imin, int imax, int jmin, int jmax, int* iflag)
 {
+/* TODO - implement using sdMat_view_block and deep copy
   *iflag=0;
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   PHIST_CAST_PTR_FROM_VOID(const Traits<_ST_>::sdMat_t,M,vM,*iflag);
@@ -485,6 +449,8 @@ extern "C" void SUBR(sdMat_get_block)(TYPE(const_sdMat_ptr) vM,
     }
   }
   PHIST_TRY_CATCH(Tpetra::deep_copy(*Mblock,*Mview),*iflag); // copy operation
+*/
+  *iflag=PHIST_NOT_IMPLEMENTED;
 }
 
 extern "C" void SUBR(sdMat_set_block)(TYPE(sdMat_ptr) vM, 
@@ -494,7 +460,7 @@ extern "C" void SUBR(sdMat_set_block)(TYPE(sdMat_ptr) vM,
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   PHIST_CAST_PTR_FROM_VOID(Traits<_ST_>::sdMat_t, M, vM,*iflag);
   PHIST_CAST_PTR_FROM_VOID(const Traits<_ST_>::sdMat_t, Mblock, vMblock, *iflag);
-  
+/*  
   Teuchos::RCP<Traits<_ST_>::sdMat_t> Mview,Mtmp;
 
   if (imin == 0 && imax == M->getLocalLength() - 1)
@@ -520,6 +486,8 @@ extern "C" void SUBR(sdMat_set_block)(TYPE(sdMat_ptr) vM,
   PHIST_TRY_CATCH(Tpetra::deep_copy(*Mview, *Mblock), *iflag); // copy operation
 
   *iflag = PHIST_SUCCESS;
+*/
+  *iflag=PHIST_NOT_IMPLEMENTED;
 }
 
 extern "C" void SUBR(sparseMat_delete)(TYPE(sparseMat_ptr) A, int* iflag)
@@ -946,11 +914,12 @@ extern "C" void SUBR(mvec_times_sdMat)(_ST_ alpha, TYPE(const_mvec_ptr) V,
   PHIST_CAST_PTR_FROM_VOID(const Traits<_ST_>::mvec_t, mvecIn, V, *iflag);
   PHIST_CAST_PTR_FROM_VOID(const Traits<_ST_>::sdMat_t, sdmat, C, *iflag);
   PHIST_CAST_PTR_FROM_VOID(Traits<_ST_>::mvec_t, mvecOut, W, *iflag);
-
+/*
   PHIST_TRY_CATCH(mvecOut->multiply(Teuchos::NO_TRANS, Teuchos::NO_TRANS,
                                     alpha, *mvecIn, *sdmat, beta),
                   *iflag);
-
+*/
+  PHIST_CHK_IERR(*iflag=PHIST_NOT_IMPLEMENTED,*iflag);
   *iflag = PHIST_SUCCESS;
 }
 
