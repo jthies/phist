@@ -18,7 +18,7 @@ WORKSPACE="$PWD/.."
 VECT_EXT="native"
 TRILINOS_VERSION="11.12.1"
 # list of modules to load
-MODULES_BASIC="cmake ccache lapack cppcheck gcovr doxygen"
+MODULES_BASIC="cmake cppcheck gcovr doxygen"
 # GCC_SANITIZE flag for debug mode, disabled for CUDA
 SANITIZER="address"
 
@@ -122,6 +122,10 @@ set -x
 
 if [[ "$PRGENV" =~ gcc* ]]; then
   export FC=gfortran CC=gcc CXX=g++
+  module load lapack
+  if [ "${VECT_EXT}" != "CUDA" ]; then
+    module load ccache
+  fi
 elif [[ "$PRGENV" =~ intel* ]]; then
   export FC=ifort CC=icc CXX=icpc
   
