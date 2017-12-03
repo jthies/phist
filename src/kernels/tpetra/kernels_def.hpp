@@ -416,78 +416,40 @@ extern "C" void SUBR(sdMat_view_block)(TYPE(sdMat_ptr) vM,
   *iflag = PHIST_SUCCESS;
 }
 
+// get a new matrix that is a copy of some rows and columns of the original one,  
+// Mblock = M(imin:imax,jmin:jmax). The object Mblock must be created beforehand 
+// and the corresponding columns of M are copied into the value array    
+// of Mblock. M is not modified.
 extern "C" void SUBR(sdMat_get_block)(TYPE(const_sdMat_ptr) vM, 
                              TYPE(sdMat_ptr) vMblock,
                              int imin, int imax, int jmin, int jmax, int* iflag)
 {
-/* TODO - implement using sdMat_view_block and deep copy
-  *iflag=0;
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
-  PHIST_CAST_PTR_FROM_VOID(const Traits<_ST_>::sdMat_t,M,vM,*iflag);
+  *iflag=0;
+  TYPE(sdMat_ptr) vMview=NULL;
+  PHIST_CHK_IERR(SUBR(sdMat_view_block)((TYPE(sdMat_ptr))vM,&vMview,imin,imax,jmin,jmax,iflag),*iflag);
+
+  PHIST_CAST_PTR_FROM_VOID(const Traits<_ST_>::sdMat_t,Mview,vMview,*iflag);
   PHIST_CAST_PTR_FROM_VOID(Traits<_ST_>::sdMat_t,Mblock,vMblock,*iflag);
-  
-  Teuchos::RCP<const Traits<_ST_>::sdMat_t> Mview,Mtmp;
 
-
-  if (imin==0 && imax==M->getLocalLength()-1)
-  {
-    PHIST_TRY_CATCH(Mview = M->subView(Teuchos::Range1D(jmin,jmax)),*iflag);
-  }
-  else
-  {
-    int nrows = imax - imin + 1;
-    auto smap = Teuchos::rcp(new map_type(nrows, 0, M->getMap()->getComm(), 
-                                          Tpetra::LocallyReplicated));
-    if (imin==0 && imax==M->getNumVectors())
-    {
-      PHIST_TRY_CATCH(Mview = M->offsetView(smap,imin),*iflag);
-    }
-    else
-    {
-      PHIST_TRY_CATCH(Mtmp = M->offsetView(smap,imin),*iflag);
-      PHIST_TRY_CATCH(Mview = Mtmp->subView(Teuchos::Range1D(jmin,jmax)),*iflag);
-    }
-  }
   PHIST_TRY_CATCH(Tpetra::deep_copy(*Mblock,*Mview),*iflag); // copy operation
-*/
-  *iflag=PHIST_NOT_IMPLEMENTED;
+  PHIST_CHK_IERR(SUBR(sdMat_delete)(vMview,iflag),*iflag);
 }
 
+//! given a serial dense matrix Mblock, set M(imin:imax,jmin:jmax)=Mblock by 
+//! copying the corresponding elements. Mblock is not modified.
 extern "C" void SUBR(sdMat_set_block)(TYPE(sdMat_ptr) vM, 
                              TYPE(const_sdMat_ptr) vMblock,
                              int imin, int imax, int jmin, int jmax, int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
-  PHIST_CAST_PTR_FROM_VOID(Traits<_ST_>::sdMat_t, M, vM,*iflag);
-  PHIST_CAST_PTR_FROM_VOID(const Traits<_ST_>::sdMat_t, Mblock, vMblock, *iflag);
-/*  
-  Teuchos::RCP<Traits<_ST_>::sdMat_t> Mview,Mtmp;
-
-  if (imin == 0 && imax == M->getLocalLength() - 1)
-  {
-    PHIST_TRY_CATCH(Mview = M->subViewNonConst(Teuchos::Range1D(jmin, jmax)), *iflag);
-  }
-  else
-  {
-    int nrows=imax-imin+1;
-    auto smap = Teuchos::rcp(new map_type(nrows, 0, M->getMap()->getComm(), 
-                                          Tpetra::LocallyReplicated));
-
-    if (imin == 0 && imax == M->getNumVectors())
-    {
-      PHIST_TRY_CATCH(Mview = M->offsetViewNonConst(smap, imin),*iflag);
-    }
-    else
-    {
-      PHIST_TRY_CATCH(Mtmp = M->offsetViewNonConst(smap, imin), *iflag);
-      PHIST_TRY_CATCH(Mview = Mtmp->subViewNonConst(Teuchos::Range1D(jmin, jmax)), *iflag);
-    }
-  }
-  PHIST_TRY_CATCH(Tpetra::deep_copy(*Mview, *Mblock), *iflag); // copy operation
-
-  *iflag = PHIST_SUCCESS;
-*/
-  *iflag=PHIST_NOT_IMPLEMENTED;
+  *iflag=0;
+  TYPE(sdMat_ptr) vMview=NULL;
+  PHIST_CHK_IERR(SUBR(sdMat_view_block)(vM,&vMview,imin,imax,jmin,jmax,iflag),*iflag);
+  PHIST_CAST_PTR_FROM_VOID(Traits<_ST_>::sdMat_t,Mblock,vMblock,*iflag);
+  PHIST_CAST_PTR_FROM_VOID(Traits<_ST_>::sdMat_t,Mview,vMview,*iflag);
+  PHIST_TRY_CATCH(Tpetra::deep_copy(*Mview,*Mblock),*iflag); // copy operation
+  PHIST_CHK_IERR(SUBR(sdMat_delete)(vMview,iflag),*iflag);
 }
 
 extern "C" void SUBR(sparseMat_delete)(TYPE(sparseMat_ptr) A, int* iflag)
