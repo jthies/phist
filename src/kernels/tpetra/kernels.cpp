@@ -77,7 +77,8 @@ extern "C" void phist_kernels_init(int* argc, char*** argv, int* iflag)
 
 extern "C" void phist_kernels_init(int* argc, char*** argv, int* iflag)
 {
-  PHIST_CHK_IERR(Tpetra::initialize(argc, argv), *iflag);
+  *iflag=0;
+  PHIST_TRY_CATCH(Tpetra::initialize(argc, argv), *iflag);
 
   PHIST_CHK_IERR(phist_kernels_common_init(argc, argv, iflag), *iflag);
 }

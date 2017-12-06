@@ -285,39 +285,23 @@ extern "C" void SUBR(mvec_extract_view)(TYPE(mvec_ptr) V, _ST_** val, phist_lidx
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   PHIST_CAST_PTR_FROM_VOID(Traits<_ST_>::mvec_t, mVec, V, *iflag);
-/*
-  auto val_ptr = mVec->getLocalView<Kokkos::HostSpace>();
-  *val = (_ST_*)(val_ptr.ptr_on_device());
 
+  Teuchos::ArrayRCP<_ST_> valptr = mVec->get1dViewNonConst();
+  *val = valptr.release();
   *lda = mVec->getStride();
-*/
-  auto valptr = mVec->get1dViewNonConst();
-  *val = valptr.getRawPtr();
-  *lda = mVec->getStride();
-  *iflag = PHIST_SUCCESS;
+  PHIST_CHK_IERR(*iflag=(*val==nullptr)? PHIST_BAD_CAST: PHIST_SUCCESS,*iflag);
 }
 
 extern "C" void SUBR(sdMat_extract_view)(TYPE(sdMat_ptr) V, _ST_** val, phist_lidx* lda, int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   PHIST_CAST_PTR_FROM_VOID(Traits<_ST_>::sdMat_t, sdMat, V, *iflag);
+
+  Teuchos::ArrayRCP<_ST_> valptr = sdMat->get1dViewNonConst();
+  *val = valptr.release();
   *lda = sdMat->getStride();
 
-  //sdMat->sync<Kokkos::HostSpace>();
-  auto val_ptr = sdMat->getLocalView<Kokkos::HostSpace>();
-  auto view1d = Kokkos::subview(val_ptr, Kokkos::ALL(), 0);
-  *val = (_ST_*)(view1d.data());
-
-if (val == nullptr)
-  PHIST_SOUT(PHIST_ERROR, "view is nullptr\n");
-
-/*
-  auto valptr = sdMat->get1dViewNonConst();
-  *val = valptr.getRawPtr();
-*/
-  
-
-  *iflag = PHIST_SUCCESS;
+  PHIST_CHK_IERR(*iflag=(val==nullptr)?PHIST_BAD_CAST:PHIST_SUCCESS,*iflag);
 }
 
 #ifdef PHIST_HIGH_PRECISION_KERNELS
