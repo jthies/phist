@@ -899,7 +899,7 @@ endif()
 #message(STATUS "GHOST libs: ${GHOST_LIBRARIES}")
 
 if (PHIST_USE_MPACK)
-  find_package (MPACK)
+  find_package (MPACK QUIET)
   if (MPACK_FOUND)
     include_directories(${MPACK_INCLUDE_DIRS})
     link_directories(${MPACK_LIBRARY_DIRS})
