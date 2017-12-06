@@ -703,7 +703,7 @@ public:
 
       #if PHIST_OUTLEV>=PHIST_DEBUG
         SUBR(mvec_from_device)(V1_, &iflag_);
-        V1Test::PrintVector(PHIST_DEBUG, " filled matrix with scalar", V1_vp_, nloc_, ldaV1_, stride_, mpi_comm_);
+        V1Test::PrintVector(PHIST_DEBUG, "filled matrix with scalar", V1_vp_, nloc_, ldaV1_, stride_, mpi_comm_);
       #endif
 
       ASSERT_NEAR( mt::one(), MvecEqual(V1_, scalar * st::one()), 
@@ -716,7 +716,7 @@ public:
 
       #if PHIST_OUTLEV>=PHIST_DEBUG
         SUBR(mvec_from_device)(V1_, &iflag_);
-        V1Test::PrintVector(PHIST_DEBUG, " scaled matrix with scalar", V1_vp_, nloc_, ldaV1_, stride_, mpi_comm_);
+        V1Test::PrintVector(PHIST_DEBUG, "scaled matrix with scalar", V1_vp_, nloc_, ldaV1_, stride_, mpi_comm_);
       #endif
 
       ASSERT_NEAR(mt::one(), MvecEqual(V1_, (scalar * scaleScalar) * st::one()), 
@@ -1111,10 +1111,10 @@ public:
       ASSERT_EQ(0,iflag_);
     
       // to check the result, scale V1 by -1, add V1'V2 again and compare with 0
-      //SUBR(mvec_scale)(V1_,-st::one(),&iflag_);
-      //ASSERT_EQ(0,iflag_);
+      SUBR(mvec_scale)(V1_,-st::one(),&iflag_);
+      ASSERT_EQ(0,iflag_);
 
-      SUBR(mvecT_times_mvec)(st::one(),V1_,V2_,-st::one(),M1_,&iflag_);
+      SUBR(mvecT_times_mvec)(st::one(),V1_,V2_,st::one(),M1_,&iflag_);
       ASSERT_EQ(0,iflag_);
   
       // but for large cases we need to respect the condition number as it won't be zero at all

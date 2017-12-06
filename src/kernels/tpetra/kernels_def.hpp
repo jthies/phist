@@ -876,12 +876,12 @@ extern "C" void SUBR(mvec_times_sdMat)(_ST_ alpha, TYPE(const_mvec_ptr) V,
   PHIST_CAST_PTR_FROM_VOID(const Traits<_ST_>::mvec_t, mvecIn, V, *iflag);
   PHIST_CAST_PTR_FROM_VOID(const Traits<_ST_>::sdMat_t, sdmat, C, *iflag);
   PHIST_CAST_PTR_FROM_VOID(Traits<_ST_>::mvec_t, mvecOut, W, *iflag);
-/*
+
   PHIST_TRY_CATCH(mvecOut->multiply(Teuchos::NO_TRANS, Teuchos::NO_TRANS,
                                     alpha, *mvecIn, *sdmat, beta),
                   *iflag);
-*/
-  PHIST_CHK_IERR(*iflag=PHIST_NOT_IMPLEMENTED,*iflag);
+
+  //PHIST_CHK_IERR(*iflag=PHIST_NOT_IMPLEMENTED,*iflag);
   *iflag = PHIST_SUCCESS;
 }
 
