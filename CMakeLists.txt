@@ -154,6 +154,13 @@ set(PHIST_PKG_CONFIG_CFLAGS)
 # the include directory.
 ########################################################################
 
+if (NOT DEFINED BLA_VENDOR)
+  if (DEFINED ENV{MKLROOT})
+    message(STATUS "environment variable MKLROOT suggests MKL is available, try to use it to provide BLAS/LAPACK(e).")
+    set(BLA_VENDOR "Intel10_64lp")
+  endif()
+endif()
+
 find_package(LAPACK REQUIRED QUIET)
 
 if (LAPACK_LIBRARIES MATCHES "mkl")
