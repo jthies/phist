@@ -92,6 +92,22 @@ void SUBR(linearOp_wrap_linearOp_product)(TYPE(linearOp_ptr) op,
 void SUBR(linearOp_wrap_linearOp_product_triple)(TYPE(linearOp_ptr) op,
         TYPE(const_linearOp_ptr) A, TYPE(const_linearOp_ptr) B, TYPE(const_linearOp_ptr) C, int* iflag);
 		
+//! create a 'product k operator' which acts as Y = alpha*A1_apply1*...*Ak_applyk*X + beta*Y (apply).
+//! k_ops gives us the k operators A1,...,Ak, (k_ops[i]=Ai the i-th operator) and 
+//! which_apply tells us, how we want to apply the operators (which_apply[i]=0 if apply i-th operator,
+//! which_apply[i]=1 if applyT and which_apply[i]=2 if apply_shifted)
+//! The other functions will at the moment return an error (-99, not implemented) because they are
+//! typically not needed and their behavior has not been defined yet for product operators.
+//! An exception is 'destroy', which will delete temporary storage used by the operator but not the
+//! operators A, B and C, which are only wrapped and not owned.
+//!
+//! CAVEAT: as the resulting wrapped operator cannot access details of the implementation of A, B and C,
+//!         we cannot use a fused kernel here. For optimal performance e.g. if A, B and C are sparse row
+//!         matrices, a fused kernel should be used.
+//!		
+void SUBR(linearOp_wrap_linearOp_product_k)(TYPE(linearOp_ptr) op,
+int k, TYPE(const_linearOp_ptr)* k_ops, int* which_apply, const _ST_* sigma, int num_shifts, int* iflag);		
+		
 
 #if defined(__cplusplus)&&defined(PHIST_KERNEL_LIB_EPETRA)&&defined(IS_DOUBLE)&&!defined(IS_COMPLEX)
 // forward declaration

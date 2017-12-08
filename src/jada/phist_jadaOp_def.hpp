@@ -606,7 +606,7 @@ PHIST_ENTER_FCN("phist_jadaOp_mvec_times_sdMat");
 	}	
 }
 
-// apply function for projection Operator
+// applyT function for projection Operator
 // Y <- alpha*(I-W*V')*X + beta*Y
 void SUBR(projection_Op_applyT)(_ST_ alpha, const void* op, TYPE(const_mvec_ptr) X, _ST_ beta, TYPE(mvec_ptr) Y, int* iflag)
 {

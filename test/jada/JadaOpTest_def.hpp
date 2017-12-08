@@ -838,4 +838,44 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,_N_,MATNAME>,
       ASSERT_EQ(0,iflag_);
     }
   }
+ 
+    TEST_F(CLASSNAME, apply_check_result_withB_with_k_wrapper)
+  {
+    if( typeImplemented_ && !problemTooSmall_ )
+    {
+	  TYPE(linearOp) proj_Op;
+      SUBR(projection_Op_create)(qb_,Bq_,&proj_Op,&iflag_);
+      ASSERT_EQ(0,iflag_);
+		
+	  int which_apply[3] = {1,2,0}; 
+	  TYPE(const_linearOp_ptr) k_ops[3]={&proj_Op,opAB_,&proj_Op};
+      TYPE(linearOp) Ak_op;
+      SUBR(linearOp_wrap_linearOp_product_k)(&Ak_op,3,k_ops,which_apply,sigma_,nvec_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+
+      SUBR(mvec_add_mvec)(st::one(),vec2_,st::zero(),vec3_,&iflag_);
+	  ASSERT_EQ(0,iflag_);
+
+      _ST_ alpha=st::prand();
+      _ST_ beta=st::prand();
+      Ak_op.apply(alpha,Ak_op.A,vec1_,beta,vec2_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      // step-by-step to create a reference solution
+      proj_Op.apply(st::one(),proj_Op.A,vec1_,st::zero(),vec4_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+	  opAB_->apply_shifted(st::one(),opAB_->A,sigma_,vec4_,st::zero(),vec1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      proj_Op.applyT(alpha,proj_Op.A,vec1_,beta,vec3_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+
+      ASSERT_NEAR(mt::one(),MvecsEqual(vec2_,vec3_),1000*VTest::releps());
+        
+      // clean up the operator
+      SUBR(linearOp_destroy)(&Ak_op,&iflag_);
+      ASSERT_EQ(0,iflag_);
+	  SUBR(projection_Op_delete)(&proj_Op,&iflag_);
+      ASSERT_EQ(0,iflag_);
+
+    }
+  }
 
