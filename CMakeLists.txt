@@ -1012,7 +1012,7 @@ endforeach()
 #########################################################################################
 
 if (NOT PHIST_USE_TRILINOS_TPLS)
-  set(OPTIONAL_TRILINOS_PKG "")
+  set(OPTIONAL_TRILI_PKG "")
 endif()
 
 foreach(PKG ${OPTIONAL_TRILI_PKG})
