@@ -129,6 +129,10 @@ if [[ "$PRGENV" =~ gcc* ]]; then
   else
     ADD_CMAKE_FLAGS+="-DPHIST_USE_CCACHE=OFF"
   fi
+  if [[ "$PRGENV" =~ gcc-7* ]]; then
+    # there's a problem in jada-tests, test STestSchurDecomp* with gcc 7.2.0 and -fsanitize=address, see #218
+    SANITIZER=""
+  fi
 elif [[ "$PRGENV" =~ intel* ]]; then
   export FC=ifort CC=icc CXX=icpc
   
