@@ -123,8 +123,11 @@ set -x
 if [[ "$PRGENV" =~ gcc* ]]; then
   export FC=gfortran CC=gcc CXX=g++
   module load lapack
-  if [ "${VECT_EXT}" != "CUDA" ]; then
+  if [ "${VECT_EXT}" != "CUDA" && "${PRGENV}" != "gcc-7.2.0-openmpi"]; then
     module load ccache
+    ADD_CMAKE_FLAGS+="-DPHIST_USE_CCACHE=ON"
+  else
+    ADD_CMAKE_FLAGS+="-DPHIST_USE_CCACHE=OFF"
   fi
 elif [[ "$PRGENV" =~ intel* ]]; then
   export FC=ifort CC=icc CXX=icpc

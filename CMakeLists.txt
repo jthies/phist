@@ -18,6 +18,8 @@ list (APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/")
 # Define some custom variables
 project(phist C CXX Fortran)
 
+option(PHIST_USE_CCACHE "Enable/disable using ccache to speed up repeated builds if you use the GNU compiler and ccache is found." ON)
+
 SET(CMAKE_SKIP_INSTALL_ALL_DEPENDENCY TRUE)
 # here an odd version minor (e.g. 1.1.x, 1.3.x etc.) indicates a development version
 # with unstable functionality, an even version minor (1.0.x, 1.2.x etc.) a stable version.
@@ -122,10 +124,11 @@ option(PHIST_USE_CRAFT
 
 if (CMAKE_C_COMPILER_ID STREQUAL "GNU")
   find_program(CCACHE_FOUND ccache)
-  if(CCACHE_FOUND)
+  if(CCACHE_FOUND AND PHIST_USE_CCACHE)
+    message(STATUS "enabling CCache to speed-up repeated builds.")
     set_property(GLOBAL PROPERTY RULE_LAUNCH_COMPILE ccache)
     set_property(GLOBAL PROPERTY RULE_LAUNCH_LINK ccache)
-  endif(CCACHE_FOUND)
+  endif()
 endif()
 
 ########################################################################
