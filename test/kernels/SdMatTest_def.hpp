@@ -362,6 +362,8 @@ public:
       ASSERT_EQ(0,iflag_);
 
       ASSERT_REAL_EQ(mt::one(),SdMatsEqual(mat1_,mat2_));
+      ASSERT_EQ(true,pointerUnchanged(mat1_,mat1_vp_,m_lda_));
+      ASSERT_EQ(true,pointerUnchanged(mat2_,mat2_vp_,m_lda_));
     }
 
   }
