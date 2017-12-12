@@ -109,7 +109,7 @@ extern "C" void phist_kernels_finalize(int* iflag)
 //!
 extern "C" void phist_comm_create(phist_comm_ptr* vcomm, int* iflag)
 {
-  *vcomm = (phist_comm_ptr)Tpetra::getDefaultComm().release().get();  
+  *vcomm = (phist_comm_ptr)Tpetra::getDefaultComm().get();  
   *iflag = PHIST_SUCCESS;
 }
 
