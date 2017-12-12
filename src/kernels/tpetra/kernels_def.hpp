@@ -100,22 +100,29 @@ extern "C" void SUBR(sparseMat_create_fromRowFuncAndContext)(TYPE(sparseMat_ptr)
 
   auto numRows = sparseMat->getNodeNumRows();
 
-  Kokkos::parallel_for(numRows, KOKKOS_LAMBDA (const phist_lidx idx)
+try {
+  // note: parallel_for here leads to segfault, and I could not find a Tpetra example
+  // where they insertGlobalVAlues in a parallel_for. Probably the function is not thread-safe
+  // unless HAVE_TEUCHOS_THREADSAFE is defined.
+  //Kokkos::parallel_for(numRows, KOKKOS_LAMBDA (const phist_lidx idx)
+  for (phist_lidx idx=0; idx<numRows; idx++)
   {
+    *iflag=0;
+    int iflag_local=0;
     phist_gidx cols[maxnne];
     _ST_ vals[maxnne];
     ghost_gidx row = tpetraMap->getGlobalElement(idx);
     ghost_lidx row_nnz;
 
-    PHIST_CHK_IERR(*iflag = rowFunPtr(row, &row_nnz, cols, vals, last_arg),
-                   *iflag);
+    iflag_local = rowFunPtr(row, &row_nnz, cols, vals, last_arg);
+    if (iflag_local) throw iflag_local;
 
     Teuchos::ArrayView<phist_gidx> cols_v{cols,row_nnz};
     Teuchos::ArrayView<_ST_> vals_v{vals,row_nnz};
     
-    PHIST_TRY_CATCH(sparseMat->insertGlobalValues(row, cols_v, vals_v),
-                    *iflag);
-  });
+    sparseMat->insertGlobalValues(row, cols_v, vals_v);
+  }//);
+  } catch (...) {*iflag=PHIST_CAUGHT_EXCEPTION; return;}
 
   const auto range_map = (const phist::tpetra::map_type*)(ctx->range_map);
   const auto domain_map = (const phist::tpetra::map_type*)(ctx->domain_map);
@@ -591,10 +598,6 @@ extern "C" void SUBR(sdMat_print)(TYPE(const_sdMat_ptr) vM, int* iflag)
   M->describe(fos,Teuchos::VERB_EXTREME); 
 }
 
-// TODO: Maybe utilize a Kokkos::View and nested parallel_for
-//       or has phist some parallelism on its own?
-//       Depends on the size if it is worth to use parallelism,
-//       so we need to benchmark it to see what is best.
 extern "C" void SUBR(sdMat_identity)(TYPE(sdMat_ptr) mat, int* iflag)
 {
   #include "phist_std_typedefs.hpp"
@@ -717,7 +720,6 @@ extern "C" void SUBR(mvec_vadd_mvec)(const _ST_ alpha[], TYPE(const_mvec_ptr) ve
   PHIST_CAST_PTR_FROM_VOID(const Traits<_ST_>::mvec_t, vec, vecIn, *iflag);
   PHIST_CAST_PTR_FROM_VOID(Traits<_ST_>::mvec_t, resultVec, vecOut, *iflag);
 
-  // Kokkos::parallel_for?
   for (int idx = 0; idx != vec->getNumVectors(); ++idx)
   {
     PHIST_TRY_CATCH(resultVec->getVectorNonConst(idx)->update(alpha[idx], 
