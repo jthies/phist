@@ -287,7 +287,7 @@ extern "C" void SUBR(mvec_extract_view)(TYPE(mvec_ptr) V, _ST_** val, phist_lidx
   PHIST_CAST_PTR_FROM_VOID(Traits<_ST_>::mvec_t, mVec, V, *iflag);
 
   Teuchos::ArrayRCP<_ST_> valptr = mVec->get1dViewNonConst();
-  *val = valptr.release();
+  *val = valptr.get();
   *lda = mVec->getStride();
   PHIST_CHK_IERR(*iflag=(*val==nullptr)? PHIST_BAD_CAST: PHIST_SUCCESS,*iflag);
 }
@@ -698,7 +698,9 @@ extern "C" void SUBR(mvec_add_mvec)(_ST_ alpha, TYPE(const_mvec_ptr) vecIn,
 
   // Check if we only want to copy vec into resultVec
   if (alpha == st::one() and beta == st::zero())
-    *resultVec = *vec; 
+  {
+    PHIST_TRY_CATCH(Tpetra::deep_copy(*resultVec, *vec), *iflag);
+  }
   else
     PHIST_TRY_CATCH(resultVec->update(alpha, *vec, beta), *iflag);
 
