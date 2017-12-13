@@ -12,6 +12,7 @@
 #ifdef __cplusplus
 
 #include <iostream>
+#include <sstream>
 
 // command-line parsing tool for C++ main programs
 // if the given position is smaller than argc, parse

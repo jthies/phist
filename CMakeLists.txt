@@ -18,6 +18,8 @@ list (APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/")
 # Define some custom variables
 project(phist C CXX Fortran)
 
+option(PHIST_USE_CCACHE "Enable/disable using ccache to speed up repeated builds if you use the GNU compiler and ccache is found." ON)
+
 SET(CMAKE_SKIP_INSTALL_ALL_DEPENDENCY TRUE)
 # here an odd version minor (e.g. 1.1.x, 1.3.x etc.) indicates a development version
 # with unstable functionality, an even version minor (1.0.x, 1.2.x etc.) a stable version.
@@ -122,10 +124,11 @@ option(PHIST_USE_CRAFT
 
 if (CMAKE_C_COMPILER_ID STREQUAL "GNU")
   find_program(CCACHE_FOUND ccache)
-  if(CCACHE_FOUND)
+  if(CCACHE_FOUND AND PHIST_USE_CCACHE)
+    message(STATUS "enabling CCache to speed-up repeated builds.")
     set_property(GLOBAL PROPERTY RULE_LAUNCH_COMPILE ccache)
     set_property(GLOBAL PROPERTY RULE_LAUNCH_LINK ccache)
-  endif(CCACHE_FOUND)
+  endif()
 endif()
 
 ########################################################################
@@ -154,6 +157,13 @@ set(PHIST_PKG_CONFIG_CFLAGS)
 # the include directory.
 ########################################################################
 
+if (NOT DEFINED BLA_VENDOR)
+  if (DEFINED ENV{MKLROOT})
+    message(STATUS "environment variable MKLROOT suggests MKL is available, try to use it to provide BLAS/LAPACK(e).")
+    set(BLA_VENDOR "Intel10_64lp")
+  endif()
+endif()
+
 find_package(LAPACK REQUIRED QUIET)
 
 if (LAPACK_LIBRARIES MATCHES "mkl")
@@ -162,7 +172,12 @@ if (LAPACK_LIBRARIES MATCHES "mkl")
   include_directories($ENV{MKLROOT}/include)
   link_libraries(${LAPACK_LIBRARIES})
 else()
-  get_filename_component(BLAS_LIBDIR ${BLAS_LIBRARIES} DIRECTORY)
+  if (BLAS_LIBRARIES MATCHES "-l*")
+    # no hint where to look for lapacke here
+    set(BLAS_LIBDIR "")
+  else()
+    get_filename_component(BLAS_LIBDIR ${BLAS_LIBRARIES} DIRECTORY)
+  endif()
   find_library (LAPACKE_LIBRARY lapacke ${BLAS_LIBDIR})
   if (LAPACKE_LIBRARY MATCHES "LAPACKE_LIBRARY-NOTFOUND")
     message(WARNING "did not find liblapacke in ${BLAS_LIBDIR}")
@@ -358,6 +373,40 @@ elseif (CMAKE_C_COMPILER_ID STREQUAL "PGI")
   set (CMAKE_C_FLAGS_DEBUG       "-O0 -g")#-O0 -g -Mbounds -Mdwarf3")
   set (CMAKE_CXX_FLAGS_DEBUG     "-O0")#-O0 -g -Mbounds -Mdwarf3")
   set (CMAKE_Fortran_FLAGS_DEBUG "-O0 -g")#-O0 -g -Mbounds -Mdwarf3")
+
+elseif (CMAKE_C_COMPILER_ID STREQUAL "Clang")
+
+  message(STATUS "using Clang (LLVM) compiler flags")
+
+  set (CMAKE_C_FLAGS        "-std=c99")
+  set (CMAKE_CXX_FLAGS      "-std=c++11")
+  # assume we are using the LLVM Flang compiler (PGI flavour)
+  set (CMAKE_Fortran_FLAGS  "-Mpreprocess -DFLANG")
+  if( PHIST_ENABLE_OPENMP )
+    set(PHIST_HAVE_OPENMP 1)
+    set (CMAKE_C_FLAGS        "${CMAKE_C_FLAGS}       -fopenmp")
+    set (CMAKE_CXX_FLAGS      "${CMAKE_CXX_FLAGS}     -fopenmp")
+    set (CMAKE_Fortran_FLAGS  "${CMAKE_Fortran_FLAGS} -fopenmp")
+  endif()
+
+  if(PHIST_HAVE_MKL)
+    set (CMAKE_C_FLAGS        "${CMAKE_C_FLAGS}       -DMKL_LP64")
+    set (CMAKE_CXX_FLAGS      "${CMAKE_CXX_FLAGS}     -DMKL_LP64")
+  endif()
+
+  # -ffast-math kills high precision stuff!
+  set(FAST_MATH "-fno-math-errno -ffinite-math-only -fno-signed-zeros -fno-trapping-math")
+  set (CMAKE_C_FLAGS_RELEASE        "-O3 ${FAST_MATH} -march=native")
+  set (CMAKE_CXX_FLAGS_RELEASE      "-O2")
+  set (CMAKE_Fortran_FLAGS_RELEASE  "-march=native -O3 ${FAST_MATH}")
+
+  set (CMAKE_C_FLAGS_RELWITHDEBINFO       "${CMAKE_C_FLAGS_RELEASE}       -g")
+  set (CMAKE_CXX_FLAGS_RELWITHDEBINFO     "${CMAKE_CXX_FLAGS_RELEASE}     -g")
+  set (CMAKE_Fortran_FLAGS_RELWITHDEBINFO "${CMAKE_Fortran_FLAGS_RELEASE} -g")
+
+  set (CMAKE_C_FLAGS_DEBUG       "-O0 -g -Wall")
+  set (CMAKE_CXX_FLAGS_DEBUG     "-O0 -g -Wall")
+  set (CMAKE_Fortran_FLAGS_DEBUG "-O0 -g -Mbounds")
 
 else()
 
@@ -865,7 +914,7 @@ endif()
 #message(STATUS "GHOST libs: ${GHOST_LIBRARIES}")
 
 if (PHIST_USE_MPACK)
-  find_package (MPACK)
+  find_package (MPACK QUIET)
   if (MPACK_FOUND)
     include_directories(${MPACK_INCLUDE_DIRS})
     link_directories(${MPACK_LIBRARY_DIRS})
@@ -966,7 +1015,7 @@ endforeach()
 #########################################################################################
 
 if (NOT PHIST_USE_TRILINOS_TPLS)
-  set(OPTIONAL_TRILINOS_PKG "")
+  set(OPTIONAL_TRILI_PKG "")
 endif()
 
 foreach(PKG ${OPTIONAL_TRILI_PKG})
@@ -1427,7 +1476,7 @@ add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND} ${CTEST_OPTIONS})
 
 # Custom targets: doc, cppcheck, coverage, audit
 # Adding optinal target "doc" to generate Doxygen documentation
-find_package(Doxygen 1.7.0)
+find_package(Doxygen 1.7.0 QUIET)
 if (DOXYGEN_FOUND)
     add_custom_target(doc ${DOXYGEN_EXECUTABLE} ${CMAKE_BINARY_DIR}/phist.doxyfile WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
 endif()

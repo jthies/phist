@@ -451,7 +451,7 @@ static int global_msum(MT* value, int count, MPI_Comm mpi_comm)
 {
   int iflag=0;
 #ifdef PHIST_HAVE_MPI
-        ST* gvalue = new MT[count];        
+        MT* gvalue = new MT[count];
         iflag=MPI_Allreduce(value,gvalue,count,
                 mt::mpi_type(), MPI_SUM, mpi_comm);
         for (int i=0;i<count;i++) value[i]=gvalue[i];
