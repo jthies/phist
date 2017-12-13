@@ -7,7 +7,7 @@
 /*                                                                                         */
 /*******************************************************************************************/
 
-// implementation of gmres on several systems simultaneously
+// implementation of BiCGStab on several systems simultaneously
 void SUBR(blockedBiCGStab_iterate)(TYPE(const_linearOp_ptr) Aop, TYPE(const_linearOp_ptr) Pop,
         TYPE(const_mvec_ptr) rhs, TYPE(mvec_ptr) sol_in, TYPE(const_mvec_ptr) V,
         int numSys, int* nIter, _MT_ const tol[], int* iflag)
@@ -145,5 +145,16 @@ void SUBR(blockedBiCGStab_iterate)(TYPE(const_linearOp_ptr) Aop, TYPE(const_line
     PHIST_CHK_IERR(SUBR(mvec_add_mvec)(st::one(),r,st::one(),p,iflag),*iflag);
   }
 }
+
+void SUBR( BiCGStab ) (TYPE(const_linearOp_ptr) Aop, TYPE(const_linearOp_ptr) Pop,
+		TYPE(const_mvec_ptr) rhs, TYPE(mvec_ptr) sol_in, int* nIter, _MT_ const tol, int* iflag)
+{
+#include "phist_std_typedefs.hpp"
+  *iflag = 0;
+  PHIST_ENTER_FCN(__FUNCTION__);
+  
+  PHIST_CHK_IERR(SUBR(blockedBiCGStab_iterate)(Aop, Pop, rhs, sol_in, NULL, 1, nIter, &tol, iflag),*iflag);
+
+}		
 
 
