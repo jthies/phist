@@ -56,7 +56,7 @@ typedef enum phist_EmatSym
   phist_INVALID_MATSYM
 } phist_EmatSym;
 
-typedef enum 
+typedef enum phist_Eprecon
 {
   phist_NO_PRECON=0,
   phist_IFPACK,
@@ -67,7 +67,34 @@ typedef enum
   phist_INVALID_PRECON
 } phist_Eprecon;
 
-
+//! define operators involving pre, post and skew projection
+//! for the Jacobi-Davidson method. The general form of the
+//! jadaOp (see phist_jadaOp_decl.h) is
+//!
+//! P_skew K^{-1} P_post (A-sigma_j B) P_pre,
+//!
+//! with W=B*V (B hpd, B=I for standard EVP),
+//! K some preconditioner for (A-sigma_j *B),
+//! V_K=K\V, and (') denoting transposition, 
+//! the operators are defined as
+//!
+//! P_skew = I - V_K*(W'V_K)^{-1}W'
+//! P_pre  = I - V (BV)'
+//! P_post = P_pre' = I - BV V'
+//!
+//! Using this enum one can 'turn on/off' the projections,
+//! for insance phist_PROJ_SKEW|phist_PROJ_PRE yields the operator
+//! P_skew K^{-1} (A-sigma_j B) P_pre.
+typedef enum phist_Eprojection
+{
+  phist_PROJ_NONE=0,
+  phist_PROJ_PRE=1,
+  phist_PROJ_POST=2,
+  phist_PROJ_PRE_POST=3,
+  phist_PROJ_SKEW=4,
+  phist_PROJ_ALL=7,
+  phist_INVALID_PROJ
+} phist_Eprojection;
 
 #ifdef __cplusplus
 #include <iostream>
@@ -79,29 +106,53 @@ const char* linSolv2str(phist_ElinSolv s);
 const char* eigExtr2str(phist_EeigExtr s);
 const char* precon2str(phist_Eprecon s);
 const char* matSym2str(phist_EmatSym s);
+const char* projection2str(phist_Eprojection s);
 
 phist_EeigSort str2eigSort(const char* str);
 phist_ElinSolv str2linSolv(const char* str);
 phist_EeigExtr str2eigExtr(const char* str);
 phist_Eprecon str2precon(const char* str);
 phist_EmatSym str2matSym(const char* str);
+phist_Eprojection str2projection(const char* str);
+
 #ifdef __cplusplus
 }
 
-//! read enum type from file stream
+//! \name read enum types from input stream
+//! @{
+
+//!
 std::istream& operator>>(std::istream& is, phist_EeigSort& s);
-
-//! read enum type from file stream
+//!
 std::istream& operator>>(std::istream& is, phist_ElinSolv& s);
-
-//! read enum type from file stream
+//!
 std::istream& operator>>(std::istream& is, phist_EeigExtr& s);
-
-//! read enum type from file stream
+//!
 std::istream& operator>>(std::istream& is, phist_Eprecon& s);
-
-//! read enum type from file stream
+//!
 std::istream& operator>>(std::istream& is, phist_EmatSym& s);
+//!
+std::istream& operator>>(std::istream& is, phist_Eprojection& s);
+
+//!@}
+
+//! \name write enum types to stream
+//! @{
+
+//!
+std::ostream& operator<<(std::ostream& is, const phist_EeigSort& s);
+//!
+std::ostream& operator<<(std::ostream& is, const phist_ElinSolv& s);
+//!
+std::ostream& operator<<(std::ostream& is, const phist_EeigExtr& s);
+//!
+std::ostream& operator<<(std::ostream& is, const phist_Eprecon& s);
+//!
+std::ostream& operator<<(std::ostream& is, const phist_EmatSym& s);
+//!
+std::ostream& operator<<(std::ostream& is, const phist_Eprojection& s);
+
+//!@}
 
 #endif
 #endif
