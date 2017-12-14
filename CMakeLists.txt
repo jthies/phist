@@ -1039,6 +1039,20 @@ foreach(PKG ${OPTIONAL_TRILI_PKG})
   message(STATUS ${TPL_REPORT})
 endforeach()
 
+if (PHIST_KERNEL_LIB STREQUAL "tpetra")
+  message(STATUS "Checking if we need special flags for compiling with Tpetra...")
+  if ("CUDA" IN_LIST Tpetra_TPL_LIST)
+    # compiling tpetra/kokkos with CUDA is tricky and requires special flags
+    # and a special wrapper script to be used as the MPI C++ compiler
+    message(STATUS "adding Tpetra_CXX_FLAGS because you're building with CUDA enabled.")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${Tpetra_CXX_FLAGS}")
+    if (NOT CMAKE_CXX_COMPILER MATCHES "mpicxx" AND $ENV{OMPI_CXX} MATCHES "nvcc_wrapper")
+      message(WARNING "NOTE: in order to compile Tpetra/Kokkos code with CUDA we recommend using OpenMPI"
+                      "      and setting the environment variables CXX=mpicxx and OMPI_CXX=nvcc_wrapper."
+                      "      The nvcc_wrapper script is installed along with Trilinos.")
+    endif()
+  endif()
+endif()
 
 option(PHIST_TIMEMONITOR "Gather detailed function-level timings" On)
 if( PHIST_TIMEMONITOR )
