@@ -102,6 +102,7 @@ extern "C" void phist_kernels_finalize(int* iflag)
             
 extern "C" void phist_kernels_finalize(int* iflag)
 {
+  PHIST_CHK_IERR(phist_kernels_common_finalize(iflag),*iflag);
   // Does not throw
   Tpetra::finalize();
 }

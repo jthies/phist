@@ -204,7 +204,7 @@ contains
     use ifport, only: getpid
 #endif
     implicit none
-#ifdef __PGI
+#if defined(__PGI) || defined(FLANG)
     integer, external :: getpid
 #endif
     integer, allocatable :: seed(:)
