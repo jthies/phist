@@ -68,8 +68,8 @@ void SUBR(blockedBiCGStab_iterate)(TYPE(const_linearOp_ptr) Aop, TYPE(const_line
   PHIST_CHK_IERR(SUBR(mvec_add_mvec)(st::one(),r,st::zero(),p,iflag),*iflag);
   PHIST_CHK_IERR(SUBR(mvec_add_mvec)(st::one(),r,st::zero(),r0,iflag),*iflag);
 
-  // rho0=(r0*r0), rho=(r,r0)
-  std::vector<ST> rho(numSys,mt::one()), rho0(numSys,mt::one()), rho_prev(numSys);
+  // rho0=(r0*r0), rho=(r*r0), rr=(r*r)
+  std::vector<ST> rho(numSys,mt::one()), rho0(numSys,mt::one()), rho_prev(numSys),rr(numSys,mt::one());
 
   PHIST_CHK_IERR(SUBR(mvec_dot_mvec)(r0,r0,&rho0[0],iflag),*iflag);
   rho=rho0;
@@ -80,7 +80,19 @@ void SUBR(blockedBiCGStab_iterate)(TYPE(const_linearOp_ptr) Aop, TYPE(const_line
     PHIST_SOUT(PHIST_VERBOSE,"BICGSTAB ITER %d:",*nIter);
     for(int j = 0; j < numSys; j++)
     {
-      MT rnrm=std::abs(std::sqrt(rho[j]/rho0[j]));
+	  // we can look at diffrent criterias for convergence
+	  // this two here get similar results in most cases
+	  // in cases when BiCGStab needs very many iteration steps to decrease the residuum,
+	  // the first criteria stops early but with a bigger residuum than the given toleranz
+	  
+	  // this criteria yields to early termination with a bigger residuum
+      // MT rnrm=std::sqrt(std::abs(rho[j]/rho0[j]));
+
+	  // this criteria yields to termination if the residuum is smal enough relative to rhs
+	  // (can take many iteration steps)
+	  PHIST_CHK_IERR(SUBR(mvec_dot_mvec)(r,r,&rr[0],iflag),*iflag);
+	  MT rnrm=std::sqrt(std::abs(rr[j]/rho0[j]));
+	  
       PHIST_SOUT(PHIST_VERBOSE,"\t%e",rnrm);
       firstConverged = firstConverged || (rnrm < tol[j]);
     }
@@ -127,7 +139,7 @@ void SUBR(blockedBiCGStab_iterate)(TYPE(const_linearOp_ptr) Aop, TYPE(const_line
     PHIST_CHK_IERR(SUBR(mvec_vadd_mvec)(&w[0],t,st::zero(),r,iflag),*iflag);
     PHIST_CHK_IERR(SUBR(mvec_add_mvec)(st::one(),s,-st::one(),r,iflag),*iflag);
 
-    // rho_(i+1) = r_(i+1)^T r0*
+    // rho_(i+1) = r_(i+1)^T*r0
     rho_prev = rho;
     PHIST_CHK_IERR(SUBR(mvec_dot_mvec)(r,r0,&rho[0],iflag),*iflag);
 
