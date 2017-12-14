@@ -142,6 +142,7 @@ public:
 
   TEST_F(CLASSNAME, tpetra_data_layout)
   {
+    if (!typeImplemented_) return;
     typedef Tpetra::MultiVector<_ST_,phist_lidx,phist_gidx> tpetra_mvec;
     ASSERT_TRUE(m_lda_>=nrows_);
     tpetra_mvec* M=(tpetra_mvec*)mat1_;

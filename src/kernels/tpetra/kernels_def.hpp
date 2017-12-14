@@ -12,7 +12,17 @@
 
 extern "C" void SUBR(type_avail)(int *iflag)
 {
+  *iflag = PHIST_NOT_IMPLEMENTED;
+#if defined(IS_DOUBLE)&&!defined(IS_COMPLEX)&&defined(HAVE_TPETRA_INST_DOUBLE)
   *iflag = PHIST_SUCCESS;
+#elif defined(IS_DOUBLE)&&defined(IS_COMPLEX)&&defined(HAVE_TPETRA_INST_DOUBLE_COMPLEX)
+  *iflag = PHIST_SUCCESS;
+#elif !defined(IS_DOUBLE)&&!defined(IS_COMPLEX)&&defined(HAVE_TPETRA_INST_FLOAT)
+  *iflag = PHIST_SUCCESS;
+#elif !defined(IS_DOUBLE)&&defined(IS_COMPLEX)&&defined(HAVE_TPETRA_INST_FLOAT_COMPLEX)
+  *iflag = PHIST_SUCCESS;
+#endif
+  return;
 }
 
 extern "C"
