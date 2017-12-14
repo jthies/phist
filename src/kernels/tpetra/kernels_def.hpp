@@ -1041,7 +1041,32 @@ extern "C" void SUBR(mvec_combine)(TYPE(mvec_ptr) V, phist_Dconst_mvec_ptr reV, 
 # else
 extern "C" void SUBR(mvec_split)(TYPE(const_mvec_ptr) V, phist_Smvec* reV, phist_Smvec* imV, int *iflag)
 {
-  *iflag=PHIST_NOT_IMPLEMENTED;
+  #include "phist_std_typedefs.hpp"
+  PHIST_CAST_PTR_FROM_VOID(const Traits<_ST_>::mvec_t, mvec, V, *iflag);
+  PHIST_CAST_PTR_FROM_VOID(Traits<_MT_>::mvec_t, reMvec, reV, *iflag);
+  PHIST_CAST_PTR_FROM_VOID(Traits<_MT_>::mvec_t, imMvec, imV, *iflag);
+  
+  //mvec->sync<Kokkos::HostSpace> ();
+  reMvec->sync<Kokkos::HostSpace> ();
+  imMvec->sync<Kokkos::HostSpace> ();
+
+  auto const sourceMvecView = mvec->getLocalView<Kokkos::HostSpace>();
+  auto reMvecView = reMvec->getLocalView<Kokkos::HostSpace>();
+  auto imMvecView = imMvec->getLocalView<Kokkos::HostSpace>();
+
+  const size_t localNumRows = mvec->getLocalLength();
+  const size_t numVectors = mvec->getNumVectors();
+
+  Kokkos::parallel_for(localNumRows, KOKKOS_LAMBDA (const size_t row)
+    {
+      for (phist_lidx col = 0; col != numVectors; ++col)
+      {
+        reMvecView(row, col) = st::real(sourceMvecView(row, col));
+        imMvecView(row, col) = st::imag(sourceMvecView(row, col));
+      }
+    });
+
+  *iflag = PHIST_SUCCESS;
 }
 extern "C" void SUBR(mvec_combine)(TYPE(mvec_ptr) V, phist_Sconst_mvec_ptr reV, phist_Sconst_mvec_ptr imV, int *iflag)
 {
