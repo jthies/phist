@@ -87,6 +87,7 @@ extern "C" void SUBR(sparseMat_create_fromRowFuncAndContext)(TYPE(sparseMat_ptr)
                                                              phist_lidx maxnne, 
                                                              phist_sparseMat_rowFunc rowFunPtr, 
                                                              void* last_arg, int *iflag)
+try
 {
   int iflag_in = *iflag;
   PHIST_CAST_PTR_FROM_VOID(const phist::internal::default_context, ctx, vctx, *iflag);
@@ -100,12 +101,12 @@ extern "C" void SUBR(sparseMat_create_fromRowFuncAndContext)(TYPE(sparseMat_ptr)
 
   auto numRows = sparseMat->getNodeNumRows();
 
-try {
   // note: parallel_for here leads to segfault, and I could not find a Tpetra example
   // where they insertGlobalVAlues in a parallel_for. Probably the function is not thread-safe
   // unless HAVE_TEUCHOS_THREADSAFE is defined.
   //Kokkos::parallel_for(numRows, KOKKOS_LAMBDA (const phist_lidx idx)
   for (phist_lidx idx=0; idx<numRows; idx++)
+
   {
     *iflag=0;
     int iflag_local=0;
@@ -116,13 +117,19 @@ try {
 
     iflag_local = rowFunPtr(row, &row_nnz, cols, vals, last_arg);
     if (iflag_local) throw iflag_local;
-
-    Teuchos::ArrayView<phist_gidx> cols_v{cols,row_nnz};
-    Teuchos::ArrayView<_ST_> vals_v{vals,row_nnz};
-    
-    sparseMat->insertGlobalValues(row, cols_v, vals_v);
+    if (row_nnz != 0)
+    {
+      Teuchos::ArrayView<phist_gidx> cols_v{cols,row_nnz};
+      Teuchos::ArrayView<_ST_> vals_v{vals,row_nnz};
+      
+      sparseMat->insertGlobalValues(row, cols_v, vals_v);
+    } else
+    {/*
+      _ST_ dvals[1] = {1};
+      phist_gidx dindex[1] = {0};
+      sparseMat->insertGlobalValues(row, 1, vals, dindex); */
+    }
   }//);
-  } catch (...) {*iflag=PHIST_CAUGHT_EXCEPTION; return;}
 
   const auto range_map = (const phist::tpetra::map_type*)(ctx->range_map);
   const auto domain_map = (const phist::tpetra::map_type*)(ctx->domain_map);
@@ -146,6 +153,11 @@ try {
   }
   
 }
+catch (std::exception &ex)
+{
+  std::cout << "Caught exception: " << ex.what() << '\n';
+}  
+catch (...) {*iflag=PHIST_CAUGHT_EXCEPTION; return;}
 
 extern "C" void SUBR(sparseMat_create_fromRowFunc)(TYPE(sparseMat_ptr) *A, 
                                                    phist_const_comm_ptr comm,
