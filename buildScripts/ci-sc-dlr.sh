@@ -18,7 +18,7 @@ WORKSPACE="$PWD/.."
 VECT_EXT="native"
 TRILINOS_VERSION="11.12.1"
 # list of modules to load
-MODULES_BASIC="cmake lapack cppcheck gcovr doxygen"
+MODULES_BASIC="cmake ccache lapack cppcheck gcovr doxygen"
 # GCC_SANITIZE flag for debug mode, disabled for CUDA
 SANITIZER="address"
 
@@ -122,10 +122,7 @@ set -x
 
 if [[ "$PRGENV" =~ gcc* ]]; then
   export FC=gfortran CC=gcc CXX=g++
-  if [ "${VECT_EXT}" != "CUDA" && "${PRGENV}" != "gcc-7.2.0-openmpi"]; then
-    module load ccache
-    ADD_CMAKE_FLAGS+="-DPHIST_USE_CCACHE=ON"
-  else
+  if [[ "${VECT_EXT}" =~ "CUDA" ]]; then
     ADD_CMAKE_FLAGS+="-DPHIST_USE_CCACHE=OFF"
   fi
   if [[ "$PRGENV" =~ gcc-7* ]]; then
