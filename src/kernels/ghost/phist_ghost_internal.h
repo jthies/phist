@@ -11,7 +11,10 @@
 
 #ifndef PHIST_HAVE_MPI
 typedef int MPI_Comm;
+// note: ghost #defines MPI_COMM_WORLD, I think...
+#ifndef MPI_COMM_WORLD
 const int MPI_COMM_WORLD=0;
+#endif
 #endif
 
 

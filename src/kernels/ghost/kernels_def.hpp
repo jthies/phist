@@ -1704,7 +1704,9 @@ extern "C" void SUBR(mvecT_times_mvec)(_ST_ alpha, TYPE(const_mvec_ptr) vV, TYPE
   PHIST_CHK_IERR(phist_map_get_comm(map,&vcomm,iflag),*iflag);
   PHIST_CAST_PTR_FROM_VOID(const MPI_Comm,comm,vcomm,*iflag);
   int rank = 0;
+#ifdef PHIST_HAVE_MPI
   PHIST_CHK_IERR(*iflag = MPI_Comm_rank(*comm,&rank),*iflag);
+#endif
   if( rank == 0 )
   {
     mybeta = beta;
@@ -1956,7 +1958,11 @@ extern "C" void SUBR(mvec_QR)(TYPE(mvec_ptr) vV, TYPE(sdMat_ptr) vR, int* iflag)
     ghost_type ghost_type;
     PHIST_CHK_GERR(ghost_type_get(&ghost_type),*iflag);
     int is_cuda=(ghost_type==GHOST_TYPE_CUDA)?1:0;
+#ifdef PHIST_HAVE_MPI
     MPI_Allreduce(&is_cuda,&any_cuda,1,MPI_INT,MPI_SUM,V->context->mpicomm);
+#else
+    any_cuda=is_cuda;
+#endif
   }
   if (any_cuda)
   {
@@ -2242,9 +2248,7 @@ extern "C" void SUBR(sparseMat_create_fromRowFunc)(TYPE(sparseMat_ptr) *vA, phis
   int outlev = *iflag&PHIST_SPARSEMAT_QUIET ? PHIST_DEBUG : PHIST_INFO;
 
   *iflag=0;
-  
   PHIST_CAST_PTR_FROM_VOID(MPI_Comm,mpicomm,vcomm,*iflag);
-  
   PHIST_TASK_DECLARE(ComputeTask)
   PHIST_TASK_BEGIN(ComputeTask)
 

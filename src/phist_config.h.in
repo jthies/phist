@@ -174,7 +174,10 @@ kernel libs) ?
 
 # ifdef PHIST_HAVE_GHOST
 # include "ghost/config.h"
-#  ifndef GHOST_HAVE_MPI
+#  if defined(GHOST_HAVE_MPI)&&!defined(PHIST_HAVE_MPI)
+#  error "ghost was compiled with MPI, conflict with phist installation without MPI."
+#  endif
+#  if defined(GHOST_HAVE_MPI)&&!defined(PHIST_HAVE_MPI)
 #  error "ghost was compiled without MPI, conflict with phist installation with MPI."
 #  endif
 # endif

@@ -93,8 +93,10 @@ void get_C_sigma(int* C, int* sigma, int flags, MPI_Comm comm)
       any_GPUs=0;
     }
 
+#ifdef PHIST_HAVE_MPI
     // everyone should have the max value found among MPI processes
     MPI_Allreduce(MPI_IN_PLACE,&any_GPUs,1,MPI_INT,MPI_SUM,comm);
+#endif
   }
 
   // if the user sets both to postive values in the config file (via CMake), respect this choice
@@ -354,8 +356,11 @@ extern "C" void phist_map_create(phist_map_ptr* vmap, phist_const_comm_ptr vcomm
   
   // try to avoid empty partitions if the number of elements is small and the weights are unequal
   int me_empty=(map->dim==0)?1:0,any_empty;
+#ifdef PHIST_HAVE_MPI
   PHIST_CHK_IERR(*iflag=MPI_Allreduce(&me_empty,&any_empty,1,MPI_INT,MPI_SUM,*comm),*iflag);
-  
+#else
+  any_empty=me_empty;
+#endif  
   if (any_empty)
   {
     weight=1.0;
