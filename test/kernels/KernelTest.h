@@ -70,10 +70,10 @@ public:
 	{
     if( staticKernelTestSetupCounter_++ == 0 )
     {
-#ifdef PHIST_HAVE_MPI	
       mpi_comm_=MPI_COMM_WORLD;
       phist_comm_create(&comm_,&iflag_);
       ASSERT_EQ(0,iflag_);
+#ifdef PHIST_HAVE_MPI
       iflag_=MPI_Comm_rank(mpi_comm_,&mpi_rank_);
       ASSERT_EQ(0,iflag_);
       iflag_=MPI_Comm_size(mpi_comm_,&mpi_size_);
