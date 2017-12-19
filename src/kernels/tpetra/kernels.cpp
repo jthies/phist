@@ -42,63 +42,21 @@ namespace
 static int myMpiSession = 0;
 } // Anonymous namespace
 
-// This function creates the default compute node to be used for vectors and matrices.
-// It is not exposed to the user because the Kokkos node concept is specific for Tpetra
-// and doesn't have a direct equivalent in epetra or ghost. The function checks if a file
-// node.xml exists in which the node parameters like "Num Threads" can be set, otherwise
-// it just uses default parameters.
-/*
-extern "C" void phist_tpetra_node_create(node_type** node, phist_const_comm_ptr vcomm, int* iflag)
-{
-  *iflag = PHIST_NOT_IMPLEMENTED;
-} */
-
-// initialize kernel library. Should at least call MPI_Init if it has not been called
-// but is required. 
-/*
 extern "C" void phist_kernels_init(int* argc, char*** argv, int* iflag)
 {
-  #ifdef PHIST_HAVE_MPI
-    int mpiInitialized;
-    MPI_Initialized(&mpiInitialized);
-    myMpiSession = mpiInitialized ? 0 : 1;
-    if (myMpiSession == 1)
-    {
-      *iflag = MPI_Init(argc, argv);
-    }
-  #endif
+  // Check if PHIST_NUM_THREADS is set, else use only 1 thread
+  int numThreads = std::getenv("PHIST_NUM_THREADS") == nullptr ? 
+                        std::strtol(std::getenv("PHIST_NUM_THREADS"), nullptr, 10) 
+                      :
+                        1;
 
-  phist_comm_ptr commPtr = nullptr;
-  PHIST_CHK_IERR(phist_comm_create(&commPtr, iflag), *iflag);
-
-  Kokkos::initialize(*argc, *argv);
-  *iflag = PHIST_SUCCESS;
-} */
-
-extern "C" void phist_kernels_init(int* argc, char*** argv, int* iflag)
-{
-  *iflag=0;
+  Kokkos::InitArguments args{numThreads};
   PHIST_TRY_CATCH(Tpetra::initialize(argc, argv), *iflag);
 
   PHIST_CHK_IERR(phist_kernels_common_init(argc, argv, iflag), *iflag);
-}
 
-      
-  // finalize kernel library. Should at least call MPI_Finalize if it has not been called
-  // but is required.
-/*
-extern "C" void phist_kernels_finalize(int* iflag)
-{
-  *iflag=0;
-  PHIST_CHK_IERR(phist_kernels_common_finalize(iflag),*iflag);
-  PHIST_TRY_CATCH(Kokkos::finalize(),*iflag);
-  #ifdef PHIST_HAVE_MPI
-    if (myMpiSession)
-    {
-      *iflag = MPI_Finalize();
-    }
-  #endif
-} */
+  *iflag = PHIST_SUCCESS;
+}
             
 extern "C" void phist_kernels_finalize(int* iflag)
 {
