@@ -311,7 +311,6 @@ class ScalarTraits< double >
 #else
     throw std::string{"prec_sqrt not implemented without PHIST_HIGH_PRECISION_KERNELS"};
 #endif
-    throw std::string{"not implemented"};
   }
   
   //! in-place computation of 1/x with increased precision
