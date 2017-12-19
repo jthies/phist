@@ -49,7 +49,7 @@
 template<typename T>
 unsigned int phist_cacheline_size()
 {
-  static unsigned int clsize=-1;
+  static unsigned int clsize=0;
   if (clsize>0) return clsize;
 #ifdef PHIST_HAVE_GHOST
   ghost_machine_cacheline_size(&clsize);
@@ -60,7 +60,7 @@ unsigned int phist_cacheline_size()
 # endif  
   
 #else
-  PHIST_SOUT(PHIST_WARNING,"guessing cacheline length (64bit) because ghost is not available.\n");
+  PHIST_SOUT(PHIST_WARNING,"guessing cacheline length (64 byte) because ghost is not available.\n");
   clsize=64;
 #endif
   clsize/=sizeof(T);
