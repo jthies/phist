@@ -13,8 +13,8 @@
 #include "../phist_kernels.h"
 #include "phist_trilinos_macros.hpp"
 
-#include <Kokkos_Core.hpp>
-#include <Tpetra_Core.hpp>
+#include "Kokkos_Core.hpp"
+#include "Tpetra_Core.hpp"
 
 #include "Teuchos_StandardCatchMacros.hpp"
 #include "Teuchos_DefaultComm.hpp"
@@ -25,7 +25,7 @@
 #else
 #include "Tpetra_SerialPlatform.hpp"
 #endif
-#include <Tpetra_Map_decl.hpp>
+#include "Tpetra_Map_decl.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
 #include "Teuchos_RCP.hpp"
 #include "MatrixMarket_Tpetra.hpp"
@@ -33,6 +33,7 @@
 
 #include <fstream>
 #include <sstream>
+#include <cstdlib>
 
 
 using namespace phist::tpetra;
@@ -44,14 +45,20 @@ static int myMpiSession = 0;
 
 extern "C" void phist_kernels_init(int* argc, char*** argv, int* iflag)
 {
-  // Check if PHIST_NUM_THREADS is set, else use only 1 thread
-  int numThreads = std::getenv("PHIST_NUM_THREADS") == nullptr ? 
+  // Check if PHIST_NUM_THREADS is set and use it
+  // Else do the same for OMP_NUM_THREADS
+  // if both are not available, default to 1
+  int numThreads = std::getenv("PHIST_NUM_THREADS") != nullptr ? 
                         std::strtol(std::getenv("PHIST_NUM_THREADS"), nullptr, 10) 
                       :
-                        1;
+                        std::getenv("OMP_NUM_THREADS") != nullptr ?
+                            std::strtol(std::getenv("OMP_NUM_THREADS"), nullptr, 10) 
+                          : 
+                            1;  
 
   Kokkos::InitArguments args{numThreads};
-  PHIST_TRY_CATCH(Tpetra::initialize(argc, argv), *iflag);
+  PHIST_TRY_CATCH(Kokkos::initialize(args), *iflag);
+  MPI_Init(argc, argv);
 
   PHIST_CHK_IERR(phist_kernels_common_init(argc, argv, iflag), *iflag);
 
