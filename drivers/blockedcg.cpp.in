@@ -41,8 +41,8 @@ int main(int argc, char** argv)
 
   phist_comm_ptr comm = NULL;
   sparseMat_ptr A = NULL;
-  phist_const_map_ptr map = NULL;
-  mvec_ptr x = NULL, r = NULL, p = NULL, q = NULL, xExact = NULL, b = NULL;
+  phist_const_map_ptr map = NULL, rmap = NULL;
+  mvec_ptr x = NULL, r = NULL, p = NULL, q = NULL, xExact = NULL, b = NULL, z = NULL;
   linearOp_ptr P_op=NULL; // preconditioner. NULL means identity/no preconditioning
   
   PHIST_ICHK_IERR(phist_kernels_init(&argc,&argv,&iflag),iflag);
@@ -52,8 +52,8 @@ PHIST_MAIN_TASK_BEGIN
   if (argc<3)
   {
     PHIST_SOUT(PHIST_INFO,"Usage: %s <matrix> <nvecs> [<maxIter> [<desiredRes> [<high-prec> [<repart> [<precon> [precon_opts]]]]]]\n", argv[0]);
-    // print usage message for creating/reading a matrix
     SUBR(create_matrix)(NULL, NULL, "usage",&iflag);
+	SUBR(precon_create)(NULL,NULL,st::zero(),NULL,NULL,NULL,"usage",NULL,NULL,&iflag);
     return 1;
   }
 
@@ -82,7 +82,19 @@ PHIST_MAIN_TASK_BEGIN
   PHIST_OUT(PHIST_INFO,"number of vectors: %d\n",nvecs);
   PHIST_OUT(PHIST_INFO,"preconditioner: %s\n",prec_type);
   PHIST_OUT(PHIST_INFO,"prec options: %s\n",prec_opts); 
-  
+	
+  // create matrix and vectors
+  iflag = repart;
+  PHIST_ICHK_IERR(SUBR(create_matrix)(&A, comm, matname, &iflag),iflag);
+  PHIST_ICHK_IERR(SUBR(sparseMat_get_domain_map)(A, &map,&iflag),iflag);
+  PHIST_ICHK_IERR(SUBR(sparseMat_get_range_map)(A, &rmap,&iflag),iflag);
+  PHIST_ICHK_IERR(SUBR(mvec_create)(&x,map,nvecs,&iflag),iflag);
+  PHIST_ICHK_IERR(SUBR(mvec_create)(&xExact,map,nvecs,&iflag),iflag);
+  PHIST_ICHK_IERR(SUBR(mvec_create)(&b,map,nvecs,&iflag),iflag);
+  PHIST_ICHK_IERR(SUBR(mvec_create)(&r,map,nvecs,&iflag),iflag);
+  PHIST_ICHK_IERR(SUBR(mvec_create)(&p,map,nvecs,&iflag),iflag);
+  PHIST_ICHK_IERR(SUBR(mvec_create)(&q,map,nvecs,&iflag),iflag);
+  PHIST_ICHK_IERR(SUBR(mvec_create)(&z,map,nvecs,&iflag),iflag);
 
   /* create the preconditioner */
   if (strcasecmp(prec_type,"None")!=0)
@@ -92,19 +104,14 @@ PHIST_MAIN_TASK_BEGIN
     PHIST_ENTER_FCN("main: preconditioner setup");
     PHIST_ICHK_IERR(SUBR(precon_create)(P_op,A,st::zero(),NULL,NULL,NULL,prec_type,prec_opts,NULL,&iflag),iflag);
   }
+  if (strcasecmp(prec_type,"None")==0)
+  {
+    P_op = (linearOp_ptr)malloc(sizeof(TYPE(linearOp)));
+    PHIST_SOUT(PHIST_VERBOSE,"preconditioner is '%s' (identity)\n",prec_type);
+    PHIST_ENTER_FCN("main: preconditioner setup");
+    PHIST_ICHK_IERR(SUBR(linearOp_identity)(P_op,rmap,map,&iflag),iflag);
+  } 
   
-	
-  // create matrix and vectors
-  iflag = repart;
-  PHIST_ICHK_IERR(SUBR(create_matrix)(&A, comm, matname, &iflag),iflag);
-  PHIST_ICHK_IERR(SUBR(sparseMat_get_domain_map)(A, &map,&iflag),iflag);
-  PHIST_ICHK_IERR(SUBR(mvec_create)(&x,map,nvecs,&iflag),iflag);
-  PHIST_ICHK_IERR(SUBR(mvec_create)(&xExact,map,nvecs,&iflag),iflag);
-  PHIST_ICHK_IERR(SUBR(mvec_create)(&b,map,nvecs,&iflag),iflag);
-  PHIST_ICHK_IERR(SUBR(mvec_create)(&r,map,nvecs,&iflag),iflag);
-  PHIST_ICHK_IERR(SUBR(mvec_create)(&p,map,nvecs,&iflag),iflag);
-  PHIST_ICHK_IERR(SUBR(mvec_create)(&q,map,nvecs,&iflag),iflag);
-
   // setup RHS
   {
     phist_gidx ilower;
@@ -131,12 +138,17 @@ PHIST_MAIN_TASK_BEGIN
 
   PHIST_ICHK_IERR(SUBR(mvec_add_mvec)(st::one(),b,st::zero(),r,&iflag),iflag);
   PHIST_ICHK_IERR(SUBR(mvec_put_value)(x,st::zero(),&iflag),iflag);
+  if (P_op == NULL)
+  {
+	PHIST_SOUT(PHIST_INFO,"NULL\n");
+  }
+  PHIST_ICHK_IERR(P_op->apply(st::one(), P_op->A, r, st::zero(), z, &iflag), iflag);
   PHIST_ICHK_IERR(SUBR(mvec_put_value)(p,st::zero(),&iflag),iflag);
 
   std::vector<MT> rho(nvecs,mt::one()), rho_prev(nvecs);
   for(int i = 0; i <= maxIter; i++)
   {
-    // rho_i = r_i^T r_i
+    // rho_i = r_i^T z_i
     rho_prev = rho;
     iflag = high_prec;
     PHIST_ICHK_IERR(SUBR(mvec_norm2)(r,&rho[0],&iflag),iflag);
@@ -144,11 +156,10 @@ PHIST_MAIN_TASK_BEGIN
     bool firstConverged = false;
     for(int j = 0; j < nvecs; j++)
     {
-      // we calculated sqrt(rho)...
       PHIST_SOUT(PHIST_INFO,"\t%e",rho[j]);
       firstConverged = firstConverged || rho[j] < desiredRes;
-      rho[j] = rho[j]*rho[j];
     }
+	PHIST_ICHK_IERR(SUBR(mvec_dot_mvec)(r,z,&rho[0],&iflag),iflag);
     PHIST_SOUT(PHIST_INFO,"\n");
     if( firstConverged || i == maxIter )
       break;
@@ -157,12 +168,12 @@ PHIST_MAIN_TASK_BEGIN
     std::vector<ST> beta(nvecs);
     for(int j = 0; j < nvecs; j++)
       beta[j] = (ST) rho[j] / rho_prev[j];
-    // p_(i+1) = r_i + beta_i*p_i
+    // p_(i+1) = z_i + beta_i*p_i
     // TODO: should be one vadd-operation -> requires more general mvec_vadd_mvec interface!
     //std::vector<ST> one(nvecs,st::one());
-    //PHIST_ICHK_IERR(SUBR(mvec_vadd_mvec)(&one[0],r,beta,p,&iflag),iflag);
+    //PHIST_ICHK_IERR(SUBR(mvec_vadd_mvec)(&one[0],z,beta,p,&iflag),iflag);
     PHIST_ICHK_IERR(SUBR(mvec_vscale)(p,&beta[0],&iflag),iflag);
-    PHIST_ICHK_IERR(SUBR(mvec_add_mvec)(st::one(),r,st::one(),p,&iflag),iflag);
+    PHIST_ICHK_IERR(SUBR(mvec_add_mvec)(st::one(),z,st::one(),p,&iflag),iflag);
 
     // q_(i+1) = A*p_(i+1)
     PHIST_ICHK_IERR(SUBR(sparseMat_times_mvec)(st::one(),A,p,st::zero(),q,&iflag),iflag);
@@ -180,6 +191,9 @@ PHIST_MAIN_TASK_BEGIN
     for(int j = 0; j < nvecs; j++)
       alpha[j] = -alpha[j];
     PHIST_ICHK_IERR(SUBR(mvec_vadd_mvec)(&alpha[0],q,st::one(),r,&iflag),iflag);
+	
+	// z_(i+1) = P_op*r_(i+1)
+	PHIST_ICHK_IERR(P_op->apply(st::one(), P_op->A, r, st::zero(), z, &iflag), iflag);
   }
 
   // calculate real residual norms
@@ -204,13 +218,19 @@ PHIST_MAIN_TASK_BEGIN
   }
   PHIST_SOUT(PHIST_INFO,"\n");
 
-  
-  if (P_op!=NULL)
+ 
+  if (strcasecmp(prec_type,"None")!=0)
   {
     PHIST_ICHK_IERR(SUBR(precon_delete)(P_op,&iflag),iflag);
     free(P_op);
   }
+  if (strcasecmp(prec_type,"None")==0)
+  {
+    PHIST_ICHK_IERR(P_op->destroy(P_op,&iflag),iflag);
+    free(P_op);
+  }
 
+  PHIST_ICHK_IERR(SUBR(mvec_delete)(z,&iflag),iflag);  
   PHIST_ICHK_IERR(SUBR(mvec_delete)(q,&iflag),iflag);
   PHIST_ICHK_IERR(SUBR(mvec_delete)(p,&iflag),iflag);
   PHIST_ICHK_IERR(SUBR(mvec_delete)(r,&iflag),iflag);
