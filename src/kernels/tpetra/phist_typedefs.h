@@ -33,6 +33,7 @@
 #ifdef __cplusplus
 //! single precision complex type
 using phist_s_complex = std::complex<float>;
+//! double precision complex type
 using phist_d_complex = std::complex<double>;
 //! type of global indices
 using phist_gidx = std::ptrdiff_t;

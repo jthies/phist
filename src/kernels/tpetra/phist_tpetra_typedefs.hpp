@@ -44,9 +44,6 @@ class Traits
   //! CRS matrices
   using sparseMat_t = Tpetra::CrsMatrix<ST, phist_lidx, phist_gidx>;
 
-  //! for performing the MVM
-//  typedef Tpetra::CrsMatrixMultiplyOp<ST,ST,phist_lidx,phist_gidx,node_type> crsMVM_t;
-
   //! scalar 1
   static inline ST one()
   {
@@ -57,53 +54,8 @@ class Traits
   static inline ST zero()
   {
       return Teuchos::ScalarTraits<ST>::zero();
-  }
-/*
-  //! create a Teuchos' view of a local mvec/sdMat
-  static Teuchos::RCP<const Teuchos_sdMat_t> CreateTeuchosView(Teuchos::RCP<const sdMat_t> M, int* iflag)
-  {
-    *iflag=0;
-    phist_lidx stride = M->getStride();
-    phist_lidx nrows = M->getLocalLength();
-    phist_lidx ncols = M->getNumVectors();
-    
-    Teuchos::ArrayRCP<const ST> M_tmp;
-    bool status=true;
-    try {
-    M_tmp=M->get1dView();
-    } TEUCHOS_STANDARD_CATCH_STATEMENTS(true,std::cerr,status);
-    if (!status) {*iflag=-1; return Teuchos::null;}
-    const ST *M_val = M_tmp.getRawPtr();
-    Teuchos::RCP<const Teuchos_sdMat_t> M_view
-                  = Teuchos::rcp(new Teuchos_sdMat_t(Teuchos::View,M_val,stride,nrows,ncols));
-    return M_view;     
-  }
-
-  //! create a non-const Teuchos' view of a local mvec/sdMat
-  static Teuchos::RCP<Teuchos_sdMat_t> CreateTeuchosViewNonConst(Teuchos::RCP<sdMat_t> M, int* iflag)
-  {
-    *iflag=0;
-    int stride = M->getStride();
-    int nrows = M->getLocalLength();
-    int ncols = M->getNumVectors();
-    Teuchos::ArrayRCP<ST> M_tmp=Teuchos::null;
-    bool status=true;
-    try {
-    M_tmp=M->get1dViewNonConst();
-    } TEUCHOS_STANDARD_CATCH_STATEMENTS(true,std::cerr,status);
-    if (!status) {*iflag=-1; return Teuchos::null;}
-    ST *M_val = M_tmp.getRawPtr();
-    Teuchos::RCP<Teuchos_sdMat_t> M_view
-                  = Teuchos::rcp(new Teuchos_sdMat_t(Teuchos::View,M_val,stride,nrows,ncols));
-    return M_view;                  
-  }
-*/
-  
+  }  
 };
-
-
-
-
 } //namespace tpetra
 } //namespace phist
 #endif

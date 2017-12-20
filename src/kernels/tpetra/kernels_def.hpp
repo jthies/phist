@@ -7,30 +7,27 @@
 /*                                                                                         */
 /*******************************************************************************************/
 
-#include <Kokkos_View.hpp>
-#include <Tpetra_MultiVector_def.hpp>
+#include "Kokkos_View.hpp"
+#include "Tpetra_MultiVector.hpp"
 
 extern "C" void SUBR(type_avail)(int *iflag)
 {
   *iflag = PHIST_NOT_IMPLEMENTED;
-#if defined(IS_DOUBLE)&&!defined(IS_COMPLEX)&&defined(HAVE_TPETRA_INST_DOUBLE)
+#if defined(IS_DOUBLE) && !defined(IS_COMPLEX) && defined(HAVE_TPETRA_INST_DOUBLE)
   *iflag = PHIST_SUCCESS;
-#elif defined(IS_DOUBLE)&&defined(IS_COMPLEX)&&defined(HAVE_TPETRA_INST_DOUBLE_COMPLEX)
+#elif defined(IS_DOUBLE) && defined(IS_COMPLEX) && defined(HAVE_TPETRA_INST_DOUBLE_COMPLEX)
   *iflag = PHIST_SUCCESS;
-#elif !defined(IS_DOUBLE)&&!defined(IS_COMPLEX)&&defined(HAVE_TPETRA_INST_FLOAT)
+#elif !defined(IS_DOUBLE) && !defined(IS_COMPLEX) && defined(HAVE_TPETRA_INST_FLOAT)
   *iflag = PHIST_SUCCESS;
-#elif !defined(IS_DOUBLE)&&defined(IS_COMPLEX)&&defined(HAVE_TPETRA_INST_FLOAT_COMPLEX)
+#elif !defined(IS_DOUBLE) && defined(IS_COMPLEX) && defined(HAVE_TPETRA_INST_FLOAT_COMPLEX)
   *iflag = PHIST_SUCCESS;
 #endif
   return;
 }
 
-extern "C"
-{
-
-void SUBR(sparseMat_read_mm)(TYPE(sparseMat_ptr)* matrixPtr,
-                              phist_const_comm_ptr vcomm,
-                              const char* fileName, int* iflag)
+extern "C" void SUBR(sparseMat_read_mm)(TYPE(sparseMat_ptr)* matrixPtr,
+                                        phist_const_comm_ptr vcomm,
+                                        const char* fileName, int* iflag)
 { 
     PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
     if (fileName == nullptr)
@@ -52,43 +49,46 @@ void SUBR(sparseMat_read_mm)(TYPE(sparseMat_ptr)* matrixPtr,
     );
 
     auto resultMatrixPtr = resultMatrix.release();
-    //a  *matrixPtr = static_cast<TYPE(sparseMat_ptr)>(resultMatrixPtr);
 
     *matrixPtr = (TYPE(sparseMat_ptr))(resultMatrixPtr.get()); 
     *iflag = PHIST_SUCCESS;
 }
 
-} // extern "C"
+} 
 
-extern "C" void SUBR(sparseMat_read_bin)(TYPE(sparseMat_ptr)* A, phist_const_comm_ptr comm,
-        const char* filename,int* iflag)
+extern "C" void SUBR(sparseMat_read_bin)(TYPE(sparseMat_ptr)* A, 
+                                         phist_const_comm_ptr comm,
+                                         const char* filename, int* iflag)
 {
-  *iflag=PHIST_NOT_IMPLEMENTED;
+  *iflag = PHIST_NOT_IMPLEMENTED;
 }
 
-extern "C" void SUBR(sparseMat_read_hb)(TYPE(sparseMat_ptr)* A, phist_const_comm_ptr comm,
-        const char* filename,int* iflag)
+extern "C" void SUBR(sparseMat_read_hb)(TYPE(sparseMat_ptr)* A, 
+                                        phist_const_comm_ptr comm,
+                                        const char* filename, int* iflag)
 {
-  *iflag=PHIST_NOT_IMPLEMENTED;
+  *iflag = PHIST_NOT_IMPLEMENTED;
 }
 
-extern "C" void SUBR(sparseMat_read_mm_with_context)(TYPE(sparseMat_ptr)* A, phist_const_context_ptr ctx,
-        const char* filename,int* iflag)
+extern "C" void SUBR(sparseMat_read_mm_with_context)(TYPE(sparseMat_ptr)* A, 
+                                                     phist_const_context_ptr ctx,
+                                                     const char* filename, int* iflag)
 {
-  *iflag=PHIST_NOT_IMPLEMENTED;
+  *iflag = PHIST_NOT_IMPLEMENTED;
 }
 
-extern "C" void SUBR(sparseMat_read_bin_with_context)(TYPE(sparseMat_ptr)* A, phist_const_context_ptr ctx,
-        const char* filename,int* iflag)
+extern "C" void SUBR(sparseMat_read_bin_with_context)(TYPE(sparseMat_ptr)* A, 
+                                                      phist_const_context_ptr ctx,
+                                                      const char* filename, int* iflag)
 {
-  *iflag=PHIST_NOT_IMPLEMENTED;
+  *iflag = PHIST_NOT_IMPLEMENTED;
 }
 
 extern "C" void SUBR(sparseMat_read_hb_with_context)(TYPE(sparseMat_ptr)* A, 
                                                      phist_const_context_ptr ctx,
                                                      const char* filename, int* iflag)
 {
-  *iflag=PHIST_NOT_IMPLEMENTED;
+  *iflag = PHIST_NOT_IMPLEMENTED;
 }
 
 // Fill the sparse matrix row by row according to the context
@@ -114,32 +114,30 @@ try
   // note: parallel_for here leads to segfault, and I could not find a Tpetra example
   // where they insertGlobalVAlues in a parallel_for. Probably the function is not thread-safe
   // unless HAVE_TEUCHOS_THREADSAFE is defined.
-  //Kokkos::parallel_for(numRows, KOKKOS_LAMBDA (const phist_lidx idx)
   for (phist_lidx idx=0; idx<numRows; idx++)
 
   {
-    *iflag=0;
-    int iflag_local=0;
+    *iflag = PHIST_SUCCESS;
+    int iflag_local = PHIST_SUCCESS;
     phist_gidx cols[maxnne];
     _ST_ vals[maxnne];
     ghost_gidx row = tpetraMap->getGlobalElement(idx);
     ghost_lidx row_nnz;
 
     iflag_local = rowFunPtr(row, &row_nnz, cols, vals, last_arg);
-    if (iflag_local) throw iflag_local;
+    if (iflag_local) 
+    {
+      throw iflag_local;
+    }
+
     if (row_nnz != 0)
     {
-      Teuchos::ArrayView<phist_gidx> cols_v{cols,row_nnz};
-      Teuchos::ArrayView<_ST_> vals_v{vals,row_nnz};
+      Teuchos::ArrayView<phist_gidx> cols_v{cols, row_nnz};
+      Teuchos::ArrayView<_ST_> vals_v{vals, row_nnz};
       
       sparseMat->insertGlobalValues(row, cols_v, vals_v);
-    } else
-    {/*
-      _ST_ dvals[1] = {1};
-      phist_gidx dindex[1] = {0};
-      sparseMat->insertGlobalValues(row, 1, vals, dindex); */
-    }
-  }//);
+    } 
+  }
 
   const auto range_map = (const phist::tpetra::map_type*)(ctx->range_map);
   const auto domain_map = (const phist::tpetra::map_type*)(ctx->domain_map);
@@ -193,6 +191,8 @@ extern "C" void SUBR(sparseMat_create_fromRowFunc)(TYPE(sparseMat_ptr) *A,
   auto ctx = new phist::internal::default_context(vmap, nullptr, nullptr);
   //The matrix will take ownership of the map and context:
   *iflag = iflag_in | PHIST_SPARSEMAT_OWN_MAPS;
+
+  // We delegate the construction of the matrix
   PHIST_CHK_IERR(SUBR(sparseMat_create_fromRowFuncAndContext)(A, ctx, maxnne, 
                                                               rowFunPtr, last_arg, 
                                                               iflag),
@@ -204,8 +204,11 @@ extern "C" void SUBR(sparseMat_get_row_map)(TYPE(const_sparseMat_ptr) A,
                                             int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
+
   PHIST_CAST_PTR_FROM_VOID(const Traits<_ST_>::sparseMat_t, mat, A, *iflag);
+
   *map = (phist_const_map_ptr)(mat->getRowMap().get());
+
   *iflag = PHIST_SUCCESS;
 }
 
@@ -324,7 +327,7 @@ extern "C" void SUBR(mvec_extract_view)(TYPE(mvec_ptr) V, _ST_** val, phist_lidx
   Teuchos::ArrayRCP<_ST_> valptr = mVec->get1dViewNonConst();
   *val = valptr.get();
   *lda = mVec->getStride();
-  PHIST_CHK_IERR(*iflag=(*val==nullptr)? PHIST_BAD_CAST: PHIST_SUCCESS,*iflag);
+  PHIST_CHK_IERR(*iflag = (*val == nullptr) ? PHIST_BAD_CAST: PHIST_SUCCESS, *iflag);
 }
 
 extern "C" void SUBR(sdMat_extract_view)(TYPE(sdMat_ptr) V, _ST_** val, phist_lidx* lda, int* iflag)
@@ -336,13 +339,13 @@ extern "C" void SUBR(sdMat_extract_view)(TYPE(sdMat_ptr) V, _ST_** val, phist_li
   *val = valptr.release();
   *lda = sdMat->getStride();
 
-  PHIST_CHK_IERR(*iflag=(val==nullptr)?PHIST_BAD_CAST:PHIST_SUCCESS,*iflag);
+  PHIST_CHK_IERR(*iflag= (val==nullptr) ? PHIST_BAD_CAST : PHIST_SUCCESS, *iflag);
 }
 
 #ifdef PHIST_HIGH_PRECISION_KERNELS
 extern "C" void SUBR(sdMat_extract_error)(TYPE(sdMat_ptr) M, _ST_** MC_raw, int* iflag)
 {
-  *iflag=PHIST_NOT_IMPLEMENTED;
+  *iflag = PHIST_NOT_IMPLEMENTED;
 }
 #endif
 
@@ -462,13 +465,16 @@ extern "C" void SUBR(sdMat_set_block)(TYPE(sdMat_ptr) vM,
                              int imin, int imax, int jmin, int jmax, int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
-  *iflag=0;
-  TYPE(sdMat_ptr) vMview=NULL;
-  PHIST_CHK_IERR(SUBR(sdMat_view_block)(vM,&vMview,imin,imax,jmin,jmax,iflag),*iflag);
-  PHIST_CAST_PTR_FROM_VOID(Traits<_ST_>::sdMat_t,Mblock,vMblock,*iflag);
-  PHIST_CAST_PTR_FROM_VOID(Traits<_ST_>::sdMat_t,Mview,vMview,*iflag);
-  PHIST_TRY_CATCH(Tpetra::deep_copy(*Mview,*Mblock),*iflag); // copy operation
-  PHIST_CHK_IERR(SUBR(sdMat_delete)(vMview,iflag),*iflag);
+  *iflag = PHIST_SUCCESS;
+  TYPE(sdMat_ptr) vMview = nullptr;
+  PHIST_CHK_IERR(SUBR(sdMat_view_block)(vM, &vMview, imin, imax, jmin, jmax, iflag), *iflag);
+
+  PHIST_CAST_PTR_FROM_VOID(Traits<_ST_>::sdMat_t, Mblock, vMblock, *iflag);
+  PHIST_CAST_PTR_FROM_VOID(Traits<_ST_>::sdMat_t, Mview, vMview, *iflag);
+
+  PHIST_TRY_CATCH(Tpetra::deep_copy(*Mview, *Mblock), *iflag); // copy operation
+
+  PHIST_CHK_IERR(SUBR(sdMat_delete)(vMview, iflag), *iflag);
 }
 
 extern "C" void SUBR(sparseMat_delete)(TYPE(sparseMat_ptr) A, int* iflag)
@@ -573,7 +579,7 @@ extern "C" void SUBR(mvec_random)(TYPE(mvec_ptr) V, int* iflag)
 
   PHIST_CAST_PTR_FROM_VOID(Traits<_ST_>::mvec_t, mvec, V, *iflag);
 
-  PHIST_TRY_CATCH(V->randomize(),*iflag);
+  PHIST_TRY_CATCH(V->randomize(), *iflag);
 
   *iflag = PHIST_SUCCESS;
 }
@@ -591,15 +597,15 @@ extern "C" void SUBR(sdMat_random)(TYPE(sdMat_ptr) M, int* iflag)
     int myRank = M->getMap()->getComm()->getRank();
     if( myRank == 0 )
     {
-      PHIST_TRY_CATCH(M->randomize(),*iflag);
+      PHIST_TRY_CATCH(M->randomize(), *iflag);
     }
     else
     {
-      PHIST_TRY_CATCH(M->putScalar(st::zero()),*iflag);
+      PHIST_TRY_CATCH(M->putScalar(st::zero()), *iflag);
     }
-    PHIST_TRY_CATCH(M->reduce(),*iflag);
+    PHIST_TRY_CATCH(M->reduce(), *iflag);
   #else
-    PHIST_TRY_CATCH(M->randomize(),*iflag);
+    PHIST_TRY_CATCH(M->randomize(), *iflag);
   #endif
   *iflag = PHIST_SUCCESS;
 }
