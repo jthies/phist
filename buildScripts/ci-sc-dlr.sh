@@ -122,8 +122,13 @@ set -x
 
 if [[ "$PRGENV" =~ gcc* ]]; then
   export FC=gfortran CC=gcc CXX=g++
+  
   if [[ "${VECT_EXT}" =~ "CUDA" ]]; then
     ADD_CMAKE_FLAGS+="-DPHIST_USE_CCACHE=OFF"
+    if [[ "${KERNEL_LIB} =~ "tpetra" ]]; then
+      export CXX=mpicxx
+      # note: the trilinos module should set OMPI_CXX=nvcc_wrapper for us, phist/cmake will check that
+    fi
   fi
   if [[ "$PRGENV" =~ gcc-7* ]]; then
     # there's a problem in jada-tests, test STestSchurDecomp* with gcc 7.2.0 and -fsanitize=address, see #218
