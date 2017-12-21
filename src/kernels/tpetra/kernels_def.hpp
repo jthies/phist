@@ -54,8 +54,6 @@ extern "C" void SUBR(sparseMat_read_mm)(TYPE(sparseMat_ptr)* matrixPtr,
     *iflag = PHIST_SUCCESS;
 }
 
-} 
-
 extern "C" void SUBR(sparseMat_read_bin)(TYPE(sparseMat_ptr)* A, 
                                          phist_const_comm_ptr comm,
                                          const char* filename, int* iflag)
