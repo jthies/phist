@@ -107,7 +107,7 @@ try
   
   auto sparseMat = new Traits<_ST_>::sparseMat_t(mapPtr, static_cast<int>(maxnne));
 
-  auto numRows = sparseMat->getNodeNumRows();
+  phist_lidx numRows = sparseMat->getNodeNumRows();
 
   // note: parallel_for here leads to segfault, and I could not find a Tpetra example
   // where they insertGlobalVAlues in a parallel_for. Probably the function is not thread-safe
@@ -752,7 +752,7 @@ extern "C" void SUBR(mvec_vadd_mvec)(const _ST_ alpha[], TYPE(const_mvec_ptr) ve
   PHIST_CAST_PTR_FROM_VOID(const Traits<_ST_>::mvec_t, vec, vecIn, *iflag);
   PHIST_CAST_PTR_FROM_VOID(Traits<_ST_>::mvec_t, resultVec, vecOut, *iflag);
 
-  for (int idx = 0; idx != vec->getNumVectors(); ++idx)
+  for (unsigned int idx = 0; idx != vec->getNumVectors(); ++idx)
   {
     PHIST_TRY_CATCH(resultVec->getVectorNonConst(idx)->update(alpha[idx], 
                                                            *vec->getVector(idx), 

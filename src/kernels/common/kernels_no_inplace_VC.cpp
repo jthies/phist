@@ -16,8 +16,6 @@ TYPE(const_sdMat_ptr) M_, int* iflag)
 #include "phist_std_typedefs.hpp"
   *iflag = 0;
 
-  phist_lidx chunkSize = 64;
-
   // get dimensions
   phist_lidx nV;
   int nvec, nM, mM;
