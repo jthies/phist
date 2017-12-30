@@ -11,7 +11,7 @@
 #ifdef PHIST_HAVE_IFPACK2
 
 #ifndef PHIST_KERNEL_LIB_TPETRA
-# error "Ifpack only works with Tpetra kernel library!"
+# error "Ifpack2 only works with Tpetra kernel library!"
 #endif
 
 #include "phist_void_aliases.h"
@@ -27,7 +27,25 @@
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
 
+#include "phist_DisallowPreconTraits.hpp"
+
+#include "Teuchos_config.h"
+#include "TpetraCore_config.h"
+
 namespace phist {
+
+/* do not allow instantiating Ifpac2 objects with data types not supported by the 
+   Trilinos instaallation.
+ */
+#if !defined(HAVE_TEUCHOS_FLOAT)||!defined(HAVE_TPETRA_INST_FLOAT)
+PHIST_DISALLOW_PRECON_TRAITS(float,phist_IFPACK)
+#endif
+#if !defined(HAVE_TEUCHOS_FLOAT)||!defined(HAVE_TEUCHOS_COMPLEX)||!defined(HAVE_TPETRA_INST_COMPLEX_FLOAT)
+PHIST_DISALLOW_PRECON_TRAITS(phist_s_complex,phist_IFPACK)
+#endif
+#if !defined(HAVE_TEUCHOS_COMPLEX)||!defined(HAVE_TPETRA_INST_COMPLEX_DOUBLE)
+PHIST_DISALLOW_PRECON_TRAITS(phist_d_complex,phist_IFPACK)
+#endif
 
 template<typename ST>
 class PreconTraits<ST,phist_IFPACK>
