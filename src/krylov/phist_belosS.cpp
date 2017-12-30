@@ -57,6 +57,11 @@
 
 #ifdef PHIST_KERNEL_LIB_EPETRA
 #undef PHIST_HAVE_BELOS
+#elif defined(PHIST_KERNEL_LIB_TPETRA)
+#include "TpetraCore_config.h"
+# ifndef HAVE_TPETRA_INST_FLOAT
+# undef PHIST_HAVE_BELOS
+# endif
 #endif
 
 #include "phist_gen_s.h"
