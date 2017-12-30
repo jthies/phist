@@ -54,15 +54,18 @@
 
 using namespace phist::tpetra;
 
-//extern "C" void phist_tpetra_node_create(node_type** node, phist_const_comm_ptr vcomm, int* iflag);
-
+#include "Teuchos_config.h"
+#include "TpetraCore_config.h"
 #include "phist_gen_c.h"
-
-#include "kernels_def.hpp"
-#include "carp_def.hpp" /*
-#include "../common/kernels_no_io.cpp"
-#include "../common/kernels_no_inplace_VC.cpp"
-#include "../common/kernels_no_VC_add_WD.cpp"
-#include "../common/kernels_no_fused.cpp"
-#include "../common/kernels_no_gpu.cpp"  */
+# if defined(HAVE_TEUCHOS_FLOAT)&&defined(HAVE_TEUCHOS_COMPLEX)&&defined(HAVE_TPETRA_INST_COMPLEX_FLOAT)
+# include "kernels_def.hpp"
+# include "carp_def.hpp"
+# else
+# warning "Your phist_config.h defines PHIST_HAVE_COMPLEX and PHIST_HAVE_SP, but your Trilinos installation does not \
+support the float complex data type, so all 'C' kernels will return with *iflag=-99 (PHIST_NOT_IMPLEMENTED). In order \
+to change this check Teuchos_config.h for HAVE_TEUCHOS_FLOAT and HAVE_TEUCHOS_COMPLEX, and TpetraCore_config.h for \
+HAVE_TPETRA_INST_COMPLEX_FLOAT, and install Trilinos such that they are defined. To get rid of this warning, set the \
+CMake variables PHIST_ENABLE_SP=OFF and PHISt_ENABLE_COMPLEX=OFF."
+# include "../common/kernels_no_impl.cpp"
+# endif
 #endif

@@ -51,15 +51,14 @@
 
 using namespace phist::tpetra;
 
-//extern "C" void phist_tpetra_node_create(node_type** node, phist_const_comm_ptr vcomm, int* iflag);
+#include "TpetraCore_config.h"
+
+#if !defined(HAVE_TPETRA_INST_DOUBLE)
+#warning "Your TpetraCore_config.h does not define HAVE_TPETRA_INST_DOUBLE, this may cause problems when compiling \
+phist. Presently we will try to compile the 'D' kernels anyway, if your Trilinos installation is correct and you run \
+into problems compiling phist, please contact the developers because this case is untested."
+#endif
 
 #include "phist_gen_d.h"
-
 #include "kernels_def.hpp"
 #include "carp_def.hpp"
-/*
-#include "../common/kernels_no_io.cpp"
-#include "../common/kernels_no_inplace_VC.cpp"
-#include "../common/kernels_no_VC_add_WD.cpp"
-#include "../common/kernels_no_fused.cpp"
-#include "../common/kernels_no_gpu.cpp" */
