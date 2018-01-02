@@ -66,7 +66,7 @@ using namespace phist::tpetra;
 support the double complex data type, so all 'Z' kernels will return with *iflag=-99 (PHIST_NOT_IMPLEMENTED). In order \
 to change this check Teuchos_config.h for HAVE_TEUCHOS_COMPLEX, and TpetraCore_config.h for \
 HAVE_TPETRA_INST_COMPLEX_DOUBLE, and install Trilinos such that they are defined. To get rid of this warning, set the \
-CMake variable PHISt_ENABLEE_COMPLEX=OFF."
+CMake variable PHISt_ENABLE_COMPLEX=OFF."
 # include "../common/kernels_no_impl.cpp"
 # endif
 #endif
