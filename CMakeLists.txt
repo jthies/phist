@@ -1226,6 +1226,8 @@ write_basic_package_version_file("${PROJECT_BINARY_DIR}/phistConfigVersion.cmake
 #######################################################################################
 add_subdirectory(cxx_bindings)
 
+# add the C++ headers as a dependency of phist_solvers so that the 'install' target works also with 'make libs'
+add_dependencies(phist_solvers cxx_headers)
 
 #######################################################################################
 # INSTALL                                                                             #
