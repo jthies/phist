@@ -154,7 +154,7 @@ public:
       Epetra_MultiVector* v = (Epetra_MultiVector*)vec1_;
       Teuchos::RCP<const Epetra_MultiVector> V = phist::rcp(v,false);
       if (Belos::TestOperatorTraits(MyOM,V,op_ptr)==false) {iflag_=-1; return iflag_;}
-#elif defined(PHIST_KERNEL_LIB_TPETRA)
+#elif defined(PHIST_KERNEL_LIB_TPETRA__disabled)
 # if defined(IS_COMPLEX)&&!defined(HAVE_TEUCHOS_COMPLEX)
   /* missing data type in Trilinos installation */
   return 0;

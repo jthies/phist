@@ -1040,18 +1040,14 @@ foreach(PKG ${OPTIONAL_TRILI_PKG})
 endforeach()
 
 if (PHIST_KERNEL_LIB STREQUAL "tpetra")
-  message(STATUS "Checking if we need special flags for compiling with Tpetra...")
   if ("CUDA" IN_LIST Tpetra_TPL_LIST)
     # compiling tpetra/kokkos with CUDA is tricky and requires special flags
     # and a special wrapper script to be used as the MPI C++ compiler
-    message(STATUS "adding Tpetra_CXX_FLAGS because you're building with CUDA enabled.")
-    # note: Tpetra sets -std=c++11, which should be first so it gets passed and subsequent
-    # flags added by CMake (e.g. -std=gnu++11/14) are ignored.
-    set(CMAKE_CXX_FLAGS "${Tpetra_CXX_FLAGS} ${CMAKE_CXX_FLAGS}")
-    if (NOT CMAKE_CXX_COMPILER MATCHES "mpicxx" AND $ENV{OMPI_CXX} MATCHES "nvcc_wrapper")
+
+    if (NOT CMAKE_CXX_COMPILER MATCHES "mpicxx" AND $ENV{OMPI_CXX} MATCHES "nvcc_wrapper" AND $ENV{OMPI_MPICXX_CXXFLAGS}" MATCHES "-expt-extended-lambda")
       message(WARNING "NOTE: in order to compile Tpetra/Kokkos code with CUDA we recommend using OpenMPI"
-                      "      and setting the environment variables CXX=mpicxx and OMPI_CXX=nvcc_wrapper."
-                      "      The nvcc_wrapper script is installed along with Trilinos.")
+                      "      and setting the environment variables CXX=mpicxx, OMPI_CXX=nvcc_wrapper, and OMPI_MPICXX_CXXFLAGS='-std=c++11 -expt-extended-lambda'."
+                      "      The nvcc_wrapper script is installed along with Trilinos. You can unset the OMPI variables after 'make libs' to avoid compiling everytingg with nvcc.")
     endif()
   endif()
 endif()

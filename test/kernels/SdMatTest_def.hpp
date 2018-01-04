@@ -13,7 +13,11 @@
 #define PHIST_HIGH_PRECISION_KERNELS
 #endif
 
-#ifdef PHIST_KERNEL_LIB_TPETRA
+#ifdef PHIST_KERNEL_LIB_TPETRA__disabled
+#deine DO_TPETRA_TESTS 1
+#endif
+
+#ifdef DO_TPETRA_TESTS
 #include "Tpetra_MultiVector.hpp"
 #include "Kokkos_Core.hpp"
 #include "Kokkos_View.hpp"
@@ -55,7 +59,7 @@ public:
     MTest::TearDown();
   }
 
-#ifdef PHIST_KERNEL_LIB_TPETRA
+#if DO_TPETRA_TESTS
 
   bool check_entries(TYPE(sdMat_ptr) M, int imin, int imax, int jmin, int jmax)
   {
@@ -138,7 +142,7 @@ public:
 };
 
 
-#ifdef PHIST_KERNEL_LIB_TPETRA
+#ifdef DO_TPETRA_TESTS
 
   TEST_F(CLASSNAME, tpetra_data_layout)
   {

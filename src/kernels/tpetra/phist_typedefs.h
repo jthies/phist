@@ -20,8 +20,7 @@
 
 #ifdef __cplusplus
 //#include <cinttypes>
-//#include <complex>
-#include <Kokkos_Complex.hpp>
+#include <complex>
 #include <cstddef>
 #else
 //#include <inttypes.h>
