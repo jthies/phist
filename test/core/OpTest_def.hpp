@@ -155,9 +155,17 @@ public:
       Teuchos::RCP<const Epetra_MultiVector> V = phist::rcp(v,false);
       if (Belos::TestOperatorTraits(MyOM,V,op_ptr)==false) {iflag_=-1; return iflag_;}
 #elif defined(PHIST_KERNEL_LIB_TPETRA)
+# if defined(IS_COMPLEX)&&!defined(HAVE_TEUCHOS_COMPLEX)
+  /* missing data type in Trilinos installation */
+  return 0;
+# elif !defined(IS_DOUBLE)&&!defined(HAVE_TEUCHOS_FLOAT)
+  /* missing data type in Trilinos installation */
+  return 0;
+# else      
       phist::tpetra::Traits<ST>::mvec_t* v = (phist::tpetra::Traits<ST>::mvec_t*)vec1_;
       Teuchos::RCP<const phist::tpetra::Traits<ST>::mvec_t> V = Teuchos::rcp(v,false);
       if (Belos::TestOperatorTraits(MyOM,V,op_ptr)==false) {iflag_=-1; return iflag_;}
+# endif
 #else
 #warning belos test case not implemented for this kernel lib (OpTest_def_hpp)
 #endif
