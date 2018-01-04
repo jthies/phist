@@ -56,7 +56,11 @@ extern "C" void phist_kernels_init(int* argc, char*** argv, int* iflag)
                           : 
                             1;  
 
+#if TRILINOS_MAJOR_MINOR_VERSION>=121300
   Kokkos::InitArguments args{numThreads};
+#else
+  Kokkos::InitArguments args; args.num_threads=numThreads;
+#endif
   PHIST_TRY_CATCH(Kokkos::initialize(args), *iflag);
   MPI_Init(argc, argv);
 
