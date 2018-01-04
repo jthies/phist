@@ -785,6 +785,7 @@ set (PHIST_KRYLOV_SOURCE ${PROJECT_SOURCE_DIR}/src/krylov/phist_simple_arnoldi.c
                          ${PROJECT_SOURCE_DIR}/src/krylov/phist_anasaziZ.cpp
                          ${PROJECT_SOURCE_DIR}/src/krylov/phist_carp_cg.cpp
                          ${PROJECT_SOURCE_DIR}/src/krylov/phist_iter_op.cpp
+                         ${PROJECT_SOURCE_DIR}/src/krylov/phist_blockedpcg.cpp
                          )
 if(PHIST_USE_CRAFT)
         set (PHIST_KRYLOV_SOURCE ${PHIST_KRYLOV_SOURCE}
