@@ -181,8 +181,16 @@ int main(int argc, char** argv)
   // preconditioner may have a pointer to A, so we delete it first.
   if (P_op!=NULL)
   {
-    PHIST_ICHK_IERR(SUBR(precon_delete)(P_op,&iflag),iflag);
-    free(P_op);
+    if (strcasecmp(prec_type,"None")!=0) 
+	{
+      PHIST_ICHK_IERR(SUBR(precon_delete)(P_op,&iflag),iflag);
+      free(P_op);
+    }
+    if (strcasecmp(prec_type,"None")==0)
+    {
+      PHIST_ICHK_IERR(SUBR(linearOp_destroy)(P_op,&iflag),iflag);
+      free(P_op);
+	}
   }
 
   PHIST_ICHK_IERR(SUBR(sparseMat_delete)(A,&iflag),iflag);
