@@ -126,7 +126,7 @@ void SUBR( blockedGMRESstates_create ) (TYPE(blockedGMRESstate_ptr) S_array[], i
 
 //!
 //! delete an set of gmresState objects. Only the individual structs are destroyed,
-//! The csller has to delete the array and nullify it.
+//! The caller has to delete the array and nullify it.
 //! \warning you cannot delete individual states, but must pass the whole array created with blockedGMRESstates_create
 //!
 void SUBR( blockedGMRESstates_delete ) (TYPE(blockedGMRESstate_ptr) S_array[], int numSys, int* iflag);
@@ -158,5 +158,18 @@ void SUBR( blockedGMRESstates_updateSol ) (TYPE(blockedGMRESstate_ptr) S_array[]
                 TYPE(const_linearOp_ptr) rightPrecon,
                 TYPE(mvec_ptr) x, _MT_ *resNorm, int scaleSolutionToOne, int* iflag);
 
+//! 
+//! a simple restarted GMRES implementation that works on several vectors simultaneously,
+//! building a separate Krylov subspace for each of them. 
+//!
+//! On input, *nIter indicates the total max number of iterations allowed, maxIter, for any system.
+//! On output, *nIter indicates the number of GMRES iterations.
+//!
+//! On output, sol_in gives the solution of the restarted GMRES
+//!
+void SUBR( restartedGMRES_iterate ) (TYPE(const_linearOp_ptr) Aop, TYPE(const_linearOp_ptr) Pop,
+        TYPE(mvec_ptr) rhs, TYPE(mvec_ptr) sol_in, int numSys, 
+		int* nIter, _MT_ const tol[], int block_size, int max_blocks, int* iflag);
+				
 //@}
 //@}

@@ -1023,3 +1023,188 @@ PHIST_TASK_END(iflag)
   for (int i=0; i<numSys; i++) *iflag=std::min(*iflag,S[i]->status);
 }
 
+// implementation of restarted GMRES on severall systems simultaneously
+void SUBR( restartedGMRES_iterate ) ( TYPE(const_linearOp_ptr) Aop, TYPE(const_linearOp_ptr) Pop,
+        TYPE(mvec_ptr) rhs, TYPE(mvec_ptr) sol_in, int numSys, 
+		int nIter[], _MT_ const tol[], int block_size, int max_blocks, int* iflag)
+{
+#include "phist_std_typedefs.hpp"
+  PHIST_ENTER_FCN(__FUNCTION__);
+  *iflag=0;
+  int useIMGS=0;
+  
+  TYPE(blockedGMRESstate_ptr) states[block_size];
+  PHIST_CHK_IERR(SUBR(blockedGMRESstates_create)(states, block_size, Aop->domain_map, max_blocks, iflag), *iflag);
+
+  for (int i=0; i<block_size; i++) states[i]->tol=tol[i];
+
+  int num_converged=0;
+  int num_failed=0;
+  int status[numSys];
+  int total_iter[numSys];
+  int active_cols[block_size];
+  
+  for (int i=0; i<numSys; i++) 
+  {
+    status[i]=-2; // not started
+    total_iter[i]=0;
+  }
+  for (int i=0; i<block_size; i++) active_cols[i]=-1;
+  
+  // for copying around single columns we may need a view object, whenever it is updated
+  // its memory is freed, and after the loop we delete it explicitly
+  TYPE(mvec_ptr) x_i=NULL;
+
+  while (num_converged+num_failed<numSys)
+  {
+    
+    // first setup at most block_size systems at a time to work on,
+    // skipping any that have converged or failed (exceeded max_iters)
+
+    TYPE(mvec_ptr) b_i=NULL;
+    
+    int num_active=0;
+    for (int i=0; i<numSys; i++)
+    {
+      if (status[i]==0||status[i]==3) continue; // converged (0) or failed (3)
+      if (status[i]==1||status[i]==2) {num_active++; continue;}// still busy
+
+      if (num_active==block_size) break;
+
+      // find first "free" state object
+      int pos=0;
+      while ( pos<=block_size && states[pos]->status>0 && states[pos]->status!=3) pos++;
+      if (pos==block_size) break; // everyone is still busy
+
+      // system i needs to be worked on, and states[num_active] is free to do it
+      status[i]=1;
+	  
+      PHIST_CHK_IERR(SUBR(mvec_view_block)(rhs,&b_i,i,i,iflag),*iflag);
+      // reset selected state object with 0 initial guess
+      PHIST_CHK_IERR(SUBR(blockedGMRESstate_reset)(states[pos], b_i, NULL, iflag), *iflag);
+      active_cols[pos]=i;
+      num_active++;
+    }
+
+    if (b_i) PHIST_CHK_IERR(SUBR(mvec_delete)(b_i,iflag),*iflag);
+
+    if (num_active==0) break;
+        
+    // perform restarts if needed
+    for (int i=0; i<num_active; i++)
+    {
+      if (states[i]->status==2)
+      {
+        int id=active_cols[i];
+        PHIST_SOUT(PHIST_VERBOSE,"restart system %d (state %d)\n",id,i);
+        PHIST_CHK_IERR(SUBR(mvec_view_block)(sol_in,&x_i,id,id,iflag),*iflag);
+#if 0
+        TYPE(mvec_ptr) resid=NULL;
+        PHIST_CHK_IERR(SUBR(mvec_create)(&resid,Aop->domain_map,1,iflag),*iflag);
+        PHIST_CHK_IERR(SUBR(mvec_get_block)(rhs,resid,id,id,iflag),*iflag);
+		PHIST_CHK_IERR(Aop->apply(st::one(), Aop->A, x_i, -st::one(), resid, iflag), *iflag);
+        MT rnorm;
+        PHIST_CHK_IERR(SUBR(mvec_norm2)(resid,&rnorm,iflag),*iflag);
+        PHIST_SOUT(PHIST_VERBOSE,"res norm of restart vector: %e\n",rnorm);
+#endif
+        PHIST_CHK_IERR(SUBR(blockedGMRESstate_reset)(states[i], NULL, x_i, iflag), *iflag);
+      }
+    }
+    
+    if (num_active>0)
+    {
+      PHIST_SOUT(PHIST_VERBOSE," working on %d systems: ",num_active);
+      for (int i=0;i<num_active;i++) PHIST_SOUT(PHIST_VERBOSE,"%d ",active_cols[i]);
+      PHIST_SOUT(PHIST_VERBOSE,"\n");
+    }
+
+	int _nIter=nIter[0];
+    PHIST_CHK_NEG_IERR(SUBR(blockedGMRESstates_iterate)(Aop, Pop,states, num_active, &_nIter, useIMGS, iflag), *iflag);
+    for (int i=0; i<num_active; i++) 
+    {
+      status[active_cols[i]]=states[i]->status;
+      total_iter[active_cols[i]]=states[i]->totalIter;
+    }
+    // we need to update the solution for any systems that
+    // - have converged (status 0)
+    // - need a restart (status 1)
+    // - have failed (status 2)
+    int num_updates=0;
+    TYPE(blockedGMRESstate_ptr) update_states[num_active];
+    int update_cols[num_active];
+    for (int i=0; i<num_active; i++)
+    {
+      if (states[i]->status==0)
+      {
+        num_converged++;
+      }
+      else if (states[i]->status==3) 
+      {
+        num_failed++;
+      }
+      // update solution for systems that are converged (0), need a restart (2) or have failed (3)
+      if (states[i]->status==0||states[i]->status>=2)
+      {
+        update_cols[num_updates]=active_cols[i];
+        update_states[num_updates]=states[i];
+        num_updates++;
+      }
+    }
+    if (num_updates>0)
+    {
+      PHIST_SOUT(PHIST_VERBOSE,"update systems: ");
+      for (int i=0; i<num_updates; i++) PHIST_SOUT(PHIST_VERBOSE," %d",update_cols[i]);
+      PHIST_SOUT(PHIST_VERBOSE,"\n");
+      // if we're updating a contiguous block of columns, use a view.
+      // Otherwise copy the columns to make them continuguous
+      bool contig=true;
+      for (int i=1; i<num_updates; i++) contig&=(update_cols[i]==update_cols[i-1]+1);
+      _MT_ res_norms[num_updates];
+      TYPE(mvec_ptr) x=NULL;
+      if (contig)
+      {
+        PHIST_CHK_IERR(SUBR(mvec_view_block)(sol_in,&x,update_cols[0],update_cols[num_updates-1],iflag),*iflag);
+      }
+      else
+      {
+        PHIST_CHK_IERR(SUBR(mvec_create)(&x,Aop->domain_map,num_updates,iflag),*iflag);
+        for (int i=0; i<num_updates; i++)
+        {
+          PHIST_CHK_IERR(SUBR(mvec_view_block)(sol_in,&x_i,update_cols[i],update_cols[i],iflag),*iflag);
+          PHIST_CHK_IERR(SUBR(mvec_set_block)(x,x_i,i,i,iflag),*iflag);
+        }
+      }    
+      PHIST_CHK_IERR(SUBR(blockedGMRESstates_updateSol)(update_states,num_updates,Pop,x,res_norms,false,iflag),*iflag);
+      if (!contig) // need to copy back solution
+      {
+        for (int i=0; i<num_updates; i++)
+        {
+          PHIST_CHK_IERR(SUBR(mvec_view_block)(x,&x_i,i,i,iflag),*iflag);
+          PHIST_CHK_IERR(SUBR(mvec_set_block)(sol_in,x_i,update_cols[i],update_cols[i],iflag),*iflag);
+        }
+      }
+      PHIST_CHK_IERR(SUBR(mvec_delete)(x,iflag),*iflag);
+    }
+    for (int i=0; i<num_active; i++)
+    {
+      if (status[active_cols[i]]!=1&&status[active_cols[i]]!=2)
+      {
+        // state object is free again
+        PHIST_SOUT(PHIST_VERBOSE,"state[%d] free to use again after working on system %d\n",i,active_cols[i]);
+        PHIST_CHK_IERR(SUBR(blockedGMRESstate_reset)(states[i],NULL,NULL,iflag),*iflag);        
+      }
+    }
+  }
+
+  // delete view of single column if it was used
+  if (x_i) PHIST_CHK_IERR(SUBR(mvec_delete)(x_i,iflag),*iflag);
+  
+  for (int i=0; i<numSys; i++)
+  {
+    nIter[i] = total_iter[i];
+  }	  
+  
+  // clean up the solver
+  PHIST_CHK_IERR(SUBR(blockedGMRESstates_delete)(states, block_size, iflag), *iflag);
+}
+
