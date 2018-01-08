@@ -6,14 +6,14 @@
 /* Contact: Jonas Thies (Jonas.Thies@DLR.de)                                               */
 /*                                                                                         */
 /*******************************************************************************************/
-// KPM algorithm (Weiße, Wellein, Alvermann & Fehske, Rev. Mod. Phys. 78 (1), 275-306).
+// KPM algorithm (Weisse, Wellein, Alvermann & Fehske, Rev. Mod. Phys. 78 (1), 275-306).
 // The arguments scale and shift have to map the spectrum of A into [-1,1]. 
 // M is the number of iterations.
 // Output array mu is assumed to have size 2 * M * #cols(x).
 // Currently there are no additional options for iflag.
 void SUBR(kpm)(TYPE(mvec_ptr) x, TYPE(sparseMat_ptr) A, _MT_ scale, _MT_ shift, int M, _MT_* mu, int* iflag);
 
-// KPM-DOS algorithm (Weiße, Wellein, Alvermann & Fehske, Rev. Mod. Phys. 78 (1), 275-306).
+// KPM-DOS algorithm (Weisse, Wellein, Alvermann & Fehske, Rev. Mod. Phys. 78 (1), 275-306).
 // The arguments scale and shift have to map the spectrum of A into [-1,1]. 
 // M is the number of iterations.
 // R is the number of vectors.
