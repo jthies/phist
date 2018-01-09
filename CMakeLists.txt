@@ -134,6 +134,35 @@ if (CMAKE_C_COMPILER_ID STREQUAL "GNU")
 endif()
 
 ########################################################################
+# xSDK options
+########################################################################
+
+option(USE_XSDK_DEFAULTS "implement the default behavior suggested for xSDK packages (see https://xsdk.info)")
+
+option(XSDK_ENABLE_CXX
+        "generate C++ bindings for PHIST"
+        ON)
+
+option(XSDK_ENABLE_Fortran
+        "generate Fortran 2003 bindings for PHIST"
+        OFF)
+
+if (XSDK_ENABLE_Fortran)
+    message(WARNING "Due to a licensing issue you have to generate the Fortran 2003 bindings for PHIST "
+                        "after installing phist using the phist_fort tool available at "
+                        "https://bitbucket.org/essex/phist_fort/")
+endif()
+
+set (XSDK_INDEX_SIZE 64 CACHE INTEGER "data type for global indices (32/64), default 64.")
+if (XSDK_INDEX_SIZE EQUAL 32)
+  set(PHIST_FORCE_INT_GIDX_DEFAULT ON)
+elseif (XSDK_INDEX_SIZE EQUAL 64)
+  set(PHIST_FORCE_INT_GIDX_DEFAULT OFF)
+else()
+  message(WARNING "invalid value of XSDK_INDEX_SIZE (${XSDK_INDEX_SIZE}, should be 32 or 64) is ignored.")
+endif()
+
+########################################################################
 # Lists of libraries, executables, tests
 ########################################################################
 set(library_list)
@@ -603,17 +632,19 @@ else()
   include_directories(${PROJECT_SOURCE_DIR}/drivers/matfuncs)
 endif()
 
+if (NOT DEFINED PHIST_FORCE_INT_GIDX_DEFAULT)
+
 #############################################################################
 # use 32-bit integers as global indices with Epetra by default. This is     #
 # because e.g. Isorropia/Zoltan and our own HYMLS require it. For larger    #
 # runs with Epetra it has to be switched off before compiling PHIST.        #
 #############################################################################
-if( "${PHIST_KERNEL_LIB}" MATCHES "epetra|petsc|Eigen" )
-  set(PHIST_FORCE_INT_GIDX_DEFAULT ON)
-else()
-  set(PHIST_FORCE_INT_GIDX_DEFAULT OFF)
+  if( "${PHIST_KERNEL_LIB}" MATCHES "epetra|petsc|Eigen" )
+    set(PHIST_FORCE_INT_GIDX_DEFAULT ON)
+  else()
+    set(PHIST_FORCE_INT_GIDX_DEFAULT OFF)
+  endif()
 endif()
-
 option(PHIST_FORCE_INT_GIDX "Use 32-bit global indices for compatiblity with other libs" 
 ${PHIST_FORCE_INT_GIDX_DEFAULT})
 if( "${PHIST_KERNEL_LIB}" MATCHES "petsc|Eigen" )
