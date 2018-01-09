@@ -1044,7 +1044,7 @@ if (PHIST_KERNEL_LIB STREQUAL "tpetra")
     # compiling tpetra/kokkos with CUDA is tricky and requires special flags
     # and a special wrapper script to be used as the MPI C++ compiler
 
-    if (NOT CMAKE_CXX_COMPILER MATCHES "mpicxx" AND $ENV{OMPI_CXX} MATCHES "nvcc_wrapper" AND $ENV{OMPI_MPICXX_CXXFLAGS}" MATCHES "-expt-extended-lambda")
+    if (NOT CMAKE_CXX_COMPILER MATCHES "mpicxx" AND "$ENV{OMPI_CXX}" MATCHES "nvcc_wrapper" AND "$ENV{OMPI_MPICXX_CXXFLAGS}" MATCHES "-expt-extended-lambda")
       message(WARNING "NOTE: in order to compile Tpetra/Kokkos code with CUDA we recommend using OpenMPI"
                       "      and setting the environment variables CXX=mpicxx, OMPI_CXX=nvcc_wrapper, and OMPI_MPICXX_CXXFLAGS='-std=c++11 -expt-extended-lambda'."
                       "      The nvcc_wrapper script is installed along with Trilinos. You can unset the OMPI variables after 'make libs' to avoid compiling everytingg with nvcc.")
