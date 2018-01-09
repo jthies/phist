@@ -30,6 +30,7 @@ class types
     typedef typename st::sparseMat_t* sparseMat_ptr;
     typedef typename st::sparseMat_t const* const_sparseMat_ptr;
 
+    typedef typename st::linearOp_t linearOp;
     typedef typename st::linearOp_t* linearOp_ptr;
     typedef typename st::linearOp_t const* const_linearOp_ptr;
 };
