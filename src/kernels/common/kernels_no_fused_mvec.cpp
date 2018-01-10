@@ -14,6 +14,7 @@ extern "C" void SUBR(fused_mvsd_mvTmv)(_ST_ alpha, TYPE(const_mvec_ptr)  V,
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
 #include "phist_std_typedefs.hpp"
+  PHIST_WARN_MISSING_KERNEL(__FUNCTION__);
   // call two kernels
   // don't freeze inside here if the first one returns an error on only some processes
   // pass *iflag to both kernels, it may e.g. contain PHIST_NO_GLOBAL_REDUCTION
@@ -32,6 +33,7 @@ extern "C" void SUBR(fused_mvsdi_mvTmv)(_ST_ alpha, TYPE(const_mvec_ptr)  V,
                                                 int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
+  PHIST_WARN_MISSING_KERNEL(__FUNCTION__);
 #include "phist_std_typedefs.hpp"
   // call two kernels
   // don't freeze inside here if the first one returns an error on only some processes

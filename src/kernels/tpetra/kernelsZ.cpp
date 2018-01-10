@@ -44,6 +44,8 @@
 # endif
 #endif
 
+#include "phist_kernel_perfmodels.hpp"
+
 #ifdef PHIST_HAVE_LIKWID
 #include <likwid.h>
 #endif

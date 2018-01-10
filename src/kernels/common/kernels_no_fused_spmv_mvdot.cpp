@@ -13,6 +13,7 @@ extern "C" void SUBR(fused_spmv_mvdot)(_ST_ alpha, TYPE(const_sparseMat_ptr) A, 
                                                                                     
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
+  PHIST_WARN_MISSING_KERNEL(__FUNCTION__);
 #include "phist_std_typedefs.hpp"
   // call two kernels
   // don't freeze inside here if the first one returns an error on only some processes
@@ -44,6 +45,7 @@ extern "C" void SUBR(fused_spmv_mvdot_mvadd)(_ST_ alpha, TYPE(const_sparseMat_pt
                                                                                     
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
+  PHIST_WARN_MISSING_KERNEL(__FUNCTION__);
 #include "phist_std_typedefs.hpp"
   // call two kernels
   // don't freeze inside here if the first one returns an error on only some processes

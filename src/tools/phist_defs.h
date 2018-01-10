@@ -27,8 +27,10 @@ code alike */
 #define PHIST_DEBUG 5
 #define PHIST_TRACE 6
 
-#ifndef PHIST_OUTLEV
-#define PHIST_OUTLEV PHIST_INFO
+#if defined (PHIST_PERFCHECK)
+#define PHIST_PERFWARNING PHIST_WARNING
+#else
+#define PHIST_PERFWARNING PHIST_INFO
 #endif
 
 /* return types */
