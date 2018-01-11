@@ -810,10 +810,6 @@ set(PHIST_PRECON_SOURCE ${PROJECT_SOURCE_DIR}/src/precon/phist_preconS.cpp
                         ${PROJECT_SOURCE_DIR}/src/precon/phist_preconZ.cpp
                         ${PROJECT_SOURCE_DIR}/src/precon/phist_ilu.cpp
                         )
-set (PHIST_SUPPORT_SOURCE  ${PROJECT_SOURCE_DIR}/src/support/phist_feastCorrectionSolver.cpp
-                           ${PROJECT_SOURCE_DIR}/src/support/phist_iter_op.cpp
-                           )
-
 
 include_directories(${PROJECT_BINARY_DIR})
 include_directories(${PROJECT_SOURCE_DIR}/src/kernels)
@@ -871,7 +867,6 @@ add_library(phist_kernels_${PHIST_KERNEL_LIB} ${PHIST_KERNEL_SOURCE})
 add_library(phist_solvers ${PHIST_KRYLOV_SOURCE} 
                           ${PHIST_JADA_SOURCE})
 add_library(phist_precon ${PHIST_PRECON_SOURCE})
-add_library(phist_support ${PHIST_SUPPORT_SOURCE})
 
 LIST(APPEND library_list phist_support)
 LIST(APPEND library_list phist_solvers)
@@ -1182,13 +1177,6 @@ endforeach()
 add_executable(phist_carp_cg ${PROJECT_SOURCE_DIR}/drivers/carp_cg.c)
 target_link_libraries(phist_carp_cg ${library_list})
 
-# these drivers need the feastCorrectionSolver and/or the iter_op
-target_link_libraries(phist_carp_cg phist_support)
-foreach (tc ${TG_Types})
-  target_link_libraries(phist_${tc}krylov_schur phist_support)
-endforeach()
-
-
 install(TARGETS phist_carp_cg RUNTIME DESTINATION bin OPTIONAL)
 
 LIST(APPEND driver_list phist_carp_cg)
@@ -1243,14 +1231,12 @@ if (${BUILD_SHARED_LIBS})
   install(TARGETS phist_core EXPORT phistLibraries LIBRARY DESTINATION ${LIBRARY_INSTALL_DIR})
   install(TARGETS phist_precon EXPORT phistLibraries LIBRARY DESTINATION ${LIBRARY_INSTALL_DIR})
   install(TARGETS phist_solvers EXPORT phistLibraries LIBRARY DESTINATION ${LIBRARY_INSTALL_DIR})
-  install(TARGETS phist_support EXPORT phistLibraries LIBRARY DESTINATION ${LIBRARY_INSTALL_DIR})
 else()
   install(TARGETS phist_kernels_${PHIST_KERNEL_LIB} EXPORT phistLibraries ARCHIVE DESTINATION ${LIBRARY_INSTALL_DIR})
   install(TARGETS phist_tools EXPORT phistLibraries ARCHIVE DESTINATION ${LIBRARY_INSTALL_DIR})
   install(TARGETS phist_core EXPORT phistLibraries ARCHIVE DESTINATION ${LIBRARY_INSTALL_DIR})
   install(TARGETS phist_precon EXPORT phistLibraries ARCHIVE DESTINATION ${LIBRARY_INSTALL_DIR})
   install(TARGETS phist_solvers EXPORT phistLibraries ARCHIVE DESTINATION ${LIBRARY_INSTALL_DIR})
-  install(TARGETS phist_support EXPORT phistLibraries ARCHIVE DESTINATION ${LIBRARY_INSTALL_DIR})
 endif()
 install(FILES ${PROJECT_BINARY_DIR}/phistConfig.cmake        DESTINATION ${LIBRARY_INSTALL_DIR}/cmake/phist)
 #export(EXPORT phistLibraries FILE "${PROJECT_BINARY_DIR}/phistLibraries.cmake")
