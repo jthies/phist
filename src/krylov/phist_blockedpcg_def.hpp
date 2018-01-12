@@ -8,10 +8,10 @@
 /*******************************************************************************************/
 
 // implementation of CG on several systems simultaneously
-void SUBR(blockedCG_iterate)(TYPE(const_linearOp_ptr) Aop, TYPE(const_linearOp_ptr) Pop,
+void SUBR(blockedPCG_iterate)(TYPE(const_linearOp_ptr) Aop, TYPE(const_linearOp_ptr) Pop,
         TYPE(const_mvec_ptr) rhs, TYPE(mvec_ptr) sol_in, int numSys, int* nIter,
-		_MT_ const tol[], int* iflag)
-{	
+        _MT_ const tol[], int* iflag)
+{
 #include "phist_std_typedefs.hpp"
   *iflag = 0;
   if (numSys==0) return; // do not appear in timing stats
@@ -76,14 +76,13 @@ void SUBR(blockedCG_iterate)(TYPE(const_linearOp_ptr) Aop, TYPE(const_linearOp_p
     bool firstConverged = false;
     for(int j = 0; j < numSys; j++)
     {
-	  PHIST_CHK_IERR(SUBR(mvec_dot_mvec)(r,r,&rr[0],iflag),*iflag);
-	  MT rnrm=std::sqrt(std::abs(rr[j]/rho0[j]));
+      PHIST_CHK_IERR(SUBR(mvec_dot_mvec)(r,r,&rr[0],iflag),*iflag);
+      MT rnrm=std::sqrt(std::abs(rr[j]/rho0[j]));
       PHIST_SOUT(PHIST_INFO,"\t%e",rnrm);
       firstConverged = firstConverged || (rnrm < tol[j]);
     }	
     PHIST_SOUT(PHIST_INFO,"\n");
-    if( firstConverged || *nIter == maxIter )
-      break;
+    if( firstConverged || *nIter == maxIter ) break;
     // rho_i = r_i*z_i
     PHIST_CHK_IERR(SUBR(mvec_dot_mvec)(r,z,&rho[0],iflag),*iflag);
 
@@ -110,10 +109,10 @@ void SUBR(blockedCG_iterate)(TYPE(const_linearOp_ptr) Aop, TYPE(const_linearOp_p
     // r_(i+1) = r_i - alpha*q_(i+1)
     for(int j = 0; j < numSys; j++)
       alpha[j] = -alpha[j];
-    PHIST_CHK_IERR(SUBR(mvec_vadd_mvec)(&alpha[0],q,st::one(),r,iflag),*iflag);
-	
-	// z_(i+1) = P_op*r_(i+1)
-	PHIST_CHK_IERR(Pop->apply(st::one(), Pop->A, r, st::zero(), z, iflag), *iflag);
+      PHIST_CHK_IERR(SUBR(mvec_vadd_mvec)(&alpha[0],q,st::one(),r,iflag),*iflag);
+
+        // z_(i+1) = P_op*r_(i+1)
+        PHIST_CHK_IERR(Pop->apply(st::one(), Pop->A, r, st::zero(), z, iflag), *iflag);
   }
 }
 

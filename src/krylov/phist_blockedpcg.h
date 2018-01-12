@@ -6,27 +6,30 @@
 /* Contact: Jonas Thies (Jonas.Thies@DLR.de)                                               */
 /*                                                                                         */
 /*******************************************************************************************/
+#ifndef PHIST_BLOCKEDPCG_H
+#define PHIST_BLOCKEDPCG_H
+
 #include "phist_config.h"
 
-#include "phist_tools.h"
-#include "phist_kernels.h"
-#include <cstdlib>
-#include <cstring>
-#include <cmath>
-#include <vector>
+#ifndef DOXYGEN
 
-#include "phist_blockedcg.h"
-#include "phist_orthog.h"
-#include "phist_MemOwner.hpp"
-
-#ifdef PHIST_HAVE_SP
-#include "phist_gen_s.h"
-#include "phist_blockedcg_def.hpp"
-#include "phist_gen_c.h"
-#include "phist_blockedcg_def.hpp"
+/* needs to be included before system headers for some intel compilers+mpi */
+#ifdef PHIST_HAVE_MPI
+#include <mpi.h>
 #endif
-#include "phist_gen_d.h"
-#include "phist_blockedcg_def.hpp"
-#include "phist_gen_z.h"
-#include "phist_blockedcg_def.hpp"
+#include "phist_operator.h"
+#include "phist_enums.h"
+#include "phist_typedefs.h"
 
+#endif //DOXYGEN
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+#define PHIST_CLASSFILE_DEF "phist_blocked_pcg_decl.h"
+#include "phist_gen_all.h"
+#ifdef __cplusplus
+}
+#endif
+
+#endif
