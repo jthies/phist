@@ -14,6 +14,6 @@
 #include "phist_blockedpcg.h"
 #include "phist_MemOwner.hpp"
 
-#define PHIST_CLASSFILE_DEF "phist_blockedcg_def.hpp"
+#define PHIST_CLASSFILE_DEF "phist_blockedpcg_def.hpp"
 #include "phist_gen_all.h"
 

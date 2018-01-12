@@ -116,14 +116,14 @@ void SUBR(blockedPCG_iterate)(TYPE(const_linearOp_ptr) Aop, TYPE(const_linearOp_
   }
 }
 
-void SUBR( CG_iterate ) (TYPE(const_linearOp_ptr) Aop, TYPE(const_linearOp_ptr) Pop,
+void SUBR( PCG_iterate ) (TYPE(const_linearOp_ptr) Aop, TYPE(const_linearOp_ptr) Pop,
 		TYPE(const_mvec_ptr) rhs, TYPE(mvec_ptr) sol_in, int* nIter, _MT_ const tol, int* iflag)
 {
 #include "phist_std_typedefs.hpp"
   *iflag = 0;
   PHIST_ENTER_FCN(__FUNCTION__);
   
-  PHIST_CHK_IERR(SUBR(blockedCG_iterate)(Aop, Pop, rhs, sol_in, 1, nIter, &tol, iflag),*iflag);
+  PHIST_CHK_IERR(SUBR(blockedPCG_iterate)(Aop, Pop, rhs, sol_in, 1, nIter, &tol, iflag),*iflag);
 
 }		
 

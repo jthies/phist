@@ -26,7 +26,7 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-#define PHIST_CLASSFILE_DEF "phist_blocked_pcg_decl.h"
+#define PHIST_CLASSFILE_DEF "phist_blockedpcg_decl.h"
 #include "phist_gen_all.h"
 #ifdef __cplusplus
 }
