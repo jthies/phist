@@ -45,7 +45,11 @@ set_tests_properties(cxx_bindings PROPERTIES FAIL_REGULAR_EXPRESSION ". \n]*FAIL
 set_tests_properties(cxx_bindings PROPERTIES TIMEOUT 30)
 
 # install all generated headers
-foreach (hpp_file ${ALL_HPP_FILES})
+foreach (hpp_file ${HPP_FILES})
     install(FILES ${CMAKE_CURRENT_BINARY_DIR}/${hpp_file} DESTINATION include)
+endforeach()
+
+foreach (hpp_file ${STATIC_HPP_FILES})
+    install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/${hpp_file} DESTINATION include)
 endforeach()
 
