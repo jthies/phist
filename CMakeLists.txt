@@ -115,8 +115,8 @@ option(PHIST_USE_TRILINOS_TPLS
 
 # option for using checkpoint/restart + automatic fault-tolerance features
 option(PHIST_USE_CRAFT
-		"enables/desables the use of checkpoint/restart and auto FT features using CRAFT"
-		OFF)
+                "enables/desables the use of checkpoint/restart and auto FT features using CRAFT"
+                OFF)
 
 ########################################################################
 # try to enable CCache as a 'compiler launcher'
@@ -202,9 +202,9 @@ endif()
 
 # output behavior
 if(CMAKE_BUILD_TYPE MATCHES "Release")
-	set(PHIST_OUTLEV 2 CACHE STRING "PHIST verbosity (release 2, 'INFO')")
+        set(PHIST_OUTLEV 2 CACHE STRING "PHIST verbosity (release 2, 'INFO')")
 else()
-	set(PHIST_OUTLEV 4 CACHE STRING "PHIST verbosity (debug 4, 'EXTREME')")
+        set(PHIST_OUTLEV 4 CACHE STRING "PHIST verbosity (debug 4, 'EXTREME')")
 endif()
 
 if(CMAKE_BUILD_TYPE MATCHES "Debug")
@@ -770,7 +770,7 @@ if (PHIST_KERNEL_LIB STREQUAL "epetra")
 endif()
 
 set (PHIST_KRYLOV_SOURCE ${PROJECT_SOURCE_DIR}/src/krylov/phist_simple_arnoldi.cpp
-				                 ${PROJECT_SOURCE_DIR}/src/krylov/phist_simple_lanczos.cpp
+                         ${PROJECT_SOURCE_DIR}/src/krylov/phist_simple_lanczos.cpp
                          ${PROJECT_SOURCE_DIR}/src/krylov/phist_blockedgmres.cpp
                          ${PROJECT_SOURCE_DIR}/src/krylov/phist_blockedqmr.cpp
                          ${PROJECT_SOURCE_DIR}/src/krylov/phist_blockedbicgstab.cpp
@@ -784,11 +784,12 @@ set (PHIST_KRYLOV_SOURCE ${PROJECT_SOURCE_DIR}/src/krylov/phist_simple_arnoldi.c
                          ${PROJECT_SOURCE_DIR}/src/krylov/phist_anasaziD.cpp
                          ${PROJECT_SOURCE_DIR}/src/krylov/phist_anasaziZ.cpp
                          ${PROJECT_SOURCE_DIR}/src/krylov/phist_carp_cg.cpp
+                         ${PROJECT_SOURCE_DIR}/src/krylov/phist_iter_op.cpp
                          )
 if(PHIST_USE_CRAFT)
-	set (PHIST_KRYLOV_SOURCE ${PHIST_KRYLOV_SOURCE}
-				                 ${PROJECT_SOURCE_DIR}/src/krylov/phist_simple_lanczos_ft.cpp
-												 )
+        set (PHIST_KRYLOV_SOURCE ${PHIST_KRYLOV_SOURCE}
+                                                 ${PROJECT_SOURCE_DIR}/src/krylov/phist_simple_lanczos_ft.cpp
+                                                                                                 )
 endif()
 set (PHIST_JADA_SOURCE   ${PROJECT_SOURCE_DIR}/src/jada/phist_jadaOp.cpp
                          ${PROJECT_SOURCE_DIR}/src/jada/phist_jadaOpts.cpp
@@ -847,17 +848,17 @@ if(PHIST_KERNEL_LIB STREQUAL "Eigen")
 endif()
 
 if (PHIST_USE_CRAFT)
-	find_package(CRAFT REQUIRED)
-	if(CRAFT_FOUND)
-		message (STATUS "CRAFT package is found ${CRAFT_INCLUDE_PATH}")
-		include_directories(${CRAFT_INCLUDE_PATH})
-		link_libraries(${CRAFT_LIBRARIES})
-		set (CMAKE_C_FLAGS        "${CMAKE_C_FLAGS}      ${CRAFT_FLAGS}")
+        find_package(CRAFT REQUIRED)
+        if(CRAFT_FOUND)
+                message (STATUS "CRAFT package is found ${CRAFT_INCLUDE_PATH}")
+                include_directories(${CRAFT_INCLUDE_PATH})
+                link_libraries(${CRAFT_LIBRARIES})
+                set (CMAKE_C_FLAGS        "${CMAKE_C_FLAGS}      ${CRAFT_FLAGS}")
     set (CMAKE_CXX_FLAGS      "${CMAKE_CXX_FLAGS}    ${CRAFT_FLAGS}")
 
-	else()
-		message (STATUS "CRAFT package is NOT found")
-	endif()
+        else()
+                message (STATUS "CRAFT package is NOT found")
+        endif()
 endif()
 
 

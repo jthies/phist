@@ -23,4 +23,6 @@
 #include "phist_simple_arnoldi.h"
 #include "phist_simple_lanczos.h"
 
+#include "phist_iter_op.h"
+
 #endif
