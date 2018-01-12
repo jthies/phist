@@ -11,11 +11,13 @@
 */
 #cmakedefine PHIST_OUTLEV ${PHIST_OUTLEV}
 
-/* enables some potentially expesive tests, for instance wether the index spaces of
+/* enables some potentially expensive tests, for instance whether the index spaces of
    input and output vectors to an operation are correct. By default, this is ON if
    CMAKE_BUILD_TYPE=Debug.
  */
 #cmakedefine PHIST_TESTING
+
+#cmakedefine PHIST_VERSION
 
 
 /* some compiler/system flags */
@@ -153,7 +155,7 @@ kernel libs) ?
 
 /* disallow Trilinos versions newer than 11.12.x because they have a
    new interface to Tpetra/Kokkos/TSQR (cf. #124)
-*/
+
 # ifdef PHIST_HAVE_KOKKOS
 # include "Trilinos_version.h"
 #  if ((TRILINOS_MAJOR_VERSION>11)||((TRILINOS_MAJOR_VERSION==11)&&(TRILINOS_MINOR_VERSION>1112)))
@@ -164,7 +166,7 @@ kernel libs) ?
 #  define OLD_TRILINOS
 #  endif
 # endif
-
+*/
 /* some more sanity checks */
 /*
 # ifndef PHIST_HAVE_MPI

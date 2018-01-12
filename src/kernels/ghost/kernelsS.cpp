@@ -7,6 +7,9 @@
 /*                                                                                         */
 /*******************************************************************************************/
 #include "phist_config.h"
+
+#ifdef PHIST_HAVE_SP
+
 /* needs to be included before system headers for some intel compilers+mpi */
 #ifdef PHIST_HAVE_MPI
 #include <mpi.h>
@@ -73,7 +76,6 @@
 # endif
 #endif
 
-#ifdef PHIST_HAVE_SP
 #include "phist_gen_s.h"
 #include "kernels_def.hpp"
 #include "carp_def.hpp"

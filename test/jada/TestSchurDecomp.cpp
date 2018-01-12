@@ -33,11 +33,12 @@ using namespace testing;
 #include "TestSchurDecomp_def.hpp"
 #undef CLASSNAME
 
+#ifdef PHIST_HAVE_CMPLX
 #define CLASSNAME CTestSchurDecomp_10
 #include "phist_gen_c.h"
 #include "TestSchurDecomp_def.hpp"
 #undef CLASSNAME
-
+#endif
 #endif
 
 #define CLASSNAME DTestSchurDecomp_10
@@ -45,10 +46,12 @@ using namespace testing;
 #include "TestSchurDecomp_def.hpp"
 #undef CLASSNAME
 
+#ifdef PHIST_HAVE_CMPLX
 #define CLASSNAME ZTestSchurDecomp_10
 #include "phist_gen_z.h"
 #include "TestSchurDecomp_def.hpp"
 #undef CLASSNAME
+#endif
 
 #undef _N_
 
@@ -60,10 +63,12 @@ using namespace testing;
 #include "TestSchurDecomp_def.hpp"
 #undef CLASSNAME
 
+#ifdef PHIST_HAVE_CMPLX
 #define CLASSNAME CTestSchurDecomp_50
 #include "phist_gen_c.h"
 #include "TestSchurDecomp_def.hpp"
 #undef CLASSNAME
+#endif
 
 #endif
 
@@ -72,9 +77,10 @@ using namespace testing;
 #include "TestSchurDecomp_def.hpp"
 #undef CLASSNAME
 
+#ifdef PHIST_HAVE_CMPLX
 #define CLASSNAME ZTestSchurDecomp_50
 #include "phist_gen_z.h"
 #include "TestSchurDecomp_def.hpp"
 #undef CLASSNAME
-
+#endif
 #undef _N_

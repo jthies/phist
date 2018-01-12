@@ -692,6 +692,40 @@ public:
     }
   }
 
+  TEST_F(CLASSNAME, mvec_scale_with_constant)
+  {
+    if (typeImplemented_ && !problemTooSmall_)
+    {
+      // fill mvec with scalar
+      const MT scalar = 5;
+      SUBR(mvec_put_value)(V1_, (ST)(scalar * st::one()), &iflag_);
+      ASSERT_EQ(0, iflag_);
+
+      #if PHIST_OUTLEV>=PHIST_DEBUG
+        SUBR(mvec_from_device)(V1_, &iflag_);
+        V1Test::PrintVector(PHIST_DEBUG, "filled matrix with scalar", V1_vp_, nloc_, ldaV1_, stride_, mpi_comm_);
+      #endif
+
+      ASSERT_NEAR( mt::one(), MvecEqual(V1_, scalar * st::one()), 
+                  mt::sqrt(mt::eps()));
+
+      // scale mvec with different scalar
+      const MT scaleScalar = -1;
+      SUBR(mvec_scale)(V1_, (ST) (scaleScalar * st::one()), &iflag_);
+      ASSERT_EQ(0, iflag_);
+
+      #if PHIST_OUTLEV>=PHIST_DEBUG
+        SUBR(mvec_from_device)(V1_, &iflag_);
+        V1Test::PrintVector(PHIST_DEBUG, "scaled matrix with scalar", V1_vp_, nloc_, ldaV1_, stride_, mpi_comm_);
+      #endif
+
+      ASSERT_NEAR(mt::one(), MvecEqual(V1_, (scalar * scaleScalar) * st::one()), 
+                  mt::sqrt(mt::eps()));
+    }
+  }
+
+
+
   // mvec_times_sdMat with random data compared with calculation by hand
   TEST_F(CLASSNAME, mvec_times_sdMat_with_random_data)
   {

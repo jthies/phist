@@ -205,6 +205,9 @@ typedef int (*phist_mvec_elemFunc)(ghost_gidx, ghost_lidx, void *, void *);
 #include "phist_kernels_fused_decl.h"
 #include "phist_kernels_carp_decl.h"
 //!@}
+
+#ifdef PHIST_HAVE_CMPLX
+
 /*!\name single precision complex kernel functions */
 //!@{
 #include "phist_gen_c.h"
@@ -230,6 +233,8 @@ void phist_Cmvec_combine(phist_Cmvec_ptr V, phist_Sconst_mvec_ptr reV, phist_Sco
 #endif
 
 //!@}
+
+#endif
 #endif /* PHIST_HAVE_SP */
 
 /*!\name double precision real kernel functions */
@@ -240,6 +245,7 @@ void phist_Cmvec_combine(phist_Cmvec_ptr V, phist_Sconst_mvec_ptr reV, phist_Sco
 #include "phist_kernels_fused_decl.h"
 #include "phist_kernels_carp_decl.h"
 //!@}
+#ifdef PHIST_HAVE_CMPLX
 /*!\name double precision complex kernel functions */
 //!@{
 #include "phist_gen_z.h"
@@ -260,14 +266,15 @@ void phist_Zmvec_split(phist_Zconst_mvec_ptr V, phist_Dmvec* reV, phist_Dmvec* i
 //! if either reV or imV are NULL, it is not touched.
 void phist_Zmvec_combine(phist_Zmvec_ptr V, phist_Dconst_mvec_ptr reV, phist_Dconst_mvec_ptr imV, int *iflag);
 
+#ifdef __cplusplus
+} //extern "C"
+#endif
+
+#endif
 
 //!@}
 #include "phist_gen_clean.h"
 #endif /* DOXYGEN_NO_TG */
-
-#ifdef __cplusplus
-} //extern "C"
-#endif
 
 //@}
 

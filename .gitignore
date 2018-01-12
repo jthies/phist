@@ -2,3 +2,5 @@
 build*
 *.swp
 *.pyc
+.vscode
+.cache

@@ -195,7 +195,7 @@ void SUBR(mvec_num_vectors)(TYPE(const_mvec_ptr) V, int* nvec, int* iflag);
 void SUBR(mvec_extract_view)(TYPE(mvec_ptr) V, _ST_** V_raw,
         phist_lidx* lda, int* iflag);
 
-//! get number of cols in local dense matrix \ingroup sdmat
+//! get number of rows in local dense matrix \ingroup sdmat
 void SUBR(sdMat_get_nrows)(TYPE(const_sdMat_ptr) M, int* nrows, int* iflag);
 
 //! get number of cols in local dense matrix. \ingroup sdmat

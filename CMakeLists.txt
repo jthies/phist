@@ -495,7 +495,7 @@ endif()
 # setup which kernel library is being used.
 ##############################################################################
 
-set(PHIST_KERNEL_LIB "builtin" CACHE STRING "Select underlying kernel libraries for phist (builtin|ghost|epetra|tpetra|magma|petsc|Eigen)")
+set(PHIST_KERNEL_LIB "builtin" CACHE STRING "Select underlying kernel libraries for phist (builtin|ghost|epetra|tpetra|magma|petsc|Eigen|tpetra12)")
 message(STATUS "kernel lib " ${PHIST_KERNEL_LIB} " ...")
 
 set(REQUIRE_TRILI_PKG,"")
@@ -633,7 +633,7 @@ endif()
 ##############################################################################
 # enable single precision and complex valued calculation if supported
 ##############################################################################
-if( "${PHIST_KERNEL_LIB}" MATCHES "tpetra|ghost|magma|petsc|Eigen" )
+if( "${PHIST_KERNEL_LIB}" MATCHES "tpetra|ghost|magma|petsc|Eigen|tpetra12" )
   set(PHIST_SUPPORT_SP ON)
   set(PHIST_SUPPORT_COMPLEX ON)
 else()
@@ -1034,6 +1034,18 @@ foreach(PKG ${OPTIONAL_TRILI_PKG})
   message(STATUS ${TPL_REPORT})
 endforeach()
 
+if (PHIST_KERNEL_LIB STREQUAL "tpetra")
+  if ("CUDA" IN_LIST Tpetra_TPL_LIST)
+    # compiling tpetra/kokkos with CUDA is tricky and requires special flags
+    # and a special wrapper script to be used as the MPI C++ compiler
+
+    if (NOT CMAKE_CXX_COMPILER MATCHES "mpicxx" AND "$ENV{OMPI_CXX}" MATCHES "nvcc_wrapper" AND "$ENV{OMPI_MPICXX_CXXFLAGS}" MATCHES "-expt-extended-lambda")
+      message(WARNING "NOTE: in order to compile Tpetra/Kokkos code with CUDA we recommend using OpenMPI"
+                      "      and setting the environment variables CXX=mpicxx, OMPI_CXX=nvcc_wrapper, and OMPI_MPICXX_CXXFLAGS='-std=c++11 -expt-extended-lambda'."
+                      "      The nvcc_wrapper script is installed along with Trilinos. You can unset the OMPI variables after 'make libs' to avoid compiling everytingg with nvcc.")
+    endif()
+  endif()
+endif()
 
 option(PHIST_TIMEMONITOR "Gather detailed function-level timings" On)
 if( PHIST_TIMEMONITOR )
@@ -1374,6 +1386,8 @@ else()
   set(PHIST_MPI_TEST_NPROCS 1)
 endif()
 
+set(ALL_PHIST_TESTS "")
+
 foreach(np ${PHIST_MPI_TEST_NPROCS})
   math(EXPR TEST_OMP_NUM_THREADS "12/${np}")
   foreach(label ${PHIST_TESTS})
@@ -1386,6 +1400,7 @@ foreach(np ${PHIST_MPI_TEST_NPROCS})
                        ./${PRODUCT_NAME}-${label}-test-${CMAKE_BUILD_TYPE} --gtest_death_test_style=threadsafe --gtest_output=xml:${TEST_OUTPUT_DIR}/xunit.xml)
     endif()
     set(CURRENT_TESTNAME test-${label}_np${np})
+    list(APPEND ALL_PHIST_TESTS ${CURRENT_TESTNAME})
     add_test(NAME ${CURRENT_TESTNAME} COMMAND ${TEST_COMMAND})
     set_tests_properties(${CURRENT_TESTNAME} PROPERTIES PASS_REGULAR_EXPRESSION "[. \n]*PASSED[. \n]*")
     set_tests_properties(${CURRENT_TESTNAME} PROPERTIES FAIL_REGULAR_EXPRESSION "[. \n]*FAILED[. \n]*")
@@ -1426,6 +1441,7 @@ foreach(pyt ${PYTHON_TESTS})
     set(TEST_OUTPUT_DIR ${PROJECT_BINARY_DIR}/test_output_np1/${pyt_name})
     file(MAKE_DIRECTORY ${TEST_OUTPUT_DIR})
     set(TEST_COMMAND py.test -s -v --junitxml ${TEST_OUTPUT_DIR}/xunit.xml --junit-prefix=${CMAKE_BUILD_TYPE} ${pyt})
+    list(APPEND ALL_PHIST_TESTS ${pyt_name})
     add_test(NAME ${pyt_name} COMMAND ${TEST_COMMAND})
     set_tests_properties(${pyt_name} PROPERTIES ENVIRONMENT "LD_LIBRARY_PATH=${CMAKE_CURRENT_BINARY_DIR}:$ENV{LD_LIBRARY_PATH};PYTHONPATH=${PYSTDIR}:${PYTESTDIR}:$ENV{PYTHONPATH};${MPIEXEC_ENVIRONMENT};PHIST_NUM_THREADS=12;OMP_NUM_THREADS=12")    
     if(INTEGRATION_BUILD AND PHIST_KERNEL_LIB STREQUAL "ghost" AND CUDA_LIBRARIES)
@@ -1456,6 +1472,7 @@ foreach(pyt ${PYTHON_TESTS})
     file(MAKE_DIRECTORY ${TEST_OUTPUT_DIR})
     set(TEST_COMMAND ${CMAKE_CURRENT_BINARY_DIR}/py.test --junitxml ${TEST_OUTPUT_DIR}/xunit.xml ./test_phist_drivers.py)
     set(pyt_name "phist_test_drivers_np${PHIST_TEST_DRIVERS_NUM_PROCS}") 
+    list(APPEND ALL_PHIST_TESTS ${pyt_name})
     add_test(NAME ${pyt_name} COMMAND ${TEST_COMMAND})
     set_tests_properties(${pyt_name} PROPERTIES ENVIRONMENT "${MPIEXEC_ENVIRONMENT}; PHIST_NUM_THREADS=2; OMP_NUM_THREADS=2 OMP_SCHEDULE=dynamic,8")
 
@@ -1464,6 +1481,15 @@ foreach(pyt ${PYTHON_TESTS})
   endif()
 endif()
 
+# For Tpetra, add some environment variables to the tests to avoid warnings and errors
+# tpetra/kokkos does not pin the threads from insides and runs into errors with CUDA unless
+# CUDA_LAUNCH_BLOCKING=1 is set.
+if (PHIST_KERNEL_LIB_TPETRA)
+  foreach(item ${ALL_PHIST_TESTS})
+    set_property(TEST ${item} APPEND PROPERTY ENVIRONMENT "OMP_PROC_BIND=1; CUDA_LAUNCH_BLOCKING=1")
+  endforeach()
+endif()
+  
 # Adding custom test target "check" because it is the only way to show the full output of test errors on console
 add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND} ${CTEST_OPTIONS})
 

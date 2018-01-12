@@ -22,7 +22,11 @@
 #include "../kernels/KernelTestWithSdMats.h"
 
 #ifdef PHIST_HAVE_BELOS
-# ifdef PHIST_KERNEL_LIB_TPETRA
+# ifdef PHIST_KERNEL_LIB_TPETRA__disabled
+/* note: compiling these tests with Tpetra+CUDA requires the nvcc_wrapper script,
+    but we try to hide all Tpetra/Trilinos headers from the user to avoid this.
+    So we disable them completely for now.
+*/
 # include "phist_tpetra_typedefs.hpp"
 # include "BelosTpetraAdapter.hpp"
 # elif defined(PHIST_KERNEL_LIB_EPETRA)

@@ -8,6 +8,8 @@
 /*******************************************************************************************/
 #include "phist_config.h"
 
+#ifdef PHIST_HAVE_CMPLX
+
 #include "phist_tools.h"
 #include "phist_kernels.h"
 #include "phist_operator.h"
@@ -55,7 +57,14 @@
 
 #ifdef PHIST_KERNEL_LIB_EPETRA
 #undef PHIST_HAVE_BELOS
+#elif defined(PHIST_KERNEL_LIB_TPETRA)
+#include "TpetraCore_config.h"
+# ifndef HAVE_TPETRA_INST_COMPLEX_DOUBLE
+# undef PHIST_HAVE_BELOS
+# endif
 #endif
 
 #include "phist_gen_z.h"
 #include "phist_belos_def.hpp"
+
+#endif

@@ -53,11 +53,15 @@ int main(int argc, char* argv[])
   int error=0;
 
   if (!phist_foo<double>()) error|=1;
+#ifdef PHIST_HAVE_CMPLX
   if (!phist_foo<phist_d_complex>()) error|=2;
+#endif
 
 #ifdef PHIST_HAVE_SP
   if (!phist_foo<float>()) error|=4;
+# ifdef PHIST_HAVE_CMPLX
   if (!phist_foo<phist_s_complex>()) error|=8;
+# endif
 #endif
 
   if (error==0) {PHIST_SOUT(PHIST_INFO,"ALL TESTS PASSED\n");}

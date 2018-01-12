@@ -96,6 +96,17 @@
 #define PHIST_ORDERED_OUT(level,mpicomm,msg, ...) PHIST_SOUT(level,msg,##__VA_ARGS__);
 #endif
 
+#define PHIST_WARN_MISSING_KERNEL(function_name) \
+  {\
+    static bool first_time=true;\
+    if (first_time)\
+    {\
+      PHIST_SOUT(PHIST_PERFWARNING,"using default implementation of function %s, if this kernel \n"\
+                               "figures prominently in your timings, you may want to provide an implementation \n"\
+                               "or try a different kernel library.",function_name);\
+    }\
+  }
+                                                                                        
 
 // "line-level" timings using PHIST_CHK macros
 #if defined(__cplusplus) && defined(PHIST_TIMEMONITOR_PERLINE)

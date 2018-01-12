@@ -83,15 +83,22 @@ public:
       mpi_rank_=0;
       mpi_size_=1;
 #endif
-#ifdef PHIST_HAVE_SP
-      phist_Stype_avail(&iflag_); haveS_=(iflag_==0);
-      phist_Ctype_avail(&iflag_); haveC_=(iflag_==0);
-#else
+
       haveS_=false;
       haveC_=false;
+      haveD_=false;
+      haveZ_=false;
+
+#ifdef PHIST_HAVE_SP
+      phist_Stype_avail(&iflag_); haveS_=(iflag_==0);
+# ifdef PHIST_HAVE_CMPLX
+      phist_Ctype_avail(&iflag_); haveC_=(iflag_==0);
+# endif
 #endif
       phist_Dtype_avail(&iflag_); haveD_=(iflag_==0);
+#ifdef PHIST_HAVE_CMPLX
       phist_Ztype_avail(&iflag_); haveZ_=(iflag_==0);
+#endif
 
       // initialize random number sequence in a reproducible way (yet
       // with a different seed on each MPI process)
