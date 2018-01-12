@@ -119,8 +119,8 @@ extern "C" const char* projection2str(phist_Eprojection s)
 {
   return   s==phist_PROJ_NONE?"NONE":
            s==phist_PROJ_PRE?"PRE":
-           s==phist_PROJ_PRE?"POST":
-           s==phist_PROJ_POST?"PRE_POST":
+           s==phist_PROJ_POST?"POST":
+           s==phist_PROJ_PRE_POST?"PRE_POST":
            s==phist_PROJ_SKEW?"SKEW":
            s==phist_PROJ_ALL?"ALL":
                 "INVALID";
