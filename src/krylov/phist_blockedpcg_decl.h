@@ -39,8 +39,8 @@ void SUBR( blockedPCG_iterate ) (TYPE(const_linearOp_ptr) op,
 
 //! PCG interface for just one vector.
 void SUBR( PCG_iterate ) (TYPE(const_linearOp_ptr) Op,
-				TYPE(const_linearOp_ptr) preconOp,
-				TYPE(const_mvec_ptr) rhs, TYPE(mvec_ptr) sol,
-				int* nIter, _MT_ const tol, int* iflag);
+                                TYPE(const_linearOp_ptr) preconOp,
+                                TYPE(const_mvec_ptr) rhs, TYPE(mvec_ptr) sol,
+                                int* nIter, _MT_ const tol, int* iflag);
 //@}
 //@}

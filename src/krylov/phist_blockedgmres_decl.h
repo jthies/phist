@@ -12,19 +12,34 @@
 //! \defgroup blockedGMRES blocked GMRES solver for general linear systems
 //@{
 
+//! high-level user interface that does not require knowledge of the state object. This interface
+//! should be used if you only want run a restarted GMRES solver on one or more systems
+
+//! restarted GMRES implementation that may work on several vectors simultaneously,
+//! building a separate Krylov subspace for each of them.
+//!
+//! On input, *nIter indicates the total max number of iterations allowed, maxIter, for any system.
+//! On output, *nIter indicates the number of GMRES iterations.
+//!
+//! On output, sol_in gives the solution of the restarted GMRES
+//!
+void SUBR( restartedGMRES_iterate ) (TYPE(const_linearOp_ptr) Aop, TYPE(const_linearOp_ptr) Pop,
+        TYPE(mvec_ptr) rhs, TYPE(mvec_ptr) sol_in, int numSys,
+        int* nIter, _MT_ const tol[], int block_size, int max_blocks, int* iflag);
+
 //! gmres state object
 
 //! iteration status object for the pipelined GMRES
 //! iteration we currently use as approximate solver
 //! for the correction equation. To initialize the
 //! object before the first call, create the object
-//! using gmresState_create and adjust the parameters 
+//! using gmresState_create and adjust the parameters
 //! manually (the parameter maxDimV must not be adjusted
 //! after the call to _create as it determines the size
 //! of the held data structures). Then call reset to
 //! set the rhs and initial vector. To restart from the
 //! previous iteration state, simply pass the object to
-//! gmres again. To restart from an initial guess, use 
+//! gmres again. To restart from an initial guess, use
 //! the reset function again. It is important to call
 //! reset before the first usage of the object in gmres
 //! because the iteration will otherwise not start up
@@ -63,7 +78,7 @@ typedef TYPE(blockedGMRESstate) const * TYPE(const_blockedGMRESstate_ptr);
 //! a simple GMRES implementation that works on several vectors simultaneously,
 //! building a separate Krylov subspace for each of them. The iteration status
 //! is stored in a struct so that the process can be continued for some of the
-//! systems if one or more converge. This is not a block GMRES but a 'pseudo- 
+//! systems if one or more converge. This is not a block GMRES but a 'pseudo-
 //! block GMRES' as the former would build a single subspace for all rhs. It is
 //! therefore OK to have the operator perform a different task for each vector
 //! column it is applied to, like in block JaDa: OP(X_j) = (A-s_jI)(I-VV').
@@ -109,17 +124,17 @@ typedef TYPE(blockedGMRESstate) const * TYPE(const_blockedGMRESstate_ptr);
 //! \warning you cannot mix together states from different calls to blockedGMRESstates_create! The way to
 //! insert a new system into a state array is via reset() with a non-NULL right-hand side b.
 //!
-void SUBR( blockedGMRESstates_iterate ) (TYPE(const_linearOp_ptr) Op, 
+void SUBR( blockedGMRESstates_iterate ) (TYPE(const_linearOp_ptr) Op,
                 TYPE(const_linearOp_ptr) rightPrecon,
                 TYPE(blockedGMRESstate_ptr) S_array[], int numSys, int *nIter, int useIMGS, int* iflag);
 
 //!
 //! create an array of gmresState objects. The method's input parameters
-//! will be set to default values and can be adjusted before calling reset/iterate. 
-//! The maxBas parameter cannot be adjusted afterwards as it determines the amount 
+//! will be set to default values and can be adjusted before calling reset/iterate.
+//! The maxBas parameter cannot be adjusted afterwards as it determines the amount
 //! of memory allocated in this function. The map argument indicates the data dist-
 //! ribution of vectors so we can create the basis vectors a priori.
-//! The array of pointers must be allocated beforehand, but the individual structs 
+//! The array of pointers must be allocated beforehand, but the individual structs
 //! are allocated by this method.
 //!
 void SUBR( blockedGMRESstates_create ) (TYPE(blockedGMRESstate_ptr) S_array[], int numSys, phist_const_map_ptr map, int maxBas, int* iflag);
@@ -134,13 +149,13 @@ void SUBR( blockedGMRESstates_delete ) (TYPE(blockedGMRESstate_ptr) S_array[], i
 //!
 //! this function can be used to force a clean restart of the associated GMRES
 //! solver. It is necessary to call this function before the first call to
-//! blockedGMRES_iterate in order to set the RHS b. The input starting vector x0 
+//! blockedGMRES_iterate in order to set the RHS b. The input starting vector x0
 //! may be NULL, in that case x0=0 is used. x0 does not have to be normalized in advance.
 //! The input RHS may also be NULL, meaning 'keep old RHS', but not on the first call to
 //! reset. If one of the RHS vectors changes between calls to gmres, reset with the new
 //! rhs should be called for that gmresState, otherwise a messed up Krylov sequence will
-//! result and the convergence criterion will not be consistent. To implement standard 
-//! restarted GMRES, call iterate, then updateSol and afterwards reset with b=NULL and 
+//! result and the convergence criterion will not be consistent. To implement standard
+//! restarted GMRES, call iterate, then updateSol and afterwards reset with b=NULL and
 //! x0 the updated solution column.
 //! To free the resources used by this state object, call _reset with b=x0=NULL. Subsequent
 //! use of the object requires a nother call to _reset with at least b!=NULL.
@@ -148,28 +163,15 @@ void SUBR( blockedGMRESstates_delete ) (TYPE(blockedGMRESstate_ptr) S_array[], i
 void SUBR( blockedGMRESstate_reset ) (TYPE(blockedGMRESstate_ptr) S, TYPE(const_mvec_ptr) b, TYPE(const_mvec_ptr) x0, int *iflag);
 
 //!
-//! For each of the state objects i passed in, update the current approximation x(:,i) using 
-//! the basis V and the projection coefficients. This should be done for a system that 
-//! indicates convergence after iterate, but it can also be done to get an intermediate 
-//! solution. The function is 'vectorized' in the same way as iterate, so an array of states 
+//! For each of the state objects i passed in, update the current approximation x(:,i) using
+//! the basis V and the projection coefficients. This should be done for a system that
+//! indicates convergence after iterate, but it can also be done to get an intermediate
+//! solution. The function is 'vectorized' in the same way as iterate, so an array of states
 //! and multivector x can be passed in.
 //!
 void SUBR( blockedGMRESstates_updateSol ) (TYPE(blockedGMRESstate_ptr) S_array[], int numSys,
                 TYPE(const_linearOp_ptr) rightPrecon,
                 TYPE(mvec_ptr) x, _MT_ *resNorm, int scaleSolutionToOne, int* iflag);
 
-//! 
-//! a simple restarted GMRES implementation that works on several vectors simultaneously,
-//! building a separate Krylov subspace for each of them. 
-//!
-//! On input, *nIter indicates the total max number of iterations allowed, maxIter, for any system.
-//! On output, *nIter indicates the number of GMRES iterations.
-//!
-//! On output, sol_in gives the solution of the restarted GMRES
-//!
-void SUBR( restartedGMRES_iterate ) (TYPE(const_linearOp_ptr) Aop, TYPE(const_linearOp_ptr) Pop,
-        TYPE(mvec_ptr) rhs, TYPE(mvec_ptr) sol_in, int numSys, 
-		int* nIter, _MT_ const tol[], int block_size, int max_blocks, int* iflag);
-				
 //@}
 //@}
