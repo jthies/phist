@@ -868,7 +868,6 @@ add_library(phist_solvers ${PHIST_KRYLOV_SOURCE}
                           ${PHIST_JADA_SOURCE})
 add_library(phist_precon ${PHIST_PRECON_SOURCE})
 
-LIST(APPEND library_list phist_support)
 LIST(APPEND library_list phist_solvers)
 LIST(APPEND library_list phist_precon)
 LIST(APPEND library_list phist_core)
@@ -879,7 +878,6 @@ target_link_libraries(phist_kernels_${PHIST_KERNEL_LIB}                         
 target_link_libraries(phist_core                                          phist_kernels_${PHIST_KERNEL_LIB} phist_tools)
 target_link_libraries(phist_precon                             phist_core phist_kernels_${PHIST_KERNEL_LIB} phist_tools)
 target_link_libraries(phist_solvers               phist_precon phist_core phist_kernels_${PHIST_KERNEL_LIB} phist_tools)
-target_link_libraries(phist_support phist_solvers phist_precon phist_core phist_kernels_${PHIST_KERNEL_LIB} phist_tools)
 
 if (MPACK_FOUND)
       target_link_libraries(phist_core ${MPACK_LIBRARIES})
