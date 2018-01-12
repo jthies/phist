@@ -6,29 +6,33 @@
 /* Contact: Jonas Thies (Jonas.Thies@DLR.de)                                               */
 /*                                                                                         */
 /*******************************************************************************************/
-#include "phist_config.h"
 
-#include "phist_tools.h"
-#include "phist_kernels.h"
-#include "phist_core.h"
+#include "phist_typedefs.h"
 #include "phist_ScalarTraits.hpp"
 
-#include "phist_iter_op.h"
+namespace phist {
 
-// todo: rename feastCorrectionSolver,
-// it is in fact a kind of general wrapper
-// for our linear solvers.
-#include "phist_feastCorrectionSolver.h"
+template<typename ST>
+class types
+{
+  public:
+  
+    typedef ScalarTraits<ST> st;
+    typedef typename ScalarTraits<ST>::magn_t MT;
+    typedef ScalarTraits<MT> mt;
+    
+    typedef typename st::mvec_t* mvec_ptr;
+    typedef typename st::mvec_t const* const_mvec_ptr;
 
-#ifdef PHIST_HAVE_SP
-#include "phist_gen_s.h"
-#include "phist_iter_op_def.hpp"
-#include "phist_gen_c.h"
-#include "phist_iter_op_def.hpp"
-#endif
+    typedef typename st::sdMat_t* sdMat_ptr;
+    typedef typename st::sdMat_t const* const_sdMat_ptr;
 
-#include "phist_gen_d.h"
-#include "phist_iter_op_def.hpp"
-#include "phist_gen_z.h"
-#include "phist_iter_op_def.hpp"
+    typedef typename st::sparseMat_t* sparseMat_ptr;
+    typedef typename st::sparseMat_t const* const_sparseMat_ptr;
 
+    typedef typename st::linearOp_t linearOp;
+    typedef typename st::linearOp_t* linearOp_ptr;
+    typedef typename st::linearOp_t const* const_linearOp_ptr;
+};
+
+}

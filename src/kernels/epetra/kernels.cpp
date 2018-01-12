@@ -9,7 +9,7 @@
 #include "phist_config.h"
 #include "phist_tools.h"
 #include "../phist_kernels.h"
-#include "phist_trilinos_macros.h"
+#include "phist_trilinos_macros.hpp"
 #include "Epetra_config.h"
 #ifdef PHIST_HAVE_MPI
 #include "Epetra_MpiComm.h"
@@ -244,11 +244,16 @@ extern "C" void phist_maps_compatible(phist_const_map_ptr vmap1, phist_const_map
 #include "phist_gen_s.h"
 #include "../common/kernels_no_impl.c"
 
-#include "phist_gen_c.h"
-#include "../common/kernels_no_impl.cpp"
+# ifdef PHIST_HAVE_CMPLX
+# include "phist_gen_c.h"
+# include "../common/kernels_no_impl.cpp"
+# endif
 #endif
+
+#ifdef PHIST_HAVE_CMPLX
 #include "phist_gen_z.h"
 #include "../common/kernels_no_impl.cpp"
+#endif
 
 #include "phist_gen_d.h"
 #include "kernels_def.hpp"

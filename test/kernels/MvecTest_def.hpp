@@ -608,24 +608,27 @@ public:
 
   // X = 1*Y + 0*X = Y
   TEST_F(CLASSNAME, copy_by_axpy)
-    {
+  {
     if (typeImplemented_ && !problemTooSmall_)
-      {
+    {
       ST alpha = st::one();
       ST beta  = st::zero();
       SUBR(mvec_add_mvec)(alpha,vec1_,beta,vec2_,&iflag_);
       ASSERT_EQ(0,iflag_);
 
       ASSERT_REAL_EQ(mt::one(),MvecsEqual(vec1_,vec2_));
-      }
-    
+      
+      // check that the data pointers have not changed
+      ASSERT_TRUE(pointerUnchanged(vec1_,vec1_vp_,lda_));
+      ASSERT_TRUE(pointerUnchanged(vec2_,vec2_vp_,lda_));
     }
+  }
 
   // X = 0*Y + a*X = a*X
   TEST_F(CLASSNAME, scale_by_axpy)
-    {
+  {
     if (typeImplemented_ && !problemTooSmall_)
-      {
+    {
       ST alpha = st::zero();
       ST beta  = st::prand();
       PHIST_OUT(9,"axpy, alpha=%f+%f i, beta=%f+%f i",st::real(alpha),
@@ -642,9 +645,8 @@ public:
       ASSERT_EQ(0,iflag_);
             
       ASSERT_REAL_EQ(mt::one(),MvecEqual(vec2_,beta));
-      }
-    
     }
+  }
 
   // X = Y*diag(a_1,...,a_nvec) + a*X
   TEST_F(CLASSNAME, random_add)

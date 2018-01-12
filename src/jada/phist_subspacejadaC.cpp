@@ -7,7 +7,8 @@
 /*                                                                                         */
 /*******************************************************************************************/
 #include "phist_config.h"
-#ifdef PHIST_HAVE_SP
+
+#if defined(PHIST_HAVE_SP)&&defined(PHIST_HAVE_CMPLX)
 
 #include "phist_tools.h"
 #include "phist_kernels.h"

@@ -108,7 +108,6 @@ void SUBR(linearOp_wrap_linearOp_product_triple)(TYPE(linearOp_ptr) op,
 void SUBR(linearOp_wrap_linearOp_product_k)(TYPE(linearOp_ptr) op,
 int k, TYPE(const_linearOp_ptr)* k_ops, int* which_apply, const _ST_* sigma, int num_shifts, int* iflag);		
 		
-
 #if defined(__cplusplus)&&defined(PHIST_KERNEL_LIB_EPETRA)&&defined(IS_DOUBLE)&&!defined(IS_COMPLEX)
 // forward declaration
 class Epetra_Operator;

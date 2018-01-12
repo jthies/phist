@@ -14,17 +14,18 @@ KERNELS="builtin" # ghost epetra tpetra
 PRGENV="gcc-5.1.0-openmpi" # intel-13.0.1-mpich gcc-4.9.2-openmpi
 FLAGS="default" # optional-libs
 ADD_CMAKE_FLAGS="-DPHIST_BENCH_LARGE_N=-1" #optional CMake flags # -1 disables benchmarks to speed up build jobs!
+WORKSPACE="$PWD/.."
 VECT_EXT="native"
 TRILINOS_VERSION="11.12.1"
 # list of modules to load
-MODULES_BASIC="cmake ccache lapack cppcheck gcovr doxygen"
+MODULES_BASIC="cmake cppcheck gcovr doxygen"
 # GCC_SANITIZE flag for debug mode, disabled for CUDA
 SANITIZER="address"
 
 
 ## parse command line arguments
 usage() { echo "Usage: $0 [-k <builtin|ghost|epetra|tpetra|petsc|Eigen>] [-e <PrgEnv/module-string>] [-f <optional-libs>]"; \
-          echo "       [-c <cmake flags to be added>] [-v <SSE|AVX|AVX2|CUDA>] [-t <trilinos version>]" 1>&2; exit 1; }
+          echo "       [-c <cmake flags to be added>] [-v <SSE|AVX|AVX2|CUDA>] [-t <trilinos version>] [-w <workspace-dir>]" 1>&2; exit 1; }
 
 function update_error { 
 if [[ "${error}" = "0" ]]; then
@@ -32,7 +33,7 @@ if [[ "${error}" = "0" ]]; then
 fi
 }
 
-while getopts "k:e:f:c:v:t:h" o; do
+while getopts "k:e:f:c:v:w:t:h" o; do
     case "${o}" in
         k)
             KERNELS=${OPTARG}
@@ -49,6 +50,9 @@ while getopts "k:e:f:c:v:t:h" o; do
             ;;
         v)
             VECT_EXT=${OPTARG}
+            ;;
+        w)
+            WORKSPACE=${OPTARG}
             ;;
         t)
             TRILINOS_VERSION=${OPTARG}
@@ -116,13 +120,30 @@ module list
 # be verbose from here on
 set -x
 
-if [[ "$PRGENV" =~ gcc* ]]; then
-  export FC=gfortran CC=gcc CXX=g++
+if [[ $PRGENV =~ gcc* ]]; then
+  if [[ $KERNEL_LIB =~ tpetra ]] && [[ $VECT_EXT =~ "CUDA" ]]; then
+      export CXX=mpicxx
+      export CC=mpicc
+      # note: the trilinos module should set OMPI_CXX=nvcc_wrapper for us, phist/cmake will check that
+      export OMPI_MPICXX_CXXFLAGS="-expt-extended-lambda"
+  else
+    export FC=gfortran CC=gcc CXX=g++
+  fi
+  module load lapack
+  if [ "${VECT_EXT}" != "CUDA" && "${PRGENV}" != "gcc-7.2.0-openmpi"]; then
+    module load ccache
+    ADD_CMAKE_FLAGS+="-DPHIST_USE_CCACHE=ON"
+  else
+    ADD_CMAKE_FLAGS+="-DPHIST_USE_CCACHE=OFF"
+  fi
+  if [[ "$PRGENV" =~ gcc-7* ]]; then
+    # there's a problem in jada-tests, test STestSchurDecomp* with gcc 7.2.0 and -fsanitize=address, see #218
+    SANITIZER=""
+  fi
 elif [[ "$PRGENV" =~ intel* ]]; then
   export FC=ifort CC=icc CXX=icpc
-  # setup environment for MKL:
-  source /tools/modulesystem/tools/mkl/mkl-2017.2.174/install/sled12.x86_64/compilers_and_libraries_2017.2.174/linux/mkl/bin/mklvars.sh intel64
   
+  module load mkl
   # make CMake find and use MKL:
   ADD_CMAKE_FLAGS+="-DBLA_VENDOR=Intel10_64lp"
 fi
@@ -142,10 +163,10 @@ if [ "$KERNELS" = "ghost" ]; then
     POSTFIX=_optional-libs
   fi
   # this is the easiest way to make phist find ghost+dependencies
-  export CMAKE_PREFIX_PATH=$PWD/../install-${PRGENV}-Release-${VECT_EXT}${POSTFIX}/lib/ghost:$CMAKE_PREFIX_PATH
-  export PKG_CONFIG_PATH=$PWD/../install-${PRGENV}-Release-${VECT_EXT}${POSTFIX}/lib/pkgconfig:$PKG_CONFIG_PATH
+  export CMAKE_PREFIX_PATH=${WORKSPACE}/install-${PRGENV}-Release-${VECT_EXT}${POSTFIX}/lib/ghost:$CMAKE_PREFIX_PATH
+  export PKG_CONFIG_PATH=${WORKSPACE}/install-${PRGENV}-Release-${VECT_EXT}${POSTFIX}/lib/pkgconfig:$PKG_CONFIG_PATH
   # also set the LD_LIBRARY_PATH appropriately
-  export LD_LIBRARY_PATH=$PWD/../install-${PRGENV}-Release-${VECT_EXT}${POSTFIX}/lib/ghost:$PWD/../install-${PRGENV}-Release-${VECT_EXT}/lib/essex-physics:$LD_LIBRARY_PATH
+  export LD_LIBRARY_PATH=${WORKSPACE}/install-${PRGENV}-Release-${VECT_EXT}${POSTFIX}/lib/ghost:${WORKSPACE}/install-${PRGENV}-Release-${VECT_EXT}/lib/essex-physics:$LD_LIBRARY_PATH
 fi
 
 # let ctest print all output if there was an error!
@@ -159,7 +180,18 @@ cmake -DCMAKE_BUILD_TYPE=Release  \
       ${ADD_CMAKE_FLAGS} \
       ..                                || update_error ${LINENO}
 make doc &> doxygen.log                 || update_error ${LINENO}
-make -j 24 || make                      || update_error ${LINENO}
+make -j 24 libs || make -j 1 libs       || update_error ${LINENO}
+if [[ ${KERNEL_LIB} =~ "tpetra" ]] && [[ ${VECT_EXT} =~ "CUDA" ]]; then
+# use nvcc_wrapper only to build the libs, we do not want any other code to depend on 
+# this kind of tweaks!
+  unset OMPI_CXX
+  unset OMPI_CC
+  unset OMPI_MPICXX_CXXFLAGS
+fi
+
+echo "Make drivers and test executables"
+make -j 24 || make -j 1 || update_error ${LINENO}
+
 echo "Running tests. Output is compressed and written to test.log.gz"
 make check &> test.log                  || update_error ${LINENO}
 if [ "${VECT_EXT}" = "CUDA" ]; then
@@ -185,10 +217,10 @@ cd ..
 # debug build
 if [ "$KERNELS" = "ghost" ]; then
   # this is the easiest way to make phist find ghost+dependencies
-  export CMAKE_PREFIX_PATH=$PWD/../install-${PRGENV}-Debug-${VECT_EXT}/lib/ghost:$CMAKE_PREFIX_PATH
-  export PKG_CONFIG_PATH=$PWD/../install-${PRGENV}-Debug-${VECT_EXT}/lib/pkgconfig:$PKG_CONFIG_PATH
+  export CMAKE_PREFIX_PATH=${WORKSPACE}/install-${PRGENV}-Debug-${VECT_EXT}/lib/ghost:$CMAKE_PREFIX_PATH
+  export PKG_CONFIG_PATH=${WORKSPACE}/install-${PRGENV}-Debug-${VECT_EXT}/lib/pkgconfig:$PKG_CONFIG_PATH
   # also set the LD_LIBRARY_PATH appropriately
-  export LD_LIBRARY_PATH=$PWD/../install-${PRGENV}-Debug-${VECT_EXT}/lib/ghost:$PWD/../install-${PRGENV}-Debug-${VECT_EXT}/lib/essex-physics:$LD_LIBRARY_PATH
+  export LD_LIBRARY_PATH=${WORKSPACE}/install-${PRGENV}-Debug-${VECT_EXT}/lib/ghost:${WORKSPACE}/install-${PRGENV}-Debug-${VECT_EXT}/lib/essex-physics:$LD_LIBRARY_PATH
 fi
 mkdir build_${KERNELS}_${PRGENV}_Debug_${FLAGS// /_}; cd $_
 cmake -DCMAKE_BUILD_TYPE=Debug    \

@@ -10,6 +10,11 @@
 
 #ifdef PHIST_KERNEL_LIB_EPETRA
 #undef PHIST_HAVE_ANASAZI
+#elif defined(PHIST_KERNEL_LIB_TPETRA)
+#include "TpetraCore_config.h"
+# ifndef HAVE_TPETRA_INST_FLOAT
+# undef PHIST_HAVE_ANASAZI
+# endif
 #endif
 #ifdef PHIST_HAVE_SP
 

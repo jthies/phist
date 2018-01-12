@@ -51,10 +51,6 @@ void SUBR(mvec_get_comm)(TYPE(const_mvec_ptr) V, phist_const_comm_ptr* comm, int
 //! to manually add flags here like MVEC_REPLICATE_DEVICE_MEM
 void SUBR(mvec_clone_shape)(TYPE(mvec_ptr)* V, TYPE(const_mvec_ptr) V_in, int* iflag);
 
-//! y[i]=alpha*(A*x+shift*x) + beta*y
-void SUBR(sparseMat_times_mvec_add_mvec)(_ST_ alpha, TYPE(const_sparseMat_ptr) A,
-        _ST_ shift, TYPE(const_mvec_ptr) x, _ST_ beta, TYPE(mvec_ptr) y, int* iflag);
-
 #ifdef __cplusplus
 } // extern "C"
 #endif

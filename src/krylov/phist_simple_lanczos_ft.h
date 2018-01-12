@@ -26,22 +26,22 @@
 
 #ifdef __cplusplus
 extern "C" {
-#endif	// CPP
+#endif        // CPP
 #ifdef PHIST_HAVE_SP
 #include "phist_gen_s.h"
-#include "phist_simple_lanczos_decl_ft.h"
+#include "phist_simple_lanczos_ft_decl.h"
 #include "phist_gen_c.h"
-#include "phist_simple_lanczos_decl_ft.h"
+#include "phist_simple_lanczos_ft_decl.h"
 #endif
 #include "phist_gen_d.h"
-#include "phist_simple_lanczos_decl_ft.h"
+#include "phist_simple_lanczos_ft_decl.h"
 #include "phist_gen_z.h"
-#include "phist_simple_lanczos_decl_ft.h"
+#include "phist_simple_lanczos_ft_decl.h"
 
 #include "phist_gen_clean.h"
 
 #ifdef __cplusplus
 }
-#endif	// CPP
+#endif        // CPP
 
-#endif	// header
+#endif        // header

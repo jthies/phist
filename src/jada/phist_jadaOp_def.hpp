@@ -6,6 +6,7 @@
 /* Contact: Jonas Thies (Jonas.Thies@DLR.de)                                               */
 /*                                                                                         */
 /*******************************************************************************************/
+
 // this file implements various forms of (skew-)projected       
 // linear operators that can be used in Jacobi-Davidson type    
 // algorithms. The general form is:                             

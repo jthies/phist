@@ -7,9 +7,7 @@
 /*                                                                                         */
 /*******************************************************************************************/
 typedef struct {
-#ifndef IS_COMPLEX
-  TYPE(feastCorrectionSolver) *fCS;
-#endif
+  phist_ElinSolv method;
   int maxIters;
   _MT_ tol;
 } TYPE(iter_solver_op);
@@ -19,11 +17,6 @@ extern "C" void SUBR(private_iter_op_apply)
         _ST_ beta,  TYPE(mvec_ptr) Y, int* iflag)
 {
 #include "phist_std_typedefs.hpp"
-#ifdef IS_COMPLEX
-  // there is no complex feastCorrectionSolver right now, I think.
-  *iflag=PHIST_NOT_IMPLEMENTED;
-  return;
-#else
 
   if (alpha!=st::one()||beta!=st::zero())
   {
@@ -31,10 +24,12 @@ extern "C" void SUBR(private_iter_op_apply)
     return;
   }
   PHIST_CAST_PTR_FROM_VOID(TYPE(iter_solver_op),op,arg,*iflag);
-  PHIST_CHK_IERR(SUBR(feastCorrectionSolver_run)
-        (op->fCS,X,op->tol,op->maxIters, &Y, NULL, iflag),*iflag);
+  
+  // note: the feastCorrectionSolver has bean relocated from phist to beast,
+  // in this file we should use the high-level krylov solver interfaces (e.g. restartedGMRES_iterate)
+  // found in src/krylov/. For now we inform the user that the functionality is not (yet) available.
+  PHIST_CHK_IERR(*iflag=PHIST_NOT_IMPLEMENTED,*iflag);
   return;
-#endif
 }
 
 //! wrap up an iterative solver as an operator, that
@@ -46,24 +41,14 @@ void SUBR(linearOp_wrap_solver)(TYPE(linearOp_ptr) Ainv_op,TYPE(const_sparseMat_
 {
 #include "phist_std_typedefs.hpp"
   PHIST_ENTER_FCN(__FUNCTION__);
-#ifdef IS_COMPLEX
-  // there is no complex feastCorrectionSolver right now, I think.
-  *iflag=PHIST_NOT_IMPLEMENTED;
-  return;
-#else
 
   //! create a feastCorrectionSolver object. You have to specify the number of rhs
   //! per shift to be treated simultaneously (blockSize), the number of shifts
   //! (numShifts), and the complex shifts
   TYPE(iter_solver_op) *op = new TYPE(iter_solver_op);
   Ainv_op->A = (void*)op;
-  MT shift_r=st::real(shift);
-  MT shift_i=st::imag(shift);
-  PHIST_CHK_IERR(SUBR(feastCorrectionSolver_create)(&op->fCS, A, method,
-        block_size, 1, &shift_r,&shift_i,iflag),*iflag);
 
-// set remaining params and pointers
-
+  op->method=method;
   op->maxIters=maxIter;
   op->tol=tol;
 
@@ -72,5 +57,4 @@ void SUBR(linearOp_wrap_solver)(TYPE(linearOp_ptr) Ainv_op,TYPE(const_sparseMat_
 Ainv_op->domain_map=Ainv_op->range_map;
 Ainv_op->apply=&SUBR(private_iter_op_apply);
   return;    
-#endif
   }

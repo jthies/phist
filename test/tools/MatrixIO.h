@@ -24,17 +24,22 @@ namespace phist
 #include "phist_gen_s.h"
 #include "MatrixIO_decl.h"
 
-#include "phist_gen_c.h"
-#include "MatrixIO_decl.h"
+# ifdef PHIST_HAVE_CMPLX
+# include "phist_gen_c.h"
+# include "MatrixIO_decl.h"
+# endif
 
 #endif
 
 #include "phist_gen_d.h"
 #include "MatrixIO_decl.h"
 
+#ifdef PHIST_HAVE_CMPLX
+
 #include "phist_gen_z.h"
 #include "MatrixIO_decl.h"
 
+#endif
   }
 }
 

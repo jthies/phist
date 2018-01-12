@@ -48,15 +48,18 @@ public:
 # include "phist_gen_s.h"
 # include "KernelTestWithSdMats_def.h"
 
+# ifdef PHIST_HAVE_CMPLX
 # include "phist_gen_c.h"
 # include "KernelTestWithSdMats_def.h"
-
+# endif
 #endif
 
 #include "phist_gen_d.h"
 #include "KernelTestWithSdMats_def.h"
 
+#ifdef PHIST_HAVE_CMPLX
 #include "phist_gen_z.h"
 #include "KernelTestWithSdMats_def.h"
+#endif
 
 #endif

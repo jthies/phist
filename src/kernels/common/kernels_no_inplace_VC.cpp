@@ -13,10 +13,10 @@ extern "C" void SUBR(mvec_times_sdMat_inplace)(TYPE(mvec_ptr) V_,
 TYPE(const_sdMat_ptr) M_, int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
+  PHIST_WARN_MISSING_KERNEL(__FUNCTION__);
 #include "phist_std_typedefs.hpp"
   *iflag = 0;
 
-  phist_lidx chunkSize = 64;
 
   // get dimensions
   phist_lidx nV;

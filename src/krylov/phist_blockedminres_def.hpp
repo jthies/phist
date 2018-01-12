@@ -495,8 +495,18 @@ PHIST_TASK_BEGIN(ComputeTask)
   }
 PHIST_TASK_END(iflag)
 
-  PHIST_SOUT(PHIST_VERBOSE,"%d converged, %d failed.\n",anyConverged,anyFailed);
-  PHIST_SOUT(PHIST_VERBOSE,"-----------------------\n");
+#if PHIST_OUTLEV>=PHIST_VERBOSE
+    PHIST_SOUT(PHIST_VERBOSE,"%d converged, %d need restart", anyConverged,anyFull);
+    if (anyFailed)
+    {
+      PHIST_SOUT(PHIST_VERBOSE,", %d exceeded max iter.\n",anyFailed);
+    }
+    else
+    {
+      PHIST_SOUT(PHIST_VERBOSE,"\n");
+    }
+    PHIST_SOUT(PHIST_VERBOSE,"---------------------------------------  \n");
+#endif
 
   // delete views
   PHIST_CHK_IERR(SUBR(mvec_delete)(work_x, iflag), *iflag);

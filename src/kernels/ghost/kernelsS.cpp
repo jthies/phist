@@ -7,6 +7,9 @@
 /*                                                                                         */
 /*******************************************************************************************/
 #include "phist_config.h"
+
+#ifdef PHIST_HAVE_SP
+
 /* needs to be included before system headers for some intel compilers+mpi */
 #ifdef PHIST_HAVE_MPI
 #include <mpi.h>
@@ -27,14 +30,14 @@
 #include "phist_ghost_internal.h"
 
 #if defined(PHIST_HAVE_KOKKOS)&&defined(PHIST_HAVE_TEUCHOS)
-#include "phist_trilinos_macros.h"
+#include "phist_trilinos_macros.hpp"
 #include "Ghost_TsqrAdaptor.hpp"
 #endif
 
 // these are from Trilinos, we need them to interface
 // the TSQR library for orthogonalizing tall skinny matrices.
 #ifdef PHIST_HAVE_BELOS
-#include "phist_trilinos_macros.h"
+#include "phist_trilinos_macros.hpp"
 #include "Belos_GhostAdapter.hpp"
 # ifdef HAVE_BELOS_TSQR
 # include "BelosTsqrOrthoManager.hpp"
@@ -42,7 +45,7 @@
 #endif
 
 #ifdef PHIST_HAVE_ANASAZI
-#include "phist_trilinos_macros.h"
+#include "phist_trilinos_macros.hpp"
 #include "Anasazi_GhostAdapter.hpp"
 #include "phist_AnasaziOperatorTraits.hpp"
 #include "AnasaziSVQBOrthoManager.hpp"
@@ -73,7 +76,6 @@
 # endif
 #endif
 
-#ifdef PHIST_HAVE_SP
 #include "phist_gen_s.h"
 #include "kernels_def.hpp"
 #include "carp_def.hpp"

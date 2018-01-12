@@ -19,6 +19,7 @@
 #include <complex>
 #include <cstdlib>
 #include <cstdio>
+#include <string>
 
 #include "phist_void_aliases.h"
 #include "phist_macros.h"
@@ -308,9 +309,8 @@ class ScalarTraits< double >
 #ifdef PHIST_HIGH_PRECISION_KERNELS
     DOUBLE_4SQRT_NEWTONRAPHSON_FMA(x,xC,sqrt,sqrtC,inv_sqrt,inv_sqrtC);
 #else
-    throw "prec_sqrt not implemented without PHIST_HIGH_PRECISION_KERNELS";
+    throw std::string{"prec_sqrt not implemented without PHIST_HIGH_PRECISION_KERNELS"};
 #endif
-    throw "not implemented";
   }
   
   //! in-place computation of 1/x with increased precision
@@ -320,7 +320,7 @@ class ScalarTraits< double >
 #ifdef PHIST_HIGH_PRECISION_KERNELS
     DOUBLE_4DIV_NEWTONRAPHSON_FMA(x,xC,inv,invC);
 #else
-    throw "prec_div not implemented without PHIST_HIGH_PRECISION_KERNELS";
+    throw std::string{"prec_div not implemented without PHIST_HIGH_PRECISION_KERNELS"};
 #endif
   }
 
@@ -473,14 +473,14 @@ class ScalarTraits< std::complex<MT> >
                    scalar_t& sqrt, scalar_t& sqrtC,
                    scalar_t& inv_sqrt, scalar_t& inv_sqrtC)
   {
-    throw "not implemented";
+    throw std::string{"not implemented"};
   }
   
   //! in-place computation of 1/x with increased precision
   static inline void prec_div(const scalar_t& x, const scalar_t& xC,
                                scalar_t& inv,     scalar_t& invC)
   {
-    throw "not implemented";
+    throw std::string{"not implemented"};
   }
     
   //! absolute value
@@ -561,7 +561,7 @@ class ScalarTraits< std::complex<MT> >
 };
 
   
-}//namepsace
+}//namespace
 
 
 

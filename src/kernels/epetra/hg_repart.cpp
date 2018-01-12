@@ -58,7 +58,7 @@
 
 #include "phist_config.h"
 
-#include "phist_trilinos_macros.h"
+#include "phist_trilinos_macros.hpp"
 #include "phist_tools.h"
 
 #include "Teuchos_StandardCatchMacros.hpp"

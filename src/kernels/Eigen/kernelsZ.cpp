@@ -14,6 +14,9 @@
 */
 
 #include "phist_config.h"
+
+#if defined(PHIST_HAVE_SP)&&defined(PHIST_HAVE_CMPLX)
+
 /* needs to be included before system headers for some intel compilers+mpi */
 #ifdef PHIST_HAVE_MPI
 #include <mpi.h>
@@ -44,3 +47,5 @@
 #include "../common/kernels_no_inplace_VC.cpp"
 #include "../common/kernels_no_VC_add_WD.cpp"
 #include "../common/kernels_no_fused.cpp"
+
+#endif

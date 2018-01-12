@@ -56,17 +56,20 @@ using namespace testing;
 
 #ifdef PHIST_HAVE_SP
 
+#ifdef PHIST_HAVE_CMPLX
 #define CLASSNAME CTestCarpCG
 #include "phist_gen_c.h"
 #include "TestCarpCG_def.hpp"
 #undef CLASSNAME
-
+#endif
 #endif
 
+#ifdef PHIST_HAVE_CMPLX
 #define CLASSNAME ZTestCarpCG
 #include "phist_gen_z.h"
 #include "TestCarpCG_def.hpp"
-
+#undef CLASSNAME
+#endif
 
 #undef MATNAME
 #undef MAXBAS
@@ -109,16 +112,19 @@ using namespace testing;
 
 #ifdef PHIST_HAVE_SP
 
+#ifdef PHIST_HAVE_CMPLX
 #define CLASSNAME CTestCarpCG_symmMat
 #include "phist_gen_c.h"
 #include "TestCarpCG_def.hpp"
 #undef CLASSNAME
+#endif
 
 #endif
 
+#ifdef PHIST_HAVE_CMPLX
 #define CLASSNAME ZTestCarpCG_symmMat
 #include "phist_gen_z.h"
 #include "TestCarpCG_def.hpp"
-
+#endif
 
 

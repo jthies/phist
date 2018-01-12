@@ -43,15 +43,18 @@ typeImplemented_=false;
 # include "phist_gen_s.h"
 # include "TestWithType_def.h"
 
+# ifdef PHIST_HAVE_CMPLX
 # include "phist_gen_c.h"
 # include "TestWithType_def.h"
-
+# endif
 #endif
 
 #include "phist_gen_d.h"
 #include "TestWithType_def.h"
 
+#ifdef PHIST_HAVE_CMPLX
 #include "phist_gen_z.h"
 #include "TestWithType_def.h"
+#endif
 
 #endif

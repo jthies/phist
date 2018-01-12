@@ -17,6 +17,9 @@ list (APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/")
 
 # Define some custom variables
 project(phist C CXX Fortran)
+
+option(PHIST_USE_CCACHE "Enable/disable using ccache to speed up repeated builds if you use the GNU compiler and ccache is found." ON)
+
 SET(CMAKE_SKIP_INSTALL_ALL_DEPENDENCY TRUE)
 # here an odd version minor (e.g. 1.1.x, 1.3.x etc.) indicates a development version
 # with unstable functionality, an even version minor (1.0.x, 1.2.x etc.) a stable version.
@@ -25,7 +28,7 @@ SET(CMAKE_SKIP_INSTALL_ALL_DEPENDENCY TRUE)
 # the function claims to do, depending on the status of the repository.
 set(PHIST_VERSION_MAJOR 1)
 set(PHIST_VERSION_MINOR 3)
-set(PHIST_VERSION_PATCH 0)
+set(PHIST_VERSION_PATCH 1)
 set(PHIST_VERSION ${PHIST_VERSION_MAJOR}.${PHIST_VERSION_MINOR}.${PHIST_VERSION_PATCH})
 set(PRODUCT_NAME phist-${PHIST_VERSION})
 
@@ -40,6 +43,15 @@ if (NOT BUILD_SHARED_LIBS)
     set(BUILD_SHARED_LIBS ON CACHE BOOL "Set to ON/OFF for shared/static library build.")
 endif()
 
+set(CMAKE_C_STANDARD 99)
+set(CMAKE_C_STANDARD_REQUIRED ON)
+
+if (PHIST_KERNEL_LIB STREQUAL "tpetra")
+  set(CMAKE_CXX_STANDARD 11)
+else()
+  set(CMAKE_CXX_STANDARD 11)
+endif()
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 if (PHIST_KERNEL_LIB STREQUAL "Eigen")
   option(PHIST_ENABLE_MPI "Enable MPI within PHIST" OFF)
@@ -103,8 +115,8 @@ option(PHIST_USE_TRILINOS_TPLS
 
 # option for using checkpoint/restart + automatic fault-tolerance features
 option(PHIST_USE_CRAFT
-		"enables/desables the use of checkpoint/restart and auto FT features using CRAFT"
-		OFF)
+                "enables/desables the use of checkpoint/restart and auto FT features using CRAFT"
+                OFF)
 
 ########################################################################
 # try to enable CCache as a 'compiler launcher'
@@ -112,10 +124,11 @@ option(PHIST_USE_CRAFT
 
 if (CMAKE_C_COMPILER_ID STREQUAL "GNU")
   find_program(CCACHE_FOUND ccache)
-  if(CCACHE_FOUND)
+  if(CCACHE_FOUND AND PHIST_USE_CCACHE)
+    message(STATUS "enabling CCache to speed-up repeated builds.")
     set_property(GLOBAL PROPERTY RULE_LAUNCH_COMPILE ccache)
     set_property(GLOBAL PROPERTY RULE_LAUNCH_LINK ccache)
-  endif(CCACHE_FOUND)
+  endif()
 endif()
 
 ########################################################################
@@ -144,7 +157,14 @@ set(PHIST_PKG_CONFIG_CFLAGS)
 # the include directory.
 ########################################################################
 
-find_package(LAPACK REQUIRED)
+if (NOT DEFINED BLA_VENDOR)
+  if (DEFINED ENV{MKLROOT})
+    message(STATUS "environment variable MKLROOT suggests MKL is available, try to use it to provide BLAS/LAPACK(e).")
+    set(BLA_VENDOR "Intel10_64lp")
+  endif()
+endif()
+
+find_package(LAPACK REQUIRED QUIET)
 
 if (LAPACK_LIBRARIES MATCHES "mkl")
   message(STATUS "found Intel(R) MKL")
@@ -152,7 +172,12 @@ if (LAPACK_LIBRARIES MATCHES "mkl")
   include_directories($ENV{MKLROOT}/include)
   link_libraries(${LAPACK_LIBRARIES})
 else()
-  get_filename_component(BLAS_LIBDIR ${BLAS_LIBRARIES} DIRECTORY)
+  if (BLAS_LIBRARIES MATCHES "-l*")
+    # no hint where to look for lapacke here
+    set(BLAS_LIBDIR "")
+  else()
+    get_filename_component(BLAS_LIBDIR ${BLAS_LIBRARIES} DIRECTORY)
+  endif()
   find_library (LAPACKE_LIBRARY lapacke ${BLAS_LIBDIR})
   if (LAPACKE_LIBRARY MATCHES "LAPACKE_LIBRARY-NOTFOUND")
     message(WARNING "did not find liblapacke in ${BLAS_LIBDIR}")
@@ -177,9 +202,9 @@ endif()
 
 # output behavior
 if(CMAKE_BUILD_TYPE MATCHES "Release")
-	set(PHIST_OUTLEV 2 CACHE STRING "PHIST verbosity (release 2, 'INFO')")
+        set(PHIST_OUTLEV 2 CACHE STRING "PHIST verbosity (release 2, 'INFO')")
 else()
-	set(PHIST_OUTLEV 4 CACHE STRING "PHIST verbosity (debug 4, 'EXTREME')")
+        set(PHIST_OUTLEV 4 CACHE STRING "PHIST verbosity (debug 4, 'EXTREME')")
 endif()
 
 if(CMAKE_BUILD_TYPE MATCHES "Debug")
@@ -195,8 +220,6 @@ if (CMAKE_C_COMPILER_ID STREQUAL "GNU")
 
   message(STATUS "using GNU compiler flags")
 
-  set (CMAKE_C_FLAGS        "-std=c99")
-  set (CMAKE_CXX_FLAGS      "-std=c++0x")
   set (CMAKE_Fortran_FLAGS  "-cpp -ffree-line-length-none")
   if( PHIST_ENABLE_OPENMP )
     set(PHIST_HAVE_OPENMP 1)
@@ -244,13 +267,13 @@ if (CMAKE_C_COMPILER_ID STREQUAL "GNU")
   set (CMAKE_Fortran_FLAGS_RELWITHDEBINFO "${CMAKE_Fortran_FLAGS_RELEASE} -g")
 
   if (CMAKE_C_COMPILER_VERSION VERSION_LESS 4.8)
-    set (CMAKE_C_FLAGS_DEBUG       "-O0 -g -Wall -Wextra -Wno-format -Wno-sign-compare -Wno-unused-variable -Wno-unused-parameter --coverage")
-    set (CMAKE_CXX_FLAGS_DEBUG     "-O0 -g -Wall -Wextra -Wno-format -Wno-sign-compare -Wno-unused-variable -Wno-unused-parameter --coverage")
-    set (CMAKE_Fortran_FLAGS_DEBUG "-O0 -g -Wall -fcheck=all -fstack-protector-all --coverage")
+    set (CMAKE_C_FLAGS_DEBUG       "-O0 -g -Wall -Wextra -Wno-format -Wno-sign-compare -Wno-unused-variable -Wno-unused-parameter")
+    set (CMAKE_CXX_FLAGS_DEBUG     "-O0 -g -Wall -Wextra -Wno-format -Wno-sign-compare -Wno-unused-variable -Wno-unused-parameter")
+    set (CMAKE_Fortran_FLAGS_DEBUG "-O0 -g -Wall -fcheck=all -fstack-protector-all")
   else ()
-    set (CMAKE_C_FLAGS_DEBUG       "-O0 -g -fstack-protector-all -Wall -Wextra -Wno-format -Wno-sign-compare -Wno-unused-variable -Wno-unused-parameter -Wno-unused-local-typedefs --coverage")
-    set (CMAKE_CXX_FLAGS_DEBUG     "-O0 -g -fstack-protector-all -Wall -Wextra -Wno-format -Wno-sign-compare -Wno-unused-variable -Wno-unused-parameter -Wno-unused-local-typedefs --coverage")
-    set (CMAKE_Fortran_FLAGS_DEBUG "-O0 -g -Wall -fcheck=all -fstack-protector-all --coverage")
+    set (CMAKE_C_FLAGS_DEBUG       "-O0 -g -fstack-protector-all -Wall -Wextra -Wno-format -Wno-sign-compare -Wno-unused-variable -Wno-unused-parameter -Wno-unused-local-typedefs")
+    set (CMAKE_CXX_FLAGS_DEBUG     "-O0 -g -fstack-protector-all -Wall -Wextra -Wno-format -Wno-sign-compare -Wno-unused-variable -Wno-unused-parameter -Wno-unused-local-typedefs")
+    set (CMAKE_Fortran_FLAGS_DEBUG "-O0 -g -Wall -fcheck=all -fstack-protector-all")
   endif ()
 
   if (NOT CMAKE_C_COMPILER_VERSION VERSION_LESS 4.8)
@@ -274,8 +297,8 @@ elseif (CMAKE_C_COMPILER_ID STREQUAL "Intel")
 
   message(STATUS "using INTEL compiler flags")
 
-  set (CMAKE_C_FLAGS        "-align -Wno-unused-variable -mkl -std=c99")
-  set (CMAKE_CXX_FLAGS      "-align -Wno-unused-variable -mkl -std=c++0x")
+  set (CMAKE_C_FLAGS        "-align -Wno-unused-variable -mkl")
+  set (CMAKE_CXX_FLAGS      "-align -Wno-unused-variable -mkl")
   set (CMAKE_Fortran_FLAGS  "-fpp -mkl -align array64byte")
 
   if( PHIST_ENABLE_OPENMP )
@@ -325,8 +348,6 @@ elseif (CMAKE_C_COMPILER_ID STREQUAL "PGI")
 
   message(STATUS "using PGI compiler flags")
 
-  set (CMAKE_C_FLAGS        "-c99")
-  set (CMAKE_CXX_FLAGS      "-std=c++0x")
   set (CMAKE_Fortran_FLAGS  "-Mpreprocess")
   if( PHIST_ENABLE_OPENMP )
     set(PHIST_HAVE_OPENMP 1)
@@ -353,6 +374,40 @@ elseif (CMAKE_C_COMPILER_ID STREQUAL "PGI")
   set (CMAKE_CXX_FLAGS_DEBUG     "-O0")#-O0 -g -Mbounds -Mdwarf3")
   set (CMAKE_Fortran_FLAGS_DEBUG "-O0 -g")#-O0 -g -Mbounds -Mdwarf3")
 
+elseif (CMAKE_C_COMPILER_ID STREQUAL "Clang")
+
+  message(STATUS "using Clang (LLVM) compiler flags")
+
+  set (CMAKE_C_FLAGS        "-std=c99")
+  set (CMAKE_CXX_FLAGS      "-std=c++11")
+  # assume we are using the LLVM Flang compiler (PGI flavour)
+  set (CMAKE_Fortran_FLAGS  "-Mpreprocess -DFLANG")
+  if( PHIST_ENABLE_OPENMP )
+    set(PHIST_HAVE_OPENMP 1)
+    set (CMAKE_C_FLAGS        "${CMAKE_C_FLAGS}       -fopenmp")
+    set (CMAKE_CXX_FLAGS      "${CMAKE_CXX_FLAGS}     -fopenmp")
+    set (CMAKE_Fortran_FLAGS  "${CMAKE_Fortran_FLAGS} -fopenmp")
+  endif()
+
+  if(PHIST_HAVE_MKL)
+    set (CMAKE_C_FLAGS        "${CMAKE_C_FLAGS}       -DMKL_LP64")
+    set (CMAKE_CXX_FLAGS      "${CMAKE_CXX_FLAGS}     -DMKL_LP64")
+  endif()
+
+  # -ffast-math kills high precision stuff!
+  set(FAST_MATH "-fno-math-errno -ffinite-math-only -fno-signed-zeros -fno-trapping-math")
+  set (CMAKE_C_FLAGS_RELEASE        "-O3 ${FAST_MATH} -march=native")
+  set (CMAKE_CXX_FLAGS_RELEASE      "-O2")
+  set (CMAKE_Fortran_FLAGS_RELEASE  "-march=native -O3 ${FAST_MATH}")
+
+  set (CMAKE_C_FLAGS_RELWITHDEBINFO       "${CMAKE_C_FLAGS_RELEASE}       -g")
+  set (CMAKE_CXX_FLAGS_RELWITHDEBINFO     "${CMAKE_CXX_FLAGS_RELEASE}     -g")
+  set (CMAKE_Fortran_FLAGS_RELWITHDEBINFO "${CMAKE_Fortran_FLAGS_RELEASE} -g")
+
+  set (CMAKE_C_FLAGS_DEBUG       "-O0 -g -Wall")
+  set (CMAKE_CXX_FLAGS_DEBUG     "-O0 -g -Wall")
+  set (CMAKE_Fortran_FLAGS_DEBUG "-O0 -g -Mbounds")
+
 else()
 
   message ("compiler ID: " ${CMAKE_C_COMPILER_ID})
@@ -363,6 +418,9 @@ endif ()
 # try to detect if we can use C++11 Lambdas
 include(CheckCXXSourceCompiles)
 include(CheckFortranSourceCompiles)
+
+set(CMAKE_REQUIRED_FLAGS "-std=c++11")
+
 CHECK_CXX_SOURCE_COMPILES("
   int main(int argc, char** argv)
   {
@@ -437,7 +495,7 @@ endif()
 # setup which kernel library is being used.
 ##############################################################################
 
-set(PHIST_KERNEL_LIB "builtin" CACHE STRING "Select underlying kernel libraries for phist (builtin|ghost|epetra|tpetra|magma|petsc|Eigen)")
+set(PHIST_KERNEL_LIB "builtin" CACHE STRING "Select underlying kernel libraries for phist (builtin|ghost|epetra|tpetra|magma|petsc|Eigen|tpetra12)")
 message(STATUS "kernel lib " ${PHIST_KERNEL_LIB} " ...")
 
 set(REQUIRE_TRILI_PKG,"")
@@ -575,7 +633,7 @@ endif()
 ##############################################################################
 # enable single precision and complex valued calculation if supported
 ##############################################################################
-if( "${PHIST_KERNEL_LIB}" MATCHES "tpetra|ghost|magma|petsc|Eigen" )
+if( "${PHIST_KERNEL_LIB}" MATCHES "tpetra|ghost|magma|petsc|Eigen|tpetra12" )
   set(PHIST_SUPPORT_SP ON)
   set(PHIST_SUPPORT_COMPLEX ON)
 else()
@@ -712,7 +770,7 @@ if (PHIST_KERNEL_LIB STREQUAL "epetra")
 endif()
 
 set (PHIST_KRYLOV_SOURCE ${PROJECT_SOURCE_DIR}/src/krylov/phist_simple_arnoldi.cpp
-				                 ${PROJECT_SOURCE_DIR}/src/krylov/phist_simple_lanczos.cpp
+                         ${PROJECT_SOURCE_DIR}/src/krylov/phist_simple_lanczos.cpp
                          ${PROJECT_SOURCE_DIR}/src/krylov/phist_blockedgmres.cpp
                          ${PROJECT_SOURCE_DIR}/src/krylov/phist_blockedqmr.cpp
                          ${PROJECT_SOURCE_DIR}/src/krylov/phist_blockedbicgstab.cpp
@@ -726,11 +784,13 @@ set (PHIST_KRYLOV_SOURCE ${PROJECT_SOURCE_DIR}/src/krylov/phist_simple_arnoldi.c
                          ${PROJECT_SOURCE_DIR}/src/krylov/phist_anasaziD.cpp
                          ${PROJECT_SOURCE_DIR}/src/krylov/phist_anasaziZ.cpp
                          ${PROJECT_SOURCE_DIR}/src/krylov/phist_carp_cg.cpp
+                         ${PROJECT_SOURCE_DIR}/src/krylov/phist_iter_op.cpp
+                         ${PROJECT_SOURCE_DIR}/src/krylov/phist_blockedpcg.cpp
                          )
 if(PHIST_USE_CRAFT)
-	set (PHIST_KRYLOV_SOURCE ${PHIST_KRYLOV_SOURCE}
-				                 ${PROJECT_SOURCE_DIR}/src/krylov/phist_simple_lanczos_ft.cpp
-												 )
+        set (PHIST_KRYLOV_SOURCE ${PHIST_KRYLOV_SOURCE}
+                                                 ${PROJECT_SOURCE_DIR}/src/krylov/phist_simple_lanczos_ft.cpp
+                                                                                                 )
 endif()
 set (PHIST_JADA_SOURCE   ${PROJECT_SOURCE_DIR}/src/jada/phist_jadaOp.cpp
                          ${PROJECT_SOURCE_DIR}/src/jada/phist_jadaOpts.cpp
@@ -752,10 +812,6 @@ set(PHIST_PRECON_SOURCE ${PROJECT_SOURCE_DIR}/src/precon/phist_preconS.cpp
                         ${PROJECT_SOURCE_DIR}/src/precon/phist_preconZ.cpp
                         ${PROJECT_SOURCE_DIR}/src/precon/phist_ilu.cpp
                         )
-set (PHIST_SUPPORT_SOURCE  ${PROJECT_SOURCE_DIR}/src/support/phist_feastCorrectionSolver.cpp
-                           ${PROJECT_SOURCE_DIR}/src/support/phist_iter_op.cpp
-                           )
-
 
 include_directories(${PROJECT_BINARY_DIR})
 include_directories(${PROJECT_SOURCE_DIR}/src/kernels)
@@ -793,17 +849,17 @@ if(PHIST_KERNEL_LIB STREQUAL "Eigen")
 endif()
 
 if (PHIST_USE_CRAFT)
-	find_package(CRAFT REQUIRED)
-	if(CRAFT_FOUND)
-		message (STATUS "CRAFT package is found ${CRAFT_INCLUDE_PATH}")
-		include_directories(${CRAFT_INCLUDE_PATH})
-		link_libraries(${CRAFT_LIBRARIES})
-		set (CMAKE_C_FLAGS        "${CMAKE_C_FLAGS}      ${CRAFT_FLAGS}")
+        find_package(CRAFT REQUIRED)
+        if(CRAFT_FOUND)
+                message (STATUS "CRAFT package is found ${CRAFT_INCLUDE_PATH}")
+                include_directories(${CRAFT_INCLUDE_PATH})
+                link_libraries(${CRAFT_LIBRARIES})
+                set (CMAKE_C_FLAGS        "${CMAKE_C_FLAGS}      ${CRAFT_FLAGS}")
     set (CMAKE_CXX_FLAGS      "${CMAKE_CXX_FLAGS}    ${CRAFT_FLAGS}")
 
-	else()
-		message (STATUS "CRAFT package is NOT found")
-	endif()
+        else()
+                message (STATUS "CRAFT package is NOT found")
+        endif()
 endif()
 
 
@@ -813,9 +869,7 @@ add_library(phist_kernels_${PHIST_KERNEL_LIB} ${PHIST_KERNEL_SOURCE})
 add_library(phist_solvers ${PHIST_KRYLOV_SOURCE} 
                           ${PHIST_JADA_SOURCE})
 add_library(phist_precon ${PHIST_PRECON_SOURCE})
-add_library(phist_support ${PHIST_SUPPORT_SOURCE})
 
-LIST(APPEND library_list phist_support)
 LIST(APPEND library_list phist_solvers)
 LIST(APPEND library_list phist_precon)
 LIST(APPEND library_list phist_core)
@@ -826,7 +880,6 @@ target_link_libraries(phist_kernels_${PHIST_KERNEL_LIB}                         
 target_link_libraries(phist_core                                          phist_kernels_${PHIST_KERNEL_LIB} phist_tools)
 target_link_libraries(phist_precon                             phist_core phist_kernels_${PHIST_KERNEL_LIB} phist_tools)
 target_link_libraries(phist_solvers               phist_precon phist_core phist_kernels_${PHIST_KERNEL_LIB} phist_tools)
-target_link_libraries(phist_support phist_solvers phist_precon phist_core phist_kernels_${PHIST_KERNEL_LIB} phist_tools)
 
 if (MPACK_FOUND)
       target_link_libraries(phist_core ${MPACK_LIBRARIES})
@@ -856,7 +909,7 @@ endif()
 #message(STATUS "GHOST libs: ${GHOST_LIBRARIES}")
 
 if (PHIST_USE_MPACK)
-  find_package (MPACK)
+  find_package (MPACK QUIET)
   if (MPACK_FOUND)
     include_directories(${MPACK_INCLUDE_DIRS})
     link_directories(${MPACK_LIBRARY_DIRS})
@@ -957,7 +1010,7 @@ endforeach()
 #########################################################################################
 
 if (NOT PHIST_USE_TRILINOS_TPLS)
-  set(OPTIONAL_TRILINOS_PKG "")
+  set(OPTIONAL_TRILI_PKG "")
 endif()
 
 foreach(PKG ${OPTIONAL_TRILI_PKG})
@@ -981,6 +1034,18 @@ foreach(PKG ${OPTIONAL_TRILI_PKG})
   message(STATUS ${TPL_REPORT})
 endforeach()
 
+if (PHIST_KERNEL_LIB STREQUAL "tpetra")
+  if ("CUDA" IN_LIST Tpetra_TPL_LIST)
+    # compiling tpetra/kokkos with CUDA is tricky and requires special flags
+    # and a special wrapper script to be used as the MPI C++ compiler
+
+    if (NOT CMAKE_CXX_COMPILER MATCHES "mpicxx" AND "$ENV{OMPI_CXX}" MATCHES "nvcc_wrapper" AND "$ENV{OMPI_MPICXX_CXXFLAGS}" MATCHES "-expt-extended-lambda")
+      message(WARNING "NOTE: in order to compile Tpetra/Kokkos code with CUDA we recommend using OpenMPI"
+                      "      and setting the environment variables CXX=mpicxx, OMPI_CXX=nvcc_wrapper, and OMPI_MPICXX_CXXFLAGS='-std=c++11 -expt-extended-lambda'."
+                      "      The nvcc_wrapper script is installed along with Trilinos. You can unset the OMPI variables after 'make libs' to avoid compiling everytingg with nvcc.")
+    endif()
+  endif()
+endif()
 
 option(PHIST_TIMEMONITOR "Gather detailed function-level timings" On)
 if( PHIST_TIMEMONITOR )
@@ -1021,6 +1086,11 @@ mark_as_advanced(GCOVR_SCRIPT)
 find_program(CPPCHECK_EXECUTABLE cppcheck)
 mark_as_advanced(CPPCHECK_EXECUTABLE)
 if (${INTEGRATION_BUILD})
+    if (CMAKE_C_COMPILER_ID STREQUAL "GNU")
+      set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} --coverage")
+      set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} --coverage")
+      set(CMAKE_Fortran_FLAGS_DEBUG "${CMAKE_Fortran_FLAGS_DEBUG} --coverage")
+    endif()
     set(GCOVR_OPTIONS -r src ${GCOVR_EXCLUDES} --xml -o coverage.xml CACHE STRING "String gcovr options")
     set(CPPCHECK_OPTIONS -j 24 --force --enable=all --suppress=unusedFunction --xml --xml-version=2 -q CACHE_STRING "cppcheck options")
     set(CPPCHECK_OPTIONS_POST 2> cppcheck.xml)
@@ -1119,13 +1189,6 @@ endforeach()
 add_executable(phist_carp_cg ${PROJECT_SOURCE_DIR}/drivers/carp_cg.c)
 target_link_libraries(phist_carp_cg ${library_list})
 
-# these drivers need the feastCorrectionSolver and/or the iter_op
-target_link_libraries(phist_carp_cg phist_support)
-foreach (tc ${TG_Types})
-  target_link_libraries(phist_${tc}krylov_schur phist_support)
-endforeach()
-
-
 install(TARGETS phist_carp_cg RUNTIME DESTINATION bin OPTIONAL)
 
 LIST(APPEND driver_list phist_carp_cg)
@@ -1164,6 +1227,14 @@ configure_package_config_file("${PROJECT_SOURCE_DIR}/phistConfig.cmake.in" "${PR
 write_basic_package_version_file("${PROJECT_BINARY_DIR}/phistConfigVersion.cmake" VERSION ${PHIST_VERSION} COMPATIBILITY SameMajorVersion)
 
 #######################################################################################
+# C++ BINDINGS                                                                        #
+#######################################################################################
+add_subdirectory(cxx_bindings)
+
+# add the C++ headers as a dependency of phist_solvers so that the 'install' target works also with 'make libs'
+add_dependencies(phist_solvers cxx_headers)
+
+#######################################################################################
 # INSTALL                                                                             #
 #######################################################################################
 if (${BUILD_SHARED_LIBS})
@@ -1172,14 +1243,12 @@ if (${BUILD_SHARED_LIBS})
   install(TARGETS phist_core EXPORT phistLibraries LIBRARY DESTINATION ${LIBRARY_INSTALL_DIR})
   install(TARGETS phist_precon EXPORT phistLibraries LIBRARY DESTINATION ${LIBRARY_INSTALL_DIR})
   install(TARGETS phist_solvers EXPORT phistLibraries LIBRARY DESTINATION ${LIBRARY_INSTALL_DIR})
-  install(TARGETS phist_support EXPORT phistLibraries LIBRARY DESTINATION ${LIBRARY_INSTALL_DIR})
 else()
   install(TARGETS phist_kernels_${PHIST_KERNEL_LIB} EXPORT phistLibraries ARCHIVE DESTINATION ${LIBRARY_INSTALL_DIR})
   install(TARGETS phist_tools EXPORT phistLibraries ARCHIVE DESTINATION ${LIBRARY_INSTALL_DIR})
   install(TARGETS phist_core EXPORT phistLibraries ARCHIVE DESTINATION ${LIBRARY_INSTALL_DIR})
   install(TARGETS phist_precon EXPORT phistLibraries ARCHIVE DESTINATION ${LIBRARY_INSTALL_DIR})
   install(TARGETS phist_solvers EXPORT phistLibraries ARCHIVE DESTINATION ${LIBRARY_INSTALL_DIR})
-  install(TARGETS phist_support EXPORT phistLibraries ARCHIVE DESTINATION ${LIBRARY_INSTALL_DIR})
 endif()
 install(FILES ${PROJECT_BINARY_DIR}/phistConfig.cmake        DESTINATION ${LIBRARY_INSTALL_DIR}/cmake/phist)
 #export(EXPORT phistLibraries FILE "${PROJECT_BINARY_DIR}/phistLibraries.cmake")
@@ -1317,6 +1386,8 @@ else()
   set(PHIST_MPI_TEST_NPROCS 1)
 endif()
 
+set(ALL_PHIST_TESTS "")
+
 foreach(np ${PHIST_MPI_TEST_NPROCS})
   math(EXPR TEST_OMP_NUM_THREADS "12/${np}")
   foreach(label ${PHIST_TESTS})
@@ -1329,6 +1400,7 @@ foreach(np ${PHIST_MPI_TEST_NPROCS})
                        ./${PRODUCT_NAME}-${label}-test-${CMAKE_BUILD_TYPE} --gtest_death_test_style=threadsafe --gtest_output=xml:${TEST_OUTPUT_DIR}/xunit.xml)
     endif()
     set(CURRENT_TESTNAME test-${label}_np${np})
+    list(APPEND ALL_PHIST_TESTS ${CURRENT_TESTNAME})
     add_test(NAME ${CURRENT_TESTNAME} COMMAND ${TEST_COMMAND})
     set_tests_properties(${CURRENT_TESTNAME} PROPERTIES PASS_REGULAR_EXPRESSION "[. \n]*PASSED[. \n]*")
     set_tests_properties(${CURRENT_TESTNAME} PROPERTIES FAIL_REGULAR_EXPRESSION "[. \n]*FAILED[. \n]*")
@@ -1369,6 +1441,7 @@ foreach(pyt ${PYTHON_TESTS})
     set(TEST_OUTPUT_DIR ${PROJECT_BINARY_DIR}/test_output_np1/${pyt_name})
     file(MAKE_DIRECTORY ${TEST_OUTPUT_DIR})
     set(TEST_COMMAND py.test -s -v --junitxml ${TEST_OUTPUT_DIR}/xunit.xml --junit-prefix=${CMAKE_BUILD_TYPE} ${pyt})
+    list(APPEND ALL_PHIST_TESTS ${pyt_name})
     add_test(NAME ${pyt_name} COMMAND ${TEST_COMMAND})
     set_tests_properties(${pyt_name} PROPERTIES ENVIRONMENT "LD_LIBRARY_PATH=${CMAKE_CURRENT_BINARY_DIR}:$ENV{LD_LIBRARY_PATH};PYTHONPATH=${PYSTDIR}:${PYTESTDIR}:$ENV{PYTHONPATH};${MPIEXEC_ENVIRONMENT};PHIST_NUM_THREADS=12;OMP_NUM_THREADS=12")    
     if(INTEGRATION_BUILD AND PHIST_KERNEL_LIB STREQUAL "ghost" AND CUDA_LIBRARIES)
@@ -1399,6 +1472,7 @@ foreach(pyt ${PYTHON_TESTS})
     file(MAKE_DIRECTORY ${TEST_OUTPUT_DIR})
     set(TEST_COMMAND ${CMAKE_CURRENT_BINARY_DIR}/py.test --junitxml ${TEST_OUTPUT_DIR}/xunit.xml ./test_phist_drivers.py)
     set(pyt_name "phist_test_drivers_np${PHIST_TEST_DRIVERS_NUM_PROCS}") 
+    list(APPEND ALL_PHIST_TESTS ${pyt_name})
     add_test(NAME ${pyt_name} COMMAND ${TEST_COMMAND})
     set_tests_properties(${pyt_name} PROPERTIES ENVIRONMENT "${MPIEXEC_ENVIRONMENT}; PHIST_NUM_THREADS=2; OMP_NUM_THREADS=2 OMP_SCHEDULE=dynamic,8")
 
@@ -1407,12 +1481,21 @@ foreach(pyt ${PYTHON_TESTS})
   endif()
 endif()
 
+# For Tpetra, add some environment variables to the tests to avoid warnings and errors
+# tpetra/kokkos does not pin the threads from insides and runs into errors with CUDA unless
+# CUDA_LAUNCH_BLOCKING=1 is set.
+if (PHIST_KERNEL_LIB_TPETRA)
+  foreach(item ${ALL_PHIST_TESTS})
+    set_property(TEST ${item} APPEND PROPERTY ENVIRONMENT "OMP_PROC_BIND=1; CUDA_LAUNCH_BLOCKING=1")
+  endforeach()
+endif()
+  
 # Adding custom test target "check" because it is the only way to show the full output of test errors on console
 add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND} ${CTEST_OPTIONS})
 
 # Custom targets: doc, cppcheck, coverage, audit
 # Adding optinal target "doc" to generate Doxygen documentation
-find_package(Doxygen 1.7.0)
+find_package(Doxygen 1.7.0 QUIET)
 if (DOXYGEN_FOUND)
     add_custom_target(doc ${DOXYGEN_EXECUTABLE} ${CMAKE_BINARY_DIR}/phist.doxyfile WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
 endif()

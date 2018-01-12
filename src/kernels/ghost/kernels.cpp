@@ -93,8 +93,10 @@ void get_C_sigma(int* C, int* sigma, int flags, MPI_Comm comm)
       any_GPUs=0;
     }
 
+#ifdef PHIST_HAVE_MPI
     // everyone should have the max value found among MPI processes
     MPI_Allreduce(MPI_IN_PLACE,&any_GPUs,1,MPI_INT,MPI_SUM,comm);
+#endif
   }
 
   // if the user sets both to postive values in the config file (via CMake), respect this choice
@@ -298,29 +300,29 @@ extern "C" void phist_kernels_finalize(int* iflag)
 
 //! simply returns MPI_COMM_WORLD, the only MPI_Comm used in ghost.
 extern "C" void phist_comm_create(phist_comm_ptr* vcomm, int* iflag)
-  {
+{
   *iflag=0;
   // concept doesn't exist in ghost, return MPI_Comm
   MPI_Comm* comm = new MPI_Comm;
   *comm=MPI_COMM_WORLD;
   *vcomm=(phist_comm_ptr)comm;
-  }
+}
 
 //!
 extern "C" void phist_comm_delete(phist_comm_ptr vcomm, int* iflag)
-  {
+{
   *iflag=0;
   PHIST_CAST_PTR_FROM_VOID(MPI_Comm,comm,vcomm,*iflag);
   delete comm;
-  }
+}
 
 //!
 extern "C" void phist_comm_get_rank(phist_const_comm_ptr vcomm, int* rank, int* iflag)
-  {
+{
   *iflag=0;
   PHIST_CAST_PTR_FROM_VOID(MPI_Comm,comm,vcomm,*iflag);
   ghost_rank(rank,*comm);
-  }
+}
 //!
 extern "C" void phist_comm_get_size(phist_const_comm_ptr vcomm, int* size, int* iflag)
   {
@@ -354,8 +356,11 @@ extern "C" void phist_map_create(phist_map_ptr* vmap, phist_const_comm_ptr vcomm
   
   // try to avoid empty partitions if the number of elements is small and the weights are unequal
   int me_empty=(map->dim==0)?1:0,any_empty;
+#ifdef PHIST_HAVE_MPI
   PHIST_CHK_IERR(*iflag=MPI_Allreduce(&me_empty,&any_empty,1,MPI_INT,MPI_SUM,*comm),*iflag);
-  
+#else
+  any_empty=me_empty;
+#endif  
   if (any_empty)
   {
     weight=1.0;

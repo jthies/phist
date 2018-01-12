@@ -10,8 +10,13 @@
 
 #ifdef PHIST_KERNEL_LIB_EPETRA
 #undef PHIST_HAVE_ANASAZI
+#elif defined(PHIST_KERNEL_LIB_TPETRA)
+#include "TpetraCore_config.h"
+# ifndef HAVE_TPETRA_INST_COMPLEX_FLOAT
+# undef PHIST_HAVE_ANASAZI
+# endif
 #endif
-#ifdef PHIST_HAVE_SP
+#if defined(PHIST_HAVE_SP)&&defined(PHIST_HAVE_CMPLX)
 
 #include "phist_tools.h"
 #include "phist_kernels.h"
@@ -58,6 +63,7 @@
 
 // Block Krylov-Schur solver manager from the Anasazi package
 #ifdef PHIST_HAVE_ANASAZI
+
 // adaptation of a basic ortho class from Trili 11.12 to avoid 
 // col-wise norm calculations
 //#include "phist_AnasaziMatOrthoManager.hpp"

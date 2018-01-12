@@ -14,7 +14,7 @@
 //! 
 //! We make use of the apply_shifted function in the given A_op object. To implement
 //! the operation (A+sigma*B)X for B!=I, the A_op should implement this in apply_shifted.
-//! To construct such an operator from two sparseMats, SUBR(linearOp_wrap_sparseMat_pair)
+//! To construct such an operator from two sparseMats, linearOp_wrap_sparseMat_pair
 //! can be used.
 void SUBR(jadaOp_create)(TYPE(const_linearOp_ptr)    AB_op,
                          TYPE(const_linearOp_ptr)     B_op,

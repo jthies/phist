@@ -6,38 +6,24 @@
 /* Contact: Jonas Thies (Jonas.Thies@DLR.de)                                               */
 /*                                                                                         */
 /*******************************************************************************************/
-#ifndef PHIST_JADACORRECTIONSOLVER_H
-#define PHIST_JADACORRECTIONSOLVER_H
-
 #include "phist_config.h"
 
-#ifndef DOXYGEN
+#include "phist_tools.h"
+#include "phist_kernels.h"
+#include "phist_core.h"
+#include "phist_ScalarTraits.hpp"
 
-/* needs to be included before system headers for some intel compilers+mpi */
-#ifdef PHIST_HAVE_MPI
-#include <mpi.h>
-#endif
-#include "phist_void_aliases.h"
-#include "phist_enums.h"
-#include "phist_carp_cg.h"
+#include "phist_iter_op.h"
 
-#endif //DOXYGEN
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-// TODO - for now we only provide the real version of
-// this solver interface, but do allow complex shifts
 #ifdef PHIST_HAVE_SP
 #include "phist_gen_s.h"
-#include "phist_feastCorrectionSolver_decl.h"
+#include "phist_iter_op_def.hpp"
+#include "phist_gen_c.h"
+#include "phist_iter_op_def.hpp"
 #endif
+
 #include "phist_gen_d.h"
-#include "phist_feastCorrectionSolver_decl.h"
+#include "phist_iter_op_def.hpp"
+#include "phist_gen_z.h"
+#include "phist_iter_op_def.hpp"
 
-#include "phist_gen_clean.h"
-
-#ifdef __cplusplus
-}
-#endif
-#endif
