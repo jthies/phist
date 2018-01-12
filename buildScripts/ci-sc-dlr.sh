@@ -18,7 +18,7 @@ WORKSPACE="$PWD/.."
 VECT_EXT="native"
 TRILINOS_VERSION="11.12.1"
 # list of modules to load
-MODULES_BASIC="cmake ccache lapack cppcheck gcovr doxygen"
+MODULES_BASIC="cmake cppcheck gcovr doxygen"
 # GCC_SANITIZE flag for debug mode, disabled for CUDA
 SANITIZER="address"
 
@@ -120,15 +120,21 @@ module list
 # be verbose from here on
 set -x
 
-if [[ "$PRGENV" =~ gcc* ]]; then
-  export FC=gfortran CC=gcc CXX=g++
-  
-  if [[ "${VECT_EXT}" =~ "CUDA" ]]; then
-    ADD_CMAKE_FLAGS+="-DPHIST_USE_CCACHE=OFF"
-    if [[ "${KERNEL_LIB} =~ "tpetra" ]]; then
+if [[ $PRGENV =~ gcc* ]]; then
+  if [[ $KERNEL_LIB =~ tpetra ]] && [[ $VECT_EXT =~ "CUDA" ]]; then
       export CXX=mpicxx
+      export CC=mpicc
       # note: the trilinos module should set OMPI_CXX=nvcc_wrapper for us, phist/cmake will check that
-    fi
+      export OMPI_MPICXX_CXXFLAGS="-expt-extended-lambda"
+  else
+    export FC=gfortran CC=gcc CXX=g++
+  fi
+  module load lapack
+  if [ "${VECT_EXT}" != "CUDA" && "${PRGENV}" != "gcc-7.2.0-openmpi"]; then
+    module load ccache
+    ADD_CMAKE_FLAGS+="-DPHIST_USE_CCACHE=ON"
+  else
+    ADD_CMAKE_FLAGS+="-DPHIST_USE_CCACHE=OFF"
   fi
   if [[ "$PRGENV" =~ gcc-7* ]]; then
     # there's a problem in jada-tests, test STestSchurDecomp* with gcc 7.2.0 and -fsanitize=address, see #218
@@ -174,7 +180,18 @@ cmake -DCMAKE_BUILD_TYPE=Release  \
       ${ADD_CMAKE_FLAGS} \
       ..                                || update_error ${LINENO}
 make doc &> doxygen.log                 || update_error ${LINENO}
-make -j 24 || make                      || update_error ${LINENO}
+make -j 24 libs || make -j 1 libs       || update_error ${LINENO}
+if [[ ${KERNEL_LIB} =~ "tpetra" ]] && [[ ${VECT_EXT} =~ "CUDA" ]]; then
+# use nvcc_wrapper only to build the libs, we do not want any other code to depend on 
+# this kind of tweaks!
+  unset OMPI_CXX
+  unset OMPI_CC
+  unset OMPI_MPICXX_CXXFLAGS
+fi
+
+echo "Make drivers and test executables"
+make -j 24 || make -j 1 || update_error ${LINENO}
+
 echo "Running tests. Output is compressed and written to test.log.gz"
 make check &> test.log                  || update_error ${LINENO}
 if [ "${VECT_EXT}" = "CUDA" ]; then

@@ -30,7 +30,7 @@ code alike */
 #if defined (PHIST_PERFCHECK)
 #define PHIST_PERFWARNING PHIST_WARNING
 #else
-#define PHIST_PERFWARNING PHIST_INFO
+#define PHIST_PERFWARNING PHIST_VERBOSE
 #endif
 
 /* return types */
