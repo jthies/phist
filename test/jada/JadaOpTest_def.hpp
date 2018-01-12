@@ -178,8 +178,8 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,_N_,MATNAME>,
 
 	  TYPE(linearOp) proj_Op;
 	  SUBR(projection_Op_create)(q_, q_, &proj_Op, &iflag_);
-	  ASSERT_EQ(0,iflag_);
-
+	  ASSERT_EQ(0,iflag_);	  
+	  
       SUBR(projection_Op_delete)(&proj_Op, &iflag_);
 	  ASSERT_EQ(0,iflag_);
 	  
@@ -199,7 +199,7 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,_N_,MATNAME>,
 	  TYPE(linearOp) proj_Op;
 	  SUBR(projection_Op_create)(qb_, Bq_, &proj_Op, &iflag_);
 	  ASSERT_EQ(0,iflag_);
-
+	  
       SUBR(projection_Op_delete)(&proj_Op, &iflag_);
 	  ASSERT_EQ(0,iflag_);
 	  
@@ -582,7 +582,7 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,_N_,MATNAME>,
 		SUBR(mvec_add_mvec)(alpha,vec2_,beta,vec3_,&iflag_);
 		ASSERT_EQ(0,iflag_);
 	  
-		ASSERT_NEAR(mt::one(),MvecsEqual(vec1_,vec3_),1000*mt::eps());
+		ASSERT_NEAR(mt::one(),MvecsEqual(vec1_,vec3_),10000*mt::eps());
 	  
 		SUBR(projection_Op_delete)(&proj_Op,&iflag_);
 		ASSERT_EQ(0,iflag_);
