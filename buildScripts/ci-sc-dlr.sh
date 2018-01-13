@@ -73,8 +73,8 @@ declare -A MODULES_KERNELS
 MODULES_KERNELS=( 
   ["builtin"]=""
   ["ghost"]="gsl"
-  ["epetra"]="trilinos/trilinos-${TRILINOS_VERSION}"
-  ["tpetra"]="trilinos/trilinos-${TRILINOS_VERSION}" 
+  ["epetra"]="lapack trilinos/trilinos-${TRILINOS_VERSION}"
+  ["tpetra"]="lapack trilinos/trilinos-${TRILINOS_VERSION}" 
   ["petsc"]="petsc" 
   ["Eigen"]="Eigen" )
 
@@ -130,7 +130,7 @@ if [[ $PRGENV =~ gcc* ]]; then
     export FC=gfortran CC=gcc CXX=g++
   fi
   module load lapack
-  if [ "${VECT_EXT}" != "CUDA" && "${PRGENV}" != "gcc-7.2.0-openmpi"]; then
+  if [[ ${VECT_EXT} != "CUDA" ]] && [[ ${PRGENV} != "gcc-7.2.0-openmpi" ]]; then
     module load ccache
     ADD_CMAKE_FLAGS+="-DPHIST_USE_CCACHE=ON"
   else
