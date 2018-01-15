@@ -104,6 +104,7 @@
       PHIST_SOUT(PHIST_PERFWARNING,"using default implementation of function %s, if this kernel \n"\
                                "figures prominently in your timings, you may want to provide an implementation \n"\
                                "or try a different kernel library.",function_name);\
+      first_time=false;\
     }\
   }
                                                                                         
