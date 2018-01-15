@@ -60,9 +60,11 @@ public:
       PHISTTEST_MVEC_CREATE(&Q_,map_,nq_,&iflag_);
       ASSERT_EQ(0,iflag_);
 
-      SUBR(mvec_random)(vec1_,&iflag_);
+      int v_arg[2]={_N_,_NV_};
+
+      SUBR(mvec_put_func)(vec1_,&PHIST_TG_PREFIX(mvec123func),v_arg,&iflag_);
       ASSERT_EQ(0,iflag_);
-      SUBR(mvec_random)(vec2_,&iflag_);
+      SUBR(mvec_put_func)(vec2_,&PHIST_TG_PREFIX(mvec321func),v_arg,&iflag_);
       ASSERT_EQ(0,iflag_);
       SUBR(mvec_add_mvec)(st::one(),vec2_,st::zero(),vec3_,&iflag_);
       ASSERT_EQ(0,iflag_);
@@ -370,7 +372,7 @@ public:
     A_op.apply(st::one(),A_op.A,vec4_,beta,vec3_,&iflag_);
     ASSERT_EQ(0,iflag_);
 
-    ASSERT_NEAR(mt::one(),MvecsEqual(vec2_,vec3_),1000*VTest::releps());
+    ASSERT_NEAR(mt::one(),MvecsEqual(vec2_,vec3_),50*VTest::releps());
         
     // clean up the operator
     SUBR(linearOp_destroy)(&AA_op,&iflag_);
@@ -402,7 +404,7 @@ public:
     A_op.apply(st::one(),A_op.A,vec5_,beta,vec3_,&iflag_);
     ASSERT_EQ(0,iflag_);
 
-    ASSERT_NEAR(mt::one(),MvecsEqual(vec2_,vec3_),1000*VTest::releps());
+    ASSERT_NEAR(mt::one(),MvecsEqual(vec2_,vec3_),100*VTest::releps());
         
     // clean up the operator
     SUBR(linearOp_destroy)(&AAA_op,&iflag_);
@@ -448,12 +450,12 @@ public:
     AA_op.apply(alpha,AA_op.A,vec1_,beta,vec5_,&iflag_);
     ASSERT_EQ(0,iflag_);	
 	
-    ASSERT_NEAR(mt::one(),MvecsEqual(vec2_,vec3_),1000*VTest::releps());
-    ASSERT_NEAR(mt::one(),MvecsEqual(vec2_,vec4_),1000*VTest::releps());
-    ASSERT_NEAR(mt::one(),MvecsEqual(vec2_,vec5_),1000*VTest::releps());
-    ASSERT_NEAR(mt::one(),MvecsEqual(vec3_,vec4_),1000*VTest::releps());
-    ASSERT_NEAR(mt::one(),MvecsEqual(vec3_,vec5_),1000*VTest::releps());
-    ASSERT_NEAR(mt::one(),MvecsEqual(vec4_,vec5_),1000*VTest::releps());	
+    ASSERT_NEAR(mt::one(),MvecsEqual(vec2_,vec3_),10*VTest::releps());
+    ASSERT_NEAR(mt::one(),MvecsEqual(vec2_,vec4_),10*VTest::releps());
+    ASSERT_NEAR(mt::one(),MvecsEqual(vec2_,vec5_),10*VTest::releps());
+    ASSERT_NEAR(mt::one(),MvecsEqual(vec3_,vec4_),10*VTest::releps());
+    ASSERT_NEAR(mt::one(),MvecsEqual(vec3_,vec5_),10*VTest::releps());
+    ASSERT_NEAR(mt::one(),MvecsEqual(vec4_,vec5_),10*VTest::releps());	
 	
 	// clean up the operator
     SUBR(linearOp_destroy)(&IAA_op,&iflag_);

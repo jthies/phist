@@ -73,8 +73,8 @@ declare -A MODULES_KERNELS
 MODULES_KERNELS=( 
   ["builtin"]=""
   ["ghost"]="gsl"
-  ["epetra"]="trilinos/trilinos-${TRILINOS_VERSION}"
-  ["tpetra"]="trilinos/trilinos-${TRILINOS_VERSION}" 
+  ["epetra"]="lapack trilinos/trilinos-${TRILINOS_VERSION}"
+  ["tpetra"]="lapack trilinos/trilinos-${TRILINOS_VERSION}" 
   ["petsc"]="petsc" 
   ["Eigen"]="Eigen" )
 
@@ -121,7 +121,7 @@ module list
 set -x
 
 if [[ $PRGENV =~ gcc* ]]; then
-  if [[ $KERNEL_LIB =~ tpetra ]] && [[ $VECT_EXT =~ "CUDA" ]]; then
+  if [[ $KERNELS =~ tpetra ]] && [[ $VECT_EXT =~ "CUDA" ]]; then
       export CXX=mpicxx
       export CC=mpicc
       # note: the trilinos module should set OMPI_CXX=nvcc_wrapper for us, phist/cmake will check that
@@ -130,7 +130,7 @@ if [[ $PRGENV =~ gcc* ]]; then
     export FC=gfortran CC=gcc CXX=g++
   fi
   module load lapack
-  if [ "${VECT_EXT}" != "CUDA" && "${PRGENV}" != "gcc-7.2.0-openmpi"]; then
+  if [[ ${VECT_EXT} != "CUDA" ]] && [[ ${PRGENV} != "gcc-7.2.0-openmpi" ]]; then
     module load ccache
     ADD_CMAKE_FLAGS+="-DPHIST_USE_CCACHE=ON"
   else
@@ -181,7 +181,7 @@ cmake -DCMAKE_BUILD_TYPE=Release  \
       ..                                || update_error ${LINENO}
 make doc &> doxygen.log                 || update_error ${LINENO}
 make -j 24 libs || make -j 1 libs       || update_error ${LINENO}
-if [[ ${KERNEL_LIB} =~ "tpetra" ]] && [[ ${VECT_EXT} =~ "CUDA" ]]; then
+if [[ ${KERNELS} =~ "tpetra" ]] && [[ ${VECT_EXT} =~ "CUDA" ]]; then
 # use nvcc_wrapper only to build the libs, we do not want any other code to depend on 
 # this kind of tweaks!
   unset OMPI_CXX
