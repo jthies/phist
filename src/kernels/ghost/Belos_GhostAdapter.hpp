@@ -67,7 +67,12 @@ using ::phist::GhostMV;
   /*!  \brief Template specialization of Belos::MultiVecTraits class using the ghost_densemat class.
 
     This interface will ensure that any ghost_densemat will be accepted by the Belos
-    templated solvers.  */
+    templated solvers.  
+    
+    NOTE: the implementation here is a bit outdated, with our cxx_bindings now it could be done much nicer using 
+    templates directly instead of all the ifs. Also, there is a new mechanism in Belos to provide a multivector class
+    via a factory, that may also be a good idea.
+    */
   template<class Scalar>
   class MultiVecTraits<Scalar, GhostMV >
   {  
@@ -76,6 +81,18 @@ using ::phist::GhostMV;
     typedef ::phist::ScalarTraits<Scalar> st;
     typedef typename st::magn_t magn_t;
     typedef typename Traits<Scalar>::Teuchos_sdMat_t Teuchos_sdMat_t;
+
+  static int GetNumberVecs( const GhostMV& mv )
+  { 
+    return mv.get()->traits.ncols;
+  }
+
+  static ghost_gidx GetGlobalLength( const GhostMV& mv )
+  { 
+    return mv.get()->map->gdim;
+  }
+
+
 
     static Teuchos::RCP<GhostMV > Clone( const GhostMV& mv, const int numvecs )
     {
@@ -252,7 +269,7 @@ using ::phist::GhostMV;
         TEUCHOS_TEST_FOR_EXCEPTION(index.ubound() >= GetNumberVecs(mv),
             std::invalid_argument, 
             os.str() << "Index range exceeds number of vectors " 
-            << GetNumberVecs() << " in the input multivector.");
+            << GetNumberVecs(mv) << " in the input multivector.");
         TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, 
             os.str() << "Should never get here!");
       }
@@ -380,12 +397,6 @@ using ::phist::GhostMV;
     {
     return mv.get()->map->gdim;
   }
-
-  static int GetNumberVecs( const GhostMV& mv )
-  { 
-    return mv.get()->traits.ncols;
-  }
-
 
     static bool HasConstantStride( const GhostMV& mv )
     { return (mv.get()->traits.flags&GHOST_DENSEMAT_SCATTERED==false); }
