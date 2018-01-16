@@ -19,6 +19,7 @@ list (APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/")
 project(phist C CXX Fortran)
 
 option(PHIST_USE_CCACHE "Enable/disable using ccache to speed up repeated builds if you use the GNU compiler and ccache is found." ON)
+option(PHIST_TRY_TO_PIN_THREADS "Try to pin the threads to cores, the exact implementation depends on the kernel library, hence the 'TRY'. A kernel library may or may not bind the threads without further warnings." On)
 
 SET(CMAKE_SKIP_INSTALL_ALL_DEPENDENCY TRUE)
 # here an odd version minor (e.g. 1.1.x, 1.3.x etc.) indicates a development version
@@ -562,7 +563,6 @@ elseif (PHIST_KERNEL_LIB STREQUAL "ghost")
 elseif (PHIST_KERNEL_LIB STREQUAL "builtin")
   set(PHIST_KERNEL_LIB_BUILTIN 1)
   set(PHIST_MVECS_ROW_MAJOR 1)
-  option(PHIST_KERNEL_LIB_BUILTIN_PIN_THREADS "Try to pin the threads to cores using sched_setaffinity (based on simple heuristics; for Intel use env KMP_AFFINITY=\"granularity=fine,compact,1,0\"" On)
   if(PHIST_HAVE_AVX2)
     message(STATUS "Activated experimental high-precision builtin kernel routines!")
     set(PHIST_HIGH_PRECISION_KERNELS 1)

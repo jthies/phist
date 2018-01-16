@@ -151,7 +151,7 @@ kernel libs) ?
 #define PHIST_DEFAULT_SPMV_MODE ${PHIST_DEFAULT_SPMV_MODE}
 #endif
 
-#cmakedefine PHIST_KERNEL_LIB_BUILTIN_PIN_THREADS
+#cmakedefine PHIST_TRY_TO_PIN_THREADS
 
 /* disallow Trilinos versions newer than 11.12.x because they have a
    new interface to Tpetra/Kokkos/TSQR (cf. #124)

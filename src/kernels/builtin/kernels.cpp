@@ -49,7 +49,7 @@ int omp_get_num_threads() {return 1;}
 void omp_set_num_threads(int nt) {return;}
 }
 #endif
-#ifdef PHIST_KERNEL_LIB_BUILTIN_PIN_THREADS
+#ifdef PHIST_TRY_TO_PIN_THREADS
 #include <string>
 #include <map>
 #include <sstream>
@@ -209,7 +209,7 @@ void phist_kernels_init(int* argc, char*** argv, int* iflag)
   }
   
 
-#ifdef PHIST_KERNEL_LIB_BUILTIN_PIN_THREADS
+#ifdef PHIST_TRY_TO_PIN_THREADS
   pinThreads();
 #endif
 
