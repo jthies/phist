@@ -55,10 +55,6 @@ if (SDMAT_sync_dev) { \
   PHIST_CHK_GERR(flag2,*iflag); \
 }
 #endif
-#if defined(PHIST_HAVE_TEUCHOS)&&defined(PHIST_HAVE_KOKKOS)
-template<>
-Teuchos::RCP<node_type> ghost::TsqrAdaptor< _ST_ >::node_=Teuchos::null;
-#endif
 
 using namespace phist::ghost_internal;
 
@@ -1915,152 +1911,11 @@ extern "C" void SUBR(mvec_QR)(TYPE(mvec_ptr) vV, TYPE(sdMat_ptr) vR, int* iflag)
 {
 #include "phist_std_typedefs.hpp"
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
-  *iflag=0;
-  PHIST_CAST_PTR_FROM_VOID(ghost_densemat,V,vV,*iflag);
-  PHIST_CAST_PTR_FROM_VOID(ghost_densemat,R,vR,*iflag);
-
-  int rank;
-  MT rankTol=mt::rankTol();
-  int ncols=V->traits.ncols;
-  if (ncols==1)
-  {
-    // we need a special treatment here because TSQR
-    // uses a relative tolerance to determine rank deficiency,
-    // so a single zero vector is not detected to be rank deficient.
-    PHIST_DEB("mvec_QR: single-vector case\n");
-    MT nrm;
-    PHIST_CHK_IERR(SUBR(mvec_normalize)(vV,&nrm,iflag),*iflag);
-    PHIST_DEB("single vector QR, R=%8.4e\n",nrm);
-    PHIST_CHK_IERR(SUBR(sdMat_put_value)(R,(ST)nrm,iflag),*iflag);
-    rank=1;
-    if (nrm<rankTol)
-    {
-      PHIST_DEB("zero vector detected\n");
-      // randomize the vector
-      PHIST_CHK_IERR(SUBR(mvec_random)(vV,iflag),*iflag);
-      PHIST_CHK_IERR(SUBR(mvec_normalize)(vV,&nrm,iflag),*iflag);
-      PHIST_CHK_IERR(SUBR(sdMat_put_value)(R,st::zero(),iflag),*iflag);
-      rank=0;// dimension of null space
-    }
-    PHIST_CHK_IERR(SUBR(mvec_from_device)(R,iflag),*iflag);
-    *iflag=1-rank;
-    return;
-  }// case ncols=1: normalize single vector
-
-  PHIST_DEB("mvec_QR: multi-vector case\n");
-
-#if defined(PHIST_HAVE_TEUCHOS)&&defined(PHIST_HAVE_KOKKOS)&&defined(HAVE_BELOS_TSQR)
-
-#ifdef GHOST_HAVE_CUDA
-  static int any_cuda=-1;
-  if (any_cuda==-1)
-  {
-    ghost_type ghost_type;
-    PHIST_CHK_GERR(ghost_type_get(&ghost_type),*iflag);
-    int is_cuda=(ghost_type==GHOST_TYPE_CUDA)?1:0;
-#ifdef PHIST_HAVE_MPI
-    MPI_Allreduce(&is_cuda,&any_cuda,1,MPI_INT,MPI_SUM,V->context->mpicomm);
-#else
-    any_cuda=is_cuda;
-#endif
-  }
-  if (any_cuda)
-  {
-    PHIST_CHK_IERR(*iflag=PHIST_NOT_IMPLEMENTED,*iflag);
-  }
-#endif
-
-  //TSQR for row major storage not available yet
-  bool transV=(V->traits.storage==GHOST_DENSEMAT_ROWMAJOR);
-  bool transR=(R->traits.storage==GHOST_DENSEMAT_ROWMAJOR);
-
-  if( transR )
-  {
-    PHIST_CHK_IERR(*iflag=PHIST_NOT_IMPLEMENTED,*iflag);
-  }
-    
-  // Here the actual TSQR call with col-major V and R begins...
-  
-  // TSQR does not do in-place QR, normalize copies the vector. So instead
-  // we copy it ourelves (and memtranspose if in row-major order) and then
-  // call the underlying normalizeOutOfPlace function directly.
-  ghost_densemat* Vcopy=NULL, *Qcopy=NULL;
-  ghost_densemat_traits vtraits = V->traits;
-    vtraits.storage=GHOST_DENSEMAT_COLMAJOR;  
-    vtraits.flags = (ghost_densemat_flags)((int)vtraits.flags & ~(int)GHOST_DENSEMAT_VIEW);
-    //vtraits.flags = (ghost_densemat_flags)((int)vtraits.flags & ~(int)GHOST_DENSEMAT_PERMUTED); // melven: do we need this?
-    //vtraits.ncolsorig=vtraits.ncols;
-    //vtraits.nrowsorig=vtraits.nrows;
-  ghost_densemat_create(&Vcopy,V->map,vtraits);
-  ghost_densemat_create(&Qcopy,V->map,vtraits);
-      
-  {
-    PHIST_ENTER_FCN("TSQR_memtranspose");
-    // this allocates the memory for the vector, copies and memTransposes the data
-    PHIST_CHK_GERR(ghost_densemat_init_densemat(Vcopy,V,0,0),*iflag);
-    // this allocates the result vector
-    ST zero = st::zero();
-    PHIST_CHK_GERR(ghost_densemat_init_val(Qcopy,&zero),*iflag);
-  }
-
-  // wrapper class for ghost_densemat for calling Belos.
-  // The wrapper does not own the vector so it doesn't destroy it.
-  phist::GhostMV mv_V(Vcopy,false);
-  phist::GhostMV mv_Q(Qcopy,false);
-    
-  int nrows = R->map->dim;
-  ncols = R->traits.ncols;
-    
-  PHIST_CHK_IERR(*iflag=nrows-ncols,*iflag);
-  PHIST_CHK_IERR(*iflag=nrows-(V->traits.ncols),*iflag);
-
-  PHIST_DEB("do TSQR on col-major ghost data structures\n");
-  PHIST_DEB("create Teuchos view of R\n");
-  Teuchos::RCP<Traits<_ST_ >::Teuchos_sdMat_t> R_view;
-  PHIST_CHK_IERR(R_view = Traits<_ST_ >::CreateTeuchosViewNonConst
-        (Teuchos::rcp(R,false),iflag),*iflag);
-
-  PHIST_DEB("create TSQR ortho manager\n");  
-  Belos::TsqrOrthoManager<_ST_, phist::GhostMV> tsqr("phist/ghost");
-  Teuchos::RCP<const Teuchos::ParameterList> valid_params = 
-        tsqr.getValidParameters();
-  // faster but numerically less robust settings:
-  Teuchos::RCP<const Teuchos::ParameterList> fast_params = 
-        tsqr.getFastParameters();
-  Teuchos::RCP<Teuchos::ParameterList> params = Teuchos::rcp
-        (new Teuchos::ParameterList(*valid_params));
-  params->set("randomizeNullSpace",true);
-  params->set("relativeRankTolerance",rankTol);
-  PHIST_DEB("set TSQR parameters\n");
-  tsqr.setParameterList(params);
-#if PHIST_OUTLEV>=PHIST_VERBOSE
-  static bool firstCall=true;
-  if (firstCall)
-  {
-    std::stringstream ss;
-    ss << *params;
-    PHIST_SOUT(PHIST_VERBOSE,"TSQR parameters:\n%s\n",ss.str().c_str());
-    firstCall=false;
-  }
-#endif
-
-  {
-    PHIST_ENTER_FCN("TSQR");
-    PHIST_TRY_CATCH(rank = tsqr.normalizeOutOfPlace(mv_V,mv_Q,R_view),*iflag);
-  }
-  PHIST_DEB("V has %d columns and rank %d\n",ncols,rank);
-  {
-    PHIST_ENTER_FCN("TSQR_memtranspose");
-    // copy (and memTranspose back if necessary)
-    PHIST_CHK_GERR(ghost_densemat_init_densemat(V,Qcopy,0,0),*iflag);
-  }
-  ghost_densemat_destroy(Vcopy);
-  ghost_densemat_destroy(Qcopy);
-  *iflag = ncols-rank;// return positive number if rank not full.
-  return;
-#else
-  PHIST_CHK_IERR(*iflag=PHIST_NOT_IMPLEMENTED,*iflag); // no Trilinos, no TSQR, no mvec_QR (right now)
-#endif
+  // note: we had a construct with Trilinos up to 11.12.1 where we 'mem transposed' our
+  // row-major ghost densemat and then called TSR, but it was discontinued because it doesn't
+  // look like there will be real support for TSQR and RM storage in Trilinos, and for all practical
+  // purposes it's faster to just do several sweeps of SVQB or CholQR.
+  PHIST_CHK_IERR(*iflag=PHIST_NOT_IMPLEMENTED,*iflag); 
 }
 
 

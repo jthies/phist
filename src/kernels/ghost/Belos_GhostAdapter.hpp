@@ -39,10 +39,6 @@
 #include <ghost/densemat_rm.h>
 #include <ghost/densemat_cm.h>
 
-#ifdef HAVE_BELOS_TSQR
-#  include <Ghost_TsqrAdaptor.hpp>
-#endif // HAVE_BELOS_TSQR
-
 // this file is mostly copied from the Belos Tpetra adapter implementation in Trilinos 11.2.4
 
 #ifndef CHK_GERR
@@ -747,16 +743,6 @@ using ::phist::GhostMV;
     return Mghost;
   }
 
-
-#ifdef HAVE_BELOS_TSQR
-#ifndef PHIST_HAVE_KOKKOS
-# error "If you use GHOST with Belos, and Belos wants to use TSQR, you should also enable Kokkos."
-#endif
-    /// \typedef tsqr_adaptor_type
-    /// \brief TsqrAdaptor specialization for ghost_densemat
-    ///
-    typedef ghost::TsqrAdaptor<Scalar> tsqr_adaptor_type;
-#endif // HAVE_BELOS_TSQR
 };
 
 } // end of Belos namespace 

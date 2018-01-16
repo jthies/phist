@@ -32,12 +32,6 @@
 #include <limits>
 #include <map>
 
-#if defined(PHIST_HAVE_BELOS)||defined(PHIST_HAVE_KOKKOS)
-# if defined(GHOST_IDX64_LOCAL)
-# warning "The interfaces between GHOST and Belos/TSQR cause problems unless you compile GHOST with LONGIDX_GLOBAL but *without* LONGIDX_LOCAL"
-# endif
-#endif
-
 namespace phist 
 {
 
@@ -270,12 +264,6 @@ extern "C" void phist_kernels_init(int* argc, char*** argv, int* iflag)
   ghost_pumap_string(&str);
   PHIST_ORDERED_OUT(PHIST_INFO,MPI_COMM_WORLD,"%s\n",str);
   free(str); str = NULL;
-
-#if defined(PHIST_HAVE_KOKKOS)&&defined(PHIST_HAVE_BELOS)
-   PHIST_SOUT(PHIST_INFO,"TSQR using node-type %s\n",node_type::name().c_str());
-#else
-   PHIST_SOUT(PHIST_DEBUG,"TSQR not available\n");
-#endif
 
   // initialize ghost's task-queue (required for tasks!)
   // (ghost does this also automatically when enqueuing the first task, but we might use

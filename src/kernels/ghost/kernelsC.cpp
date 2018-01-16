@@ -29,30 +29,6 @@
 
 #include "phist_ghost_internal.h"
 
-#if defined(PHIST_HAVE_KOKKOS)&&defined(PHIST_HAVE_TEUCHOS)
-#include "phist_trilinos_macros.hpp"
-#include "Ghost_TsqrAdaptor.hpp"
-#endif
-
-// these are from Trilinos, we need them to interface
-// the TSQR library for orthogonalizing tall skinny matrices.
-#ifdef PHIST_HAVE_BELOS
-#include "phist_trilinos_macros.hpp"
-#include "Belos_GhostAdapter.hpp"
-# ifdef HAVE_BELOS_TSQR
-# include "BelosTsqrOrthoManager.hpp"
-# endif
-#endif
-
-#ifdef PHIST_HAVE_ANASAZI
-#include "phist_trilinos_macros.hpp"
-#include "Anasazi_GhostAdapter.hpp"
-#include "phist_AnasaziOperatorTraits.hpp"
-#include "AnasaziSVQBOrthoManager.hpp"
-#endif
-
-#include "phist_GhostMV.hpp"
-
 #ifdef PHIST_HAVE_LIKWID
 #include <likwid.h>
 #endif
