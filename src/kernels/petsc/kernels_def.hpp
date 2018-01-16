@@ -23,6 +23,13 @@ extern "C" void SUBR(sparseMat_read_mm)(TYPE(sparseMat_ptr)* A, phist_const_comm
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
 
+  if (filename==NULL)
+  {
+    *iflag=PHIST_INVALID_INPUT;
+    return;
+  }
+
+
   std::string line;
   std::ifstream infile(filename);
   getline(infile, line);
@@ -64,6 +71,13 @@ extern "C" void SUBR(sparseMat_read_mm_with_context)(TYPE(sparseMat_ptr)* vA, ph
         const char* filename,int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
+
+  if (filename==NULL)
+  {
+    *iflag=PHIST_INVALID_INPUT;
+    return;
+  }
+
   PHIST_CAST_PTR_FROM_VOID(Traits<_ST_>::sparseMat_t*,A,vA,*iflag);
   PHIST_CAST_PTR_FROM_VOID(phist::internal::default_context,ctx,vctx,*iflag);
 

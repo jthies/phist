@@ -75,6 +75,12 @@ const char* filename,int* iflag)
 #include "phist_std_typedefs.hpp"
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
 
+  if (filename==NULL)
+  {
+    *iflag=PHIST_INVALID_INPUT;
+    return;
+  }
+
   int iflag_in=*iflag;
   int outlev = *iflag&PHIST_SPARSEMAT_QUIET ? PHIST_DEBUG : PHIST_INFO;
 
@@ -87,11 +93,7 @@ const char* filename,int* iflag)
 PHIST_TASK_DECLARE(ComputeTask)
 PHIST_TASK_BEGIN(ComputeTask)
   PHIST_CAST_PTR_FROM_VOID(const MPI_Comm,comm,vcomm,*iflag);
-  if (filename==NULL)
-  {
-    *iflag=PHIST_INVALID_INPUT;
-    return;
-  }
+
   ghost_sparsemat* mat;
 
   ghost_sparsemat_traits mtraits=(ghost_sparsemat_traits)GHOST_SPARSEMAT_TRAITS_INITIALIZER;
@@ -134,6 +136,12 @@ const char* filename,int* iflag)
 #include "phist_std_typedefs.hpp"
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
 
+  if (filename==NULL)
+  {
+    *iflag=PHIST_INVALID_INPUT;
+    return;
+  }
+
   int iflag_in=*iflag;
   int outlev = *iflag&PHIST_SPARSEMAT_QUIET ? PHIST_DEBUG : PHIST_INFO;
 
@@ -146,11 +154,6 @@ const char* filename,int* iflag)
 PHIST_TASK_DECLARE(ComputeTask)
 PHIST_TASK_BEGIN(ComputeTask)
   PHIST_CAST_PTR_FROM_VOID(const MPI_Comm,comm,vcomm,*iflag);
-  if (filename==NULL)
-  {
-    *iflag=PHIST_INVALID_INPUT;
-    return;
-  }
 
   ghost_sparsemat* mat;
 
@@ -200,16 +203,17 @@ extern "C" void SUBR(sparseMat_read_mm_with_context)(TYPE(sparseMat_ptr)* A, phi
         const char* filename,int* iflag)
 {
   PHIST_ENTER_FCN(__FUNCTION__);
-  int outlev = *iflag&PHIST_SPARSEMAT_QUIET ? PHIST_DEBUG : PHIST_INFO;
-
-PHIST_TASK_DECLARE(ComputeTask)
-PHIST_TASK_BEGIN(ComputeTask)
 
   if (filename==NULL)
   {
     *iflag=PHIST_INVALID_INPUT;
     return;
   }
+  
+  int outlev = *iflag&PHIST_SPARSEMAT_QUIET ? PHIST_DEBUG : PHIST_INFO;
+
+PHIST_TASK_DECLARE(ComputeTask)
+PHIST_TASK_BEGIN(ComputeTask)
 
   ghost_context const* context= (ghost_context const*)ctx;
 

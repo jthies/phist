@@ -16,6 +16,8 @@
 #include "Kokkos_Core.hpp"
 #include "Tpetra_Core.hpp"
 
+#include "Kokkos_hwloc.hpp"
+
 #include "Teuchos_StandardCatchMacros.hpp"
 #include "Teuchos_DefaultComm.hpp"
 #ifdef PHIST_HAVE_MPI
@@ -54,15 +56,37 @@ extern "C" void phist_kernels_init(int* argc, char*** argv, int* iflag)
                         std::getenv("OMP_NUM_THREADS") != nullptr ?
                             std::strtol(std::getenv("OMP_NUM_THREADS"), nullptr, 10) 
                           : 
-                            1;  
+                            -1;  
+
+int numNuma = -1;
+
+#ifdef PHIST_TRY_TO_PIN_THREADS
+if (Kokkos::hwloc::available())
+{
+  // note: by default, Kokkos will use Hyperthreads as well, we don't do that if
+  // the installation gives us the freedom to pin threads.
+  numNuma = Kokkos::hwloc::get_available_numa_count();
+  if (numThreads==-1) numThreads=Kokkos::hwloc::get_available_cores_per_numa()*numNuma;
+}
+#endif
 
 #if TRILINOS_MAJOR_MINOR_VERSION>=121300
-  Kokkos::InitArguments args{numThreads};
+  Kokkos::InitArguments args{numThreads, numNuma};
 #else
-  Kokkos::InitArguments args; args.num_threads=numThreads;
+  Kokkos::InitArguments args; args.num_threads=numThreads; args.num_numa=numNuma;
 #endif
   PHIST_TRY_CATCH(Kokkos::initialize(args), *iflag);
   MPI_Init(argc, argv);
+
+#ifdef PHIST_TRY_TO_PIN_THREADS
+if (Kokkos::hwloc::available() && Kokkos::hwloc::can_bind_threads())
+{
+  PHIST_OUT(PHIST_WARNING,"Tpetra/Kokkos/OpenMP: pinning of threads is not implemented!\n"
+                          "                      Suggesting %d threads, %d NUMA domains on this MPI rank.\n",
+                          numThreads,numNuma);
+  //bool bind_this_thread( const std::pair<unsigned,unsigned> );
+}
+#endif
 
   PHIST_CHK_IERR(phist_kernels_common_init(argc, argv, iflag), *iflag);
 
