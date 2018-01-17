@@ -77,8 +77,8 @@ extern "C" {
 //! but is required.
 void phist_kernels_init(int *argc, char*** argv, int* iflag);
 
-//! finalize kernel library. Should at least call MPI_Finalize if it has not been called
-//! but is required.
+//! finalize kernel library. Should at least call MPI_Finalize if MPI_Init was called
+//! by phist_kernels_init.
 void phist_kernels_finalize(int* iflag);
 
 //! creates a global comm object

@@ -47,6 +47,19 @@ static int myMpiSession = 0;
 
 extern "C" void phist_kernels_init(int* argc, char*** argv, int* iflag)
 {
+
+#ifdef PHIST_HAVE_MPI
+  // initialize MPI if it has not been done before, remember to finalize it
+  // if we did the Init.
+  bool mpi_init_called
+  PHIST_CHK_IERR( *iflag = MPI_Initialized(&mpi_init_called), *iflag);
+  if (!mpi_init_called)
+  {
+    MPI_Init(argc, argv);
+    myMpiSession=true;
+  }
+#endif
+
   // Check if PHIST_NUM_THREADS is set and use it
   // Else do the same for OMP_NUM_THREADS
   // if both are not available, default to 1
@@ -76,8 +89,7 @@ if (Kokkos::hwloc::available())
   Kokkos::InitArguments args; args.num_threads=numThreads; args.num_numa=numNuma;
 #endif
   PHIST_TRY_CATCH(Kokkos::initialize(args), *iflag);
-  MPI_Init(argc, argv);
-
+  
 #ifdef PHIST_TRY_TO_PIN_THREADS
 if (Kokkos::hwloc::available() && Kokkos::hwloc::can_bind_threads())
 {
@@ -95,9 +107,16 @@ if (Kokkos::hwloc::available() && Kokkos::hwloc::can_bind_threads())
             
 extern "C" void phist_kernels_finalize(int* iflag)
 {
+  // this function prints unified timing info etc.
   PHIST_CHK_IERR(phist_kernels_common_finalize(iflag),*iflag);
-  // Does not throw
-  Tpetra::finalize();
+  
+#ifdef PHIST_HAVE_MPI
+  if (myMpiSession)
+  {
+    MPI_Finalize();
+  }
+#endif
+  Kokkos::finalize();
 }
 
 //!
