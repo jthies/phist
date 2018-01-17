@@ -9,7 +9,7 @@
 //! create projected and shifted operator for Jacobi-Davidson,
 //! op*X = (I-BV*V')(A*X+B*X*sigma)(I-V*BV')
 //! by setting the appropriate pointers. No data is copied.
-//! For B_op==NULL, the pre-projection I-V*BV') is
+//! For B_op==NULL, the pre-projection (I-V*BV') is
 //! omitted to save reductions (and BV is ignored).
 //! 
 //! We make use of the apply_shifted function in the given A_op object. To implement
@@ -59,8 +59,27 @@ void SUBR(jadaPrec_create)(TYPE(const_linearOp_ptr) P_op,
 //! the operator is reset to it's original effect.
 void SUBR(jadaOp_set_leftPrecond)(TYPE(linearOp_ptr) jadaOp, TYPE(const_linearOp_ptr) jadaPrec, int* iflag);		
 
-// create projection Operator
-// Y <- alpha*(I - W*V')X + beta*Y
+//! create projection Operator
+//! Y <- alpha*(I - W*V')X + beta*Y
 void SUBR(projection_Op_create)(TYPE(const_mvec_ptr) V, TYPE(const_mvec_ptr) W, TYPE(linearOp_ptr) proj_Op, int* iflag);
 
-void SUBR(projection_Op_delete)(TYPE(linearOp_ptr) proj_Op, int *iflag);					 
+void SUBR(projection_Op_delete)(TYPE(linearOp_ptr) proj_Op, int *iflag);
+
+//! Create projected and shifted operator for Jacobi-Davidson using the linearOp_product_k wrapper
+//! and a variable combination of projections.
+
+//! With method we can choose, which Projections to use:
+//! "NONE": op*X = (A+B*sigma)*X (only shifted operator)
+//! "PRE": op*X = (A+B*sigma)(I-V*BV')*X (with pre-projection)
+//! "POST": op*X = (I-BV*V')(A+B*sigma)*X (with post-projection)
+//! "PRE_POST": op*X = (I-BV*V')(A+B*sigma)(I-V*BV')*X (with pre- and post-projection)
+
+//! not implemented yet:
+//! "SKEW": with skew-projection
+//! "ALL": with pre-, post- and skew-projection
+void SUBR(JadaOp_create_variable)(TYPE(const_linearOp_ptr)    AB_op,
+						 TYPE(const_linearOp_ptr)     Proj_op,
+                         const _ST_            sigma[], int                   nvec,
+                         int* which_apply, TYPE(const_linearOp_ptr)* k_ops,
+                         TYPE(linearOp_ptr)          jdOp, const char* method,
+						 int*                  iflag);					 

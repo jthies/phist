@@ -11,6 +11,8 @@
 
 #include "phist_config.h"
 
+#include "phist_enums.h"
+
 #ifndef DOXYGEN
 
 /* needs to be included before system headers for some intel compilers+mpi */

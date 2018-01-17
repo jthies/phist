@@ -698,4 +698,109 @@ extern "C" void SUBR(projection_Op_create)(TYPE(const_mvec_ptr) V, TYPE(const_mv
 	
 }
 
+// allocate and initialize the jadaOp struct for a variable combination of projections
+extern "C" void SUBR(JadaOp_create_variable)(TYPE(const_linearOp_ptr)    AB_op,
+						 TYPE(const_linearOp_ptr)     Proj_op,
+                         const _ST_            sigma[], int                   nvec,
+                         int* which_apply, TYPE(const_linearOp_ptr)* k_ops,
+                         TYPE(linearOp_ptr)          jdOp, const char* method,
+						 int*                  iflag)
+{
+#include "phist_std_typedefs.hpp"
+  PHIST_ENTER_FCN(__FUNCTION__);
+  *iflag = 0;
+  
+ if(method==NULL)
+  {
+	PHIST_SOUT(PHIST_ERROR,"no method given to %s\n"
+                           "(file %s, line %d)\n",__FUNCTION__,__FILE__,__LINE__);
+  *iflag=-1;
+  return;
+  }
+  
+  int k;
+  phist_Eprojection which_proj = str2projection(method);
+   
+  // case NONE
+  if(which_proj==phist_PROJ_NONE)
+  {
+    k = 1;
+    which_apply = (int*)malloc(k*sizeof(int));
+    which_apply[0] = 2;
+    
+    k_ops = (TYPE(const_linearOp_ptr)*)malloc(k*sizeof(TYPE(const_linearOp_ptr)));
+	k_ops[0] = AB_op;
+
+    PHIST_CHK_IERR(SUBR(linearOp_wrap_linearOp_product_k)(jdOp, k, k_ops,which_apply, sigma, nvec, iflag),*iflag);
+  }	
+  
+  // case PRE
+  else if(which_proj==phist_PROJ_PRE)
+  {
+    k = 2;
+    which_apply = (int*)malloc(k*sizeof(int));
+    which_apply[0] = 2;
+    which_apply[1] = 0;
+    
+    k_ops = (TYPE(const_linearOp_ptr)*)malloc(k*sizeof(TYPE(const_linearOp_ptr)));
+	k_ops[0] = AB_op;
+    k_ops[1] = Proj_op;
+    
+    PHIST_CHK_IERR(SUBR(linearOp_wrap_linearOp_product_k)(jdOp, k, k_ops,which_apply, sigma, nvec, iflag),*iflag);
+  }
+  
+  // case POST
+  else if(which_proj==phist_PROJ_POST)
+  {
+    k = 2;
+    which_apply = (int*)malloc(k*sizeof(int));
+    which_apply[0] = 1;
+    which_apply[1] = 2;
+    
+    k_ops = (TYPE(const_linearOp_ptr)*)malloc(k*sizeof(TYPE(const_linearOp_ptr)));
+	k_ops[0] = Proj_op;
+    k_ops[1] = AB_op;
+    
+    PHIST_CHK_IERR(SUBR(linearOp_wrap_linearOp_product_k)(jdOp, k, k_ops,which_apply, sigma, nvec, iflag),*iflag);
+  }
+  
+  // case PRE_POST
+  else if(which_proj==phist_PROJ_PRE_POST)
+  {
+    int k = 3;
+    which_apply = (int*)malloc(k*sizeof(int));
+    which_apply[0] = 1;
+    which_apply[1] = 2;
+    which_apply[2] = 0;
+    
+    k_ops = (TYPE(const_linearOp_ptr)*)malloc(k*sizeof(TYPE(const_linearOp_ptr)));
+	k_ops[0] = Proj_op;
+    k_ops[1] = AB_op;
+    k_ops[2] = Proj_op;  
+
+    PHIST_CHK_IERR(SUBR(linearOp_wrap_linearOp_product_k)(jdOp, k, k_ops,which_apply, sigma, nvec, iflag),*iflag);  
+  }
+  
+  // case SKEW
+  else if(which_proj==phist_PROJ_SKEW)
+  {
+    *iflag=PHIST_NOT_IMPLEMENTED;
+  }
+  
+  // case ALL
+  else if(which_proj==phist_PROJ_ALL)
+  {
+    *iflag=PHIST_NOT_IMPLEMENTED;
+  }
+  
+  else
+  {
+	PHIST_SOUT(PHIST_ERROR,"there is no such method in %s implemented\n"
+                           "choose between NONE, PRE, POST, PRE_POST, SKEW and ALL\n"
+                           "(file %s, line %d)\n",__FUNCTION__,__FILE__,__LINE__);                     
+  *iflag=-1;
+  return;
+  }
+  
+}
 
