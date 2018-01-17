@@ -1486,7 +1486,7 @@ endif()
 # CUDA_LAUNCH_BLOCKING=1 is set.
 if (PHIST_KERNEL_LIB_TPETRA)
   foreach(item ${ALL_PHIST_TESTS})
-    set_property(TEST ${item} APPEND PROPERTY ENVIRONMENT "OMP_PROC_BIND=1; CUDA_LAUNCH_BLOCKING=1")
+    set_property(TEST ${item} APPEND PROPERTY ENVIRONMENT "OMP_PROC_BIND=false; CUDA_LAUNCH_BLOCKING=1")
   endforeach()
 endif()
   
