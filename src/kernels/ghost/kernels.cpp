@@ -100,6 +100,15 @@ void get_C_sigma(int* C, int* sigma, int flags, MPI_Comm comm)
   *C=PHIST_SELL_C;
   *sigma=PHIST_SELL_SIGMA;
   
+  // workaround for #225: force sigma=1 unless the user provides a matrix (pair) himself, in which case
+  // he or she is responsible for making them consistently ordered.
+  if (*sigma>1)
+  {
+    PHIST_SOUT(PHIST_WARNING,"To avoid possible inconsistent ordering between matrices, we force sigma=1\n"
+                             " right now, see issue #225.\n");
+    *sigma=+1;
+  }
+  
   if (!(flags&PHIST_SPARSEMAT_PERM_LOCAL) ) *sigma=1;
 
   if (*C>0 && *sigma>0) return;
