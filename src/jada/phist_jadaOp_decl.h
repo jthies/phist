@@ -65,6 +65,12 @@ void SUBR(projection_Op_create)(TYPE(const_mvec_ptr) V, TYPE(const_mvec_ptr) W, 
 
 void SUBR(projection_Op_delete)(TYPE(linearOp_ptr) proj_Op, int *iflag);
 
+//! create skew projection Operator for a preconditioner P_op
+//! Y <- (I - P_op\V (BV'P_op\V)^{-1} (BV)') * X
+void SUBR(skew_projection_Op_create)(TYPE(const_linearOp_ptr) P_op,
+        TYPE(const_mvec_ptr) V, TYPE(const_mvec_ptr) BV,
+        TYPE(linearOp_ptr) skew_Op, int* iflag);
+
 //! Create projected and shifted operator for Jacobi-Davidson using the linearOp_product_k wrapper
 //! and a variable combination of projections.
 
@@ -73,13 +79,21 @@ void SUBR(projection_Op_delete)(TYPE(linearOp_ptr) proj_Op, int *iflag);
 //! "PRE": op*X = (A+B*sigma)(I-V*BV')*X (with pre-projection)
 //! "POST": op*X = (I-BV*V')(A+B*sigma)*X (with post-projection)
 //! "PRE_POST": op*X = (I-BV*V')(A+B*sigma)(I-V*BV')*X (with pre- and post-projection)
+//! "SKEW": op*X = (I-(K\V)*((BV)'K\V)^{-1}*(BV)')*(K\+sigma*I)*X (with skew-projection and 
+//! preconditioner K)
+//! "ALL": op*X = P_{skew}*(K\+sigma*I)*P_{proj}^T*(A+B*sigma)*P_{proj}*X (with pre-, post-, 
+//! skew-projection and preconditioner)
 
-//! not implemented yet:
-//! "SKEW": with skew-projection
-//! "ALL": with pre-, post- and skew-projection
+//! onlyPrec will change the methods "SKEW" and "ALL":
+//! onlyPrec == 0: we use skew-projection and preconditioner
+//! onlyPrec == 1: we only use the preconditioner
 void SUBR(JadaOp_create_variable)(TYPE(const_linearOp_ptr)    AB_op,
 						 TYPE(const_linearOp_ptr)     Proj_op,
+                         TYPE(const_linearOp_ptr)     Skew_op,
+                         TYPE(const_linearOp_ptr)     Prec_op,
+                         TYPE(const_mvec_ptr) V, TYPE(const_mvec_ptr) BV,
                          const _ST_            sigma[], int                   nvec,
                          int* which_apply, TYPE(const_linearOp_ptr)* k_ops,
                          TYPE(linearOp_ptr)          jdOp, const char* method,
+                         int onlyPrec,
 						 int*                  iflag);					 

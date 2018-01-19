@@ -116,7 +116,7 @@ void SUBR(jadaOp_apply_project_none)(_ST_ alpha, const void* op, TYPE(const_mvec
   else
   {
 
-    // y_i <- alpha*(A+sigma_i I)*x_i + beta * y_i
+    // y_i <- alpha*(A+sigma_i B)*x_i + beta * y_i
     if (jadaOp->leftPrecon_op==NULL)
     {
       PHIST_CHK_IERR(SUBR(linearOp_apply_shifted)(alpha, jadaOp->AB_op, jadaOp->sigma, X, beta, Y, iflag),*iflag);
@@ -250,7 +250,7 @@ void SUBR(jadaOp_apply_project_post)(_ST_ alpha, const void* op, TYPE(const_mvec
     TYPE(sdMat_ptr) tmp;
     PHIST_CHK_IERR( SUBR( sdMat_create ) (&tmp, nvecp, nvec, comm, iflag), *iflag);
 
-    // y_i <- alpha*(A+sigma_i I)*x_i + beta * y_i
+    // y_i <- alpha*(A+sigma_i B)*x_i + beta * y_i
 {
 PHIST_ENTER_FCN("phist_jadaOp_shifted_A_times_mvec");
     PHIST_CHK_IERR(SUBR(linearOp_apply_shifted)(alpha, jadaOp->AB_op, jadaOp->sigma, X, beta, Y, iflag),*iflag);
@@ -512,7 +512,7 @@ extern "C" void SUBR(jadaPrec_create)(TYPE(const_linearOp_ptr) P_op,
     
     PHIST_CHK_IERR(SUBR(mvecT_times_mvec)(st::one(),BV,PV,st::zero(),BVtPV,iflag),*iflag);
 
-    // compute the *transposed* pseudo-inverse of V'K\V in place
+    // compute the *transposed* pseudo-inverse of (BV)'P\V in place
     PHIST_CHK_IERR(SUBR(sdMat_from_device)(BVtPV,iflag),*iflag);    
     int rank;
     _MT_ rankTol=mt::eps();
@@ -521,7 +521,7 @@ extern "C" void SUBR(jadaPrec_create)(TYPE(const_linearOp_ptr) P_op,
     // explicitly transpose the result
     PHIST_CHK_IERR(SUBR(sdMatT_add_sdMat)(st::one(),BVtPV,st::zero(),M,iflag),*iflag);
 
-    // in-place PV*(V'P\V)^+
+    // in-place PV*((BV)'P\V)^+
     PHIST_CHK_IERR(SUBR(mvec_times_sdMat_inplace)(PV,M,iflag),*iflag);
 
     // use the version with only post-projection by giving B_op==NULL:
@@ -698,12 +698,67 @@ extern "C" void SUBR(projection_Op_create)(TYPE(const_mvec_ptr) V, TYPE(const_mv
 	
 }
 
+extern "C" void SUBR(skew_projection_Op_create)(TYPE(const_linearOp_ptr) P_op,
+        TYPE(const_mvec_ptr) V, TYPE(const_mvec_ptr) BV,
+        TYPE(linearOp_ptr) skew_Op, int* iflag)
+{
+#include "phist_std_typedefs.hpp"
+    PHIST_ENTER_FCN(__FUNCTION__);
+    *iflag = 0;
+    
+    // we always require BV!=NULL, but it may point to the same memory or object in memory as V
+    if (BV==NULL)
+    {
+      PHIST_SOUT(PHIST_ERROR,"jadaPrec_create requires BV if V is given, but it may be the same object or a view \n"
+                             " of the same memory as V\n");
+      *iflag=PHIST_INVALID_INPUT;
+      return;
+    }
+    // construct a skew-projected operator, first we need to construct P\V*(BV'P\V)^{-1}
+    int nproj;
+    PHIST_CHK_IERR(SUBR(mvec_num_vectors)(V,&nproj,iflag),*iflag);
+    if (nproj==0) PHIST_CHK_IERR(*iflag=PHIST_INVALID_INPUT,*iflag);
+    
+    TYPE(mvec_ptr) PV=NULL;
+    PHIST_CHK_IERR(SUBR(mvec_create)(&PV,P_op->domain_map,nproj,iflag),*iflag);
+    PHIST_CHK_IERR(P_op->apply(st::one(),P_op->A,V,st::zero(),PV,iflag),*iflag);
+    TYPE(sdMat_ptr) BVtPV=NULL, M=NULL;
+    phist_const_comm_ptr comm=NULL;
+
+    PHIST_CHK_IERR(phist_map_get_comm(P_op->domain_map,&comm,iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(sdMat_create)(&BVtPV, nproj,nproj,comm,iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(sdMat_create)(&M, nproj,nproj,comm,iflag),*iflag);
+    SdMatOwner<_ST_> _BVtPV(BVtPV), _M(M);
+    
+    PHIST_CHK_IERR(SUBR(mvecT_times_mvec)(st::one(),BV,PV,st::zero(),BVtPV,iflag),*iflag);
+
+    // compute the *transposed* pseudo-inverse of (BV)'P\V in place
+    PHIST_CHK_IERR(SUBR(sdMat_from_device)(BVtPV,iflag),*iflag);    
+    int rank;
+    _MT_ rankTol=mt::eps();
+    PHIST_CHK_IERR(SUBR(sdMat_pseudo_inverse)(BVtPV,&rank,rankTol,iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(sdMat_to_device)(BVtPV,iflag),*iflag);
+    // explicitly transpose the result
+    PHIST_CHK_IERR(SUBR(sdMatT_add_sdMat)(st::one(),BVtPV,st::zero(),M,iflag),*iflag);
+
+    // in-place PV*((BV)'P\V)^+
+    PHIST_CHK_IERR(SUBR(mvec_times_sdMat_inplace)(PV,M,iflag),*iflag);
+
+    PHIST_CHK_IERR(SUBR(projection_Op_create)(PV, BV, skew_Op, iflag),*iflag);
+
+    // todo: we need to delete PV if we destroy the skew-projection Operator
+}
+
 // allocate and initialize the jadaOp struct for a variable combination of projections
 extern "C" void SUBR(JadaOp_create_variable)(TYPE(const_linearOp_ptr)    AB_op,
 						 TYPE(const_linearOp_ptr)     Proj_op,
+                         TYPE(const_linearOp_ptr)     Skew_op,
+                         TYPE(const_linearOp_ptr)     Prec_op,
+                         TYPE(const_mvec_ptr) V, TYPE(const_mvec_ptr) BV,
                          const _ST_            sigma[], int                   nvec,
                          int* which_apply, TYPE(const_linearOp_ptr)* k_ops,
                          TYPE(linearOp_ptr)          jdOp, const char* method,
+                         int onlyPrec,
 						 int*                  iflag)
 {
 #include "phist_std_typedefs.hpp"
@@ -730,8 +785,6 @@ extern "C" void SUBR(JadaOp_create_variable)(TYPE(const_linearOp_ptr)    AB_op,
     
     k_ops = (TYPE(const_linearOp_ptr)*)malloc(k*sizeof(TYPE(const_linearOp_ptr)));
 	k_ops[0] = AB_op;
-
-    PHIST_CHK_IERR(SUBR(linearOp_wrap_linearOp_product_k)(jdOp, k, k_ops,which_apply, sigma, nvec, iflag),*iflag);
   }	
   
   // case PRE
@@ -745,10 +798,8 @@ extern "C" void SUBR(JadaOp_create_variable)(TYPE(const_linearOp_ptr)    AB_op,
     k_ops = (TYPE(const_linearOp_ptr)*)malloc(k*sizeof(TYPE(const_linearOp_ptr)));
 	k_ops[0] = AB_op;
     k_ops[1] = Proj_op;
-    
-    PHIST_CHK_IERR(SUBR(linearOp_wrap_linearOp_product_k)(jdOp, k, k_ops,which_apply, sigma, nvec, iflag),*iflag);
   }
-  
+ 
   // case POST
   else if(which_proj==phist_PROJ_POST)
   {
@@ -760,14 +811,12 @@ extern "C" void SUBR(JadaOp_create_variable)(TYPE(const_linearOp_ptr)    AB_op,
     k_ops = (TYPE(const_linearOp_ptr)*)malloc(k*sizeof(TYPE(const_linearOp_ptr)));
 	k_ops[0] = Proj_op;
     k_ops[1] = AB_op;
-    
-    PHIST_CHK_IERR(SUBR(linearOp_wrap_linearOp_product_k)(jdOp, k, k_ops,which_apply, sigma, nvec, iflag),*iflag);
   }
   
   // case PRE_POST
   else if(which_proj==phist_PROJ_PRE_POST)
   {
-    int k = 3;
+    k = 3;
     which_apply = (int*)malloc(k*sizeof(int));
     which_apply[0] = 1;
     which_apply[1] = 2;
@@ -777,20 +826,72 @@ extern "C" void SUBR(JadaOp_create_variable)(TYPE(const_linearOp_ptr)    AB_op,
 	k_ops[0] = Proj_op;
     k_ops[1] = AB_op;
     k_ops[2] = Proj_op;  
-
-    PHIST_CHK_IERR(SUBR(linearOp_wrap_linearOp_product_k)(jdOp, k, k_ops,which_apply, sigma, nvec, iflag),*iflag);  
   }
   
   // case SKEW
   else if(which_proj==phist_PROJ_SKEW)
   {
-    *iflag=PHIST_NOT_IMPLEMENTED;
+    if(onlyPrec == 1)
+    {
+      k = 2;
+      which_apply = (int*)malloc(k*sizeof(int));
+      which_apply[0] = 2;
+      which_apply[1] = 2;
+    
+      k_ops = (TYPE(const_linearOp_ptr)*)malloc(k*sizeof(TYPE(const_linearOp_ptr)));
+      k_ops[0] = Prec_op;
+      k_ops[1] = AB_op; 
+    }
+    else
+    {
+      k = 3;
+      which_apply = (int*)malloc(k*sizeof(int));
+      which_apply[0] = 0;
+      which_apply[1] = 2;
+      which_apply[2] = 2;
+    
+      k_ops = (TYPE(const_linearOp_ptr)*)malloc(k*sizeof(TYPE(const_linearOp_ptr)));
+      k_ops[0] = Skew_op;
+      k_ops[1] = Prec_op;
+      k_ops[2] = AB_op; 
+    } 
   }
   
   // case ALL
   else if(which_proj==phist_PROJ_ALL)
   {
-    *iflag=PHIST_NOT_IMPLEMENTED;
+    if(onlyPrec == 1)
+    {
+      k = 4;
+      which_apply = (int*)malloc(k*sizeof(int));
+      which_apply[0] = 2;
+      which_apply[1] = 1;
+      which_apply[2] = 2;
+      which_apply[3] = 0;
+    
+      k_ops = (TYPE(const_linearOp_ptr)*)malloc(k*sizeof(TYPE(const_linearOp_ptr)));
+      k_ops[0] = Prec_op;
+      k_ops[1] = Proj_op;
+      k_ops[2] = AB_op;
+      k_ops[3] = Proj_op;
+    }
+    else
+    {
+      k = 5;
+      which_apply = (int*)malloc(k*sizeof(int));
+      which_apply[0] = 0;
+      which_apply[1] = 2;
+      which_apply[2] = 1;
+      which_apply[3] = 2;
+      which_apply[4] = 0;
+    
+      k_ops = (TYPE(const_linearOp_ptr)*)malloc(k*sizeof(TYPE(const_linearOp_ptr)));
+	  k_ops[0] = Skew_op;
+      k_ops[1] = Prec_op;
+      k_ops[2] = Proj_op;
+      k_ops[3] = AB_op;
+      k_ops[4] = Proj_op;
+    }
   }
   
   else
@@ -801,6 +902,8 @@ extern "C" void SUBR(JadaOp_create_variable)(TYPE(const_linearOp_ptr)    AB_op,
   *iflag=-1;
   return;
   }
+  
+  PHIST_CHK_IERR(SUBR(linearOp_wrap_linearOp_product_k)(jdOp, k, k_ops,which_apply, sigma, nvec, iflag),*iflag);
   
 }
 
