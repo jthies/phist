@@ -23,7 +23,8 @@
 #endif
 
 #ifdef __cplusplus
-# include <cstdio>
+#include <cstdio>
+#include <iostream>
 #else
 # include <stdio.h>
 #endif
@@ -81,7 +82,7 @@ const char* phist_kernel_lib();
 
 //! pretty-print process-local strings in order. This function should
 //! not be used directly but via the wrapper macro PHIST_ORDERED_OUT(...)
-int phist_ordered_fprintf(FILE* stream, MPI_Comm comm, const char* fmt, ...);
+int phist_ordered_fprintf(MPI_Comm comm, const char* fmt, ...);
 
 # endif
 

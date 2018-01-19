@@ -18,6 +18,9 @@
 
 #include <algorithm>
 #include <string>
+#include <iostream>
+
+#include <stdio.h>
 
 #include <cstring>
 #include <cstdarg>
@@ -31,6 +34,33 @@ std::string phist_str2upper(const std::string& s)
   std::transform(S.begin(), S.end(), S.begin(), ::toupper);
   return S;
 }
+#ifdef __cplusplus
+  std::ostream* phist_output_stream = &std::cout;
+  extern "C" void PHIST_set_default_output(std::ostream& ostr)
+  {
+    phist_output_stream = &ostr;
+  }
+
+  extern "C" void phist_fprintf(std::string const& msg)
+  {
+    *phist_output_stream << msg << '\n' << std::flush;
+  }
+
+#else
+  FILE* phist_output_stream = stdout;
+  extern "C" void phist_set_default_output(FILE* fp)
+  {
+    phist_output_stream = fp;
+  }
+
+  extern "C" void phist_fprintf(char* const msg)
+  {
+    fprintf(phist_output_stream, msg);
+    fprintf(phist_output_stream, '\n');
+    fflush(phist_output_stream);
+  }
+
+#endif
 
 extern "C" const char* phist_retcode2str(int code)
 {
@@ -269,11 +299,12 @@ thread_local bool phist_CheckKernelFcnNesting::nestedKernelCall_ = false;
 bool phist_CheckKernelFcnNesting::nestedKernelCall_ = false;
 #endif
 
+
 #ifdef PHIST_HAVE_MPI
 //! pretty-print process-local strings in order. This function should
 //! not be used directly but via the wrapper macro PHIST_ORDERED_OUT(...)
 //! the return value is the number of characters contributed by this process.
-extern "C" int phist_ordered_fprintf(FILE* stream, MPI_Comm comm, const char* fmt, ...)
+extern "C" int phist_ordered_fprintf(MPI_Comm comm, const char* fmt, ...)
 {
   int rank, size;
   char *local_string=NULL;
@@ -304,7 +335,7 @@ extern "C" int phist_ordered_fprintf(FILE* stream, MPI_Comm comm, const char* fm
     global_length=char_disps[size];
     if (global_length>1e8)
     {
-      fprintf(stderr,"WARNING: you're gathering a very large string, PHIST_ORDERED_OUT is intended for short messages\n");
+      phist_fprintf("WARNING: you're gathering a very large string, PHIST_ORDERED_OUT is intended for short messages\n");
     }
     global_string=new char[global_length+1];
   }
@@ -315,7 +346,7 @@ extern "C" int phist_ordered_fprintf(FILE* stream, MPI_Comm comm, const char* fm
   if (rank==0)
   {
     global_string[global_length]='\0';
-    fprintf(stream,global_string);
+    phist_fprintf(global_string);
   }
   
   // clean up the mess

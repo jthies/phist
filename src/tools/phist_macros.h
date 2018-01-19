@@ -22,10 +22,29 @@
 #include <cstdio>
 #include <exception>
 #include <string>
+#include <iostream>
 #else
 #include <stdio.h>
 #endif
 #include "phist_defs.h"
+#endif
+
+/* 
+    Global variable that states the stream used for the output stream
+    Users should set this by the function phist_set_default_output(FILE* fp)
+*/
+#ifdef __cplusplus
+  extern std::ostream* phist_output_stream;
+#else
+  extern FILE* phist_output_stream;
+#endif
+
+#ifdef __cplusplus
+  extern "C" void PHIST_set_default_output(std::ostream& ostr);
+  extern "C" void phist_fprintf(std::string const& msg);
+#else
+  void phist_set_default_output(FILE* fp);
+  void phist_fprintf(char* const msg);
 #endif
 
 /* print a warning that an untested / experimental function is called */
@@ -39,35 +58,46 @@
 #ifdef PHIST_HAVE_MPI
 #define PHIST_OUT(level,msg, ...) {\
         if(PHIST_OUTLEV >= level) {\
-                FILE* PHIST_OUT_out= (level<=PHIST_WARNING)? stderr:stdout;\
-                int PHIST_OUT_me,PHIST_OUT_np,PHIST_OUT_ini,PHIST_OUT_fini;\
+                int PHIST_OUT_me, PHIST_OUT_np, PHIST_OUT_ini, PHIST_OUT_fini;\
                 MPI_Initialized(&PHIST_OUT_ini); \
                 if (PHIST_OUT_ini) MPI_Finalized(&PHIST_OUT_fini); \
-                if (PHIST_OUT_ini && (!PHIST_OUT_fini)) { \
-                MPI_Comm_rank(MPI_COMM_WORLD,&PHIST_OUT_me);\
-                MPI_Comm_size(MPI_COMM_WORLD,&PHIST_OUT_np);\
-                } else {PHIST_OUT_me=0; PHIST_OUT_np=1;}\
-                if (PHIST_OUT_np>1) \
-                {fprintf(PHIST_OUT_out,"PE%d: " msg,PHIST_OUT_me,##__VA_ARGS__);}\
-                else \
-                {fprintf(PHIST_OUT_out,msg,##__VA_ARGS__);}\
-                fflush(PHIST_OUT_out);\
+                if (PHIST_OUT_ini && (!PHIST_OUT_fini)) \
+                { \
+                  MPI_Comm_rank(MPI_COMM_WORLD,&PHIST_OUT_me);\
+                  MPI_Comm_size(MPI_COMM_WORLD,&PHIST_OUT_np);\
+                } else \
+                { \
+                  PHIST_OUT_me = 0; \
+                  PHIST_OUT_np=1;  \
+                } \
+                char buffer[1024] = "";\
+                snprintf(buffer, sizeof buffer, msg, ##__VA_ARGS__);\
+                  if (PHIST_OUT_np > 1) \
+                  { \
+                    char p_name_buf[32] = ""; \
+                    snprintf(p_name_buf, sizeof p_name_buf, "PE%d", PHIST_OUT_me); \
+                    phist_fprintf(p_name_buf); \
+                    phist_fprintf(buffer); \
+                  }\
+                  else \
+                  {\
+                    phist_fprintf(buffer);\
+                  }\
         }\
 }
 #else
 #define PHIST_OUT(level,msg, ...) {\
         if(PHIST_OUTLEV >= level) {\
-                FILE* PHIST_OUT_out= (level<=PHIST_WARNING)? stderr:stdout;\
-                fprintf(PHIST_OUT_out,msg,##__VA_ARGS__);\
-                fflush(PHIST_OUT_out);\
-                }\
-        }
+          char buffer[1024] = "";\
+          snprintf(buffer, sizeof buffer, msg, ##__VA_ARGS__);\
+          phist_fprintf(buffer);\
+        }\
+      }
 #endif
 
 #ifdef PHIST_HAVE_MPI
 #define PHIST_SOUT(level,msg, ...) {\
         if(PHIST_OUTLEV >= level) {\
-                FILE* PHIST_OUT_out= (level<=PHIST_WARNING)? stderr:stdout;\
                 int PHIST_OUT_me,PHIST_OUT_ini,PHIST_OUT_fini;\
                 MPI_Initialized(&PHIST_OUT_ini); \
                 if (PHIST_OUT_ini) MPI_Finalized(&PHIST_OUT_fini); \
@@ -75,22 +105,25 @@
                 MPI_Comm_rank(MPI_COMM_WORLD,&PHIST_OUT_me);\
                 } else {PHIST_OUT_me=0;}\
                 if(PHIST_OUT_me==0){\
-                fprintf(PHIST_OUT_out,msg,##__VA_ARGS__);\
-                fflush(PHIST_OUT_out);}\
+                char buffer[1024] = "";\
+                snprintf(buffer, sizeof buffer, msg, ##__VA_ARGS__);\
+                phist_fprintf(buffer);\
         }\
+  }\
 }
+
+
 #define PHIST_ORDERED_OUT(level,mpicomm,msg, ...) { \
         if(PHIST_OUTLEV >= level) {\
-                FILE* PHIST_OUT_out= (level<=PHIST_WARNING)? stderr:stdout;\
-                phist_ordered_fprintf(PHIST_OUT_out,mpicomm,msg,##__VA_ARGS__);\
+                phist_ordered_fprintf(mpicomm,msg,##__VA_ARGS__);\
         }\
-}
+} 
 #else
 #define PHIST_SOUT(level,msg, ...) {\
         if(PHIST_OUTLEV >= level) {\
-                FILE* PHIST_OUT_out= (level<=PHIST_WARNING)? stderr:stdout;\
-                fprintf(PHIST_OUT_out,msg,##__VA_ARGS__);\
-                fflush(PHIST_OUT_out);\
+          char buffer[1024] = "";\
+          snprintf(buffer, sizeof buffer, msg, ##__VA_ARGS__);\
+          phist_fprintf(buffer);\
         }\
 }
 #define PHIST_ORDERED_OUT(level,mpicomm,msg, ...) PHIST_SOUT(level,msg,##__VA_ARGS__);
