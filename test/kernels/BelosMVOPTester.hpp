@@ -102,7 +102,6 @@ namespace Belos {
     using Teuchos::MatrixMarket::details::SetScientific;
     using std::endl;
     typedef MultiVecTraits<ScalarType, MV>    MVT;
-    typedef MultiVecTraitsExt<ScalarType, MV>    MVText;
     typedef Teuchos::ScalarTraits<ScalarType> STS;
     typedef typename STS::magnitudeType       MagType;
 
@@ -245,7 +244,7 @@ namespace Belos {
        Verify:
        1) This number should be strictly positive
     *********************************************************************/
-    if ( MVText::GetGlobalLength(*A) <= 0 ) {
+    if ( MVT::GetGlobalLength(*A) <= 0 ) {
       om->stream(Warnings)
         << "*** ERROR *** MultiVectorTraitsExt::GetGlobalLength()" << endl
         << "Returned <= 0." << endl;
@@ -270,7 +269,7 @@ namespace Belos {
           << "Did not allocate requested number of vectors." << endl;
         return false;
       }
-      if ( MVText::GetGlobalLength(*B) != MVText::GetGlobalLength(*A) ) {
+      if ( MVT::GetGlobalLength(*B) != MVT::GetGlobalLength(*A) ) {
         om->stream(Warnings)
           << "*** ERROR *** MultiVecTraits::Clone()." << endl
           << "Did not allocate requested number of vectors." << endl;
@@ -477,7 +476,7 @@ namespace Belos {
           << "Wrong number of vectors." << endl;
         return false;
       }
-      if ( MVText::GetGlobalLength(*C) != MVText::GetGlobalLength(*B) ) {
+      if ( MVT::GetGlobalLength(*C) != MVT::GetGlobalLength(*B) ) {
         om->stream(Warnings)
           << "*** ERROR *** MultiVecTraits::CloneCopy(ind)." << endl
           << "Vector lengths don't match." << endl;

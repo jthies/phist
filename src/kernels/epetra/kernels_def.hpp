@@ -23,12 +23,12 @@ extern "C" void SUBR(sparseMat_read_mm)(TYPE(sparseMat_ptr)* vA, phist_const_com
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   bool repart = *iflag&PHIST_SPARSEMAT_PERM_GLOBAL;
   *iflag=0;
-  PHIST_CAST_PTR_FROM_VOID(const Epetra_Comm,comm,vcomm,*iflag);
   if (filename==NULL)
   {
     *iflag=PHIST_INVALID_INPUT;
     return;
   }
+  PHIST_CAST_PTR_FROM_VOID(const Epetra_Comm,comm,vcomm,*iflag);
   Epetra_CrsMatrix* A=NULL;
 #if defined(EPETRA_NO_64BIT_GLOBAL_INDICES)||defined(PHIST_FORCE_INT_GIDX)
   *iflag=EpetraExt::MatrixMarketFileToCrsMatrix(filename,*comm,A);
@@ -64,13 +64,13 @@ extern "C" void SUBR(sparseMat_read_mm_with_context)(TYPE(sparseMat_ptr)* vA, ph
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   *iflag=0;
-  PHIST_CAST_PTR_FROM_VOID(const phist::internal::default_context,ctx,vctx,*iflag);
-  PHIST_CAST_PTR_FROM_VOID(const Epetra_Map,map,ctx->row_map,*iflag);
   if (filename==NULL)
   {
     *iflag=PHIST_INVALID_INPUT;
     return;
   }
+  PHIST_CAST_PTR_FROM_VOID(const phist::internal::default_context,ctx,vctx,*iflag);
+  PHIST_CAST_PTR_FROM_VOID(const Epetra_Map,map,ctx->row_map,*iflag);
   Epetra_CrsMatrix* A=NULL;
 #if defined(EPETRA_NO_64BIT_GLOBAL_INDICES)||defined(PHIST_FORCE_INT_GIDX)
   *iflag=EpetraExt::MatrixMarketFileToCrsMatrix(filename,*map,A);

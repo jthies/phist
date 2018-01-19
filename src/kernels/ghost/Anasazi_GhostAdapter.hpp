@@ -34,10 +34,6 @@
 #include "phist_GhostMV.hpp"
 #include "phist_rcp_helpers.hpp"
 
-#ifdef HAVE_ANASAZI_TSQR
-#  include <Ghost_TsqrAdaptor.hpp>
-#endif // HAVE_ANASAZI_TSQR
-
 #include "Belos_GhostAdapter.hpp"
 
 using namespace phist;
