@@ -15,6 +15,10 @@ phist_krylov_decl.hpp
 phist_precon.hpp
 phist_precon_decl.hpp)
 
+foreach (hpp_file ${STATIC_HPP_FILES})
+  configure_file(${PROJECT_SOURCE_DIR}/cxx_bindings/${hpp_file} ${CMAKE_CURRENT_BINARY_DIR} COPYONLY)
+endforeach()
+
 set(ALL_HPP_FILES ${HPP_FILES} ${STATIC_HPP_FILES})
 
 # put correct path into py-script and copy it

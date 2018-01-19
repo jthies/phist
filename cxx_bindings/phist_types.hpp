@@ -6,6 +6,8 @@
 /* Contact: Jonas Thies (Jonas.Thies@DLR.de)                                               */
 /*                                                                                         */
 /*******************************************************************************************/
+#ifndef PHIST_TYPES_HPP
+#define PHIST_TYPES_HPP
 
 #include "phist_typedefs.h"
 #include "phist_ScalarTraits.hpp"
@@ -39,3 +41,4 @@ class types
 };
 
 }
+#endif

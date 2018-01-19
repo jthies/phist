@@ -35,7 +35,7 @@
 #include <BelosTypes.hpp>
 #include <BelosMultiVecTraits.hpp>
 
-#include "phist_GhostMV.hpp"
+#include "phist_BelosMV.hpp"
 #include "phist_rcp_helpers.hpp"
 
 #include <ghost/densemat.h>
@@ -59,25 +59,24 @@
 
 namespace Belos {
 
-using ::phist::GhostMV;
+using ::phist::BelosMV<Scalar>;
 
   ////////////////////////////////////////////////////////////////////
   //
-  // Implementation of the Belos::MultiVecTraits for ghost_densemat.
+  // Implementation of the Belos::MultiVecTraits for phist mvecs.
   //
   ////////////////////////////////////////////////////////////////////
 
   /*!  \brief Template specialization of Belos::MultiVecTraits class using the ghost_densemat class.
 
-    This interface will ensure that any ghost_densemat will be accepted by the Belos
-    templated solvers.  
+    This interface will ensure that any phist mvec will be accepted by the Belos
+    templated solvers, regardless of what kernel library is used.
     
-    NOTE: the implementation here is a bit outdated, with our cxx_bindings now it could be done much nicer using 
-    templates directly instead of all the ifs. Also, there is a new mechanism in Belos to provide a multivector class
-    via a factory, that may also be a good idea.
+    Note: Belos requires 'scattered' views, i.e. views of a certain (possibly discontinuous and permuted) subset of 
+    columns of an mvec, we throw an exception in this interface if such a request is made.
     */
   template<class Scalar>
-  class MultiVecTraits<Scalar, GhostMV >
+  class MultiVecTraits<Scalar, BelosMV<Scalar>  >
   {
   public:
 
@@ -91,7 +90,7 @@ using ::phist::GhostMV;
     typedef typename st::magn_t magn_t;
     typedef typename Traits<Scalar>::Teuchos_sdMat_t Teuchos_sdMat_t;
 
-  static int GetNumberVecs( const GhostMV& mv )
+  static int GetNumberVecs( const BelosMV<Scalar>& mv )
   {
     int iflag=0;
     int nvecs;
@@ -99,12 +98,12 @@ using ::phist::GhostMV;
     return nvecs;
   }
 
-    static int GetVecLength( const GhostMV& mv )
+    static int GetVecLength( const BelosMV<Scalar>& mv )
     {
       return GetGlobalLength(mv);
     }
 
-  static phist_gidx GetGlobalLength( const GhostMV& mv )
+  static phist_gidx GetGlobalLength( const BelosMV<Scalar>& mv )
   {
     int iflag=0;
     phist_gidx nglob;
@@ -114,7 +113,7 @@ using ::phist::GhostMV;
 
 
 
-  static Teuchos::RCP<GhostMV > Clone( const GhostMV& mv, const int numvecs )
+  static Teuchos::RCP<BelosMV<Scalar> > Clone( const BelosMV<Scalar>& mv, const int numvecs )
   {
     int iflag=0;
     phist_const_map_ptr map=nullptr;
@@ -124,7 +123,7 @@ using ::phist::GhostMV;
     return phist::rcp((ghost_densemat*)new_mvec,true);
   }
 
-static Teuchos::RCP<GhostMV > CloneCopy( const GhostMV& mv )
+static Teuchos::RCP<BelosMV<Scalar> > CloneCopy( const BelosMV<Scalar>& mv )
 {
   int iflag=0;
   auto result = Clone(mv,GetNumberVecs(mv));
@@ -132,11 +131,11 @@ static Teuchos::RCP<GhostMV > CloneCopy( const GhostMV& mv )
   return result;
 }
 
-    static Teuchos::RCP<GhostMV > CloneCopy( const GhostMV& mv, const std::vector<int>& index )
+    static Teuchos::RCP<BelosMV<Scalar> > CloneCopy( const BelosMV<Scalar>& mv, const std::vector<int>& index )
     {
       int iflag=0;
       int nvecs=(int)index.size();
-      Teuchos::RCP<GhostMV> result = Clone(mv,nvecs);
+      Teuchos::RCP<BelosMV<Scalar>> result = Clone(mv,nvecs);
 
       bool contig=true;
       for (int j=1; j<nvecs; j++) contig&=(index[j]==index[j-1]+1);
@@ -162,8 +161,8 @@ static Teuchos::RCP<GhostMV > CloneCopy( const GhostMV& mv )
       return result;
     }
 
-    static Teuchos::RCP<GhostMV > 
-    CloneCopy (const GhostMV& mv, 
+    static Teuchos::RCP<BelosMV<Scalar> > 
+    CloneCopy (const BelosMV<Scalar>& mv, 
          const Teuchos::Range1D& index)
     {
       int iflag=0;
@@ -176,16 +175,16 @@ static Teuchos::RCP<GhostMV > CloneCopy( const GhostMV& mv )
     }
 
 
-static Teuchos::RCP<GhostMV > CloneViewNonConst( GhostMV& mv, const std::vector<int>& index )
+static Teuchos::RCP<BelosMV<Scalar> > CloneViewNonConst( BelosMV<Scalar>& mv, const std::vector<int>& index )
 {
   TEUCHOS_TEST_FOR_EXCEPTION(index.size() == 0,std::invalid_argument,
-          "Belos::MultiVecTraits<Scalar,GhostMV>::CloneView(mv,index): numvecs must be greater than zero.");
+          "Belos::MultiVecTraits<Scalar,BelosMV<Scalar>>::CloneView(mv,index): numvecs must be greater than zero.");
   int nvec=(int)index.size();
   bool contig=true;
   for (int j=2; j<nvec; j++) contig&=(index[j] == index[j-1]+1);
         
   TEUCHOS_TEST_FOR_EXCEPTION(!contig,std::invalid_argument,
-          "Belos::MultiVecTraits<Scalar,GhostMV>::CloneView(mv,index): can only view contiguous blocks with PHIST.");
+          "Belos::MultiVecTraits<Scalar,BelosMV<Scalar>>::CloneView(mv,index): can only view contiguous blocks with PHIST.");
     int iflag=0;
     mvec_ptr result=NULL;
     kt::mvec_view_block(mv.get(),&result,index[0],index[nvec-1],&iflag);
@@ -193,8 +192,8 @@ static Teuchos::RCP<GhostMV > CloneViewNonConst( GhostMV& mv, const std::vector<
   }
 
 
-    static Teuchos::RCP<GhostMV > 
-    CloneViewNonConst (GhostMV& mv, 
+    static Teuchos::RCP<BelosMV<Scalar> > 
+    CloneViewNonConst (BelosMV<Scalar>& mv, 
            const Teuchos::Range1D& index)
     {
       int iflag=0;
@@ -204,29 +203,29 @@ static Teuchos::RCP<GhostMV > CloneViewNonConst( GhostMV& mv, const std::vector<
     }
 
 
-    static Teuchos::RCP<const GhostMV > CloneView(const GhostMV& mv, const std::vector<int>& index )
+    static Teuchos::RCP<const BelosMV<Scalar> > CloneView(const BelosMV<Scalar>& mv, const std::vector<int>& index )
     {
       PHIST_ENTER_FCN(__FUNCTION__);    
-      return Teuchos::rcp_dynamic_cast<const GhostMV >
-        (CloneViewNonConst(const_cast<GhostMV&>(mv),index));
+      return Teuchos::rcp_dynamic_cast<const BelosMV<Scalar> >
+        (CloneViewNonConst(const_cast<BelosMV<Scalar>&>(mv),index));
     }
 
-    static Teuchos::RCP<const GhostMV > 
-    CloneView (const GhostMV& mv, 
+    static Teuchos::RCP<const BelosMV<Scalar> > 
+    CloneView (const BelosMV<Scalar>& mv, 
          const Teuchos::Range1D& index)
     {
       PHIST_ENTER_FCN(__FUNCTION__);    
-      return Teuchos::rcp_dynamic_cast<const GhostMV >
-        (CloneViewNonConst(const_cast<GhostMV&>(mv),index));
+      return Teuchos::rcp_dynamic_cast<const BelosMV<Scalar> >
+        (CloneViewNonConst(const_cast<BelosMV<Scalar>&>(mv),index));
     }
 
 
-    static bool HasConstantStride( const GhostMV& mv )
+    static bool HasConstantStride( const BelosMV<Scalar>& mv )
     { return true; }
 
-    static void MvTimesMatAddMv( Scalar alpha, const GhostMV& A, 
+    static void MvTimesMatAddMv( Scalar alpha, const BelosMV<Scalar>& A, 
                                  const Teuchos_sdMat_t& B, 
-                                 Scalar beta, GhostMV& mv )
+                                 Scalar beta, BelosMV<Scalar>& mv )
     {
       ghost_densemat* Bphist=createGhostCopyOfTeuchosSDM(B);
       int iflag=0;
@@ -237,9 +236,13 @@ static Teuchos::RCP<GhostMV > CloneViewNonConst( GhostMV& mv, const std::vector<
     // compute mv = alpha*A + beta*B. This function is abused in Belos by aliasing mv and A 
     // or B, e.g. A = 0*A+1*B instead of A=B. We therefore have to be a bit careful with
     // the memcopy we use if either alpha or beta are 0.
-    static void MvAddMv( Scalar alpha, const GhostMV& A, Scalar beta, const GhostMV& B, GhostMV& mv )
+    static void MvAddMv( Scalar alpha, const BelosMV<Scalar>& A, Scalar beta, const BelosMV<Scalar>& B, BelosMV<Scalar>& mv )
     {
       int iflag=0;
+      if (alpha==st::zero() && beta==st::zero())
+      {
+        kt::mvec_put_value(mv.get(),st::zero(),&iflag);
+      }
       if (mv.get()==A.get())
       {
         kt::mvec_add_mvec(beta,B.get(),alpha,mv.get(),&iflag);
@@ -250,25 +253,33 @@ static Teuchos::RCP<GhostMV > CloneViewNonConst( GhostMV& mv, const std::vector<
       }
       else
       {
-        kt::mvec_add_mvec(alpha,A.get(),st::zero(),mv.get(),&iflag);
-        kt::mvec_add_mvec(beta,B.get(),st::one(),mv.get(),&iflag);
+        Scalar gamma=st::zero();
+        if (alpha!=st::zero())
+        {
+          kt::mvec_add_mvec(alpha,A.get(),gamma,mv.get(),&iflag);
+          gamma=st::one();
+        }
+        if (beta!=st::zero())
+        {
+          kt::mvec_add_mvec(beta,B.get(),gamma,mv.get(),&iflag);
+        }
       }
     }
 
-    static void MvScale ( GhostMV& mv, Scalar alpha )
+    static void MvScale ( BelosMV<Scalar>& mv, Scalar alpha )
     {
       int iflag=0;
       kt::mvec_scale(mv.get(),alpha,&iflag);
     }
 
-    static void MvScale ( GhostMV& mv, const std::vector<Scalar>& alphas )
+    static void MvScale ( BelosMV<Scalar>& mv, const std::vector<Scalar>& alphas )
     {
       int iflag=0;
       kt::mvec_vscale(mv.get(),&alphas[0],&iflag);
     }
 
     // C=alpha*A*B
-    static void MvTransMv( Scalar alpha, const GhostMV& A, const GhostMV& B, Teuchos_sdMat_t& C)
+    static void MvTransMv( Scalar alpha, const BelosMV<Scalar>& A, const BelosMV<Scalar>& B, Teuchos_sdMat_t& C)
     {
       int iflag=0;
       sdMat_ptr C_tmp=NULL;
@@ -291,21 +302,21 @@ static Teuchos::RCP<GhostMV > CloneViewNonConst( GhostMV& mv, const std::vector<
       kt::sdMat_delete(C_tmp,&iflag);
     }
 
-    static void MvDot( const GhostMV& A, const GhostMV& B, std::vector<Scalar> &dots)
+    static void MvDot( const BelosMV<Scalar>& A, const BelosMV<Scalar>& B, std::vector<Scalar> &dots)
     {
       int iflag=0;
       kt::mvec_dot_mvec(A.get(),B.get(),&dots[0],&iflag);          
     }
 
-    static void MvNorm(const GhostMV& mv, std::vector<magn_t> &normvec, NormType type=TwoNorm)
+    static void MvNorm(const BelosMV<Scalar>& mv, std::vector<magn_t> &normvec, NormType type=TwoNorm)
     {
       TEUCHOS_TEST_FOR_EXCEPTION(type != TwoNorm,std::invalid_argument,
-          "Belos::MultiVecTraits<Scalar,GhostMV>::MvNorm(mv,normvec): MvNorm only accepts TwoNorm up to now.");
+          "Belos::MultiVecTraits<Scalar,BelosMV<Scalar>>::MvNorm(mv,normvec): MvNorm only accepts TwoNorm up to now.");
       int iflag=0;
       kt::mvec_norm2(mv.get(),&normvec[0],&iflag);          
     }
 
-    static void SetBlock( const GhostMV& A, const std::vector<int>& index, GhostMV& mv )
+    static void SetBlock( const BelosMV<Scalar>& A, const std::vector<int>& index, BelosMV<Scalar>& mv )
     {
       int iflag=0;
       int nvecs=(int)index.size();
@@ -336,42 +347,42 @@ static Teuchos::RCP<GhostMV > CloneViewNonConst( GhostMV& mv, const std::vector<
     }
 
     static void
-    SetBlock (const GhostMV& A, 
+    SetBlock (const BelosMV<Scalar>& A, 
         const Teuchos::Range1D& index, 
-        GhostMV& mv)
+        BelosMV<Scalar>& mv)
     {
       int iflag=0;
       kt::mvec_set_block(mv.get(),A.get(),(int)index.lbound(),(int)index.ubound(),&iflag);
     }
 
     static void
-    Assign (const GhostMV& A, 
-      GhostMV& mv)
+    Assign (const BelosMV<Scalar>& A, 
+      BelosMV<Scalar>& mv)
     {
       int nvA=GetNumberVecs(A);
       int nvmv=GetNumberVecs(mv);
 
   TEUCHOS_TEST_FOR_EXCEPTION(nvA!=nvmv,std::invalid_argument,
-          "Belos::MultiVecTraits<Scalar,GhostMV>::Assign: mvecs must have same number of columns.");
+          "Belos::MultiVecTraits<Scalar,BelosMV<Scalar>>::Assign: mvecs must have same number of columns.");
 
       int iflag=0;
       kt::mvec_get_block(A.get(),mv.get(),0,nvA-1,&iflag);
     }
 
 
-    static void MvRandom( GhostMV& mv )
+    static void MvRandom( BelosMV<Scalar>& mv )
     { 
       int iflag=0;
       kt::mvec_random(mv.get(),&iflag);
     }
 
-    static void MvInit( GhostMV& mv, Scalar alpha = st::zero() )
+    static void MvInit( BelosMV<Scalar>& mv, Scalar alpha = st::zero() )
     {
       int iflag=0;
       kt::mvec_put_value(mv.get(),alpha,&iflag);
     }
 
-    static void MvPrint( const GhostMV& mv, std::ostream& os )
+    static void MvPrint( const BelosMV<Scalar>& mv, std::ostream& os )
     {
       // TODO - the stream argument is ignored, ghost always prints to stdout
       ghost_densemat* _mv = const_cast<ghost_densemat*>(mv.get());
