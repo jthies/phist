@@ -81,7 +81,7 @@ option(PHIST_BUILTIN_RNG
 # use GHOST if found (must be ON if ghost is the kernel lib)
 option(PHIST_USE_GHOST
         "try to find the GHOST library even if it is not the kernel lib" 
-        ON)
+        OFF)
 
 # try to find MPACK for high precision lapack routines
 option(PHIST_USE_MPACK
@@ -703,7 +703,6 @@ if (PHIST_KERNEL_LIB STREQUAL "builtin")
                           ${PROJECT_SOURCE_DIR}/src/kernels/builtin/spmv_buff_cpy_kernels.f90
                           ${PROJECT_SOURCE_DIR}/src/kernels/builtin/kacz_kernels.f90
                           ${PROJECT_SOURCE_DIR}/src/kernels/builtin/sdmat_module.f90
-                          ${PROJECT_SOURCE_DIR}/src/kernels/trilinos_interface/phist_rcp_helpers.cpp
                           )
   if(PHIST_HIGH_PRECISION_KERNELS)
     set (PHIST_KERNEL_SOURCE ${PHIST_KERNEL_SOURCE}
@@ -729,8 +728,7 @@ else()
                            ${PROJECT_SOURCE_DIR}/drivers/matfuncs/matpde3d.f90
                            ${PROJECT_SOURCE_DIR}/drivers/matfuncs/tritoeplitz.f90
                            ${PROJECT_SOURCE_DIR}/drivers/matfuncs/brussolator.f90
-                           ${PROJECT_SOURCE_DIR}/src/kernels/phist_mpi_kernels.cpp
-                           ${PROJECT_SOURCE_DIR}/src/kernels/trilinos_interface/phist_rcp_helpers.cpp)
+                           ${PROJECT_SOURCE_DIR}/src/kernels/phist_mpi_kernels.cpp)
 endif()
 if (NOT ESSEX-PHYSICS_FOUND)
   LIST(APPEND PHIST_KERNEL_SOURCE ${PROJECT_SOURCE_DIR}/drivers/matfuncs/graphene.c
@@ -824,6 +822,7 @@ include_directories(${PROJECT_SOURCE_DIR}/src/jada)
 include_directories(${PROJECT_SOURCE_DIR}/src/precon)
 include_directories(${PROJECT_SOURCE_DIR}/src/support)
 include_directories(${PROJECT_SOURCE_DIR}/drivers)
+include_directories(${PROJECT_BINARY_DIR}/cxx_bindings)
 
 if(PHIST_KERNEL_LIB STREQUAL "magma")
   find_package(MAGMA REQUIRED)
@@ -1232,7 +1231,7 @@ write_basic_package_version_file("${PROJECT_BINARY_DIR}/phistConfigVersion.cmake
 add_subdirectory(cxx_bindings)
 
 # add the C++ headers as a dependency of phist_solvers so that the 'install' target works also with 'make libs'
-add_dependencies(phist_solvers cxx_headers)
+add_dependencies(phist_kernels_${PHIST_KERNEL_LIB} cxx_headers)
 
 #######################################################################################
 # INSTALL                                                                             #

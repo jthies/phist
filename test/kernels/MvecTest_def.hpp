@@ -1063,8 +1063,6 @@ TEST_F(CLASSNAME,split_and_combine)
 }
 #endif
 
-// only test the Belos interface for ghost, we didn't write
-// the interfaces for Epetra or Tpetra so it is not our problem.
 #ifdef DO_BELOS_TESTS
   // runs all tests from the Belos MvTraits tester
   TEST_F(CLASSNAME, belos_iface)
@@ -1075,11 +1073,10 @@ TEST_F(CLASSNAME,split_and_combine)
         = Teuchos::rcp( new Belos::OutputManager<ST>() );
       MyOM->setVerbosity( Belos::Warnings|Belos::Debug);
 
-      ghost_densemat* v = (ghost_densemat*)vec1_;
-      Teuchos::RCP<phist::GhostMV> ivec = phist::rcp(v,false);
+      Teuchos::RCP< phist::BelosMV< _ST_ > > ivec = phist::mvec_rcp< _ST_ >(vec1_,false);
 
       // test the multivector and its adapter
-      bool berr=Belos::TestMultiVecTraits<ST,phist::GhostMV>(MyOM,ivec,nglob_);
+      bool berr=Belos::TestMultiVecTraits<ST,phist::BelosMV< _ST_ > >(MyOM,ivec,nglob_);
       ASSERT_EQ(true,berr);
     }
   }

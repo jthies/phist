@@ -6,13 +6,8 @@
 /* Contact: Jonas Thies (Jonas.Thies@DLR.de)                                               */
 /*                                                                                         */
 /*******************************************************************************************/
-#if defined PHIST_KERNEL_LIB_BUILTIN
-// use the correct rcp function, this is a bit adhoc
-// and should be implemented nicer
-#define PHIST_rcp phist::PHIST_TG_PREFIX(rcp)
-#else
-#define PHIST_rcp phist::rcp
-#endif
+
+#define PHIST_rcp phist::mvec_rcp< _ST_ >
 
 // Belos: block krylov methods from Trilinos
 extern "C" void SUBR(belos)(TYPE(const_linearOp_ptr) Op, 
@@ -28,19 +23,10 @@ extern "C" void SUBR(belos)(TYPE(const_linearOp_ptr) Op,
   *iflag = PHIST_NOT_IMPLEMENTED;
 #else
 #include "phist_std_typedefs.hpp"  
-#ifdef PHIST_KERNEL_LIB_GHOST
-  typedef ghost_densemat MV;
-  typedef phist::GhostMV BelosMV;
-#elif defined(PHIST_KERNEL_LIB_TPETRA)
-  typedef phist::tpetra::Traits<ST>::mvec_t MV;
-  typedef MV BelosMV;
-#elif defined(PHIST_KERNEL_LIB_EPETRA)
-  typedef Epetra_MultiVector MV; 
-  typedef MV BelosMV;
-#else
+
 typedef st::mvec_t MV;
-typedef phist::MultiVector< _ST_ > BelosMV;
-#endif
+typedef phist::BelosMV< _ST_ > BelosMV;
+
   typedef st::linearOp_t OP; // gives Sop_t, Dop_t etc.
 
   bool status=true;

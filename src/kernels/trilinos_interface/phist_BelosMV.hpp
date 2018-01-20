@@ -6,19 +6,20 @@
 /* Contact: Jonas Thies (Jonas.Thies@DLR.de)                                               */
 /*                                                                                         */
 /*******************************************************************************************/
-#ifndef BELOS_GHOST_MV_HPP
-#define BELOS_GHOST_MV_HPP
+#ifndef BELOS_BELOS_MV_HPP
+#define BELOS_BELOS_MV_HPP
 
 #include "phist_config.h"
-/* needs to be included before system headers for some intel compilers+mpi */
-#ifdef PHIST_HAVE_MPI
-#include <mpi.h>
-#endif
 #include "phist_macros.h"
-#include <ghost.h>
+#include "phist_types.hpp"
+#include "phist_kernels.hpp"
+
+#ifdef PHIST_HAVE_TEUCHOS
+#include "Teuchos_RCP.hpp"
+#endif
 
 #if PHIST_OUTLEV>=PHIST_TRACE
-#define TRACE_GHOSTMV_MEM
+#define TRACE_BELOSMV_MEM
 #endif
 
 
@@ -34,7 +35,7 @@ namespace phist {
 //! Teuchos::RCP<ghost_vec_t> v_ptr        
 //!      =phist::rcp(v);                   
 //!                                        
-//! we derive GhostMV from ghost_vec_t. Be-
+//! we derive BelosMV from ghost_vec_t. Be-
 //! ware that the 'member functions' of    
 //! ghost_vec_t are NULL, however, unless  
 //! you pass the object through            
@@ -50,52 +51,59 @@ namespace phist {
 //! otherwise just the wrapper is deleted. 
 //!                                        
 //! JT 20.11.2013: disabling the feature   
-//! that GhostMV is derived from ghost_vec 
+//! that BelosMV is derived from ghost_vec 
 //! because it leads ot confusion and bugs.
 //! Use phist::rcp(ghost_vec_t*) to get an 
-//! RCP<GhostMV> instead, and phist::ref2ptr
+//! RCP<BelosMV> instead, and phist::ref2ptr
 //! in order to get a ghost_vec_t* from a  
-//! GhostMV object (or whatever the underly-
+//! BelosMV object (or whatever the underly-
 //! ing kernel lib uses as vector format).
-class GhostMV
-  {
+template<typename Scalar>
+class BelosMV
+{
   public:
+  
+  typedef typename phist::types<Scalar>::mvec_ptr mvec_ptr;
+  typedef typename phist::types<Scalar>::const_mvec_ptr const_mvec_ptr;
+  typedef phist::kernels<Scalar> kt;
+  
   //!
-  GhostMV(ghost_densemat* v_in, bool ownMem)
-    {
+  BelosMV(mvec_ptr v_in, bool ownMem)
+  {
     v_=v_in;
     ownMem_=ownMem;
     
-#ifdef TRACE_GHOSTMV_MEM
+#ifdef TRACE_BELOSMV_MEM
     myID=countObjects++;
-    PHIST_OUT(PHIST_INFO,"### Create GhostMV #%d, ownMem=%d\n",myID,ownMem);
+    PHIST_OUT(PHIST_INFO,"### Create BelosMV #%d, ownMem=%d\n",myID,ownMem);
 #else
     myID=-1;
 #endif
-    }
+  }
   
   //!
-  virtual ~GhostMV()
-    {
-#ifdef TRACE_GHOSTMV_MEM
+  virtual ~BelosMV()
+  {
+#ifdef TRACE_BELOSMV_MEM
     if (ownMem_)
-      {
-      PHIST_OUT(PHIST_INFO,"### Delete GhostMV #%d\n",myID);
-      }
+    {
+      PHIST_OUT(PHIST_INFO,"### Delete BelosMV #%d\n",myID);
+    }
     else
-      {
-      PHIST_OUT(PHIST_INFO,"### Delete view GhostMV #%d\n",myID);
-      }
+    {
+      PHIST_OUT(PHIST_INFO,"### Delete view BelosMV #%d\n",myID);
+    }
 #endif
     if (ownMem_)
-      {
-      ghost_densemat_destroy(this->get());
+    {
+      int iflag=0;
+      kt::mvec_delete(this->get(),&iflag);
       this->v_=NULL;
-      }
     }
+  }
 
   //!
-  ghost_densemat* get()
+  mvec_ptr get()
     {
     if (v_!=NULL) 
       {
@@ -105,7 +113,7 @@ class GhostMV
     }
 
   //!
-  const ghost_densemat* get() const
+  const_mvec_ptr get() const
     {
     if (v_!=NULL) 
       {
@@ -117,17 +125,17 @@ class GhostMV
 protected:
 
   //! disallow default constructor
-  GhostMV();
+  BelosMV()=delete;
   
   //! disallow copy constructor
-  GhostMV(const GhostMV& v);
+  BelosMV(const BelosMV<Scalar>& v)=delete;
   
   //! disallow assignment operator
-  GhostMV& operator=(const GhostMV& v);
+  BelosMV<Scalar>& operator=(const BelosMV<Scalar>& v)=delete;
   
   
   //! the wrapped object
-  ghost_densemat* v_;
+  mvec_ptr v_;
 
   //! are we allowed to delete the vector?
   bool ownMem_;
@@ -135,9 +143,30 @@ protected:
   // give each newly created object a label so we can track where they are destroyed 
   static int countObjects;
 
-  // label of this object for TRACE_GHOSTMV_MEM
+  // label of this object for TRACE_BELOSMV_MEM
   int myID;
-  };
+};
+
+#ifdef PHIST_HAVE_TEUCHOS
+
+//! this function is used to easily create the wrapper object from a raw pointer,
+// similar to Teuchos::rcp. You do have to explicitly give the scalar type, though,
+// because all phist objects are passed around as void pointers. So phist::mvec_rcp<double>(V,true/false)
+// instead of just rcp(V,true/false)
+template<typename Scalar>
+Teuchos::RCP<BelosMV<Scalar> > mvec_rcp(typename phist::types<Scalar>::mvec_ptr V, bool own_mem)
+{
+  return Teuchos::rcp(new BelosMV<Scalar>(V,own_mem),true);
+}
+
+//!
+template<typename Scalar>
+Teuchos::RCP<const BelosMV<Scalar> > mvec_rcp(typename phist::types<Scalar>::const_mvec_ptr V, bool own_mem)
+{
+  return Teuchos::rcp(new BelosMV<Scalar>(const_cast<typename phist::types<Scalar>::mvec_ptr>(V),false),true);
+}
+
+#endif /* PHIST_HAVE_TEUCHOS */
 
 } //namespace phist
 

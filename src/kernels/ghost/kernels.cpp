@@ -20,7 +20,6 @@
 #include "typedefs.hpp"
 
 #include "phist_ghost_internal.h"
-#include "phist_GhostMV.hpp"
 
 #include <ghost.h>
 #include <ghost/machine.h>
@@ -34,8 +33,6 @@
 
 namespace phist 
 {
-
-  int GhostMV::countObjects=0;
 
   namespace ghost_internal
   {

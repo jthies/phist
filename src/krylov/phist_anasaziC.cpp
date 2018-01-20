@@ -8,15 +8,9 @@
 /*******************************************************************************************/
 #include "phist_config.h"
 
-#ifdef PHIST_KERNEL_LIB_EPETRA
-#undef PHIST_HAVE_ANASAZI
-#elif defined(PHIST_KERNEL_LIB_TPETRA)
-#include "TpetraCore_config.h"
-# ifndef HAVE_TPETRA_INST_COMPLEX_FLOAT
-# undef PHIST_HAVE_ANASAZI
-# endif
-#endif
 #if defined(PHIST_HAVE_SP)&&defined(PHIST_HAVE_CMPLX)
+
+#ifdef PHIST_HAVE_ANASAZI
 
 #include "phist_tools.h"
 #include "phist_kernels.h"
@@ -24,12 +18,6 @@
 #include "phist_ScalarTraits.hpp"
 #include "phist_anasazi.h"
 
-#ifdef PHIST_HAVE_ANASAZI
-
-// this solver is to unstable right now, it doesn't compile with Trilinos 12.x if TSQR is enabled
-//#define PHIST_HAVE_ANASAZI_TRACEMIN_DAVIDSON
-
-#include "phist_rcp_helpers.hpp"
 #include "phist_AnasaziOperatorTraits.hpp"
 
 // Trilinos stuff
@@ -45,38 +33,13 @@
 // to clash in Trilinos 12.2.1
 #include "Belos_config.h"
 
-# ifdef PHIST_KERNEL_LIB_GHOST
-#  include "ghost.h"
-#  include "Belos_GhostAdapter.hpp"
-#  include "Anasazi_GhostAdapter.hpp"
-#  include "AnasaziEpetraAdapter.hpp"
-# elif defined(PHIST_KERNEL_LIB_TPETRA)
-#  include "Tpetra_MultiVector.hpp"
-#  include "BelosTpetraAdapter.hpp"
-#  include "AnasaziTpetraAdapter.hpp"
-#  include "phist_tpetra_typedefs.hpp"
-# else
-#  warning "Anasazi not supported for this kernel lib"
-#  undef PHIST_HAVE_ANASAZI
-# endif
-#endif
+#include "Belos_PhistAdapter.hpp"
+#include "Anasazi_PhistAdapter.hpp"
 
-// Block Krylov-Schur solver manager from the Anasazi package
-#ifdef PHIST_HAVE_ANASAZI
-
-// adaptation of a basic ortho class from Trili 11.12 to avoid 
-// col-wise norm calculations
-//#include "phist_AnasaziMatOrthoManager.hpp"
 #include "AnasaziBasicEigenproblem.hpp"
 #include "AnasaziSolverManager.hpp"
-/* use our own adaptation of this file from Trilinos 11.12.1 because 
- * the original did not support TSQR
- */
-/*#include "phist_AnasaziBlockKrylovSchurSolMgr.hpp"*/
 #include "AnasaziBlockKrylovSchurSolMgr.hpp"
-# ifdef PHIST_HAVE_ANASAZI_TRACEMIN_DAVIDSON
-# include "AnasaziTraceMinDavidsonSolMgr.hpp"
-# endif
+#include "AnasaziTraceMinDavidsonSolMgr.hpp"
 #endif
 
 #include "phist_gen_c.h"
