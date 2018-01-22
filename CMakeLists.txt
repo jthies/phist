@@ -1286,14 +1286,16 @@ if( "${CMAKE_BUILD_TYPE}" MATCHES "Release" )
                   krylov
                   jada
                   bench
-                  precon)
+                  precon
+                  tools)
 else()
   set(PHIST_TESTS task
                   kernels
                   core
                   krylov
                   jada
-                  precon)
+                  precon
+                  tools)
 endif()
 
 foreach(label ${PHIST_TESTS})
