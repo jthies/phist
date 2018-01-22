@@ -105,27 +105,20 @@ using namespace testing;
 
 
 // the Belos Tester selects the number of vectors itself,
-// it is enough to test it for one vector length, I think
-#ifdef PHIST_KERNEL_LIB_GHOST
-# ifdef PHIST_HAVE_BELOS
-// ghost views of mvecs are not general enough to pass these
-// tests for row-major ordering, however, in our own adapted
-// version of the MVOPTester, we use only ascending col in- 
-// dices, which should work with scattered views in GHOST.
-//#  ifndef PHIST_MVECS_ROW_MAJOR
-# ifndef GHOST_HAVE_CUDA
-// these tests are a bit too hard for GHOST/CUDA up to now,
-// even with our adjustments. We disable them for now because
-// scattered views are not important for PHIST
-#  define DO_BELOS_TESTS
-# endif
-#  include "phist_GhostMV.hpp"
-#  include "phist_rcp_helpers.hpp"
-#  include "Belos_GhostAdapter.hpp"
+// it is enough to test it for one vector length, I think.
+#ifdef PHIST_HAVE_BELOS
+// phist views of mvecs are not general enough to pass these
+// tests (missing 'scattered views'), however, in our own adapted
+// version of the MVOPTester, we use only contiguous col in- 
+// dices, which should work with any kernel library.
+# define DO_BELOS_TESTS
+# include "Teuchos_RCP.hpp"
+# include "phist_BelosMV.hpp"
+# include "Belos_PhistAdapter.hpp"
+# include "phist_BelosOperatorTraits.hpp"
+#
 #  include "./BelosMVOPTester.hpp"
 #  include "BelosOutputManager.hpp"
-//      #  endif
-# endif
 #endif
 
 

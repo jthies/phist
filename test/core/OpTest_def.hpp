@@ -148,29 +148,10 @@ public:
       // TODO setup necessary arguments for jadaOp: AX, work
       PHIST_ICHK_IERR(SUBR(jadaOp_create)(op,NULL,Q_,NULL,sigma,nq_,&jdOp,&iflag_),iflag_);
       Teuchos::RCP<const TYPE(linearOp)> jdOp_ptr=Teuchos::rcp(&jdOp,false);
-#ifdef PHIST_KERNEL_LIB_GHOST
-      ghost_densemat* v = (ghost_densemat*)vec1_;
-      Teuchos::RCP<const phist::GhostMV> V = phist::rcp(v,false);
+
+      Teuchos::RCP<const phist::BelosMV< _ST_ > > V = phist::mvec_rcp< _ST_ >(vec1_,false);
       if (Belos::TestOperatorTraits(MyOM,V,op_ptr)==false) {iflag_=-1; return iflag_;}
-#elif defined(PHIST_KERNEL_LIB_EPETRA)
-      Epetra_MultiVector* v = (Epetra_MultiVector*)vec1_;
-      Teuchos::RCP<const Epetra_MultiVector> V = phist::rcp(v,false);
-      if (Belos::TestOperatorTraits(MyOM,V,op_ptr)==false) {iflag_=-1; return iflag_;}
-#elif defined(PHIST_KERNEL_LIB_TPETRA__disabled)
-# if defined(IS_COMPLEX)&&!defined(HAVE_TEUCHOS_COMPLEX)
-  /* missing data type in Trilinos installation */
-  return 0;
-# elif !defined(IS_DOUBLE)&&!defined(HAVE_TEUCHOS_FLOAT)
-  /* missing data type in Trilinos installation */
-  return 0;
-# else      
-      phist::tpetra::Traits<ST>::mvec_t* v = (phist::tpetra::Traits<ST>::mvec_t*)vec1_;
-      Teuchos::RCP<const phist::tpetra::Traits<ST>::mvec_t> V = Teuchos::rcp(v,false);
-      if (Belos::TestOperatorTraits(MyOM,V,op_ptr)==false) {iflag_=-1; return iflag_;}
-# endif
-#else
-#warning belos test case not implemented for this kernel lib (OpTest_def_hpp)
-#endif
+
 // note: we can't test the jadaOp in this way because it operates on a fixed number of 
 // vectors and the Belos test assumes it works for any number of vectors.
 //      if (Belos::TestOperatorTraits(MyOM,V,jdOp_ptr)==false) {iflag_=-2; return iflag_;}

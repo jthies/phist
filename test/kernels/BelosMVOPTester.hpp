@@ -206,15 +206,16 @@ namespace Belos {
        these are ordered or even distinct.
        Also retrieve the edges.
 
-       However, to spice things up, grab the first std::vector,
-       last std::vector, and choose the others randomly.
+       Belos asks for a general 'scattered' view here,
+       but we only support contiguous views in phist, 
+       so I adjusted the test (Jonas)
     */
     TEUCHOS_TEST_FOR_EXCEPT(numvecs_2 != 5);
-    ind[0] = 0;
-    ind[1] = 2;
+    ind[0] = 2;
+    ind[1] = 3;
     ind[2] = 4;
     ind[3] = 5;
-    ind[4] = 9;
+    ind[4] = 6;
 
     /*********** GetNumberVecs() *****************************************
        Verify:
