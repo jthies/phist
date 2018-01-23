@@ -179,11 +179,7 @@ public:
 
 
 #if defined(PHIST_HAVE_BELOS)
-#ifdef PHIST_KERNEL_LIB_GHOST
-  TEST_F(CLASSNAME, DISABLED_belos_opTests) 
-#else
   TEST_F(CLASSNAME, belos_opTests) 
-#endif
   {
     if (typeImplemented_ && !problemTooSmall_)
     {
