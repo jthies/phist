@@ -36,14 +36,33 @@ std::string phist_str2upper(const std::string& s)
 }
 #ifdef __cplusplus
   std::ostream* phist_output_stream = &std::cout;
-  extern "C" void PHIST_set_default_output(std::ostream& ostr)
+  extern void phist_set_default_output(std::ostream& ostr)
   {
     phist_output_stream = &ostr;
   }
 
-  extern "C" void phist_fprintf(std::string const& msg)
+  extern void phist_fprintf(char* msg, ...)
   {
-    *phist_output_stream << msg << '\n' << std::flush;
+    va_list args;
+    va_start(args, msg);
+
+    // For most small outputs, 1023 chars + '\0' should be enough
+    char buffer[1024] = "";
+    int text_size = 0;
+    if ((text_size = vsnprintf(buffer, sizeof buffer, msg, args)) < 1024)
+    {
+      // Output fits in buffer
+      *phist_output_stream << buffer << '\n' << std::flush;
+      return;
+    }
+    // Allocate big enough buffer on the heap for string
+    // + 1 for the null terminator
+    char* large_buffer = new char[text_size + 1];
+    vsnprintf(large_buffer, text_size + 1, msg, args);
+
+    *phist_output_stream << large_buffer << '\n' << std::flush;
+
+    va_end(args);
   }
 
 #else
@@ -53,11 +72,16 @@ std::string phist_str2upper(const std::string& s)
     phist_output_stream = fp;
   }
 
-  extern "C" void phist_fprintf(char* const msg)
+  extern "C" void phist_fprintf(char* const msg, ...)
   {
-    fprintf(phist_output_stream, msg);
+    va_list args;
+    va_start(args, msg);
+
+    vfprintf(phist_output_stream, msg, args);
     fprintf(phist_output_stream, '\n');
     fflush(phist_output_stream);
+
+    va_end(args);
   }
 
 #endif
@@ -335,7 +359,7 @@ extern "C" int phist_ordered_fprintf(MPI_Comm comm, const char* fmt, ...)
     global_length=char_disps[size];
     if (global_length>1e8)
     {
-      phist_fprintf("WARNING: you're gathering a very large string, PHIST_ORDERED_OUT is intended for short messages\n");
+      phist_fprintf((char* const)"WARNING: you're gathering a very large string, PHIST_ORDERED_OUT is intended for short messages\n");
     }
     global_string=new char[global_length+1];
   }
@@ -346,7 +370,7 @@ extern "C" int phist_ordered_fprintf(MPI_Comm comm, const char* fmt, ...)
   if (rank==0)
   {
     global_string[global_length]='\0';
-    phist_fprintf(global_string);
+    phist_fprintf((char* const)global_string);
   }
   
   // clean up the mess
