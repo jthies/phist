@@ -91,6 +91,7 @@ class TYPE(projOp_data)
 
   TYPE(const_mvec_ptr)  V;
   TYPE(const_mvec_ptr)  W;
+  MvecOwner<_ST_> _V, _W; // these objects make sure that some temporary storage is freed when the object is deleted 
 };
 
 
@@ -746,7 +747,9 @@ extern "C" void SUBR(skew_projection_Op_create)(TYPE(const_linearOp_ptr) P_op,
 
     PHIST_CHK_IERR(SUBR(projection_Op_create)(PV, BV, skew_Op, iflag),*iflag);
 
-    // todo: we need to delete PV if we destroy the skew-projection Operator
+    // add the PV block vector to be deleted automatically when the operator is deleted.
+    TYPE(projOp_data)* pjDat=(TYPE(projOp_data)*)skew_Op->A;
+    pjDat->_W.set(PV);
 }
 
 // allocate and initialize the jadaOp struct for a variable combination of projections
