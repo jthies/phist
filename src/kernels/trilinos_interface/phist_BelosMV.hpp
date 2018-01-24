@@ -6,8 +6,8 @@
 /* Contact: Jonas Thies (Jonas.Thies@DLR.de)                                               */
 /*                                                                                         */
 /*******************************************************************************************/
-#ifndef BELOS_BELOS_MV_HPP
-#define BELOS_BELOS_MV_HPP
+#ifndef PHIST_BELOS_MV_HPP
+#define PHIST_BELOS_MV_HPP
 
 #include "phist_config.h"
 #include "phist_macros.h"
