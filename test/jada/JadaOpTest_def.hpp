@@ -181,11 +181,9 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,_N_,MATNAME>,
       ASSERT_EQ(0,iflag_);  
 
 	  const char* method= "NONE";
-      int* which_apply;
-      TYPE(const_linearOp_ptr)* k_ops;
 	  
 	  TYPE(linearOp) jadaOp;
-	  SUBR(JadaOp_create_variable)(opA_,&proj_Op,NULL,NULL,q_,q_,sigma_,_NV_,which_apply,k_ops,&jadaOp,method,0,&iflag_);
+	  SUBR(JadaOp_create_variable)(opA_,&proj_Op,NULL,NULL,q_,q_,sigma_,_NV_,&jadaOp,method,0,&iflag_);
 	  ASSERT_EQ(0,iflag_);
 	  
 	  jadaOp.destroy(&jadaOp,&iflag_);
@@ -898,11 +896,9 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,_N_,MATNAME>,
       ASSERT_EQ(0,iflag_);  
 
 	  const char* method= "NONE";
-	  int* which_apply;
-      TYPE(const_linearOp_ptr)* k_ops;
 	  
 	  TYPE(linearOp) jadaOp;
-	  SUBR(JadaOp_create_variable)(opAB_,&proj_Op,NULL,NULL,qb_,Bq_,sigma_,_NV_,which_apply,k_ops,&jadaOp,method,0,&iflag_);
+	  SUBR(JadaOp_create_variable)(opAB_,&proj_Op,NULL,NULL,qb_,Bq_,sigma_,_NV_,&jadaOp,method,0,&iflag_);
 	  ASSERT_EQ(0,iflag_);
 	  
       _ST_ alpha=st::prand();
@@ -944,11 +940,9 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,_N_,MATNAME>,
       ASSERT_EQ(0,iflag_);  
 
 	  const char* method= "PRE";
-      int* which_apply;
-      TYPE(const_linearOp_ptr)* k_ops;
 	  
 	  TYPE(linearOp) jadaOp;
-	  SUBR(JadaOp_create_variable)(opAB_,&proj_Op,NULL,NULL,qb_,Bq_,sigma_,_NV_,which_apply,k_ops,&jadaOp,method,0,&iflag_);
+	  SUBR(JadaOp_create_variable)(opAB_,&proj_Op,NULL,NULL,qb_,Bq_,sigma_,_NV_,&jadaOp,method,0,&iflag_);
 	  ASSERT_EQ(0,iflag_);
 	  
 	  _ST_ alpha=st::prand();
@@ -996,11 +990,9 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,_N_,MATNAME>,
       ASSERT_EQ(0,iflag_);  
 
 	  const char* method= "POST";
-      int* which_apply;
-      TYPE(const_linearOp_ptr)* k_ops;
 	  
 	  TYPE(linearOp) jadaOp;
-	  SUBR(JadaOp_create_variable)(opAB_,&proj_Op,NULL,NULL,qb_,Bq_,sigma_,_NV_,which_apply,k_ops,&jadaOp,method,0,&iflag_);
+	  SUBR(JadaOp_create_variable)(opAB_,&proj_Op,NULL,NULL,qb_,Bq_,sigma_,_NV_,&jadaOp,method,0,&iflag_);
 	  ASSERT_EQ(0,iflag_);
 	  
 	  _ST_ alpha=st::prand();
@@ -1046,11 +1038,9 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,_N_,MATNAME>,
       ASSERT_EQ(0,iflag_);  
 
 	  const char* method= "PRE_POST";
-	  int* which_apply;
-      TYPE(const_linearOp_ptr)* k_ops;
 	  
 	  TYPE(linearOp) jadaOp;
-	  SUBR(JadaOp_create_variable)(opAB_,&proj_Op,NULL,NULL,qb_,Bq_,sigma_,_NV_,which_apply,k_ops,&jadaOp,method,0,&iflag_);
+	  SUBR(JadaOp_create_variable)(opAB_,&proj_Op,NULL,NULL,qb_,Bq_,sigma_,_NV_,&jadaOp,method,0,&iflag_);
 	  ASSERT_EQ(0,iflag_);
 	  
 	  _ST_ alpha=st::prand();

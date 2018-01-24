@@ -759,7 +759,6 @@ extern "C" void SUBR(JadaOp_create_variable)(TYPE(const_linearOp_ptr)    AB_op,
                          TYPE(const_linearOp_ptr)     Prec_op,
                          TYPE(const_mvec_ptr) V, TYPE(const_mvec_ptr) BV,
                          const _ST_            sigma[], int                   nvec,
-                         int* which_apply, TYPE(const_linearOp_ptr)* k_ops,
                          TYPE(linearOp_ptr)          jdOp, const char* method,
                          int onlyPrec,
 						 int*                  iflag)
@@ -778,6 +777,8 @@ extern "C" void SUBR(JadaOp_create_variable)(TYPE(const_linearOp_ptr)    AB_op,
   
   int k;
   phist_Eprojection which_proj = str2projection(method);
+  int* which_apply;
+  TYPE(const_linearOp_ptr)* k_ops;
    
   // case NONE
   if(which_proj==phist_PROJ_NONE)

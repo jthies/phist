@@ -93,7 +93,6 @@ void SUBR(JadaOp_create_variable)(TYPE(const_linearOp_ptr)    AB_op,
                          TYPE(const_linearOp_ptr)     Prec_op,
                          TYPE(const_mvec_ptr) V, TYPE(const_mvec_ptr) BV,
                          const _ST_            sigma[], int                   nvec,
-                         int* which_apply, TYPE(const_linearOp_ptr)* k_ops,
                          TYPE(linearOp_ptr)          jdOp, const char* method,
                          int onlyPrec,
 						 int*                  iflag);					 
