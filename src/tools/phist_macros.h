@@ -29,22 +29,12 @@
 #include "phist_defs.h"
 #endif
 
-/* 
-    Global variable that states the stream used for the output stream
-    Users should set this by the function phist_set_default_output(FILE* fp)
-*/
 #ifdef __cplusplus
-  extern std::ostream* phist_output_stream;
-#else
-  extern FILE* phist_output_stream;
+  extern "C" {
 #endif
-
+  void phist_printf(int outlev, int rootOnly, char* msg, ...);
 #ifdef __cplusplus
-  extern "C" void phist_set_default_output(std::ostream& ostr);
-  extern "C" void phist_fprintf(char* msg, ...);
-#else
-  void phist_set_default_output(FILE* fp);
-  void phist_fprintf(char* const msg, ...);
+} // extern "C"
 #endif
 
 /* print a warning that an untested / experimental function is called */
@@ -55,84 +45,24 @@
 #define PHIST_TOUCH(x) (void)(x);
 #endif
 
-#ifdef PHIST_HAVE_MPI
-#define PHIST_OUT(level,msg, ...) {                                                 \
-        if(PHIST_OUTLEV >= level) {                                                 \
-                int PHIST_OUT_me, PHIST_OUT_np, PHIST_OUT_ini, PHIST_OUT_fini;      \
-                MPI_Initialized(&PHIST_OUT_ini);                                    \
-                if (PHIST_OUT_ini)                                                  \
-                {                                                                   \
-                  MPI_Finalized(&PHIST_OUT_fini);                                   \
-                }                                                                   \
-                                                                                    \
-                if (PHIST_OUT_ini && (!PHIST_OUT_fini))                             \
-                {                                                                   \
-                  MPI_Comm_rank(MPI_COMM_WORLD, &PHIST_OUT_me);                     \
-                  MPI_Comm_size(MPI_COMM_WORLD, &PHIST_OUT_np);                     \
-                }                                                                   \
-                else                                                                \
-                {                                                                   \
-                  PHIST_OUT_me = 0;                                                 \
-                  PHIST_OUT_np = 1;                                                 \
-                }                                                                   \
-                                                                                    \
-                if (PHIST_OUT_np > 1)                                               \
-                {                                                                   \
-                  phist_fprintf((char* const)"PE%d", PHIST_OUT_me);                 \
-                  phist_fprintf((char* const)msg, ##__VA_ARGS__);                   \
-                }                                                                   \
-                else                                                                \
-                {                                                                   \
-                  phist_fprintf((char* const)msg, ##__VA_ARGS__);                   \
-                }                                                                   \
-        }                                                                           \
-}
-#else
-#define PHIST_OUT(level,msg, ...) {                            \
-        if(PHIST_OUTLEV >= level) {                            \
-          phist_fprintf((char* const)msg, ##__VA_ARGS__);      \
-        }                                                      \
-      }
-#endif
+/*! macro to print a C-style message (optionally with arguments) to the phist default stream
+    if the given level<=PHIST_OUTLEV. The message is printed on all MPI ranks and prefixed with
+    the MPI rank.
+ */
+#define PHIST_OUT(level,msg, ...) phist_printf(level,0,(char* const)msg, ##__VA_ARGS__);
+
+/*! similar to PHIST_OUT but only rank 0 in the phist default communicator prints the message, and the prefix is 
+omitted.
+*/
+#define PHIST_SOUT(level,msg, ...) phist_printf(level,1,(char* const)msg, ##__VA_ARGS__);
 
 #ifdef PHIST_HAVE_MPI
-#define PHIST_SOUT(level,msg, ...) {                                    \
-        if(PHIST_OUTLEV >= level) {                                     \
-                int PHIST_OUT_me, PHIST_OUT_ini, PHIST_OUT_fini;        \
-                MPI_Initialized(&PHIST_OUT_ini);                        \
-                if (PHIST_OUT_ini)                                      \
-                {                                                       \
-                  MPI_Finalized(&PHIST_OUT_fini);                       \
-                }                                                       \
-                                                                        \
-                if (PHIST_OUT_ini && (!PHIST_OUT_fini))                 \
-                {                                                       \
-                  MPI_Comm_rank(MPI_COMM_WORLD, &PHIST_OUT_me);         \
-                }                                                       \
-                else                                                    \
-                {                                                       \
-                  PHIST_OUT_me = 0;                                     \
-                }                                                       \
-                                                                        \
-                if (PHIST_OUT_me == 0)                                  \
-                {                                                       \
-                  phist_fprintf((char* const)msg, ##__VA_ARGS__);       \
-                }                                                       \
-  }                                                                     \
-}
-
-
 #define PHIST_ORDERED_OUT(level,mpicomm,msg, ...) {                                  \
         if(PHIST_OUTLEV >= level) {                                                  \
                 phist_ordered_fprintf(mpicomm, (char* const)msg, ##__VA_ARGS__);     \
         }                                                                            \
-} 
-#else
-#define PHIST_SOUT(level,msg, ...) {                              \
-        if(PHIST_OUTLEV >= level) {                               \
-          phist_fprintf((char* const)msg, ##__VA_ARGS__);         \
-        }                                                         \
 }
+#else
 #define PHIST_ORDERED_OUT(level,mpicomm,msg, ...) PHIST_SOUT(level, (char* const)msg, ##__VA_ARGS__);
 #endif
 

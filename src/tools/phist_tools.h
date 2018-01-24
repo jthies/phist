@@ -68,8 +68,35 @@ unsigned int phist_cacheline_size()
   return clsize;
 }
 
+  //! redirect all subsequent output in phist to this output stream
+  //! (if this function is not called, the default stream is std:cout)
+  //!
+  //! Any subsequent call to phist_set_CXX_output_stream or phist_set_C_output_stream
+  //! overrides the previous setting.
+  //!
+  //! All output can be suppressed by calling this function with a nullptr argument.
+  void phist_set_CXX_output_stream(std::ostream& ostr);
+
 extern "C" {
 #endif
+
+#ifdef PHIST_HAVE_MPI
+  //! set the standard MPI communicator used to create all subsequent objects
+  //! (the one wrapped and returned by phist_comm_create)
+  void phist_set_default_comm(MPI_Comm new_comm);
+  
+  //! return the MPI communicator used internally by default
+  MPI_Comm phist_get_default_comm();
+#endif
+  //! redirect all subsequent output in phist to this C output stream
+  //! (if this function is not called, the default stream is stdout)
+  //!
+  //! Any subsequent call to phist_set_CXX_output_stream or phist_set_C_output_stream
+  //! overrides the previous setting.
+  //!
+  //! All output can be suppressed by calling this function with a NULL argument.
+  void phist_set_C_output_stream(FILE* fp);
+
 const char* phist_retcode2str(int code);
 #ifdef PHIST_HAVE_GHOST
 #include <ghost/config.h>

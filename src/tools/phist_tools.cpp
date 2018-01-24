@@ -20,10 +20,47 @@
 #include <string>
 #include <iostream>
 
-#include <stdio.h>
+#include <cstdio>
 
 #include <cstring>
 #include <cstdarg>
+
+namespace phist {
+
+/* default communicator used internally for creating objects,
+   all kernel libraries must respect the users choice here.
+ */
+ MPI_Comm default_comm=MPI_COMM_WORLD;
+ 
+ 
+/* 
+    Global variable that states the stream used for the output stream
+    Users can set this by the function phist_set_CXX_output_stream
+*/
+  std::ostream* output_stream = nullptr;
+/* 
+    Global variable that states the stream used for the output stream
+    Users can set this by the function phist_set_C_output_stream
+*/
+  FILE* output_FILE=stdout;
+}// namespace phist
+
+#ifdef PHIST_HAVE_MPI
+
+  //! set the standard MPI communicator used to create all subsequent objects
+  //! (the one wrapped and returned by phist_comm_create)
+  extern "C" void phist_set_default_comm(MPI_Comm new_comm)
+  {
+    phist::default_comm=new_comm;
+  }
+  
+  //! return the MPI communicator used internally by default
+  extern "C" MPI_Comm phist_get_default_comm()
+  {
+    return phist::default_comm;
+  }
+
+#endif
 
 // little helper utiliity so that we can recognize strings regardless of case,
 // e.g. carp_cg, CARP_CG, carp_CG => CARP_CG. Note that "carp-cg" won't work
@@ -34,57 +71,68 @@ std::string phist_str2upper(const std::string& s)
   std::transform(S.begin(), S.end(), S.begin(), ::toupper);
   return S;
 }
-#ifdef __cplusplus
-  std::ostream* phist_output_stream = &std::cout;
-  extern void phist_set_default_output(std::ostream& ostr)
+
+  void phist_set_CXX_output_stream(std::ostream& ostr)
   {
-    phist_output_stream = &ostr;
+    phist::output_stream = &ostr;
+    phist::output_FILE = nullptr;
   }
 
-  extern void phist_fprintf(char* msg, ...)
+  extern "C" void phist_set_C_output_stream(FILE* ostr)
   {
-    va_list args;
-    va_start(args, msg);
-
-    // For most small outputs, 1023 chars + '\0' should be enough
-    char buffer[1024] = "";
-    int text_size = 0;
-    if ((text_size = vsnprintf(buffer, sizeof buffer, msg, args)) < 1024)
-    {
-      // Output fits in buffer
-      *phist_output_stream << buffer << '\n' << std::flush;
-      return;
-    }
-    // Allocate big enough buffer on the heap for string
-    // + 1 for the null terminator
-    char* large_buffer = new char[text_size + 1];
-    vsnprintf(large_buffer, text_size + 1, msg, args);
-
-    *phist_output_stream << large_buffer << '\n' << std::flush;
-
-    va_end(args);
+    phist::output_FILE = nullptr;
+    phist::output_FILE = ostr;
   }
 
-#else
-  FILE* phist_output_stream = stdout;
-  extern "C" void phist_set_default_output(FILE* fp)
+  extern "C" void phist_printf(int outlev, int rootOnly, char* msg, ...)
   {
-    phist_output_stream = fp;
-  }
-
-  extern "C" void phist_fprintf(char* const msg, ...)
-  {
-    va_list args;
-    va_start(args, msg);
-
-    vfprintf(phist_output_stream, msg, args);
-    fprintf(phist_output_stream, '\n');
-    fflush(phist_output_stream);
-
-    va_end(args);
-  }
-
+    if (outlev>PHIST_OUTLEV) return;
+    static int old_rank=-1;
+    static char PE_prefix[20]="";
+    int rank=0, size=1;
+#ifdef PHIST_HAVE_MPI
+    MPI_Comm_rank(phist::default_comm, &rank);
+    MPI_Comm_size(phist::default_comm, &size);
 #endif
+    if (rank!=old_rank)
+    {
+      old_rank=rank;
+      snprintf(PE_prefix,16,"PE%d: ", rank);
+    }
+    if (rootOnly && rank!=0) return;
+
+    const char* prefix = rootOnly?"":PE_prefix;
+    
+    va_list args;
+    va_start(args, msg);
+
+    if (phist::output_FILE!=nullptr)
+    {
+      vfprintf(phist::output_FILE, (std::string(prefix)+std::string(msg)).c_str(), args);
+    }
+    else if (phist::output_stream!=nullptr)
+    {
+      // For most small outputs, 1023 chars + '\0' should be enough
+      char buffer[1024] = "";
+      int text_size = 0;
+      if ((text_size = vsnprintf(buffer, sizeof buffer, msg, args)) < 1024)
+      {
+        // Output fits in buffer
+        *phist::output_stream << prefix << buffer << std::flush;
+      }
+      else
+      {
+        // Allocate big enough buffer on the heap for string
+        // + 1 for the null terminator
+        char* large_buffer = new char[text_size + 1];
+        vsnprintf(large_buffer, text_size + 1, msg, args);
+
+        *(phist::output_stream) << prefix << large_buffer << std::flush;
+        delete [] large_buffer;
+      }
+    }
+    va_end(args);
+  }
 
 extern "C" const char* phist_retcode2str(int code)
 {
@@ -359,7 +407,7 @@ extern "C" int phist_ordered_fprintf(MPI_Comm comm, const char* fmt, ...)
     global_length=char_disps[size];
     if (global_length>1e8)
     {
-      phist_fprintf((char* const)"WARNING: you're gathering a very large string, PHIST_ORDERED_OUT is intended for short messages\n");
+      phist_printf(PHIST_WARNING,0,(char* const)"WARNING: you're gathering a very large string, PHIST_ORDERED_OUT is intended for short messages\n");
     }
     global_string=new char[global_length+1];
   }
@@ -370,7 +418,14 @@ extern "C" int phist_ordered_fprintf(MPI_Comm comm, const char* fmt, ...)
   if (rank==0)
   {
     global_string[global_length]='\0';
-    phist_fprintf((char* const)global_string);
+    if (phist::output_FILE!=nullptr)
+    {
+      fprintf(phist::output_FILE, (char* const)global_string);
+    }
+    else if (phist::output_stream!=nullptr)
+    {
+      *(phist::output_stream) << global_string;
+    }
   }
   
   // clean up the mess
