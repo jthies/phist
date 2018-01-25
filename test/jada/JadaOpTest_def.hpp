@@ -183,7 +183,7 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,_N_,MATNAME>,
 	  const char* method= "NONE";
 	  
 	  TYPE(linearOp) jadaOp;
-	  SUBR(JadaOp_create_variable)(opA_,&proj_Op,NULL,NULL,q_,q_,sigma_,_NV_,&jadaOp,method,0,&iflag_);
+	  SUBR(JadaOp_create_variable)(opA_,&proj_Op,NULL,NULL,sigma_,_NV_,&jadaOp,method,0,&iflag_);
 	  ASSERT_EQ(0,iflag_);
 	  
 	  jadaOp.destroy(&jadaOp,&iflag_);
@@ -898,7 +898,7 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,_N_,MATNAME>,
 	  const char* method= "NONE";
 	  
 	  TYPE(linearOp) jadaOp;
-	  SUBR(JadaOp_create_variable)(opAB_,&proj_Op,NULL,NULL,qb_,Bq_,sigma_,_NV_,&jadaOp,method,0,&iflag_);
+	  SUBR(JadaOp_create_variable)(opAB_,&proj_Op,NULL,NULL,sigma_,_NV_,&jadaOp,method,0,&iflag_);
 	  ASSERT_EQ(0,iflag_);
 	  
       _ST_ alpha=st::prand();
@@ -942,7 +942,7 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,_N_,MATNAME>,
 	  const char* method= "PRE";
 	  
 	  TYPE(linearOp) jadaOp;
-	  SUBR(JadaOp_create_variable)(opAB_,&proj_Op,NULL,NULL,qb_,Bq_,sigma_,_NV_,&jadaOp,method,0,&iflag_);
+	  SUBR(JadaOp_create_variable)(opAB_,&proj_Op,NULL,NULL,sigma_,_NV_,&jadaOp,method,0,&iflag_);
 	  ASSERT_EQ(0,iflag_);
 	  
 	  _ST_ alpha=st::prand();
@@ -992,7 +992,7 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,_N_,MATNAME>,
 	  const char* method= "POST";
 	  
 	  TYPE(linearOp) jadaOp;
-	  SUBR(JadaOp_create_variable)(opAB_,&proj_Op,NULL,NULL,qb_,Bq_,sigma_,_NV_,&jadaOp,method,0,&iflag_);
+	  SUBR(JadaOp_create_variable)(opAB_,&proj_Op,NULL,NULL,sigma_,_NV_,&jadaOp,method,0,&iflag_);
 	  ASSERT_EQ(0,iflag_);
 	  
 	  _ST_ alpha=st::prand();
@@ -1040,7 +1040,7 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,_N_,MATNAME>,
 	  const char* method= "PRE_POST";
 	  
 	  TYPE(linearOp) jadaOp;
-	  SUBR(JadaOp_create_variable)(opAB_,&proj_Op,NULL,NULL,qb_,Bq_,sigma_,_NV_,&jadaOp,method,0,&iflag_);
+	  SUBR(JadaOp_create_variable)(opAB_,&proj_Op,NULL,NULL,sigma_,_NV_,&jadaOp,method,0,&iflag_);
 	  ASSERT_EQ(0,iflag_);
 	  
 	  _ST_ alpha=st::prand();

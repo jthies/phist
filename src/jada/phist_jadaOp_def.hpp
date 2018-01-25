@@ -593,7 +593,6 @@ extern "C" void SUBR(JadaOp_create_variable)(TYPE(const_linearOp_ptr)    AB_op,
 						 TYPE(const_linearOp_ptr)     Proj_op,
                          TYPE(const_linearOp_ptr)     Skew_op,
                          TYPE(const_linearOp_ptr)     Prec_op,
-                         TYPE(const_mvec_ptr) V, TYPE(const_mvec_ptr) BV,
                          const _ST_            sigma[], int                   nvec,
                          TYPE(linearOp_ptr)          jdOp, const char* method,
                          int onlyPrec,
@@ -805,7 +804,7 @@ extern "C" void SUBR(jadaOp_create)(TYPE(const_linearOp_ptr)    AB_op,
   }
 
   TYPE(linearOp_ptr) k_Op = new TYPE(linearOp);
-  PHIST_CHK_IERR(SUBR(JadaOp_create_variable)(myOp->AB_op,myOp->Proj_op,NULL,NULL,myOp->V,myOp->BV,myOp->sigma,myOp->num_shifts,k_Op,method,0,iflag),*iflag);
+  PHIST_CHK_IERR(SUBR(JadaOp_create_variable)(myOp->AB_op,myOp->Proj_op,NULL,NULL,myOp->sigma,myOp->num_shifts,k_Op,method,0,iflag),*iflag);
 
   myOp->k_op = k_Op;
 
@@ -863,7 +862,7 @@ extern "C" void SUBR(jadaPrec_create)(TYPE(const_linearOp_ptr) P_op,
     // need methode NONE with p_op as ab_op
     jdPr->k_op->destroy(jdPr->k_op,iflag);
     const char* method = "NONE";
-    PHIST_CHK_IERR(SUBR(JadaOp_create_variable)(jdPr->Prec_op,NULL,NULL,NULL,jdPr->V,jdPr->BV,jdPr->sigma,jdPr->num_shifts,jdPr->k_op,method,0,iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(JadaOp_create_variable)(jdPr->Prec_op,NULL,NULL,NULL,jdPr->sigma,jdPr->num_shifts,jdPr->k_op,method,0,iflag),*iflag);
     jdPrec->apply = SUBR(jadaOp_apply);
   }
   else
@@ -888,7 +887,7 @@ extern "C" void SUBR(jadaPrec_create)(TYPE(const_linearOp_ptr) P_op,
     // need method POST with skew_op as proj_op and p_op as ab_op
     jdPr->k_op->destroy(jdPr->k_op,iflag);
     const char* method = "POST";
-    PHIST_CHK_IERR(SUBR(JadaOp_create_variable)(jdPr->Prec_op,jdPr->Skew_op,NULL,NULL,jdPr->V,jdPr->BV,jdPr->sigma,jdPr->num_shifts,jdPr->k_op,method,0,iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(JadaOp_create_variable)(jdPr->Prec_op,jdPr->Skew_op,NULL,NULL,jdPr->sigma,jdPr->num_shifts,jdPr->k_op,method,0,iflag),*iflag);
     jdPrec->apply = SUBR(jadaOp_apply);
   }
 }
@@ -914,7 +913,7 @@ extern "C" void SUBR(jadaOp_set_leftPrecond)(TYPE(linearOp_ptr) jdOp, TYPE(const
     jdDat->projType = jdPrec->projType;
     jdDat->k_op->destroy(jdDat->k_op,iflag);
     const char* method= "PRE_POST";
-    PHIST_CHK_IERR(SUBR(JadaOp_create_variable)(jdDat->AB_op,jdDat->Proj_op,jdDat->Prec_op,jdDat->Skew_op,jdDat->V,jdDat->BV,jdDat->sigma,jdDat->num_shifts,jdDat->k_op,method,1-(jdDat->projType),iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(JadaOp_create_variable)(jdDat->AB_op,jdDat->Proj_op,jdDat->Prec_op,jdDat->Skew_op,jdDat->sigma,jdDat->num_shifts,jdDat->k_op,method,1-(jdDat->projType),iflag),*iflag);
     jdOp->apply = SUBR(jadaOp_apply);
   }
 }
