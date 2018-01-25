@@ -483,7 +483,7 @@ public:
     int which_apply[1] = {0}; 
 	TYPE(const_linearOp_ptr) k_ops[1]={&A_op};
     TYPE(linearOp) Ak_op;
-    SUBR(linearOp_wrap_linearOp_product_k)(&Ak_op,1,k_ops,which_apply,NULL,0,&iflag_);
+    SUBR(linearOp_wrap_linearOp_product_k)(&Ak_op,1,k_ops,which_apply,NULL,0,0,&iflag_);
     ASSERT_EQ(0,iflag_);
 
     // we have v1, v2 random and v3=v2 from SetUp()
@@ -506,7 +506,7 @@ public:
     ASSERT_EQ(0,iflag_);
 	
 	which_apply[0] = 2; 
-    SUBR(linearOp_wrap_linearOp_product_k)(&Ak_op,1,k_ops,which_apply,sigma,nvec_,&iflag_);
+    SUBR(linearOp_wrap_linearOp_product_k)(&Ak_op,1,k_ops,which_apply,(const _ST_**)&sigma,1,nvec_,&iflag_);
     ASSERT_EQ(0,iflag_);
 
     // we have v1, v2 random and v3=v2 from SetUp()
@@ -533,7 +533,7 @@ public:
     int which_apply[2] = {0,2}; 
 	TYPE(const_linearOp_ptr) k_ops[2]={&A_op,&A_op};
     TYPE(linearOp) Ak_op;
-    SUBR(linearOp_wrap_linearOp_product_k)(&Ak_op,2,k_ops,which_apply,sigma,nvec_,&iflag_);
+    SUBR(linearOp_wrap_linearOp_product_k)(&Ak_op,2,k_ops,which_apply,(const _ST_**)&sigma,1,nvec_,&iflag_);
     ASSERT_EQ(0,iflag_);
 
     // we have v1, v2 random and v3=v2 from SetUp()

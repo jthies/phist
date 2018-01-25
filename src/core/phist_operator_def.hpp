@@ -42,7 +42,8 @@ typedef struct TYPE(private_linearOp_k)
   TYPE(const_linearOp_ptr)* k_Ops;
   int nops;
   int * which_apply;
-  const _ST_* sigma;
+  const _ST_** sigma;
+  int num_sigma;
   int num_shifts;
   mutable TYPE(mvec_ptr) Xtmp;
   mutable TYPE(mvec_ptr) Xtmp2;
@@ -314,6 +315,7 @@ void SUBR(private_linearOp_apply_linearOp_product_k)
   } 
   
   //iterate over all operators
+  int sigma_cnt=Op_k->num_sigma-1;
   for (int i=(Op_k->nops)-1; i>=0; i--) {
 	
 	//apply
@@ -340,7 +342,8 @@ void SUBR(private_linearOp_apply_linearOp_product_k)
 		PHIST_CHK_IERR(SUBR(mvec_create)(&(Op_k->Xtmp2),k_Ops[i]->range_map,nvX,iflag),*iflag);
 	  }	  
 	  
-	  PHIST_CHK_IERR(SUBR(linearOp_apply_shifted)(st::one(),k_Ops[i],Op_k->sigma,Op_k->Xtmp,st::zero(),Op_k->Xtmp2,iflag),*iflag);	  
+	  PHIST_CHK_IERR(SUBR(linearOp_apply_shifted)(st::one(),k_Ops[i],Op_k->sigma[sigma_cnt],Op_k->Xtmp,st::zero(),Op_k->Xtmp2,iflag),*iflag);
+      sigma_cnt--;
 	}
 	
 	// which_apply has an unalowed component
@@ -366,7 +369,7 @@ void SUBR(private_linearOp_apply_linearOp_product_k)
 
 
 void SUBR(linearOp_wrap_linearOp_product_k)(TYPE(linearOp_ptr) op,
-int k, TYPE(const_linearOp_ptr)* k_ops, int* which_apply, const _ST_* sigma, int num_shifts, int* iflag)
+int k, TYPE(const_linearOp_ptr)* k_ops, int* which_apply, const _ST_** sigma, int num_sigma, int num_shifts, int* iflag)
 {
   // setup maps etc.
   TYPE(private_linearOp_k) *Op_k=new TYPE(private_linearOp_k);
@@ -375,6 +378,7 @@ int k, TYPE(const_linearOp_ptr)* k_ops, int* which_apply, const _ST_* sigma, int
   Op_k->Xtmp2=NULL;
   Op_k->nops=k;
   Op_k->sigma=sigma;
+  Op_k->num_sigma=num_sigma;
   Op_k->num_shifts=num_shifts;
   Op_k->which_apply=which_apply;
   op->A=(void*)(Op_k);
