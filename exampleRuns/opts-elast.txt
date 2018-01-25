@@ -1,15 +1,15 @@
 symmetry        HERMITIAN
 
 numEigs         20
-which           SR
+which           LR
 convTol         1.0e-8
 
-blockSize       4
+blockSize       2
 maxIters        250
 minBas          28
 maxBas          60
 
-innerSolvBlockSize      4
+innerSolvBlockSize      2
 innerSolvType           MINRES
 innerSolvMaxBas         10
 innerSolvMaxIters       10
