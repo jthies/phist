@@ -43,9 +43,6 @@ namespace Belos {
   ////////////////////////////////////////////////////////////////////
 
 /// \brief Partial specialization of OperatorTraits for phist_linearOp_t.
-/// Note: this is only going to work if MV is the class used by the kernel
-/// library, for instance, you can't compile phist with PHIST_KERNEL_LIB=
-/// tpetra and then use ghost vectors in Belos.
 template <typename ST>
 class OperatorTraits <ST, ::phist::BelosMV<ST>, typename phist::ScalarTraits<ST>::linearOp_t >
 {
