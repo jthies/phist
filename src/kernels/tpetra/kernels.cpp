@@ -87,8 +87,11 @@ int numCoresPerNuma=-1;
 # ifdef PHIST_HAVE_MPI
   MPI_Comm global_comm;
   phist_comm_ptr phist_comm;
+  // create a wrapper to get a hold on the default comm used in phist
   PHIST_CHK_IERR(phist_comm_create(&phist_comm,iflag),*iflag);
   PHIST_CHK_IERR(phist_comm_get_mpi_comm(phist_comm,&global_comm,iflag),*iflag);
+  // delete wrapper
+  PHIST_CHK_IERR(phist_comm_delete(phist_comm,iflag),*iflag);
 
   MPI_Comm node_comm;
   MPI_Comm_split_type(global_comm, MPI_COMM_TYPE_SHARED, 0,
@@ -188,13 +191,22 @@ extern "C" void phist_kernels_finalize(int* iflag)
 //!
 extern "C" void phist_comm_create(phist_comm_ptr* vcomm, int* iflag)
 {
+#ifdef PHIST_HAVE_MPI
+  Teuchos::MpiComm<int> *comm=new Teuchos::MpiComm<int>(phist_get_default_comm());
+  *vcomm = (phist_comm_ptr)comm;
+#else
   *vcomm = (phist_comm_ptr)Tpetra::getDefaultComm().get();  
+#endif
   *iflag = PHIST_SUCCESS;
 }
 
 //!
 extern "C" void phist_comm_delete(phist_comm_ptr vcomm, int* iflag)
 {
+#ifdef PHIST_HAVE_MPI
+  PHIST_CAST_PTR_FROM_VOID(Teuchos::MpiComm<int>,comm,vcomm,*iflag);
+  delete comm;
+#endif
   *iflag = PHIST_SUCCESS;
 }
 
