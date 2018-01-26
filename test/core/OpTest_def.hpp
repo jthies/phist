@@ -23,6 +23,11 @@ public:
   typedef KernelTestWithVectors<_ST_,_N_,_NV_,0,5> VTest;
   typedef KernelTestWithSdMats<_ST_,_NV_,_NV_,0> MTest;
 
+#ifdef PHIST_HAVE_BELOS
+  typedef Belos::MultiVecTraits< _ST_, phist::BelosMV< _ST_ > > MVT;
+  typedef Belos::OperatorTraits< _ST_, phist::BelosMV< _ST_ >, st::linearOp_t > OPT;
+#endif
+
   static void SetUpTestCase()
   {
     int sparseMatCreateFlag=getSparseMatCreateFlag(_N_,_NV_);
@@ -67,6 +72,8 @@ public:
       SUBR(mvec_put_func)(vec2_,&PHIST_TG_PREFIX(mvec321func),v_arg,&iflag_);
       ASSERT_EQ(0,iflag_);
       SUBR(mvec_add_mvec)(st::one(),vec2_,st::zero(),vec3_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(mvec_add_mvec)(st::one(),vec1_,st::zero(),vec4_,&iflag_);
       ASSERT_EQ(0,iflag_);
 
       // create random orthogonal Q
@@ -135,7 +142,7 @@ public:
 
 #ifdef PHIST_HAVE_BELOS
   int doBelosTests(TYPE(sparseMat_ptr) A)
-    {
+  {
     if (typeImplemented_ && !problemTooSmall_ && haveMat_)
     {
       Teuchos::RCP<Belos::OutputManager<ST> > MyOM
@@ -179,6 +186,139 @@ public:
 
 
 #if defined(PHIST_HAVE_BELOS)
+
+  // basic checks if the Apply function used in Belos gives the
+  // same result as the standard phist sparseMat_times_mvec when
+  // used with original vectors, copies or views created via the
+  // Belos interface.
+  TEST_F(CLASSNAME, belos_OpApply_basic)
+  {
+    //note: vec1==vec4 and vec2==vec3 from SetUp().
+    if (typeImplemented_ && !problemTooSmall_)
+    {
+      Teuchos::RCP<phist::BelosMV< _ST_ > > V1 = phist::mvec_rcp< _ST_ >(vec1_,false);
+      Teuchos::RCP<phist::BelosMV< _ST_ > > V2 = phist::mvec_rcp< _ST_ >(vec2_,false);
+      
+      SUBR(sparseMat_times_mvec)(st::one(),A_,vec4_,st::zero(),vec3_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      OPT::Apply(A_op,*V1,*V2);
+      ASSERT_NEAR(1.0,MvecsEqual(vec2_,vec3_),VTest::releps());
+    }
+  }
+
+  TEST_F(CLASSNAME, belos_OpApply_on_full_copy)
+  {
+    if (typeImplemented_ && !problemTooSmall_)
+    {
+      Teuchos::RCP<phist::BelosMV< _ST_ > > V1 = phist::mvec_rcp< _ST_ >(vec1_,false);
+      Teuchos::RCP<phist::BelosMV< _ST_ > > V2 = phist::mvec_rcp< _ST_ >(vec2_,false);
+      
+      SUBR(sparseMat_times_mvec)(st::one(),A_,vec4_,st::zero(),vec3_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+
+      std::vector<int> cols(nvec_);
+      for (int i=0; i<nvec_; i++) cols[i]=i;
+      Teuchos::RCP< phist::BelosMV< _ST_ > >  W1=MVT::CloneCopy(*V1,cols);
+      Teuchos::RCP< phist::BelosMV< _ST_ > > W2=MVT::CloneCopy(*V2,cols);
+
+      OPT::Apply(A_op,*W1,*W2);
+      ASSERT_NEAR(1.0,MvecsEqual(W2->get(),vec3_),VTest::releps());
+    }
+  }
+
+  TEST_F(CLASSNAME, belos_OpApply_on_colwise_copy)
+  {
+    if (typeImplemented_ && !problemTooSmall_)
+    {
+      Teuchos::RCP<phist::BelosMV< _ST_ > > V1 = phist::mvec_rcp< _ST_ >(vec1_,false);
+      Teuchos::RCP<phist::BelosMV< _ST_ > > V2 = phist::mvec_rcp< _ST_ >(vec2_,false);
+      
+      SUBR(sparseMat_times_mvec)(st::one(),A_,vec4_,st::zero(),vec3_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+
+      std::vector<int> cols(1);
+      for (int i=0; i<nvec_; i++) 
+      {
+        cols[0]=i;
+        Teuchos::RCP< phist::BelosMV< _ST_ > > W1=MVT::CloneCopy(*V1,cols);
+        Teuchos::RCP< phist::BelosMV< _ST_ > > W2=MVT::CloneCopy(*V2,cols);
+        OPT::Apply(A_op,*W1,*W2);
+        MVT::SetBlock(*W2,cols,*V2);
+      }
+      ASSERT_NEAR(1.0,MvecsEqual(vec2_,vec3_),VTest::releps());
+    }
+  }
+
+  TEST_F(CLASSNAME, belos_OpApply_on_full_view)
+  {
+    if (typeImplemented_ && !problemTooSmall_)
+    {
+      Teuchos::RCP<phist::BelosMV< _ST_ > > V1 = phist::mvec_rcp< _ST_ >(vec1_,false);
+      Teuchos::RCP<phist::BelosMV< _ST_ > > V2 = phist::mvec_rcp< _ST_ >(vec2_,false);
+      
+      SUBR(sparseMat_times_mvec)(st::one(),A_,vec4_,st::zero(),vec3_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+
+      std::vector<int> cols(nvec_);
+      for (int i=0; i<nvec_; i++) cols[i]=i;
+      Teuchos::RCP< const phist::BelosMV< _ST_ > > W1=MVT::CloneView(*V1,cols);
+      Teuchos::RCP< phist::BelosMV< _ST_ > > W2=MVT::CloneViewNonConst(*V2,cols);
+
+      OPT::Apply(A_op,*W1,*W2);
+      ASSERT_NEAR(1.0,MvecsEqual(V2->get(),vec3_),VTest::releps());
+      ASSERT_NEAR(1.0,MvecsEqual(W2->get(),vec3_),VTest::releps());
+    }
+  }
+
+  TEST_F(CLASSNAME, belos_OpApply_on_colwise_view)
+  {
+    if (typeImplemented_ && !problemTooSmall_)
+    {
+      Teuchos::RCP<phist::BelosMV< _ST_ > > V1 = phist::mvec_rcp< _ST_ >(vec1_,false);
+      Teuchos::RCP<phist::BelosMV< _ST_ > > V2 = phist::mvec_rcp< _ST_ >(vec2_,false);
+      
+      SUBR(sparseMat_times_mvec)(st::one(),A_,vec4_,st::zero(),vec3_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+
+      std::vector<int> cols(1);
+      for (int i=0; i<nvec_; i++) 
+      {
+        cols[0]=i;
+        Teuchos::RCP< const phist::BelosMV< _ST_ > > W1=MVT::CloneView(*V1,cols);
+        Teuchos::RCP< phist::BelosMV< _ST_ > > W2=MVT::CloneViewNonConst(*V2,cols);
+        OPT::Apply(A_op,*W1,*W2);
+      }
+      ASSERT_NEAR(1.0,MvecsEqual(vec2_,vec3_),VTest::releps());
+    }
+  }
+  
+  // e.g. in the BelosBlcoGmres solver X and Y are defined
+  // to be columns/blocks j-1 and j and Y=OP*X is computed.
+  // This seems to fail with GHOST on more than one MPI process,
+  // so I added this extra test.
+  TEST_F(CLASSNAME, belos_OpApply_on_views_of_same_vec) 
+  {
+    if (typeImplemented_ && !problemTooSmall_ && _NV_>1)
+    {
+      Teuchos::RCP<phist::BelosMV< _ST_ > > V = phist::mvec_rcp< _ST_ >(vec1_,false);
+      std::vector<int> i0(1), i1(1);
+      i0[0]=0; i1[0]=1;
+      Teuchos::RCP<phist::BelosMV< _ST_ > > V0_copied = MVT::CloneCopy(*V,i0);
+      Teuchos::RCP<phist::BelosMV< _ST_ > > V1_copied = MVT::CloneCopy(*V,i1);
+
+      Teuchos::RCP<phist::BelosMV< _ST_ > > V0 = MVT::CloneViewNonConst(*V,i0);
+      Teuchos::RCP<phist::BelosMV< _ST_ > > V1 = MVT::CloneViewNonConst(*V,i1);
+      OPT::Apply(A_op,*V0_copied,*V1_copied);
+      OPT::Apply(A_op,*V0,*V1);
+      
+      _ST_* troet;
+      phist_lidx lda;
+
+      ASSERT_REAL_EQ(1.0,MvecsEqual(V0->get(),V0_copied->get()));
+      ASSERT_NEAR(1.0,MvecsEqual(V1->get(),V1_copied->get()),VTest::releps());
+    }
+  }
+
   TEST_F(CLASSNAME, belos_opTests) 
   {
     if (typeImplemented_ && !problemTooSmall_)
@@ -426,12 +566,12 @@ public:
     AA_op.apply(alpha,AA_op.A,vec1_,beta,vec5_,&iflag_);
     ASSERT_EQ(0,iflag_);	
 	
-    ASSERT_NEAR(mt::one(),MvecsEqual(vec2_,vec3_),10*VTest::releps());
-    ASSERT_NEAR(mt::one(),MvecsEqual(vec2_,vec4_),10*VTest::releps());
-    ASSERT_NEAR(mt::one(),MvecsEqual(vec2_,vec5_),10*VTest::releps());
-    ASSERT_NEAR(mt::one(),MvecsEqual(vec3_,vec4_),10*VTest::releps());
-    ASSERT_NEAR(mt::one(),MvecsEqual(vec3_,vec5_),10*VTest::releps());
-    ASSERT_NEAR(mt::one(),MvecsEqual(vec4_,vec5_),10*VTest::releps());	
+    ASSERT_NEAR(mt::one(),MvecsEqual(vec2_,vec3_),50*VTest::releps());
+    ASSERT_NEAR(mt::one(),MvecsEqual(vec2_,vec4_),50*VTest::releps());
+    ASSERT_NEAR(mt::one(),MvecsEqual(vec2_,vec5_),50*VTest::releps());
+    ASSERT_NEAR(mt::one(),MvecsEqual(vec3_,vec4_),50*VTest::releps());
+    ASSERT_NEAR(mt::one(),MvecsEqual(vec3_,vec5_),50*VTest::releps());
+    ASSERT_NEAR(mt::one(),MvecsEqual(vec4_,vec5_),50*VTest::releps());	
 	
 	// clean up the operator
     SUBR(linearOp_destroy)(&IAA_op,&iflag_);
