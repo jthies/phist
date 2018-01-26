@@ -16,7 +16,7 @@ FLAGS="default" # optional-libs
 ADD_CMAKE_FLAGS="-DPHIST_BENCH_LARGE_N=-1" #optional CMake flags # -1 disables benchmarks to speed up build jobs!
 WORKSPACE="$PWD/.."
 VECT_EXT="native"
-TRILINOS_VERSION="11.12.1"
+TRILINOS_VERSION="git"
 # list of modules to load
 MODULES_BASIC="cmake cppcheck gcovr doxygen"
 # GCC_SANITIZE flag for debug mode, disabled for CUDA
