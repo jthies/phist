@@ -70,8 +70,8 @@ void pinThreads()
   }
   // MPI rank
   int myRank, nRanks;
-  PHIST_CHK_IERR( iflag = MPI_Comm_rank(MPI_COMM_WORLD, &myRank), iflag);
-  PHIST_CHK_IERR( iflag = MPI_Comm_size(MPI_COMM_WORLD, &nRanks), iflag);
+  PHIST_CHK_IERR( iflag = MPI_Comm_rank(phist_get_default_comm(), &myRank), iflag);
+  PHIST_CHK_IERR( iflag = MPI_Comm_size(phist_get_default_comm(), &nRanks), iflag);
   // nodes
   int ranksPerNode = 1;
   int myRankInNode = 0;

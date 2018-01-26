@@ -36,6 +36,11 @@ module env_module
 
   ! C declarations
   interface
+  
+    function phist_get_default_comm() bind(C,name='phist_get_default_comm_f')
+      INTEGER :: phist_get_default_comm
+    end function phist_get_default_comm
+
     function posix_memalign(p, align, n) bind(C)
       use, intrinsic :: iso_c_binding, only: C_PTR, C_SIZE_T, C_INT
       integer(kind=C_SIZE_T), value :: align, n
@@ -47,6 +52,7 @@ module env_module
       type(C_PTR), value :: p
     end subroutine free
   end interface
+
 contains
 
   !================================================================================
@@ -91,7 +97,7 @@ contains
     integer, pointer :: comm
     !------------------------------------------------------------
     allocate(comm)
-    comm = MPI_COMM_WORLD
+    comm = phist_get_default_comm()
     comm_ptr = c_loc(comm)
     ierr = 0
   end subroutine phist_comm_create

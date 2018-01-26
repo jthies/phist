@@ -78,7 +78,7 @@ extern "C" void phist_comm_create(phist_comm_ptr* vcomm, int* iflag)
 {
   *iflag=0;
 #ifdef PHIST_HAVE_MPI
-  Epetra_Comm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+  Epetra_Comm *comm = new Epetra_MpiComm(phist_get_default_comm());
 #else
   Epetra_Comm *comm = new Epetra_SerialComm;
 #endif

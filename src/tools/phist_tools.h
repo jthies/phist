@@ -83,6 +83,14 @@ extern "C" {
 #ifdef PHIST_HAVE_MPI
   //! set the standard MPI communicator used to create all subsequent objects
   //! (the one wrapped and returned by phist_comm_create)
+  //!
+  //! CAVEAT: for many kernel libaries (e.g. builtin, ghost, tpetra) we implement 
+  //!         a pinning strategy (i.e. bind MPI processes and threads to physical 
+  //!         cores of the machine). This is typically done in phist_kernels_init,
+  //!         so we recommend setting the communicator *before* that function. If 
+  //!         you want to be able to spawn new MPI processes, you may want to set 
+  //!         PHIST_TRY_TO_PIN_THREADS=OFF using cmake and use this function to   
+  //!         update the communicator.
   void phist_set_default_comm(MPI_Comm new_comm);
   
   //! return the MPI communicator used internally by default
