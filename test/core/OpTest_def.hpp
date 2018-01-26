@@ -245,7 +245,7 @@ public:
         OPT::Apply(A_op,*W1,*W2);
         MVT::SetBlock(*W2,cols,*V2);
       }
-      ASSERT_NEAR(1.0,MvecsEqual(vec2_,vec3_),VTest::releps());
+      ASSERT_NEAR(1.0,MvecsEqual(vec2_,vec3_),25*VTest::releps());
     }
   }
 
@@ -288,7 +288,7 @@ public:
         Teuchos::RCP< phist::BelosMV< _ST_ > > W2=MVT::CloneViewNonConst(*V2,cols);
         OPT::Apply(A_op,*W1,*W2);
       }
-      ASSERT_NEAR(1.0,MvecsEqual(vec2_,vec3_),VTest::releps());
+      ASSERT_NEAR(1.0,MvecsEqual(vec2_,vec3_),25*VTest::releps());
     }
   }
   
