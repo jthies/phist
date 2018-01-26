@@ -98,14 +98,14 @@ class BelosMV
     {
       int iflag=0;
       kt::mvec_delete(this->get(),&iflag);
-      this->v_=NULL;
+      this->v_=nullptr;
     }
   }
 
   //!
   mvec_ptr get()
     {
-    if (v_!=NULL) 
+    if (v_!=nullptr) 
       {
       return v_;
       }
@@ -115,7 +115,7 @@ class BelosMV
   //!
   const_mvec_ptr get() const
     {
-    if (v_!=NULL) 
+    if (v_!=nullptr) 
       {
       return v_;
       }
@@ -167,6 +167,8 @@ Teuchos::RCP<const BelosMV<Scalar> > mvec_rcp(typename phist::types<Scalar>::con
 }
 
 #endif /* PHIST_HAVE_TEUCHOS */
+
+template<typename ST> int BelosMV<ST>::countObjects=0;
 
 } //namespace phist
 

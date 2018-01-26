@@ -161,10 +161,10 @@ static Teuchos::RCP<BelosMV<ST> > CloneViewNonConst( BelosMV<ST>& mv, const std:
   TEUCHOS_TEST_FOR_EXCEPTION(!contig,std::invalid_argument,
           "Belos::MultiVecTraits<ST,BelosMV<ST>>::CloneView(mv,index): can only view contiguous blocks with PHIST.");
     int iflag=0;
-    mvec_ptr result=NULL;
+    mvec_ptr result=nullptr;
     kt::mvec_view_block(mv.get(),&result,index[0],index[nvec-1],&iflag);
-      return mvec_rcp(result,true);
-  }
+    return mvec_rcp(result,true);
+}
 
 
     static Teuchos::RCP<BelosMV<ST> > 
@@ -204,7 +204,7 @@ static Teuchos::RCP<BelosMV<ST> > CloneViewNonConst( BelosMV<ST>& mv, const std:
     {
       int iflag=0;
       // copy B to a phist sdMat
-      sdMat_ptr Bphist=NULL;
+      sdMat_ptr Bphist=nullptr;
       kt::sdMat_create(&Bphist,B.numRows(),B.numCols(),nullptr,&iflag);
       ST* B_raw=nullptr;
       ghost_lidx lda;
@@ -270,7 +270,7 @@ static Teuchos::RCP<BelosMV<ST> > CloneViewNonConst( BelosMV<ST>& mv, const std:
     static void MvTransMv( ST alpha, const BelosMV<ST>& A, const BelosMV<ST>& B, Teuchos_sdMat& C)
     {
       int iflag=0;
-      sdMat_ptr C_tmp=NULL;
+      sdMat_ptr C_tmp=nullptr;
       int nrC=GetNumberVecs(A),ncC=GetNumberVecs(B);
       phist_const_comm_ptr comm;
       kt::mvec_get_comm(A.get(),&comm,&iflag);
@@ -278,7 +278,7 @@ static Teuchos::RCP<BelosMV<ST> > CloneViewNonConst( BelosMV<ST>& mv, const std:
       
       kt::mvecT_times_mvec(alpha,A.get(),B.get(),st::one(),C_tmp,&iflag);
 
-      ST* C_raw=NULL;
+      ST* C_raw=nullptr;
       phist_lidx lda;
       kt::sdMat_extract_view(C_tmp,&C_raw,&lda,&iflag);
       
