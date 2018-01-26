@@ -87,6 +87,15 @@ extern "C" {
   
   //! return the MPI communicator used internally by default
   MPI_Comm phist_get_default_comm();
+  
+  //! this function should be called from Fortran to set the MPI communicator
+  //! analogously to phist_set_default_comm.
+  void phist_set_default_comm_f(MPI_Fint f_comm);
+
+  //! this function should be called from Fortran to get a valid MPI communicator
+  //! analogously to phist_get_default_comm. For a fortran binding of this       
+  //! function, see src/kernels/builtin/env_module.f90.
+  MPI_Fint phist_get_default_comm_f();
 #endif
   //! redirect all subsequent output in phist to this C output stream
   //! (if this function is not called, the default stream is stdout)

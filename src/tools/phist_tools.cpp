@@ -54,10 +54,20 @@ namespace phist {
     phist::default_comm=new_comm;
   }
   
+  extern "C" void phist_set_default_comm_f(MPI_Fint new_comm_f)
+  {
+    phist_set_default_comm(MPI_Comm_f2c(new_comm_f));
+  }
+  
   //! return the MPI communicator used internally by default
   extern "C" MPI_Comm phist_get_default_comm()
   {
     return phist::default_comm;
+  }
+  
+  extern "C" MPI_Fint phist_get_default_comm_f()
+  {
+    return MPI_Comm_c2f(phist_get_default_comm());
   }
 
 #endif
