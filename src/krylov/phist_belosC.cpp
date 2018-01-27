@@ -10,16 +10,12 @@
 
 #if defined(PHIST_HAVE_SP)&&defined(PHIST_HAVE_CMPLX)
 
-#ifdef PHIST_KERNEL_LIB_EPETRA
-#undef PHIST_HAVE_BELOS
-#elif defined(PHIST_KERNEL_LIB_TPETRA)
+#if defined(PHIST_KERNEL_LIB_TPETRA)
 #include "TpetraCore_config.h"
 # ifndef HAVE_TPETRA_INST_COMPLEX_FLOAT
 # undef PHIST_HAVE_BELOS
 # endif
 #endif
-
-#ifdef PHIST_HAVE_BELOS
 
 #include "phist_tools.h"
 #include "phist_kernels.h"
@@ -27,6 +23,7 @@
 #include "phist_ScalarTraits.hpp"
 #include "phist_belos.h"
 
+#ifdef PHIST_HAVE_BELOS
 
 // Trilinos stuff
 #include "Teuchos_RCP.hpp"

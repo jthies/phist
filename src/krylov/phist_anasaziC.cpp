@@ -10,13 +10,20 @@
 
 #if defined(PHIST_HAVE_SP)&&defined(PHIST_HAVE_CMPLX)
 
-#ifdef PHIST_HAVE_ANASAZI
+#if defined(PHIST_KERNEL_LIB_TPETRA)
+#include "TpetraCore_config.h"
+# ifndef HAVE_TPETRA_INST_COMPLEX_FLOAT
+# undef PHIST_HAVE_ANASAZI
+# endif
+#endif
 
 #include "phist_tools.h"
 #include "phist_kernels.h"
 #include "phist_operator.h"
 #include "phist_ScalarTraits.hpp"
 #include "phist_anasazi.h"
+
+#ifdef PHIST_HAVE_ANASAZI
 
 #include "phist_AnasaziOperatorTraits.hpp"
 
