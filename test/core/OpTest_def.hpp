@@ -517,7 +517,7 @@ public:
     A_op.apply(st::one(),A_op.A,vec5_,beta,vec3_,&iflag_);
     ASSERT_EQ(0,iflag_);
 
-    ASSERT_NEAR(mt::one(),MvecsEqual(vec2_,vec3_),1000*VTest::releps());
+    ASSERT_NEAR(mt::one(),MvecsEqual(vec2_,vec3_),std::sqrt(mt::eps()));
         
     // clean up the operator
     SUBR(linearOp_destroy)(&AAA_op,&iflag_);
