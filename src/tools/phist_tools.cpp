@@ -27,11 +27,13 @@
 
 namespace phist {
 
+#ifdef PHIST_HAVE_MPI
 /* default communicator used internally for creating objects,
    all kernel libraries must respect the users choice here.
  */
  MPI_Comm default_comm=MPI_COMM_WORLD;
- 
+
+#endif 
  
 /* 
     Global variable that states the stream used for the output stream
