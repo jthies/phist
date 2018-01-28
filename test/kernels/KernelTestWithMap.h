@@ -78,6 +78,7 @@ static void TearDownTestCase()
     defaultMap_=NULL;
   }
   map_ = NULL; // this either belongs to another object or points to defaultMap_
+  KernelTest::TearDownTestCase();
 }
 
 static const phist_gidx nglob_=_Nglob;

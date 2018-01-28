@@ -87,6 +87,8 @@ class KernelTestWithMassMat<_ST_, _Nglob> : public virtual TestWithType< _ST_ >,
           KernelTestWithMap<_Nglob>::TearDownTestCase();
         }
       }
+      TestWithType<_ST_>::TearDownTestCase();
+      KernelTest::TearDownTestCase();
     }
 
     static TYPE(sparseMat_ptr) B_;

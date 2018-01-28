@@ -135,22 +135,22 @@ public:
 
   /** static teardown method for the complete test case
    */
-  static void TearDownTestCase()
-  {
+static void TearDownTestCase()
+{
   // should work if we count correctly
   if( --staticKernelTestSetupCounter_ == 0 )
-    {
+  {
     phist_comm_delete(comm_,&iflag_);
     EXPECT_EQ(0,iflag_);
     comm_=NULL;
-    }
   }
+}
   
 ::testing::AssertionResult AssertNotNull(void* ptr)
-  {
+{
   if (ptr==NULL) return ::testing::AssertionFailure();
   return ::testing::AssertionSuccess();
-  }
+}
 
 private:
   int kernelTestSetupCounter_;

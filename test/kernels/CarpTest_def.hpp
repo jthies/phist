@@ -297,6 +297,7 @@ public:
   {
     VTest::TearDownTestCase();
     SparseMatTest::TearDownTestCase();
+    MT_Test::TearDownTestCase();
   }
 
 

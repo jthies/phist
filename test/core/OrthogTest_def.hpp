@@ -177,6 +177,7 @@ public:
 #else
     KernelTestWithMap<_N_>::TearDownTestCase();
 #endif
+    TestWithType< _ST_ >::TearDownTestCase();
   }
 
   // primary test routine that calls orthog and checks the result vectors

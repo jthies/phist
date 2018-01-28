@@ -150,7 +150,9 @@ class KernelTestWithSparseMat<_ST_, _Nglob, _Mglob, _MatName, _multipleDefinitio
       KernelTest::SetUp();
       KernelTestWithMap<_Nglob>::SetUp();
 
-      if( this->typeImplemented_ && !this->problemTooSmall_ )
+      bool problemTooSmall = mpi_size_ > _Nglob;
+
+      if( this->typeImplemented_ && !problemTooSmall )
       {
         phist_const_map_ptr map = NULL;
         SUBR(sparseMat_get_range_map)(A_,&map,&this->iflag_);
@@ -169,16 +171,18 @@ class KernelTestWithSparseMat<_ST_, _Nglob, _Mglob, _MatName, _multipleDefinitio
 
     static void TearDownTestCase()
     {
-      // respect teardown order!
-      KernelTestWithMap<_Nglob>::TearDownTestCase();
-
       if( A_ != NULL )
       {
         SUBR(sparseMat_delete)(A_,&iflag_);
         ASSERT_EQ(0,iflag_);
         A_ = NULL;
       }
-
+      bool problemTooSmall = mpi_size_ > _Nglob;
+      if (typeImplemented_ && !problemTooSmall)
+      {
+        KernelTestWithMap<_Nglob>::TearDownTestCase();
+      }
+      TestWithType< _ST_ >::TearDownTestCase();
       KernelTest::TearDownTestCase();
     }
 

@@ -47,8 +47,8 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_,_USE_VIEWS_,
   static void SetUpTestCase()
   {
     ST_Test::SetUpTestCase();
-    KernelTest::SetUpTestCase();
     if (!typeImplemented_) return;
+    KernelTest::SetUpTestCase();
     int sparseMatCreateFlag=getSparseMatCreateFlag(_N_,_NV_);
     // initialize all of the row functions that we use in this class
     ghost_gidx gdim[2];
@@ -122,6 +122,7 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_,_USE_VIEWS_,
 
   static void TearDownTestCase()
   {
+    ST_Test::TearDownTestCase();
     if (!typeImplemented_) return;
     VTest::TearDownTestCase();
     if (A_) SUBR(sparseMat_delete)(A_,&iflag_);
@@ -129,6 +130,8 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_,_USE_VIEWS_,
     if (Al_) SUBR(sparseMat_delete)(Al_,&iflag_);
     if (Ar_) SUBR(sparseMat_delete)(Ar_,&iflag_);
     ASSERT_EQ(0,iflag_);
+    KernelTestWithMap<_N_>::TearDownTestCase();
+    KernelTest::TearDownTestCase();
   }
 
 protected:

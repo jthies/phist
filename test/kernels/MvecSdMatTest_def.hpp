@@ -135,6 +135,7 @@ public:
     V1Test::TearDownTestCase();
 
     KernelTestWithMap<_N_>::TearDownTestCase();
+    TestWithType<_ST_>::TearDownTestCase();
   }
 };
 

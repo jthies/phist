@@ -28,6 +28,9 @@ static void SetUpTestCase()
   phist_random_init();
 }
 
+static void TearDownTestCase()
+{
+}
 static _MT_ MvecEqual(TYPE(mvec_ptr) V, _ST_ value)
 {
   int iflag;
