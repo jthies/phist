@@ -60,7 +60,7 @@ class OperatorTraits <ST, ::phist::BelosMV<ST>, typename phist::ScalarTraits<ST>
     {
       TEUCHOS_TEST_FOR_EXCEPTION(trans!=NOTRANS,std::invalid_argument,
           "Belos::OperatorTraits<ST,MV,phist_linearOp_t>:: Apply: only implemented for trans=NOTRANS up to now.");
-      int iflag;
+      int iflag=0;
       ST alpha = phist::ScalarTraits<ST>::one();
       ST beta = phist::ScalarTraits<ST>::zero();
       Op.apply(alpha,Op.A,X.get(), beta, Y.get(),&iflag);
