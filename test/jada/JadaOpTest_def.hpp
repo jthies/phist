@@ -582,7 +582,7 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,_N_,MATNAME>,
 		SUBR(mvec_add_mvec)(alpha,vec2_,beta,vec3_,&iflag_);
 		ASSERT_EQ(0,iflag_);
 	  
-		ASSERT_NEAR(mt::one(),MvecsEqual(vec1_,vec3_),100*VTest::releps());
+		ASSERT_NEAR(mt::one(),MvecsEqual(vec1_,vec3_),std::sqrt(mt::eps()));
 	  
 		SUBR(projection_Op_delete)(&proj_Op,&iflag_);
 		ASSERT_EQ(0,iflag_);
