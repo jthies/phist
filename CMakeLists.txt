@@ -1522,6 +1522,9 @@ endif()
 # Adding custom test target "check" because it is the only way to show the full output of test errors on console
 add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND} ${CTEST_OPTIONS})
 
+# check the installation with an example project
+add_custom_target(test_install COMMAND ${PROJECT_SOURCE_DIR}/buildScripts/test_install.sh ${CMAKE_INSTALL_PREFIX})
+
 # Custom targets: doc, cppcheck, coverage, audit
 # Adding optinal target "doc" to generate Doxygen documentation
 find_package(Doxygen 1.7.0 QUIET)

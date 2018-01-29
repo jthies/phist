@@ -201,16 +201,8 @@ fi
 gzip test.log                           || update_error ${LINENO}
 echo "Install..."
 make install &> install.log             || update_error ${LINENO}
-echo "Check installation with pkg-config project"
-mkdir jdqr_pkg_config; cd $_
-PKG_CONFIG_PATH=../$INSTALL_PREFIX/lib/pkgconfig:$PKG_CONFIG_PATH cmake ../../exampleProjects/jdqr_pkg_config || update_error ${LINENO}
-make || update_error ${LINENO}
-cd ..
-echo "Check installation with CMake project"
-mkdir jdqr_cmake; cd $_
-CMAKE_PREFIX_PATH=../$INSTALL_PREFIX:$CMAKE_PREFIX_PATH cmake ../../exampleProjects/jdqr_cmake || update_error ${LINENO}
-make || update_error ${LINENO}
-cd ..
+echo "Check installation"
+make test_install || update_error ${LINENO}
 
 cd ..
 
