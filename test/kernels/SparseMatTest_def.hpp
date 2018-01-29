@@ -1446,6 +1446,72 @@ TEST_F(CLASSNAME,fromRowFuncAndContext)
 
 #endif
 
+#if _NV_>1
+
+  TEST_F(CLASSNAME, sparseMat_times_mvec_with_sequence_of_same_vec_views)
+  {
+    if( !typeImplemented_ || problemTooSmall_ )
+      return;
+
+    _ST_ alpha=st::one();
+    _ST_ beta=st::zero();
+
+    SUBR(mvec_random)(vec1_, &iflag_);
+    ASSERT_EQ(0,iflag_);
+
+    // save vec1_
+    SUBR(mvec_add_mvec)(st::one(), vec1_, st::zero(), vec2_, &iflag_);
+    ASSERT_EQ(0,iflag_);
+
+    // views and copies of current and previous column
+    TYPE(mvec_ptr) v0 = NULL, v0_copied=NULL;
+    TYPE(mvec_ptr) v1 = NULL, v1_copied=NULL;
+    
+    PHISTTEST_MVEC_CREATE(&v0_copied, map_, 1, &iflag_);
+    PHISTTEST_MVEC_CREATE(&v1_copied, map_, 1, &iflag_);
+    
+    for (int i=1; i<_NV_; i++)
+    {
+    
+      SUBR(mvec_view_block)(vec1_, &v0, i-1, i-1, &iflag_);
+    ASSERT_EQ(0,iflag_);
+      SUBR(mvec_view_block)(vec1_, &v1, i, i, &iflag_);
+    ASSERT_EQ(0,iflag_);
+
+    // note: copy the reference blocks from a backup mvec because the spMVM may have
+    // destroyed the data in vec1_
+    SUBR(mvec_get_block)(vec2_, v0_copied, i-1, i-1, &iflag_);
+    ASSERT_EQ(0,iflag_);
+    SUBR(mvec_get_block)(vec2_, v1_copied, i, i, &iflag_);
+    ASSERT_EQ(0,iflag_);
+
+    // first generate reference data (safe calculation)
+    SUBR(sparseMat_times_mvec)(alpha, A_, v0, beta, v1, &iflag_);
+    ASSERT_EQ(0,iflag_);
+    // calculation (unsafe aliasing!)
+    SUBR(sparseMat_times_mvec)(alpha, A_, v0_copied, beta, v1_copied, &iflag_);
+    ASSERT_EQ(0,iflag_);
+
+    SUBR(mvec_set_block)(vec2_, v1_copied, i, i, &iflag_);
+    ASSERT_EQ(0,iflag_);
+    
+    EXPECT_NEAR(1.0,MvecsEqual(vec1_,vec2_),VTest::releps());
+  }
+
+  EXPECT_NEAR(1.0,MvecsEqual(vec1_,vec2_),std::sqrt(mt::eps()));
+
+  // delete views and copies
+    SUBR(mvec_delete)(v0, &iflag_);
+    ASSERT_EQ(0,iflag_);
+    SUBR(mvec_delete)(v1, &iflag_);
+    ASSERT_EQ(0,iflag_);
+    SUBR(mvec_delete)(v0_copied, &iflag_);
+    ASSERT_EQ(0,iflag_);
+    SUBR(mvec_delete)(v1_copied, &iflag_);
+    ASSERT_EQ(0,iflag_);
+  }
+#endif
+
 #ifdef PHIST_KERNEL_LIB_GHOST
 
 TEST_F(CLASSNAME, ghost_spmv_mode_overlap )
@@ -1508,6 +1574,8 @@ TEST_F(CLASSNAME, ghost_spmv_mode_task )
     ASSERT_NEAR(mt::one(), MvecsEqual(vec2_,vec3_,mt::one()),std::sqrt(mt::eps()));
 }
 #endif
+
+
 
 #endif // DONT_INSTANTIATE
 

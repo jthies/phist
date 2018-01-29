@@ -316,6 +316,34 @@ public:
     }
   }
 
+  // apply operator to a series of viewed columns:
+  //    V1 = A*V0
+  //    Y2 = A*V1
+  //    ...
+  //    Vm = A*V(m-1)
+  TEST_F(CLASSNAME, belos_OpApply_to_sequence_of_column_views) 
+  {
+    if (typeImplemented_ && !problemTooSmall_ && _NV_>1)
+    {
+      Teuchos::RCP<phist::BelosMV< _ST_ > > V = phist::mvec_rcp< _ST_ >(vec1_,false);
+      std::vector<int> i0(1), i1(1);
+      for (int i=1; i<_NV_; i++)
+      {
+        i0[0]=i-1; i1[0]=i;
+        Teuchos::RCP<phist::BelosMV< _ST_ > > V0_copied = MVT::CloneCopy(*V,i0);
+        Teuchos::RCP<phist::BelosMV< _ST_ > > V1_copied = MVT::CloneCopy(*V,i1);
+
+        Teuchos::RCP<phist::BelosMV< _ST_ > > V0 = MVT::CloneViewNonConst(*V,i0);
+        Teuchos::RCP<phist::BelosMV< _ST_ > > V1 = MVT::CloneViewNonConst(*V,i1);
+        OPT::Apply(A_op,*V0_copied,*V1_copied);
+        OPT::Apply(A_op,*V0,*V1);
+      
+        EXPECT_REAL_EQ(1.0,MvecsEqual(V0->get(),V0_copied->get()));
+        EXPECT_NEAR(1.0,MvecsEqual(V1->get(),V1_copied->get()),VTest::releps());
+      }
+    }
+  }
+
   TEST_F(CLASSNAME, belos_opTests) 
   {
     if (typeImplemented_ && !problemTooSmall_)
