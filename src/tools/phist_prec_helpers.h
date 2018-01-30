@@ -19,6 +19,8 @@
 
 #include "phist_config.h"
 /* needs to be included before system headers for some intel compilers+mpi */
+
+#ifndef DOXYGEN
 #ifdef PHIST_HAVE_MPI
 #include <mpi.h>
 #endif
@@ -28,6 +30,7 @@
 #include <stdio.h>
 #include <math.h>
 #include <stdlib.h>
+#endif /* DOXYGEN */
 
 #ifdef __cplusplus
 #define restrict
