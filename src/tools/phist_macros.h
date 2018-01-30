@@ -27,7 +27,7 @@
 #include <stdio.h>
 #endif
 #include "phist_defs.h"
-#endif
+#endif /* DOXYGEN */
 
 #ifdef __cplusplus
   extern "C" {
@@ -81,8 +81,10 @@ omitted.
 
 // "line-level" timings using PHIST_CHK macros
 #if defined(__cplusplus) && defined(PHIST_TIMEMONITOR_PERLINE)
-#include "phist_timemonitor.hpp"
-#include <string>
+#ifndef DOXYGEN
+# include "phist_timemonitor.hpp"
+# include <string>
+#endif /* DOXYGEN */
 #define PHIST_STRINGIFY_MACRO(l) #l
 #define PHIST_FILE_LINE_REMOVE_PATH(f) (strrchr(f, '/') ? strrchr(f, '/') + 1 : f)
 #define PHIST_FILE_LINE_MACRO(f,l) PHIST_FILE_LINE_REMOVE_PATH(f ":" PHIST_STRINGIFY_MACRO(l))

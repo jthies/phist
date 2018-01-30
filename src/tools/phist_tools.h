@@ -33,13 +33,13 @@
 #include <likwid.h>
 #endif
 
-#endif //DOXYGEN
-
-# include "phist_macros.h"
-
 #ifdef PHIST_HAVE_GHOST
 #include <ghost.h>
 #endif
+
+#endif //DOXYGEN
+
+# include "phist_macros.h"
 
 #ifdef __cplusplus
 

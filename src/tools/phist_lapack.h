@@ -8,11 +8,10 @@
 /*******************************************************************************************/
 #ifndef PHIST_LAPACK_H
 #define PHIST_LAPACK_H
+
 #include "phist_config.h"
-/* needs to be included before system headers for some intel compilers+mpi */
-#ifdef PHIST_HAVE_MPI
-#include <mpi.h>
-#endif
+
+#ifndef DOXYGEN
 
 #include "phist_typedefs.h"
 //TODO: cmake integration of lapacke
@@ -191,4 +190,6 @@ const phist_Dblas_cmplx* alpha, const phist_Dblas_cmplx* a,  const phist_blas_id
 #endif
 
 #endif
-#endif
+
+#endif /* DOXYGEN */
+#endif /* PHIST_LAPACK_H */

@@ -219,7 +219,9 @@ else()
   else()
     message(STATUS "found liblapacke: '${LAPACKE_LIBRARY}'")
   endif()
-  find_path (LAPACKE_INCLUDE_DIR NAMES lapacke.h mkl_lapacke.h HINTS ${BLAS_LIBDIR})
+  find_path (LAPACKE_INCLUDE_DIR NAMES lapacke.h mkl_lapacke.h 
+                                 HINTS ${BLAS_LIBDIR}
+                                 PATH_SUFFIXES "lapacke")
   if (LAPACKE_INCLUDE_DIR MATCHES "LAPACKE_INCLUDE_DIR-NOTFOUND")
     message(WARNING "did not find lapacke header")
   else()

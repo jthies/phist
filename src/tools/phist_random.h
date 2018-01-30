@@ -15,11 +15,9 @@
 
 #include "phist_config.h"
 /* needs to be included before system headers for some intel compilers+mpi */
-#ifdef PHIST_HAVE_MPI
-#include <mpi.h>
-#endif
-
+#ifndef DOXYGEN
 #include <stdint.h>
+#endif
 
 #ifdef __cplusplus
 extern "C" {
