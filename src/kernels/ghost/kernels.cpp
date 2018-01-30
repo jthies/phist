@@ -239,6 +239,7 @@ extern "C" void phist_kernels_init(int* argc, char*** argv, int* iflag)
   // This will not handle the situation correctly where multiple MPI processes
   // are started on a node and rank 1 gets the GPU automatically, I think (cf. #128)
   const char* GHOST_TYPE=getenv("GHOST_TYPE");
+
   if (GHOST_TYPE && !strcasecmp(GHOST_TYPE,"cuda")) num_threads=-1;
   if (num_threads!=-1)
   {
@@ -252,6 +253,14 @@ extern "C" void phist_kernels_init(int* argc, char*** argv, int* iflag)
   ghost_hwconfig_set(hwconfig);
 
   ghost_init(*argc, *argv);
+
+  if (std::getenv("OMP_SCHEDULE") == nullptr)
+  {
+    PHIST_OUT(PHIST_PERFWARNING,"GHOST uses OpenMP scheduling according to the environment variable 'OMP_SCHEDULE'.\n"
+                                "We recommend setting it to e.g. 'static' because the default ('dynamic,1') usually\n"
+                                "leads to rather poor performance.\n");
+  }
+
 
   char *str = NULL;
   ghost_string(&str);
