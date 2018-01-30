@@ -1495,7 +1495,7 @@ TEST_F(CLASSNAME,fromRowFuncAndContext)
     SUBR(mvec_set_block)(vec2_, v1_copied, i, i, &iflag_);
     ASSERT_EQ(0,iflag_);
     
-    EXPECT_NEAR(1.0,MvecsEqual(vec1_,vec2_),100*VTest::releps());
+    EXPECT_NEAR(1.0,MvecsEqual(vec1_,vec2_),std::sqrt(mt::eps()));
   }
 
   EXPECT_NEAR(1.0,MvecsEqual(vec1_,vec2_),std::sqrt(mt::eps()));
