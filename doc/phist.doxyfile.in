@@ -8,7 +8,8 @@ HIDE_UNDOC_MEMBERS     = YES
 INPUT                  = ./src/ README.md
 FILE_PATTERNS          = "*.h" "*.md"
 RECURSIVE              = YES
-EXCLUDE_PATTERNS       = "*_def.*" \
+EXCLUDE_PATTERNS       = "*/src/craft/*" \
+                         "*_def.*" \
                          "*_decl*"
 FILTER_PATTERNS        = "*.h=\"cpp -C -DDOXYGEN ${INCLUDE_FLAGS} -I.\""
 USE_MDFILE_AS_MAINPAGE = README.md

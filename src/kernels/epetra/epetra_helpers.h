@@ -9,8 +9,10 @@
 #ifndef KERNELS_EPETRA_HELPERS_HPP
 #define KERNELS_EPETRA_HELPERS_HPP
 
+#ifndef DOXYGEN
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_SerialDenseMatrix.hpp"
+#endif
 
 class Epetra_Operator;
 class Epetra_CrsMatrix;
