@@ -74,6 +74,8 @@ namespace Belos {
       PHIST_SOUT(PHIST_ERROR,"projectAndNormalize without Q -> only 'normalize (not implemented)'\n");
       throw phist::Exception(PHIST_NOT_IMPLEMENTED);
     }
+
+    int rank_of_X=ncolsX;
     
     // in contrast to orthog, this routine allows orthogonalizing against
     // several blocks. Hence the outer loop
@@ -97,14 +99,25 @@ namespace Belos {
       _MT_ rankTol=sing_tol_;
       _MT_ orthoEps=blk_tol_;
       int numSweeps=max_ortho_steps_;
+      try {
       phist::core< _ST_ >::orthog_impl
           (Q[i]->get(),X.get(),_Op.get(),X_or_MX->get(),
           XtMX,Bphist,Cphist,
           max_ortho_steps_,&rankQiX,rankTol,orthoEps,
           &iflag);
+      } catch (phist::Exception e)
+      {
+        // note: this function returns iflag=-8 if the nullspace of X could not be augmented by
+        // random vectors. iflag=1 means that [Q X] did not have full rank, but Belos wants us 
+        // to return the rank *of X after randomizing the null space*.
+        if (iflag==-8) rank_of_X=rankQiX-ncolsQi;
+      }
 
-
+      MVT::CopySdMatToTeuchos(Cphist, *C[i]);
+      MVT::CopySdMatToTeuchos(Bphist, *B);
+      if (iflag==1) PHIST_SOUT(PHIST_VERBOSE,"orthog suggests rank([Q,X])=%d on input.\n",rankQiX);
     }
+    return rank_of_X;
   }
 } /* namespace Belos */
 

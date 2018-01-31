@@ -30,7 +30,6 @@ namespace Belos {
 
 using ::phist::BelosMV;
 
-
   ////////////////////////////////////////////////////////////////////
   //
   // Implementation of the Belos::MultiVecTraits for phist mvecs.
@@ -64,6 +63,38 @@ using ::phist::BelosMV;
     
     static inline Teuchos::RCP<BelosMV<ST> > mvec_rcp(mvec_ptr V,bool own_mem) {return ::phist::mvec_rcp<ST>(V,own_mem);}
     static inline Teuchos::RCP<const BelosMV<ST> > mvec_rcp(const_mvec_ptr V,bool own_mem) {return ::phist::mvec_rcp<ST>(V,own_mem);}
+
+
+  static void CopySdMatToTeuchos(const_sdMat_ptr Bphist, Teuchos_sdMat& B)
+  {
+    int iflag=0;
+    ST* B_raw=nullptr;
+    phist_lidx lda;
+    kt::sdMat_extract_view(const_cast<sdMat_ptr>(Bphist),&B_raw,&lda,&iflag);
+    for (int j=0; j<B.numCols(); j++)
+    {
+      for (int i=0; i<B.numRows(); i++)
+      {
+        B(i,j)=B_raw[j*lda+i];
+      }
+    }
+  }
+
+  static void CopySdMatFromTeuchos(sdMat_ptr Bphist, const Teuchos_sdMat& B)
+  {
+    int iflag=0;
+    ST* B_raw=nullptr;
+    phist_lidx lda;
+    kt::sdMat_extract_view(Bphist,&B_raw,&lda,&iflag);
+    for (int j=0; j<B.numCols(); j++)
+    {
+      for (int i=0; i<B.numRows(); i++)
+      {
+        B_raw[j*lda+i]=B(i,j);
+      }
+    }
+  }
+
 
   static int GetNumberVecs( const BelosMV<ST>& mv )
   {
@@ -206,16 +237,8 @@ static Teuchos::RCP<BelosMV<ST> > CloneViewNonConst( BelosMV<ST>& mv, const std:
       // copy B to a phist sdMat
       sdMat_ptr Bphist=nullptr;
       kt::sdMat_create(&Bphist,B.numRows(),B.numCols(),nullptr,&iflag);
-      ST* B_raw=nullptr;
-      ghost_lidx lda;
-      kt::sdMat_extract_view(Bphist,&B_raw,&lda,&iflag);
-      for (int j=0; j<B.numCols(); j++)
-      {
-        for (int i=0; i<B.numRows(); i++)
-        {
-          B_raw[j*lda+i]=B(i,j);
-        }
-      }
+
+      CopySdMatFromTeuchos(Bphist,B);
 
       kt::mvec_times_sdMat(alpha,A.get(),Bphist,beta,mv.get(),&iflag);
       kt::sdMat_delete(Bphist,&iflag);
@@ -278,15 +301,8 @@ static Teuchos::RCP<BelosMV<ST> > CloneViewNonConst( BelosMV<ST>& mv, const std:
       
       kt::mvecT_times_mvec(alpha,A.get(),B.get(),st::one(),C_tmp,&iflag);
 
-      ST* C_raw=nullptr;
-      phist_lidx lda;
-      kt::sdMat_extract_view(C_tmp,&C_raw,&lda,&iflag);
+      CopySdMatToTeuchos(C_tmp,C);
       
-      for (int j=0; j<C.numCols(); j++)
-        for (int i=0; i<C.numRows(); i++)
-        {
-          C(i,j)=C_raw[j*lda+i];
-        }
       kt::sdMat_delete(C_tmp,&iflag);
     }
 
