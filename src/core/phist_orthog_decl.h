@@ -6,6 +6,7 @@
 /* Contact: Jonas Thies (Jonas.Thies@DLR.de)                                               */
 /*                                                                                         */
 /*******************************************************************************************/
+
 //! orthogonalize an mvec against an already orthogonal one. \ingroup core
 
 //! This is the main orthogonalization routine in PHIST.           
@@ -49,5 +50,24 @@ void SUBR(orthog)(TYPE(const_mvec_ptr) V,
                      TYPE(sdMat_ptr) R1,
                      TYPE(sdMat_ptr) R2,
                      int numSweeps, int* rankVW, int* iflag);
+
+
+
+//! This function is called by orthog and allows some additional tweaking.   
+//! It assumes that B*W and WtW=W'*BW are already available. It also allows  
+//! you to specify the desired orthogonalization tolerance (orthoEps) and    
+//! threshold when to consider two columns as linearly dependent (rankTol).  
+//! You may call this function with BW=W and B=NULL when orthogonalizing in  
+//! the standard inner product.                                              
+void SUBR(orthog_impl)(TYPE(const_mvec_ptr) V,
+                     TYPE(mvec_ptr) W,
+                     TYPE(const_linearOp_ptr) B,
+                     TYPE(mvec_ptr) BW,
+                     TYPE(sdMat_ptr) WtW,
+                     TYPE(sdMat_ptr) R1,
+                     TYPE(sdMat_ptr) R2,
+                     int numSweeps, int* rankVW, 
+                     _MT_ rankTol, _MT_ orthoEps,
+                     int* iflag);
 
 

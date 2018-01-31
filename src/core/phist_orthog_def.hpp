@@ -18,6 +18,7 @@ extern "C" void SUBR(orthog)(TYPE(const_mvec_ptr) V,
 {
   PHIST_ENTER_FCN(__FUNCTION__);
 #include "phist_std_typedefs.hpp"
+  int iflag_in=*iflag;
 #ifdef PHIST_HIGH_PRECISION_KERNELS_FORCE
   int robust=1;
 #else
@@ -37,10 +38,8 @@ extern "C" void SUBR(orthog)(TYPE(const_mvec_ptr) V,
   PHIST_CHK_IERR(SUBR(mvec_num_vectors)(W,&k,iflag),*iflag);
   if (V!=NULL) PHIST_CHK_IERR(SUBR(mvec_num_vectors)(V,&m,iflag),*iflag);
 
-    phist_const_map_ptr map=NULL;
-    PHIST_CHK_IERR(SUBR(mvec_get_map)(W,&map,iflag),*iflag);
     phist_const_comm_ptr comm=NULL;
-    PHIST_CHK_IERR(phist_map_get_comm(map,&comm,iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(mvec_get_comm)(W,&comm,iflag),*iflag);
   
   TYPE(mvec_ptr) BW= W;
   
@@ -48,10 +47,12 @@ extern "C" void SUBR(orthog)(TYPE(const_mvec_ptr) V,
   PHIST_CHK_IERR(SUBR(sdMat_create)(&WtW,k,k,comm,iflag),*iflag);
   SdMatOwner<_ST_> _WtW(WtW);
   
+  MvecOwner< _ST_ > _BW;
 
   if (B!=NULL)
   {
-    PHIST_CHK_IERR(SUBR(mvec_create)(&BW,map,k,iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(mvec_clone_shape)(&BW,W,iflag),*iflag);
+    _BW.set(BW);
     if (robust) *iflag=PHIST_ROBUST_REDUCTIONS;
     // note: we pass in WtW as the "VtW" argument because it should contain W'BW
     PHIST_CHK_IERR(B->fused_apply_mvTmv(st::one(),B->A,W,st::zero(),BW,NULL,WtW,iflag),*iflag);
@@ -61,8 +62,38 @@ extern "C" void SUBR(orthog)(TYPE(const_mvec_ptr) V,
     if (robust) *iflag=PHIST_ROBUST_REDUCTIONS;
     PHIST_CHK_IERR(SUBR(mvecT_times_mvec)(st::one(),W,W,st::zero(),WtW,iflag),*iflag);
   }
-  
+
+  *iflag=iflag_in;
+  SUBR(orthog_impl)(V,W,B,BW,WtW,R1,R2,numSweeps,rankVW,rankTol,orthoEps,iflag);
+}
+
+extern "C" void SUBR(orthog_impl)(TYPE(const_mvec_ptr) V,
+                     TYPE(mvec_ptr) W,
+                     TYPE(const_linearOp_ptr) B,
+                     TYPE(mvec_ptr) BW,
+                     TYPE(sdMat_ptr) WtW,
+                     TYPE(sdMat_ptr) R1,
+                     TYPE(sdMat_ptr) R2,
+                     int numSweeps,
+                     int* rankVW,
+                     _MT_ rankTol,
+                     _MT_ orthoEps,
+                     int* iflag)
+{
+  PHIST_ENTER_FCN(__FUNCTION__);
+#include "phist_std_typedefs.hpp"
+#ifdef PHIST_HIGH_PRECISION_KERNELS_FORCE
+  int robust=1;
+#else
+  int robust    =(*iflag&PHIST_ROBUST_REDUCTIONS);
+#endif
+  int randomize =(*iflag&PHIST_ORTHOG_RANDOMIZE_NULLSPACE);
   int dim0;
+
+  int m=0,k;
+
+  PHIST_CHK_IERR(SUBR(mvec_num_vectors)(W,&k,iflag),*iflag);
+  if (V!=NULL) PHIST_CHK_IERR(SUBR(mvec_num_vectors)(V,&m,iflag),*iflag);
 
   if (V!=NULL)
   {
@@ -86,6 +117,8 @@ extern "C" void SUBR(orthog)(TYPE(const_mvec_ptr) V,
   TYPE(sdMat_ptr) R1p=NULL,R1pp=NULL,R2p=NULL;
   if (randomize&&dim0>0)
   {
+    phist_const_comm_ptr comm;
+    PHIST_CHK_IERR(SUBR(mvec_get_comm)(W,&comm,iflag),*iflag);
     if (m>0) PHIST_CHK_IERR(SUBR(sdMat_create)(&R2p,m,k,comm,iflag),*iflag);
     PHIST_CHK_IERR(SUBR(sdMat_create)(&R1p,k,k,comm,iflag),*iflag);
     PHIST_CHK_IERR(SUBR(sdMat_create)(&R1pp,k,k,comm,iflag),*iflag);
@@ -158,10 +191,6 @@ extern "C" void SUBR(orthog)(TYPE(const_mvec_ptr) V,
     PHIST_CHK_IERR(SUBR(sdMat_delete)(R1_r,iflag),*iflag);
   }
   
-  if (B!=NULL)
-  {
-    PHIST_CHK_IERR(SUBR(mvec_delete)(BW,iflag),*iflag);
-  }
   if (num_attempts==max_attempts)
   {
     *iflag=-8;
@@ -171,6 +200,3 @@ extern "C" void SUBR(orthog)(TYPE(const_mvec_ptr) V,
     *iflag=+1;
   }
 }
-
-
-
