@@ -7,6 +7,8 @@
 /*                                                                                         */
 /*******************************************************************************************/
 
+#include "phist_BelosICGSOrthoManager.hpp"
+
 #define PHIST_rcp phist::mvec_rcp< _ST_ >
 
 // Belos: block krylov methods from Trilinos

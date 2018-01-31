@@ -9,10 +9,11 @@
 #include "phist_config.h"
 
 #include "phist_tools.h"
-#include "phist_kernels.h"
-#include "phist_operator.h"
+#include "phist_kernels.hpp"
+#include "phist_core.hpp"
 #include "phist_ScalarTraits.hpp"
 #include "phist_belos.h"
+#include "phist_MemOwner.hpp"
 
 #ifdef PHIST_HAVE_BELOS
 
@@ -22,15 +23,11 @@
 #include "Teuchos_StandardCatchMacros.hpp"
 #include "Teuchos_FancyOStream.hpp"
 
+#include "phist_BelosMV.hpp"
 #include "Belos_PhistAdapter.hpp"
 #include "phist_BelosOperatorTraits.hpp"
 
-// we provide our own ICGS/CholQR ortho manager based on the 'orthog' routine.
-// Since there is no easy mechanism to extend Belos with new OrthoManagers,
-// we do this by specializing their class for our own MV and OP types.
 #include "BelosICGSOrthoManager.hpp"
-#include "phist_BelosICGSOrthoManager.hpp"
-
 #include "BelosSolverManager.hpp"
 #include "BelosBlockGmresSolMgr.hpp"
 #include "BelosPseudoBlockGmresSolMgr.hpp"
