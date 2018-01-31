@@ -52,7 +52,7 @@ namespace Belos {
     
     phist_const_comm_ptr comm;    
     pk::mvec_get_comm(X.get(),&comm,&iflag);
-    pt::sdMat_ptr Bphist=NULL, Cphist=NULL, XtMX;
+    pt::sdMat_ptr Bphist=NULL, Cphist=NULL, XtMX=NULL;
     int ncolsX = MVT::GetNumberVecs(X);
     int ncolsQ = -1;
 
@@ -65,6 +65,13 @@ namespace Belos {
       // when orthogonalizing X against Q_i, the previous efforts may be compromized and <Q_j,X>!=0 for j<i may occur,
       // so we would actually have to add another loop here. I don't know exactly which Belos solvers require this 
       // feature, if someone complains we can still add it, of course.
+      PHIST_SOUT(PHIST_ERROR,"projectAndNormalize with several Q -> not implemented'\n");
+      throw phist::Exception(PHIST_NOT_IMPLEMENTED);
+    }
+
+    if (Q.size()==0)
+    {
+      PHIST_SOUT(PHIST_ERROR,"projectAndNormalize without Q -> only 'normalize (not implemented)'\n");
       throw phist::Exception(PHIST_NOT_IMPLEMENTED);
     }
     
@@ -83,7 +90,7 @@ namespace Belos {
         _Cphist.set(Cphist);
       }
       // (re-)compute X'*M*X because X is updated for every i
-      pk::mvecT_times_mvec(st::zero(),X.get(),X_or_MX->get(),st::zero(),XtMX,&iflag);
+      pk::mvecT_times_mvec(st::one(),X.get(),X_or_MX->get(),st::zero(),XtMX,&iflag);
       int iflag=iflag_in;
       int rankQiX; // rank of [Q[i],X] before orthog (we'll randomize the null-space, so unless iflag=-8 is returned,
                    // [Q[i] X] has full rank afterwards)

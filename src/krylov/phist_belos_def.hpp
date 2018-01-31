@@ -87,7 +87,7 @@ typedef phist::BelosMV< _ST_ > BelosMV;
   }
   belosList->set("Maximum Iterations",*num_iters);
   belosList->set("Block Size",numRhs);
-  belosList->set("Orthogonalization","DGKS");
+  belosList->set("Orthogonalization","ICGS");
   belosList->set("Convergence Tolerance",tol);
   belosList->set("Output Frequency",1);
   belosList->set("Show Maximum Residual Norm Only",true);
