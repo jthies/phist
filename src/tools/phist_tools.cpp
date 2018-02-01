@@ -90,10 +90,28 @@ std::string phist_str2upper(const std::string& s)
     phist::output_FILE = nullptr;
   }
 
+  std::ostream* phist_get_CXX_output_stream()
+  {
+    if (phist::output_stream==nullptr && phist::output_FILE==stdout)
+    {
+      return &std::cout;
+    }
+    return phist::output_stream;
+  }
+
   extern "C" void phist_set_C_output_stream(FILE* ostr)
   {
     phist::output_FILE = nullptr;
     phist::output_FILE = ostr;
+  }
+
+  FILE* phist_get_C_output_stream()
+  {
+    if (phist::output_FILE==nullptr && phist::output_stream==&std::cout)
+    {
+      return stdout;
+    }
+    return phist::output_FILE;
   }
 
   extern "C" void phist_printf(int outlev, int rootOnly, char* msg, ...)

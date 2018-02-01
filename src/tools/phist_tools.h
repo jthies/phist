@@ -77,6 +77,10 @@ unsigned int phist_cacheline_size()
   //! All output can be suppressed by calling this function with a nullptr argument.
   void phist_set_CXX_output_stream(std::ostream& ostr);
 
+  //! retrieve the C++ stream to which phistj is printing.
+  //! May be nullptr if a C output stream was set using phist_set_C_output_stream.
+  std::ostream* phist_get_CXX_output_stream();
+
 extern "C" {
 #endif
 
@@ -113,6 +117,10 @@ extern "C" {
   //!
   //! All output can be suppressed by calling this function with a NULL argument.
   void phist_set_C_output_stream(FILE* fp);
+
+  //! Get the default output stream (C-style) to which phist is printing.
+  //! May be NULL if a C++ stream was provided using phist_set_CXX_output_stream().
+  FILE* phist_get_C_output_stream();
 
 const char* phist_retcode2str(int code);
 #ifdef PHIST_HAVE_GHOST

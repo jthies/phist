@@ -52,11 +52,7 @@ typedef phist::BelosMV< _ST_ > BelosMV;
   // create a nice wrapper for std::cout. Note that we do not allow
   // the stream to 'delete' std::cout by passing 'false' to the rcp() function
   Teuchos::RCP<Teuchos::FancyOStream> out = 
-        Teuchos::rcp(new Teuchos::FancyOStream(Teuchos::rcp(&std::cout,false)));
-
-  // customize output behavior a little:
-  out->setOutputToRootOnly(0);
-  out->setShowProcRank(false);
+        Teuchos::rcp(new Teuchos::FancyOStream(Teuchos::rcp(phist_get_CXX_output_stream(),false)));
 
 ///////////////////////////////////////////////////////////////////////
 // create a block GMRES "solver manager" to solve AX=B.              //
