@@ -103,7 +103,7 @@ namespace Belos {
       phist::core< _ST_ >::orthog_impl
           (Q[i]->get(),X.get(),_Op.get(),X_or_MX->get(),
           XtMX,Bphist,Cphist,
-          max_ortho_steps_,&rankQiX,rankTol,orthoEps,
+          numSweeps,&rankQiX,rankTol,orthoEps,
           &iflag);
       } catch (phist::Exception e)
       {
