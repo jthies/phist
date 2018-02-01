@@ -58,6 +58,7 @@ public:
 	ASSERT_EQ(mpi_size_, size);
 }
 
+#ifdef PHIST_HAVE_MPI
   /*! Test the comm_get_rank function - is the comm in the kernel lib really MPI_COMM_WORLD?. */
   TEST_F(XCommTest, change_default_comm_to_SELF)
   {
@@ -98,4 +99,4 @@ public:
     // reset the comm - otherwise subsequent tests fail...
     phist_set_default_comm(MPI_COMM_WORLD);
   }
-
+#endif /* PHIST_HAVE_MPI */
