@@ -339,7 +339,7 @@ public:
         OPT::Apply(A_op,*V0,*V1);
       
         EXPECT_REAL_EQ(1.0,MvecsEqual(V0->get(),V0_copied->get()));
-        EXPECT_NEAR(1.0,MvecsEqual(V1->get(),V1_copied->get()),VTest::releps());
+        EXPECT_NEAR(1.0,MvecsEqual(V1->get(),V1_copied->get()),10*VTest::releps());
       }
     }
   }
