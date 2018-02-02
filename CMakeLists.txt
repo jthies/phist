@@ -157,13 +157,15 @@ if (XSDK_ENABLE_Fortran)
                         "https://bitbucket.org/essex/phist_fort/")
 endif()
 
-set (XSDK_INDEX_SIZE 64 CACHE INTEGER "data type for global indices (32/64), default 64.")
+if (USE_XSDK_DEFAULTS)
+  set (XSDK_INDEX_SIZE 64 CACHE INTEGER "data type for global indices (32/64), default 64.")
+  #otherwise, leave it to the kernel library to decide.
+endif()
+
 if (XSDK_INDEX_SIZE EQUAL 32)
   set(PHIST_FORCE_INT_GIDX_DEFAULT ON)
 elseif (XSDK_INDEX_SIZE EQUAL 64)
   set(PHIST_FORCE_INT_GIDX_DEFAULT OFF)
-else()
-  message(WARNING "invalid value of XSDK_INDEX_SIZE (${XSDK_INDEX_SIZE}, should be 32 or 64) is ignored.")
 endif()
 
 ########################################################################
@@ -654,11 +656,9 @@ if (NOT DEFINED PHIST_FORCE_INT_GIDX_DEFAULT)
     set(PHIST_FORCE_INT_GIDX_DEFAULT OFF)
   endif()
 endif()
+
 option(PHIST_FORCE_INT_GIDX "Use 32-bit global indices for compatiblity with other libs" 
 ${PHIST_FORCE_INT_GIDX_DEFAULT})
-if( "${PHIST_KERNEL_LIB}" MATCHES "petsc|Eigen" )
-  set(PHIST_FORCE_INT_GIDX ON)
-endif()
 
 ##############################################################################
 # enable single precision and complex valued calculation if supported
