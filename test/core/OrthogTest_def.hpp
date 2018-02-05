@@ -11,7 +11,6 @@
 #error "file not included correctly"
 #endif
 
-
 #if !defined(PHIST_HIGH_PRECISION_KERNELS) && defined(PHIST_HIGH_PRECISION_KERNELS_FORCE)
 #define PHIST_HIGH_PRECISION_KERNELS
 #endif
@@ -46,7 +45,7 @@ public:
   TYPE(linearOp_ptr) B_op;
 
   //! vectorspaces above, pre-multiplied by B
-  TYPE(mvec_ptr) BV_, BW_,BQ_;
+  TYPE(mvec_ptr) BV_, BW_,BW2_,BQ_;
 
   //! R1 is m x m, R2 is k x k
   TYPE(sdMat_ptr) R0_, R1_, R2_;
@@ -114,7 +113,7 @@ public:
       SUBR(mvec_extract_view)(W2_,&W2_vp_,&this->ldaW2_,&this->iflag_);
       ASSERT_EQ(0,this->iflag_);
       
-      B_op=NULL; BV_=V_; BW_=W_; BQ_=Q_;
+      B_op=NULL; BV_=V_; BW_=W_; BW2_=BW_; BQ_=Q_;
 
 #ifdef ORTHOG_WITH_HPD_B
       B_op=new TYPE(linearOp);
@@ -125,6 +124,8 @@ public:
       PHISTTEST_MVEC_CREATE(&BV_,map,this->m_,&this->iflag_);
       ASSERT_EQ(0,this->iflag_);
       PHISTTEST_MVEC_CREATE(&BW_,map,this->k_,&this->iflag_);
+      ASSERT_EQ(0,this->iflag_);
+      PHISTTEST_MVEC_CREATE(&BW2_,map,this->k_,&this->iflag_);
       ASSERT_EQ(0,this->iflag_);
       PHISTTEST_MVEC_CREATE(&BQ_,map,this->k_,&this->iflag_);
       ASSERT_EQ(0,this->iflag_);
@@ -159,6 +160,7 @@ public:
     BTest::TearDown();
       SUBR(mvec_delete)(BV_,&iflag_);
       SUBR(mvec_delete)(BW_,&iflag_);
+      SUBR(mvec_delete)(BW2_,&iflag_);
       SUBR(mvec_delete)(BQ_,&iflag_);
       delete B_op;
 #endif
@@ -774,3 +776,85 @@ return;
       ASSERT_EQ(0,iflag_);
     }
   }
+
+#ifdef PHIST_HAVE_BELOS
+
+  // compare our overloaded ICGS (based on orthog) with another Belos OrthoManager class.
+  TEST_F(CLASSNAME,belos_ortho_manager)
+  {
+    typedef phist::BelosMV< _ST_ > MV;
+    typedef Teuchos::SerialDenseMatrix<int, _ST_ > SDM;
+    typedef phist::ScalarTraits< _ST_ >::linearOp_t OP;
+  
+    if (typeImplemented_ && !problemTooSmall_)
+    {
+      // create a random orthogonal space V with m columns
+      SUBR(mvec_random)(V_,&iflag_);
+      iflag_=PHIST_ORTHOG_RANDOMIZE_NULLSPACE;
+      int rankV0;
+      SUBR(orthog)(NULL,V_,B_op,R0_,NULL,1,&rankV0,&iflag_);
+      ASSERT_EQ(0,iflag_);
+ 
+      // random vector block W with k columns, backup to W2.
+      SUBR(mvec_random)(W_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(mvec_add_mvec)(st::one(),W_,st::zero(),W2_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      
+      // copy Q=W because orthog() works in-place
+      SUBR(mvec_add_mvec)(st::one(),W_,st::zero(),Q_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(mvec_add_mvec)(st::one(),BW_,st::zero(),BW2_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+
+#ifdef ORTHOG_WITH_HPD_B
+      // compute BV after orthogonalizing V
+      B_op->apply(st::one(),B_op->A,W_,st::zero(),BW_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+#endif
+      // create the Belos objects
+      Teuchos::RCP<const MV> V =phist::mvec_rcp< _ST_ >((TYPE(const_mvec_ptr))V_, false);
+      Teuchos::RCP<MV> W=phist::mvec_rcp< _ST_ >( W_,false),
+                       W2=phist::mvec_rcp< _ST_ >(W2_,false), 
+                       BW=phist::mvec_rcp< _ST_ >(BW_,false),
+                       BW2=phist::mvec_rcp< _ST_ >(BW2_,false);
+      Teuchos::RCP<OP> Op=Teuchos::rcp(B_op,false);
+     
+      Teuchos::RCP<SDM> B = Teuchos::rcp(new SDM(k_,k_)), B2=Teuchos::rcp(new SDM(k_,k_));
+      Teuchos::RCP<SDM> C = Teuchos::rcp(new SDM(m_,k_)), C2=Teuchos::rcp(new SDM(m_,k_));
+      
+      Teuchos::Array<Teuchos::RCP<SDM> > C_array(1,C),C2_array(1,C2);
+      Teuchos::ArrayView<Teuchos::RCP<const MV> > V_array(&V,1);
+      
+      int max_blk_ortho=2;
+      _MT_ blk_tol=std::sqrt(mt::eps());
+      _MT_ dep_tol=mt::eps();
+      _MT_ sing_tol=mt::eps();
+      
+      Belos::ICGSOrthoManager<_ST_,MV,OP> myOrtho("phist/orthog",Op,
+                                                  max_blk_ortho, blk_tol, sing_tol);
+
+      Belos::DGKSOrthoManager<_ST_,MV,OP> dgksOrtho("Belos/DGKS",Op,
+                                                  max_blk_ortho, blk_tol, dep_tol, sing_tol);
+
+      int my_ret=myOrtho.projectAndNormalize(*W,BW,C_array,B,V_array);
+      int dgks_ret=dgksOrtho.projectAndNormalize(*W2,BW2,C2_array,B2,V_array);
+
+      // should return the same code
+      ASSERT_EQ(my_ret,dgks_ret);
+      // should give similar orthogonality of W wrt. itself
+      // ...
+      std::cout << "my B = "<<*B << std::endl;
+      std::cout << "their B = "<<*B2 << std::endl;
+      std::cout << "my C = "<<*C << std::endl;
+      std::cout << "their C = "<<*C2 << std::endl;
+       
+      SDM Bdiff=*B; Bdiff-=*B2;
+      SDM Cdiff=*C; Bdiff-=*C2;
+       
+      ASSERT_NEAR(mt::one(), mt::one()+Bdiff.normFrobenius(),std::sqrt(mt::eps()));
+      ASSERT_NEAR(mt::one(), mt::one()+Cdiff.normFrobenius(),std::sqrt(mt::eps()));
+    }
+  }
+
+#endif
