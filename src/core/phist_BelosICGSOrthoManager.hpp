@@ -100,6 +100,7 @@ namespace Belos {
       _MT_ orthoEps=blk_tol_;
       int numSweeps=max_ortho_steps_;
       try {
+      iflag=PHIST_ORTHOG_TRIANGULAR_R1;
       phist::core< _ST_ >::orthog_impl
           (Q[i]->get(),X.get(),_Op.get(),X_or_MX->get(),
           XtMX,Bphist,Cphist,

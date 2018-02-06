@@ -785,6 +785,8 @@ return;
     typedef phist::BelosMV< _ST_ > MV;
     typedef Teuchos::SerialDenseMatrix<int, _ST_ > SDM;
     typedef phist::ScalarTraits< _ST_ >::linearOp_t OP;
+    typedef Belos::MultiVecTraits<_ST_, MV> MVT;
+    typedef Belos::OperatorTraits<_ST_, MV, OP> OPT;
   
     if (typeImplemented_ && !problemTooSmall_)
     {
@@ -801,7 +803,10 @@ return;
       SUBR(mvec_add_mvec)(st::one(),W_,st::zero(),W2_,&iflag_);
       ASSERT_EQ(0,iflag_);
       
-      // copy Q=W because orthog() works in-place
+      // copy Q_=W_ and use it as a backup. Note the different notations:
+      // We use V as the orthogonal basis, in Belos it's called Q, and our W is called V in Belos.
+      // What we call R1 and R2 are called B and C, respectively.
+      // So after projectAndNormalize, W_orig-V*C=W*B
       SUBR(mvec_add_mvec)(st::one(),W_,st::zero(),Q_,&iflag_);
       ASSERT_EQ(0,iflag_);
       SUBR(mvec_add_mvec)(st::one(),BW_,st::zero(),BW2_,&iflag_);
@@ -815,6 +820,7 @@ return;
       // create the Belos objects
       Teuchos::RCP<const MV> V =phist::mvec_rcp< _ST_ >((TYPE(const_mvec_ptr))V_, false);
       Teuchos::RCP<MV> W=phist::mvec_rcp< _ST_ >( W_,false),
+                       W0=phist::mvec_rcp< _ST_ >(Q_,false),
                        W2=phist::mvec_rcp< _ST_ >(W2_,false), 
                        BW=phist::mvec_rcp< _ST_ >(BW_,false),
                        BW2=phist::mvec_rcp< _ST_ >(BW2_,false);
@@ -842,15 +848,32 @@ return;
 
       // should return the same code
       ASSERT_EQ(my_ret,dgks_ret);
-      // should give similar orthogonality of W wrt. itself
-      // ...
+
       std::cout << "my B = "<<*B << std::endl;
       std::cout << "their B = "<<*B2 << std::endl;
       std::cout << "my C = "<<*C << std::endl;
       std::cout << "their C = "<<*C2 << std::endl;
-       
+
+      // there may be sign switches in B, depending on the algorithm used, so 'normalize' the signs first.
+      for (int i=0; i<B->numRows(); i++)
+      {
+        int sgnB = (mt::zero() < st::real((*B)(i,i))) - (st::real((*B)(i,i)) < mt::zero());
+        int sgnB2 = (mt::zero() < st::real((*B2)(i,i))) - (st::real((*B2)(i,i)) < mt::zero());
+        for (int j=0; j<B->numCols(); j++)
+        {
+          (*B)(i,j)*=(_ST_)sgnB;
+          (*B2)(i,j)*=(_ST_)sgnB2;
+        }
+      }
+
+      std::cout << "my normalized B = "<<*B << std::endl;
+      std::cout << "their normalized B = "<<*B2 << std::endl;
+      
       SDM Bdiff=*B; Bdiff-=*B2;
-      SDM Cdiff=*C; Bdiff-=*C2;
+      SDM Cdiff=*C; Cdiff-=*C2;
+
+      //std::cout << "Bdiff = "<<Bdiff << std::endl;
+      //std::cout << "Cdiff = "<<Cdiff << std::endl;
        
       ASSERT_NEAR(mt::one(), mt::one()+Bdiff.normFrobenius(),std::sqrt(mt::eps()));
       ASSERT_NEAR(mt::one(), mt::one()+Cdiff.normFrobenius(),std::sqrt(mt::eps()));

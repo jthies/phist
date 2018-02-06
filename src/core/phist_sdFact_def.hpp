@@ -392,7 +392,7 @@ void SUBR(sdMat_svd)(TYPE(sdMat_ptr) A, TYPE(sdMat_ptr) U, TYPE(sdMat_ptr) Sigma
 
 // A should be provided via the R argument.
 // If A is singular, some columns of Q may be 0. The function calls the lapack
-// subroutines XGEQR and XGEMQR to explicitly construct the Q factor. On output,
+// subroutines XGEQRT and XGEMQRT to explicitly construct the Q factor. On output,
 // A is overwritten by R.
 void SUBR(sdMat_qr)(TYPE(sdMat_ptr) Q, TYPE(sdMat_ptr) R, int* iflag)
 {
@@ -416,17 +416,18 @@ void SUBR(sdMat_qr)(TYPE(sdMat_ptr) Q, TYPE(sdMat_ptr) R, int* iflag)
   PHIST_CHK_IERR(SUBR(sdMat_extract_view)(R,&R_raw,&ldR,iflag),*iflag);
   PHIST_CHK_IERR(SUBR(sdMat_extract_view)(Q,&Q_raw,&ldQ,iflag),*iflag);
   
-  int lwork=8*k, tsize=8*k;
-  _ST_ tau[tsize];
-  _ST_ work[lwork];
+  int nb=1;
+  int ldT=nb;
+  _ST_ tau[ldT*k];
+  _ST_ work[nb*k];
 
-  PHIST_CHK_IERR(PHIST_TG_PREFIX(GEQR)(&k,&k,R_raw,&ldR,tau,&tsize,work,&lwork,iflag),*iflag);
+  PHIST_CHK_IERR(PHIST_TG_PREFIX(GEQRT)(&k,&k,&nb,R_raw,&ldR,tau,&ldT,work,iflag),*iflag);
 
   PHIST_CHK_IERR(SUBR(sdMat_identity)(Q,iflag),*iflag);
   phist_blas_char side='L', trans='N';
-  PHIST_CHK_IERR(PHIST_TG_PREFIX(GEMQR)( &side, &trans, &k, &k, &k, 
-                           R_raw, &ldR, tau, &tsize, Q_raw, &ldQ, 
-                           work, &lwork, iflag),*iflag);
+  PHIST_CHK_IERR(PHIST_TG_PREFIX(GEMQRT)( &side, &trans, &k, &k, &k, &nb,
+                           R_raw, &ldR, tau, &ldT, Q_raw, &ldQ, 
+                           work, iflag),*iflag);
 
   // zero-out the lower triangular part of R, which currently still contains data from the QR decomp
   for (int j=0; j<k; j++)

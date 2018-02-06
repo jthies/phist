@@ -197,7 +197,7 @@ extern "C" void SUBR(orthog_impl)(TYPE(const_mvec_ptr) V,
   // We have Q*R1     = W - V*R2 = Q*P*R1p, so
   // first compute R1=P*R1p where R1p overwrites R1 and P is stored explicitly
   // then  update Q <- Q*P in-place.
-  if (triangular_R1)
+  if (triangular_R1 && k>1)
   {
     if (R1p==NULL)
     {
@@ -205,7 +205,10 @@ extern "C" void SUBR(orthog_impl)(TYPE(const_mvec_ptr) V,
       _R1p.set(R1p);
     }
     TYPE(sdMat_ptr) P=R1p;
+    PHIST_CHK_IERR(SUBR(sdMat_from_device)(R1,iflag),*iflag);
     PHIST_CHK_IERR(SUBR(sdMat_qr)(P,R1,iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(sdMat_to_device)(R1,iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(sdMat_to_device)(P,iflag),*iflag);
     // update the output Q
     PHIST_CHK_IERR(SUBR(mvec_times_sdMat_inplace)(W,P,iflag),*iflag);
   }

@@ -59,16 +59,16 @@ typedef char phist_blas_char;
 #define DGEMM BLAS_SUBR(DGEMM,dgemm)
 #define CGEMM BLAS_SUBR(CGEMM,cgemm)
 #define ZGEMM BLAS_SUBR(ZGEMM,zgemm)
-/* GEQR */
-#define SGEQR LAPACK_SUBR(SGEQR,sgeqr)
-#define DGEQR LAPACK_SUBR(DGEQR,dgeqr)
-#define CGEQR LAPACK_SUBR(CGEQR,cgeqr)
-#define ZGEQR LAPACK_SUBR(ZGEQR,zgeqr)
-/* GEMQR */
-#define GEMQR LAPACK_SUBR(SGEMQR,sgemqr)
-#define DGEMQR LAPACK_SUBR(DGEMQR,dgemqr)
-#define CGEMQR LAPACK_SUBR(CGEMQR,cgemqr)
-#define ZGEMQR LAPACK_SUBR(ZGEMQR,zgemqr)
+/* GEQRT */
+#define SGEQRT LAPACK_SUBR(SGEQRT,sgeqrt)
+#define DGEQRT LAPACK_SUBR(DGEQRT,dgeqrt)
+#define CGEQRT LAPACK_SUBR(CGEQRT,cgeqrt)
+#define ZGEQRT LAPACK_SUBR(ZGEQRT,zgeqrt)
+/* GEMQRT */
+#define SGEMQRT LAPACK_SUBR(SGEMQRT,sgemqrt)
+#define DGEMQRT LAPACK_SUBR(DGEMQRT,dgemqrt)
+#define CGEMQRT LAPACK_SUBR(CGEMQRT,cgemqrt)
+#define ZGEMQRT LAPACK_SUBR(ZGEMQRT,zgemqrt)
 /* STEQR */
 #define SSTEQR LAPACK_SUBR(SSTEQR,ssteqr)
 #define DSTEQR LAPACK_SUBR(DSTEQR,dsteqr)
@@ -171,13 +171,13 @@ const phist_Dblas_cmplx* a, const phist_blas_idx* lda, phist_Dblas_cmplx* b, con
 ///////////////////////////////////////////////////////////////////////////////////////////
 void SLARTG(const float *f, const float *g, float* cs, float* sn, float* r);
 
-void DLARTG(const double *f, const double *g, double* cs, double* sn, double* 
+void DLARTG(const double *f, const double *g, double* cs, double* sn, double*
 r);
 
-void CLARTG(const phist_Sblas_cmplx *f, const phist_Sblas_cmplx *g, float* cs, 
+void CLARTG(const phist_Sblas_cmplx *f, const phist_Sblas_cmplx *g, float* cs,
 phist_Sblas_cmplx* sn, phist_Sblas_cmplx* r);
 
-void ZLARTG(const phist_Dblas_cmplx *f, const phist_Dblas_cmplx *g, double* cs, 
+void ZLARTG(const phist_Dblas_cmplx *f, const phist_Dblas_cmplx *g, double* cs,
 phist_Dblas_cmplx* sn, phist_Dblas_cmplx* r);
 
 ///////////////////////////////////////////////////////////////////////////////////////////
@@ -194,46 +194,43 @@ const phist_Sblas_cmplx* alpha, const phist_Sblas_cmplx* a,  const phist_blas_id
 
 void ZGEMM(const char* transA, const char* transB, const phist_blas_idx* m, const phist_blas_idx* n, const phist_blas_idx* k,
 const phist_Dblas_cmplx* alpha, const phist_Dblas_cmplx* a,  const phist_blas_idx* lda, phist_Dblas_cmplx* b, const phist_blas_idx* ldb, const phist_Dblas_cmplx* beta, phist_Dblas_cmplx* c, const phist_blas_idx* ldc);
-
+/*
 ///////////////////////////////////////////////////////////////////////////////////////////
-//      XGEQR - QR factorization
+//      XGEQRT - QR factorization
 ///////////////////////////////////////////////////////////////////////////////////////////
 
-void SGEQR( const phist_blas_idx* m, const phist_blas_idx* n, float* a, const phist_blas_idx* lda,
-                  float* tau, const phist_blas_idx* tsize, float* work, const phist_blas_idx* lwork,
-                  phist_blas_idx *info );
-void DGEQR( const phist_blas_idx* m, const phist_blas_idx* n, double* a, const phist_blas_idx* lda,
-                  double* tau, const phist_blas_idx* tsize, double* work, const phist_blas_idx* lwork,
-                  phist_blas_idx *info );
-void CGEQR( const phist_blas_idx* m, const phist_blas_idx* n, phist_Sblas_cmplx* a,
-                  const phist_blas_idx* lda, phist_Sblas_cmplx* tau, const phist_blas_idx* tsize,
-                  phist_Sblas_cmplx* work, const phist_blas_idx* lwork,
-                  phist_blas_idx *info );
-void ZGEQR( const phist_blas_idx* m, const phist_blas_idx* n, phist_Dblas_cmplx* a,
-                  const phist_blas_idx* lda, phist_Dblas_cmplx* tau, const phist_blas_idx* tsize,
-                  phist_Dblas_cmplx* work, const phist_blas_idx* lwork,
-                  phist_blas_idx *info );
+void SGEQRT( const phist_blas_idx* m, const phist_blas_idx* n, const phist_blas_idx* nb, float* a, const phist_blas_idx* lda,
+                   float* tau, const phist_blas_idx* ldT, float* work, phist_blas_idx *info);
+void DGEQR( const phist_blas_idx* m, const phist_blas_idx* n, const phist_blas_idx* nb, double* a, const phist_blas_idx* lda,
+                  double* tau, const phist_blas_idx* ldT, double* work, phist_blas_idx *info);
+void CGEQRT( const phist_blas_idx* m, const phist_blas_idx* n, const phist_blas_idx* nb, phist_Sblas_cmplx* a, const phist_blas_idx* lda,
+                   phist_Sblas_cmplx* tau, const phist_blas_idx* ldT, phist_Sblas_cmplx* work, phist_blas_idx *info );
+void ZGEQRT( const phist_blas_idx* m, const phist_blas_idx* n, const phist_blas_idx* nb, phist_Dblas_cmplx* a, const phist_blas_idx* lda,
+                   phist_Dblas_cmplx* tau, const phist_blas_idx* ldT, phist_Dblas_cmplx* work, phist_blas_idx *info );
 
 ///////////////////////////////////////////////////////////////////////////////////////////
 //      XGEMQR - 'multiply by Q' after XGEQR
 ///////////////////////////////////////////////////////////////////////////////////////////
 
-void SGEMQR( phist_blas_char* side, phist_blas_char* trans, const phist_blas_idx* m, const phist_blas_idx* n, const phist_blas_idx* k,
-             const float* A, const phist_blas_idx* lda, const float* tau, const phist_blas_idx *tsize, float* c, const phist_blas_idx *ldc, 
-             float* work, const phist_blas_idx* lwork, phist_blas_idx* info);
-void DGEMQR( phist_blas_char* side, phist_blas_char* trans, const phist_blas_idx* m, const phist_blas_idx* n, const phist_blas_idx* k,
-             const double* A, const phist_blas_idx* lda, const double* tau, const phist_blas_idx *tsize, double* c, const phist_blas_idx *ldc, 
-             double* work, const phist_blas_idx* lwork, phist_blas_idx* info);
-void CGEMQR( phist_blas_char* side, phist_blas_char* trans, const phist_blas_idx* m, const phist_blas_idx* n, const phist_blas_idx* k,
-             const phist_Sblas_cmplx* A, const phist_blas_idx* lda, const phist_Sblas_cmplx* tau, const phist_blas_idx *tsize, phist_Sblas_cmplx* c, const phist_blas_idx *ldc, 
-             phist_Sblas_cmplx* work, const phist_blas_idx* lwork, phist_blas_idx* info);
-void ZGEMQR( phist_blas_char* side, phist_blas_char* trans, const phist_blas_idx* m, const phist_blas_idx* n, const phist_blas_idx* k,
-             const phist_Dblas_cmplx* A, const phist_blas_idx* lda, const phist_Dblas_cmplx* tau, const phist_blas_idx *tsize, phist_Dblas_cmplx* c, const phist_blas_idx *ldc, 
-             phist_Dblas_cmplx* work, const phist_blas_idx* lwork, phist_blas_idx* info);
+void SGEMQRT( phist_blas_char* side, phist_blas_char* trans, const phist_blas_idx* m, const phist_blas_idx* n, const phist_blas_idx* k,
+             const phist_blas_idx* nb, const float* A, const phist_blas_idx* lda, const float* tau, const phist_blas_idx *ldT,
+             float* c, const phist_blas_idx *ldc, float* work, phist_blas_idx* info);
 
+void DGEMQRT( phist_blas_char* side, phist_blas_char* trans, const phist_blas_idx* m, const phist_blas_idx* n, const phist_blas_idx* k,
+             const phist_blas_lidx* nb, const double* A, const phist_blas_idx* lda, const double* tau, const phist_blas_idx *ldT,
+             double* c, const phist_blas_idx *ldc, double* work, phist_blas_idx* info);
 
+void CGEMQRT( phist_blas_char* side, phist_blas_char* trans, const phist_blas_idx* m, const phist_blas_idx* n, const phist_blas_idx* k,
+             const phist_blas_lidx* nb, const phist_Sblas_cmplx* A, const phist_blas_idx* lda, const phist_Sblas_cmplx* tau, const phist_blas_idx *ldT,
+             phist_Sblas_cmplx* c, const phist_blas_idx *ldc, phist_Sblas_cmplx* work, phist_blas_idx* info);
+
+void ZGEMQRT( phist_blas_char* side, phist_blas_char* trans, const phist_blas_idx* m, const phist_blas_idx* n, const phist_blas_idx* k,
+             const phist_blas_idx* nb, const phist_Dblas_cmplx* A, const phist_blas_idx* lda, const phist_Dblas_cmplx* tau, const phist_blas_idx *ldT, 
+             phist_Dblas_cmplx* c, const phist_blas_idx *ldc, phist_Dblas_cmplx* work, phist_blas_idx* info);
+
+*/
 #ifdef __cplusplus
-} // extern "C" 
+} // extern "C"
 #endif
 
 #endif
