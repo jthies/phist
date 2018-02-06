@@ -41,13 +41,13 @@ public:
   
   //! linear operator representing a Hermitian positive definite (hpd) matrix B
   //! which defines the inner product in which we want to orthogonalize.
-  //! If NULL it is the identity matrix, this is the case if ORTHOG_WITH_HPD_B is not defined.
+  //! If nullptr it is the identity matrix, this is the case if ORTHOG_WITH_HPD_B is not defined.
   TYPE(linearOp_ptr) B_op;
 
   //! vectorspaces above, pre-multiplied by B
   TYPE(mvec_ptr) BV_, BW_,BW2_,BQ_;
 
-  //! R1 is m x m, R2 is k x k
+  //! R0 is m x m, R1 is k x k, R2 is m x k
   TYPE(sdMat_ptr) R0_, R1_, R2_;
 
   //! for some tests we need to access the raw data of the R matrices and W2 (tmp space)
@@ -61,7 +61,7 @@ public:
 #ifdef ORTHOG_WITH_HPD_B
     // creates mass matrix B_ without a given context, and
     // re-initializes the KernelTestWithMap by calling SetUpTestCaseWithMap
-    BTest::SetUpTestCase(NULL);
+    BTest::SetUpTestCase(nullptr);
 #else
     KernelTestWithMap<_N_>::SetUpTestCase();
 #endif
@@ -115,7 +115,7 @@ public:
       SUBR(mvec_extract_view)(W2_,&W2_vp_,&this->ldaW2_,&this->iflag_);
       ASSERT_EQ(0,this->iflag_);
       
-      B_op=NULL; BV_=V_; BW_=W_; BW2_=BW_; BQ_=Q_;
+      B_op=nullptr; BV_=V_; BW_=W_; BW2_=BW_; BQ_=Q_;
 
 #ifdef ORTHOG_WITH_HPD_B
       B_op=new TYPE(linearOp);
@@ -227,10 +227,10 @@ public:
       ASSERT_EQ(0,iflag_);
 
       // orthogonalize the m columns of V. Test that orthog
-      // works if the first argument is NULL.
+      // works if the first argument is nullptr.
       int rankVW=-42;
       iflag_=iflag_in;
-      SUBR(orthog)(NULL,V,B_op,R0,NULL,1,&rankVW,&iflag_);
+      SUBR(orthog)(nullptr,V,B_op,R0,nullptr,1,&rankVW,&iflag_);
       if (iflag_!=+2)
       {
         ASSERT_EQ(expect_iflagV,iflag_);
@@ -254,7 +254,7 @@ public:
 
       // check wether this worked out
       phist_lidx ldaV;
-      ST* V_vp=NULL;
+      ST* V_vp=nullptr;
       SUBR(mvec_extract_view)(V,&V_vp,&ldaV,&iflag_);
       ASSERT_EQ(0,iflag_);
       
@@ -273,7 +273,7 @@ public:
 #ifdef ORTHOG_WITH_HPD_B
       // check wether this worked out
       phist_lidx ldaBV;
-      ST* BV_vp=NULL;
+      ST* BV_vp=nullptr;
       SUBR(mvec_extract_view)(BV,&BV_vp,&ldaBV,&iflag_);
       ASSERT_EQ(0,iflag_);
       
@@ -325,7 +325,7 @@ SUBR(sdMat_print)(R2,&iflag_);
       
       // check orthonormality of Q
       phist_lidx ldaQ;
-      ST* Q_vp=NULL;
+      ST* Q_vp=nullptr;
       SUBR(mvec_extract_view)(Q,&Q_vp,&ldaQ,&iflag_);
       ASSERT_EQ(0,iflag_);
       
@@ -348,7 +348,7 @@ SUBR(sdMat_print)(R2,&iflag_);
       ASSERT_EQ(0,iflag_);
 
       phist_lidx ldaBQ;
-      ST* BQ_vp=NULL;
+      ST* BQ_vp=nullptr;
       SUBR(mvec_extract_view)(BQ,&BQ_vp,&ldaBQ,&iflag_);
       ASSERT_EQ(0,iflag_);
       
@@ -372,7 +372,7 @@ SUBR(sdMat_print)(R2,&iflag_);
 #endif
 
       // check Q and original V are orthogonal to each other, V'Q=0
-      TYPE(sdMat_ptr) VtQ=NULL;
+      TYPE(sdMat_ptr) VtQ=nullptr;
       SUBR(sdMat_create)(&VtQ,nvec_V,nvec_Q,comm_,&iflag_);
       ASSERT_EQ(0,iflag_);
       SdMatOwner<_ST_> _VtQ(VtQ);
@@ -430,6 +430,52 @@ SUBR(sdMat_print)(R2,&iflag_);
     ASSERT_NEAR(mt::one(), mt::one()+sym_err,100.0*mt::eps());
 #endif
     ASSERT_GT(min_diag,std::sqrt(mt::eps()));
+  }
+  
+  TEST_F(CLASSNAME,orthog_impl_updates_BW)
+  {
+    if (!problemTooSmall_ && typeImplemented_)
+    {
+      // create some V and BV, to make it a bit more interesting, make the first and last column linearly dependent.
+      SUBR(mvec_random)(V_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      int m=VTest::nvec_;
+      if (m>1)
+      {
+        TYPE(mvec_ptr) v1=nullptr, vm=nullptr;
+        SUBR(mvec_view_block)(V_,&v1,0,0,&iflag_);
+        ASSERT_EQ(0,iflag_);
+        SUBR(mvec_view_block)(V_,&vm,m-1,m-1,&iflag_);
+        ASSERT_EQ(0,iflag_);
+
+        SUBR(mvec_add_mvec)((_ST_)2,v1,st::zero(),vm,&iflag_);
+        ASSERT_EQ(0,iflag_);
+
+        SUBR(mvec_delete)(v1,&iflag_);
+        ASSERT_EQ(0,iflag_);
+        SUBR(mvec_delete)(vm,&iflag_);
+        ASSERT_EQ(0,iflag_);
+      }
+      SUBR(linearOp_apply)(st::one(),B_op,V_,st::zero(),BV_,&iflag_);
+      int numSweeps=2;
+      _MT_ orthoEps=std::sqrt(mt::eps());
+      _MT_ rankTol=mt::eps();
+      int rankV;
+      TYPE(sdMat_ptr) VtV = nullptr;
+      SUBR(sdMat_create)(&VtV,m,m,comm_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SdMatOwner< _ST_ > _VtV(VtV);
+      ASSERT_EQ(0,this->iflag_);
+      SUBR(mvecT_times_mvec)(st::one(),V_,BV_,st::zero(),VtV,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(orthog_impl)(nullptr,V_,B_op,BV_,VtV,R0_,nullptr,numSweeps,&rankV,rankTol,orthoEps,&iflag_);
+      ASSERT_EQ(m>1?1:0,iflag_); // +1 means not full rank
+      ASSERT_EQ(m>1?m-1:1,rankV); // rank is k-1 if there are at least two cols, see above.
+      // now check that BV=B*V still holds
+      SUBR(linearOp_apply)(-st::one(),B_op,V_,st::one(),BV_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      ASSERT_NEAR(mt::one(),VTest::MvecEqual(BV_,st::zero()),VTest::releps());
+    }
   }
 #endif
 
@@ -503,18 +549,18 @@ SUBR(sdMat_print)(R2,&iflag_);
       ASSERT_EQ(0,iflag_);
       
       phist_lidx nR=_M_+_K_;
-      TYPE(sdMat_ptr) R=NULL;
+      TYPE(sdMat_ptr) R=nullptr;
       SUBR(sdMat_create)(&R,nR,nR,comm_,&iflag_);
       ASSERT_EQ(0,iflag_);
       SUBR(sdMat_delete)(R0_,&iflag_);
       ASSERT_EQ(0,iflag_);
-      R0_=NULL;
+      R0_=nullptr;
       SUBR(sdMat_delete)(R1_,&iflag_);
       ASSERT_EQ(0,iflag_);
-      R1_=NULL;
+      R1_=nullptr;
       SUBR(sdMat_delete)(R2_,&iflag_);
       ASSERT_EQ(0,iflag_);
-      R2_=NULL;
+      R2_=nullptr;
       SUBR(sdMat_view_block)(R,&R0_,0,_M_-1,0,_M_-1,&iflag_);
       ASSERT_EQ(0,iflag_);
       // R1 is the k x k diagonal block:
@@ -584,13 +630,13 @@ return;
 
       SUBR(sdMat_delete)(R0_,&iflag_);
       ASSERT_EQ(0,iflag_);
-      R0_=NULL;
+      R0_=nullptr;
       SUBR(sdMat_delete)(R1_,&iflag_);
       ASSERT_EQ(0,iflag_);
-      R1_=NULL;
+      R1_=nullptr;
       SUBR(sdMat_delete)(R2_,&iflag_);
       ASSERT_EQ(0,iflag_);
-      R2_=NULL;
+      R2_=nullptr;
       SUBR(sdMat_delete)(R,&iflag_);
       ASSERT_EQ(0,iflag_);
     }
@@ -610,18 +656,18 @@ return;
       ASSERT_EQ(0,iflag_);
       
       phist_lidx nR=_M_+_K_;
-      TYPE(sdMat_ptr) R=NULL;
+      TYPE(sdMat_ptr) R=nullptr;
       SUBR(sdMat_create)(&R,nR,nR,comm_,&iflag_);
       ASSERT_EQ(0,iflag_);
       SUBR(sdMat_delete)(R0_,&iflag_);
       ASSERT_EQ(0,iflag_);
-      R0_=NULL;
+      R0_=nullptr;
       SUBR(sdMat_delete)(R1_,&iflag_);
       ASSERT_EQ(0,iflag_);
-      R1_=NULL;
+      R1_=nullptr;
       SUBR(sdMat_delete)(R2_,&iflag_);
       ASSERT_EQ(0,iflag_);
-      R2_=NULL;
+      R2_=nullptr;
       SUBR(sdMat_view_block)(R,&R0_,0,_M_-1,0,_M_-1,&iflag_);
       ASSERT_EQ(0,iflag_);
       // R1 is the k x k diagonal block:
@@ -691,13 +737,13 @@ return;
 
       SUBR(sdMat_delete)(R0_,&iflag_);
       ASSERT_EQ(0,iflag_);
-      R0_=NULL;
+      R0_=nullptr;
       SUBR(sdMat_delete)(R1_,&iflag_);
       ASSERT_EQ(0,iflag_);
-      R1_=NULL;
+      R1_=nullptr;
       SUBR(sdMat_delete)(R2_,&iflag_);
       ASSERT_EQ(0,iflag_);
-      R2_=NULL;
+      R2_=nullptr;
       SUBR(sdMat_delete)(R,&iflag_);
       ASSERT_EQ(0,iflag_);
     }
@@ -716,7 +762,7 @@ return;
 #ifdef ORTHOG_WITH_HPD_B
       map=B_op->domain_map;
 #endif      
-      TYPE(mvec_ptr) V_big=NULL, V=NULL, W=NULL;
+      TYPE(mvec_ptr) V_big=nullptr, V=nullptr, W=nullptr;
       int ncols = m_+k_+13;// some extra padding to make the test more interesting
       PHISTTEST_MVEC_CREATE(&V_big,map,ncols,&iflag_);
       ASSERT_EQ(0,iflag_);
@@ -757,7 +803,7 @@ return;
 #ifdef ORTHOG_WITH_HPD_B
       map=B_op->domain_map;
 #endif      
-      TYPE(mvec_ptr) V_big=NULL, V=NULL, W=NULL;
+      TYPE(mvec_ptr) V_big=nullptr, V=nullptr, W=nullptr;
       int ncols = m_+k_+13;// some extra padding to make the test more interesting
       PHISTTEST_MVEC_CREATE(&V_big,map,ncols,&iflag_);
       ASSERT_EQ(0,iflag_);
@@ -802,7 +848,7 @@ return;
       SUBR(mvec_random)(V_,&iflag_);
       iflag_=PHIST_ORTHOG_RANDOMIZE_NULLSPACE;
       int rankV0;
-      SUBR(orthog)(NULL,V_,B_op,R0_,NULL,1,&rankV0,&iflag_);
+      SUBR(orthog)(nullptr,V_,B_op,R0_,nullptr,1,&rankV0,&iflag_);
       ASSERT_EQ(0,iflag_);
  
       // random vector block W with k columns, backup to W2.
@@ -847,15 +893,18 @@ return;
       
       Belos::ICGSOrthoManager<_ST_,MV,OP> myOrtho("phist/orthog",Op,
                                                   max_blk_ortho, blk_tol, sing_tol);
-
-      Belos::DGKSOrthoManager<_ST_,MV,OP> dgksOrtho("Belos/DGKS",Op,
+/*
+      Belos::DGKSOrthoManager<_ST_,MV,OP> theirOrtho("Belos/DGKS",Op,
                                                   max_blk_ortho, blk_tol, dep_tol, sing_tol);
+*/
+      ::Belos::IMGSOrthoManager<_ST_,MV,OP> theirOrtho("Belos/IMGS",Op,
+                                                  max_blk_ortho, blk_tol, sing_tol);
 
       int my_ret=myOrtho.projectAndNormalize(*W,BW,C_array,B,V_array);
-      int dgks_ret=dgksOrtho.projectAndNormalize(*W2,BW2,C2_array,B2,V_array);
+      int their_ret=theirOrtho.projectAndNormalize(*W2,BW2,C2_array,B2,V_array);
 
       // should return the same code
-      ASSERT_EQ(my_ret,dgks_ret);
+      ASSERT_EQ(my_ret,their_ret);
 
       std::cout << "my B = "<<*B << std::endl;
       std::cout << "their B = "<<*B2 << std::endl;

@@ -25,6 +25,7 @@
 #include "Belos_PhistAdapter.hpp"
 #include "phist_BelosOperatorTraits.hpp"
 #include "BelosICGSOrthoManager.hpp"
+#include "BelosIMGSOrthoManager.hpp"
 #include "BelosDGKSOrthoManager.hpp"
 
 #define PHIST_CLASSFILE_DEF "phist_BelosICGSOrthoManager.hpp"

@@ -211,6 +211,8 @@ extern "C" void SUBR(orthog_impl)(TYPE(const_mvec_ptr) V,
     PHIST_CHK_IERR(SUBR(sdMat_to_device)(P,iflag),*iflag);
     // update the output Q
     PHIST_CHK_IERR(SUBR(mvec_times_sdMat_inplace)(W,P,iflag),*iflag);
+    // for B-rothogonalization, also update BQ
+    if (BW!=W) PHIST_CHK_IERR(SUBR(mvec_times_sdMat_inplace)(BW,P,iflag),*iflag);
   }
   
   if (num_attempts==max_attempts)
