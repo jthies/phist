@@ -48,6 +48,21 @@
   */
 #define PHIST_SPARSEMAT_PERM_GLOBAL 2
 
+/*! \def PHIST_SPARSEMAT_DIST2_COLOR
+
+    in the current implementation of the builtin kernels,
+    DIST2_COLOR will cause a local permutation according to 
+    colors. This requires ColPack and is primarily intended
+    for benchmarking the performance impact of the coloring.
+
+    If you want to use the CGMN/CARP-CG solver, use PHIST_SPARSEMAT_OPT_CARP
+    instead, which is independent of the kernel library. This flag
+    (DIST2_COLOR) may in the future be used in combination with the RACE
+    library.
+ */
+#define PHIST_SPARSEMAT_DIST2_COLOR 4
+
+
 /*! \def PHIST_SPARSEMAT_OPT_SINGLESPMVM
 
     when creating a sparse matrix, indicate to the kernel library that the
@@ -55,7 +70,7 @@
     (spmv) with a single vector. This information may be used to select a 
      suitable storage scheme.
  */
-#define PHIST_SPARSEMAT_OPT_SINGLESPMVM 4
+#define PHIST_SPARSEMAT_OPT_SINGLESPMVM 8
 
 /*! \def PHIST_SPARSEMAT_OPT_BLOCKSPMVM
 
@@ -64,7 +79,7 @@
     (spmv) with multiple vectors. This information may be used to select a
      suitable storage scheme.
  */
-#define PHIST_SPARSEMAT_OPT_BLOCKSPMVM 8
+#define PHIST_SPARSEMAT_OPT_BLOCKSPMVM 16
 
 /*! \def PHIST_SPARSEMAT_OPT_CARP
 
@@ -73,13 +88,13 @@
     to the CGMN/CARP-CG algorithm. This information may be used to guide  
     sparse matrix storage and permutations.
  */
-#define PHIST_SPARSEMAT_OPT_CARP 16
+#define PHIST_SPARSEMAT_OPT_CARP 32
 
 /*! \def PHIST_SPARSEMAT_QUIET
 
     do not print information or statistics when creating a matrix.
  */
-#define PHIST_SPARSEMAT_QUIET 32
+#define PHIST_SPARSEMAT_QUIET 64
 /*! \def PHIST_SPARSEMAT_OWN_MAPS
 
     if you pass pointers to maps to a function to create/read a matrix,  
@@ -88,7 +103,7 @@
     If the creating function has no maps as arguments, they are created  
     and owned by the matrix automatically.                               
  */
-#define PHIST_SPARSEMAT_OWN_MAPS 64
+#define PHIST_SPARSEMAT_OWN_MAPS 128
 
 /*! \def PHIST_SPARSEMAT_FLAGS_DESCRIPTION
 
@@ -99,11 +114,12 @@
 "     PHIST_IFLAG_DEFAULT 0 \n" \
 "     PHIST_SPARSEMAT_PERM_LOCAL 1 \n" \
 "     PHIST_SPARSEMAT_PERM_GLOBAL 2 \n" \
-"     PHIST_SPARSEMAT_OPT_SINGLESPMVM 4 \n" \
-"     PHIST_SPARSEMAT_OPT_BLOCKSPMVM  8 \n" \
-"     PHIST_SPARSEMAT_OPT_CARP 16 \n" \
-"     PHIST_SPARSEMAT_QUIET 32 \n" \
-"     PHIST_SPARSEMAT_OWN_MAPS 64 \n"
+"     PHIST_SPARSEMAT_DIST2_COLOR 4 \n" \
+"     PHIST_SPARSEMAT_OPT_SINGLESPMVM 8 \n" \
+"     PHIST_SPARSEMAT_OPT_BLOCKSPMVM  16 \n" \
+"     PHIST_SPARSEMAT_OPT_CARP 32 \n" \
+"     PHIST_SPARSEMAT_QUIET 64 \n" \
+"     PHIST_SPARSEMAT_OWN_MAPS 128 \n"
 
 /*! \def PHIST_MVEC_REPLICATE_DEVICE_MEM
 
