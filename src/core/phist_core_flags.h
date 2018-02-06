@@ -9,7 +9,9 @@
 #ifndef PHIST_CORE_FLAGS_H
 #define PHIST_CORE_FLAGS_H
 
-/* some flags that influence the behavior of core functions, see also
+/*! \file phist_core_flags.h
+   
+   some flags that influence the behavior of core functions, see also
    phist_kernel_flags.h for an introduction to flags in PHIST.
    
    The values 2^[16...23] are reserved for core functionality for now, again, 
@@ -17,11 +19,27 @@
    
  */
 
-/* for KPM */
+//! \ingroup core
+//@{
+
+/*! \def PHIST_KPM_SINGLEVEC 
+    Accepted by KPM core routine) 
+ */
 #define PHIST_KPM_SINGLEVEC 65536
 
-/* for orthog routines: fill up output vector with random numbers and orthogonalize them along */
-/* with the original entries if the vector W is found to be rank-deficient.                    */
+/*! \def PHIST_ORTHOG_RANDOMIZE_NULLSPACE
+   
+   For orthog routines: fill up output vector with random numbers and orthogonalize them along 
+   with the original entries if the vector W is found to be rank-deficient.                    
+ */
 #define PHIST_ORTHOG_RANDOMIZE_NULLSPACE 131072
+
+/*! \def PHIST_ORTHOG_TRIANGULAR_R2
+    
+    For orthog routine: make sure the resulting factor R2 is upper triangular on output. 
+ */
+#define PHIST_ORTHOG_TRIANGULAR_R2       262144
+
+//@}
 
 #endif
