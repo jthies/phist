@@ -51,8 +51,8 @@ public:
   TYPE(sdMat_ptr) R0_, R1_, R2_;
 
   //! for some tests we need to access the raw data of the R matrices and W2 (tmp space)
-  _ST_ *R0_vp_,*R1_vp_,*R2_vp_,*W2_vp_;
-  phist_lidx ldaR0_, ldaR1_, ldaR2_, ldaW2_, stride_;
+  _ST_ *R0_vp_,*R1_vp_,*R2_vp_,*W_vp_,*W2_vp_;
+  phist_lidx ldaR0_, ldaR1_, ldaR2_, ldaW_, ldaW2_, stride_;
   
 
   static void SetUpTestCase()
@@ -109,6 +109,8 @@ public:
       PHISTTEST_MVEC_CREATE(&Q_,map,this->k_,&this->iflag_);
       ASSERT_EQ(0,this->iflag_);
       PHISTTEST_MVEC_CREATE(&W2_,map,this->k_,&this->iflag_);
+      ASSERT_EQ(0,this->iflag_);
+      SUBR(mvec_extract_view)(W_,&W_vp_,&this->ldaW_,&this->iflag_);
       ASSERT_EQ(0,this->iflag_);
       SUBR(mvec_extract_view)(W2_,&W2_vp_,&this->ldaW2_,&this->iflag_);
       ASSERT_EQ(0,this->iflag_);
@@ -855,16 +857,45 @@ return;
       std::cout << "their C = "<<*C2 << std::endl;
 
       // there may be sign switches in B, depending on the algorithm used, so 'normalize' the signs first.
-      for (int i=0; i<B->numRows(); i++)
+      std::vector<_ST_> col_signs(k_),col_signs2(k_);
+      for (int i=0; i<k_; i++)
       {
-        int sgnB = (mt::zero() < st::real((*B)(i,i))) - (st::real((*B)(i,i)) < mt::zero());
-        int sgnB2 = (mt::zero() < st::real((*B2)(i,i))) - (st::real((*B2)(i,i)) < mt::zero());
+        col_signs[i] = (_ST_)((mt::zero() < st::real((*B)(i,i))) - (st::real((*B)(i,i)) < mt::zero()));
+        col_signs2[i] = (_ST_)((mt::zero() < st::real((*B2)(i,i))) - (st::real((*B2)(i,i)) < mt::zero()));
         for (int j=0; j<B->numCols(); j++)
         {
-          (*B)(i,j)*=(_ST_)sgnB;
-          (*B2)(i,j)*=(_ST_)sgnB2;
+          (*B)(i,j)*=col_signs[i];
+          (*B2)(i,j)*=col_signs2[i];
         }
       }
+      MVT::MvScale(*W,col_signs);
+      MVT::MvScale(*W2,col_signs2);
+      
+      /* compute the orthog relation QB - (W-VC), should be almost zero for both methods */
+      Teuchos::RCP<MV> orthogRel = MVT::CloneCopy(*W0);
+      Teuchos::RCP<MV> orthogRel2 = MVT::CloneCopy(*W0);
+      
+      MVT::MvTimesMatAddMv(st::one(), *W, *B,  -st::one(), *orthogRel);
+      MVT::MvTimesMatAddMv(st::one(), *W2,*B2, -st::one(), *orthogRel2);
+
+      MVT::MvTimesMatAddMv(st::one(),*V,*C,  st::one(), *orthogRel);
+      MVT::MvTimesMatAddMv(st::one(),*V,*C2, st::one(), *orthogRel2);
+      
+      std::vector< _MT_ > normsOrthogRel(k_),normsOrthogRel2(k_);
+      MVT::MvNorm(*orthogRel,normsOrthogRel);
+      MVT::MvNorm(*orthogRel2,normsOrthogRel2);
+      
+      auto maxOrthogRelError=std::max_element(normsOrthogRel.begin(),  normsOrthogRel.end());
+      auto maxOrthogRelError2=std::max_element(normsOrthogRel2.begin(),  normsOrthogRel2.end());
+
+      ASSERT_NEAR(mt::one(),mt::one()+*maxOrthogRelError, std::sqrt(mt::eps()));
+      ASSERT_NEAR(mt::one(),mt::one()+*maxOrthogRelError2, std::sqrt(mt::eps()));
+      
+      // check that W is correctly orthonormalized 
+      ASSERT_NEAR(mt::one(),WTest::ColsAreOrthogonal(W_vp_,nloc_,ldaW_,stride_,mpi_comm_),std::sqrt(mt::eps()));
+      ASSERT_NEAR(mt::one(),WTest::ColsAreNormalized(W_vp_,nloc_,ldaW_,stride_,mpi_comm_),std::sqrt(mt::eps()));
+      ASSERT_NEAR(mt::one(),WTest::ColsAreOrthogonal(W2_vp_,nloc_,ldaW2_,stride_,mpi_comm_),std::sqrt(mt::eps()));
+      ASSERT_NEAR(mt::one(),WTest::ColsAreNormalized(W2_vp_,nloc_,ldaW2_,stride_,mpi_comm_),std::sqrt(mt::eps()));
 
       std::cout << "my normalized B = "<<*B << std::endl;
       std::cout << "their normalized B = "<<*B2 << std::endl;
