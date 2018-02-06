@@ -51,8 +51,8 @@ public:
   TYPE(sdMat_ptr) R0_, R1_, R2_;
 
   //! for some tests we need to access the raw data of the R matrices and W2 (tmp space)
-  _ST_ *R0_vp_,*R1_vp_,*R2_vp_,*W_vp_,*W2_vp_;
-  phist_lidx ldaR0_, ldaR1_, ldaR2_, ldaW_, ldaW2_, stride_;
+  _ST_ *R0_vp_,*R1_vp_,*R2_vp_,*W_vp_,*W2_vp_, *BW_vp_, *BW2_vp_;
+  phist_lidx ldaR0_, ldaR1_, ldaR2_, ldaW_, ldaW2_, ldaBW_, ldaBW2_, stride_;
   
 
   static void SetUpTestCase()
@@ -131,6 +131,12 @@ public:
       ASSERT_EQ(0,this->iflag_);
       PHISTTEST_MVEC_CREATE(&BQ_,map,this->k_,&this->iflag_);
       ASSERT_EQ(0,this->iflag_);
+
+      SUBR(mvec_extract_view)(BW_,&BW_vp_,&this->ldaBW_,&this->iflag_);
+      ASSERT_EQ(0,this->iflag_);
+      SUBR(mvec_extract_view)(BW2_,&BW2_vp_,&this->ldaBW2_,&this->iflag_);
+      ASSERT_EQ(0,this->iflag_);
+
 #endif
       // create matrices R0,R1, R2 and matrix views for setting/checking entries
       SUBR(sdMat_create)(&R0_,this->m_,this->m_,this->comm_,&this->iflag_);
@@ -870,35 +876,66 @@ return;
       }
       MVT::MvScale(*W,col_signs);
       MVT::MvScale(*W2,col_signs2);
-      
+#ifdef ORTHOG_WITH_HPD_B
+      MVT::MvScale(*BW,col_signs);
+      MVT::MvScale(*BW2,col_signs2);
+#endif
       /* compute the orthog relation QB - (W-VC), should be almost zero for both methods */
-      Teuchos::RCP<MV> orthogRel = MVT::CloneCopy(*W0);
-      Teuchos::RCP<MV> orthogRel2 = MVT::CloneCopy(*W0);
+      Teuchos::RCP<MV> orthogCond = MVT::CloneCopy(*W0);
+      Teuchos::RCP<MV> orthogCond2 = MVT::CloneCopy(*W0);
       
-      MVT::MvTimesMatAddMv(st::one(), *W, *B,  -st::one(), *orthogRel);
-      MVT::MvTimesMatAddMv(st::one(), *W2,*B2, -st::one(), *orthogRel2);
+      MVT::MvTimesMatAddMv(st::one(), *W, *B,  -st::one(), *orthogCond);
+      MVT::MvTimesMatAddMv(st::one(), *W2,*B2, -st::one(), *orthogCond2);
 
-      MVT::MvTimesMatAddMv(st::one(),*V,*C,  st::one(), *orthogRel);
-      MVT::MvTimesMatAddMv(st::one(),*V,*C2, st::one(), *orthogRel2);
+      MVT::MvTimesMatAddMv(st::one(),*V,*C,  st::one(), *orthogCond);
+      MVT::MvTimesMatAddMv(st::one(),*V,*C2, st::one(), *orthogCond2);
       
-      std::vector< _MT_ > normsOrthogRel(k_),normsOrthogRel2(k_);
-      MVT::MvNorm(*orthogRel,normsOrthogRel);
-      MVT::MvNorm(*orthogRel2,normsOrthogRel2);
+      std::vector< _MT_ > normsOrthogCond(k_),normsOrthogCond2(k_);
+      MVT::MvNorm(*orthogCond,normsOrthogCond);
+      MVT::MvNorm(*orthogCond2,normsOrthogCond2);
       
-      auto maxOrthogRelError=std::max_element(normsOrthogRel.begin(),  normsOrthogRel.end());
-      auto maxOrthogRelError2=std::max_element(normsOrthogRel2.begin(),  normsOrthogRel2.end());
+      auto maxOrthogCondError=std::max_element(normsOrthogCond.begin(),  normsOrthogCond.end());
+      auto maxOrthogCondError2=std::max_element(normsOrthogCond2.begin(),  normsOrthogCond2.end());
 
-      ASSERT_NEAR(mt::one(),mt::one()+*maxOrthogRelError, std::sqrt(mt::eps()));
-      ASSERT_NEAR(mt::one(),mt::one()+*maxOrthogRelError2, std::sqrt(mt::eps()));
+      ASSERT_NEAR(mt::one(),mt::one()+*maxOrthogCondError, std::sqrt(mt::eps()));
+      ASSERT_NEAR(mt::one(),mt::one()+*maxOrthogCondError2, std::sqrt(mt::eps()));
+
+#ifdef ORTHOG_WITH_HPD_B
+      // check that BW after the orthogonalization is correctly updated
+      Teuchos::RCP<MV> BW_expl = MVT::Clone(*W,k_);
+      Teuchos::RCP<MV> BW_expl2 = MVT::Clone(*W,k_);
+      Teuchos::RCP<MV> BW_updated = MVT::Clone(*W,k_);
+      Teuchos::RCP<MV> BW_updated2 = MVT::Clone(*W,k_);
       
+      OPT::Apply(*Op,*W,*BW_expl,Belos::NOTRANS);
+      OPT::Apply(*Op,*W2,*BW_expl2,Belos::NOTRANS);
+      
+      MVT::MvAddMv(-st::one(),*BW, st::one(),*BW_expl, *BW_updated);
+      MVT::MvAddMv(-st::one(),*BW2,st::one(),*BW_expl2, *BW_updated2);
+
+      std::vector< _MT_ > normsBWupdated(k_),normsBWupdated2(k_);
+      MVT::MvNorm(*BW_updated,  normsBWupdated);
+      MVT::MvNorm(*BW_updated2, normsBWupdated2);
+      
+      auto maxBWupdatedError=std::max_element(normsBWupdated.begin(),  normsBWupdated.end());
+      auto maxBWupdatedError2=std::max_element(normsBWupdated2.begin(),  normsBWupdated2.end());
+
+      ASSERT_NEAR(mt::one(),mt::one()+*maxBWupdatedError, std::sqrt(mt::eps()));
+      ASSERT_NEAR(mt::one(),mt::one()+*maxBWupdatedError2, std::sqrt(mt::eps()));
+      
+#endif      
       // check that W is correctly orthonormalized 
+#ifdef ORTHOG_WITH_HPD_B
+      ASSERT_NEAR(mt::one(),WTest::ColsAreBOrthogonal(W_vp_,BW_vp_,nloc_,ldaW_,ldaBW_,stride_,mpi_comm_),std::sqrt(mt::eps()));
+      ASSERT_NEAR(mt::one(),WTest::ColsAreBNormalized(W_vp_,BW_vp_,nloc_,ldaW_,ldaBW_,stride_,mpi_comm_),std::sqrt(mt::eps()));
+      ASSERT_NEAR(mt::one(),WTest::ColsAreBOrthogonal(W2_vp_,BW2_vp_,nloc_,ldaW2_,ldaBW2_,stride_,mpi_comm_),std::sqrt(mt::eps()));
+      ASSERT_NEAR(mt::one(),WTest::ColsAreBNormalized(W2_vp_,BW2_vp_,nloc_,ldaW2_,ldaBW2_,stride_,mpi_comm_),std::sqrt(mt::eps()));
+#else
       ASSERT_NEAR(mt::one(),WTest::ColsAreOrthogonal(W_vp_,nloc_,ldaW_,stride_,mpi_comm_),std::sqrt(mt::eps()));
       ASSERT_NEAR(mt::one(),WTest::ColsAreNormalized(W_vp_,nloc_,ldaW_,stride_,mpi_comm_),std::sqrt(mt::eps()));
       ASSERT_NEAR(mt::one(),WTest::ColsAreOrthogonal(W2_vp_,nloc_,ldaW2_,stride_,mpi_comm_),std::sqrt(mt::eps()));
       ASSERT_NEAR(mt::one(),WTest::ColsAreNormalized(W2_vp_,nloc_,ldaW2_,stride_,mpi_comm_),std::sqrt(mt::eps()));
-
-      std::cout << "my normalized B = "<<*B << std::endl;
-      std::cout << "their normalized B = "<<*B2 << std::endl;
+#endif
       
       SDM Bdiff=*B; Bdiff-=*B2;
       SDM Cdiff=*C; Cdiff-=*C2;
