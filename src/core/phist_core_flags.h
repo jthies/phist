@@ -19,8 +19,8 @@
    
  */
 
-//! \ingroup core
-//@{
+/*! \ingroup core */
+/*@{*/
 
 /*! \def PHIST_KPM_SINGLEVEC 
     Accepted by KPM core routine) 
@@ -41,6 +41,6 @@
  */
 #define PHIST_ORTHOG_TRIANGULAR_R1       262144
 
-//@}
+/*@}*/
 
 #endif
