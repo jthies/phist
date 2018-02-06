@@ -88,6 +88,7 @@ extern "C" void SUBR(orthog_impl)(TYPE(const_mvec_ptr) V,
   int robust    =(*iflag&PHIST_ROBUST_REDUCTIONS);
 #endif
   int randomize =(*iflag&PHIST_ORTHOG_RANDOMIZE_NULLSPACE);
+  int triangular_R1=(*iflag&PHIST_ORTHOG_TRIANGULAR_R1);
   int dim0;
 
   int m=0,k;
@@ -115,10 +116,10 @@ extern "C" void SUBR(orthog_impl)(TYPE(const_mvec_ptr) V,
   int num_attempts=0;
   const int max_attempts=5;
   TYPE(sdMat_ptr) R1p=NULL,R1pp=NULL,R2p=NULL;
+  phist_const_comm_ptr comm;
+  PHIST_CHK_IERR(SUBR(mvec_get_comm)(W,&comm,iflag),*iflag);
   if (randomize&&dim0>0)
   {
-    phist_const_comm_ptr comm;
-    PHIST_CHK_IERR(SUBR(mvec_get_comm)(W,&comm,iflag),*iflag);
     if (m>0) PHIST_CHK_IERR(SUBR(sdMat_create)(&R2p,m,k,comm,iflag),*iflag);
     PHIST_CHK_IERR(SUBR(sdMat_create)(&R1p,k,k,comm,iflag),*iflag);
     PHIST_CHK_IERR(SUBR(sdMat_create)(&R1pp,k,k,comm,iflag),*iflag);
@@ -189,6 +190,24 @@ extern "C" void SUBR(orthog_impl)(TYPE(const_mvec_ptr) V,
     PHIST_CHK_IERR(SUBR(sdMat_view_block)(R1,&R1_r,0,k-1,rankW,k-1,iflag),*iflag);
     PHIST_CHK_IERR(SUBR(sdMat_put_value)(R1_r,st::zero(),iflag),*iflag);
     PHIST_CHK_IERR(SUBR(sdMat_delete)(R1_r,iflag),*iflag);
+  }
+  
+  // if the user explicitly asks for a triangular R1 factor, we have to permute
+  // the final orthogonal Q (which is stored in W at this point).
+  // We have Q*R1     = W - V*R2 = Q*P*R1p, so
+  // first compute R1=P*R1p where R1p overwrites R1 and P is stored explicitly
+  // then  update Q <- Q*P in-place.
+  if (triangular_R1)
+  {
+    if (R1p==NULL)
+    {
+      PHIST_CHK_IERR(SUBR(sdMat_create)(&R1p,k,k,comm,iflag),*iflag);
+      _R1p.set(R1p);
+    }
+    TYPE(sdMat_ptr) P=R1p;
+    PHIST_CHK_IERR(SUBR(sdMat_qr)(P,R1,iflag),*iflag);
+    // update the output Q
+    PHIST_CHK_IERR(SUBR(mvec_times_sdMat_inplace)(W,P,iflag),*iflag);
   }
   
   if (num_attempts==max_attempts)

@@ -59,6 +59,16 @@ typedef char phist_blas_char;
 #define DGEMM BLAS_SUBR(DGEMM,dgemm)
 #define CGEMM BLAS_SUBR(CGEMM,cgemm)
 #define ZGEMM BLAS_SUBR(ZGEMM,zgemm)
+/* GEQR */
+#define SGEQR LAPACK_SUBR(SGEQR,sgeqr)
+#define DGEQR LAPACK_SUBR(DGEQR,dgeqr)
+#define CGEQR LAPACK_SUBR(CGEQR,cgeqr)
+#define ZGEQR LAPACK_SUBR(ZGEQR,zgeqr)
+/* GEMQR */
+#define GEMQR LAPACK_SUBR(SGEMQR,sgemqr)
+#define DGEMQR LAPACK_SUBR(DGEMQR,dgemqr)
+#define CGEMQR LAPACK_SUBR(CGEMQR,cgemqr)
+#define ZGEMQR LAPACK_SUBR(ZGEMQR,zgemqr)
 /* STEQR */
 #define SSTEQR LAPACK_SUBR(SSTEQR,ssteqr)
 #define DSTEQR LAPACK_SUBR(DSTEQR,dsteqr)
@@ -184,6 +194,43 @@ const phist_Sblas_cmplx* alpha, const phist_Sblas_cmplx* a,  const phist_blas_id
 
 void ZGEMM(const char* transA, const char* transB, const phist_blas_idx* m, const phist_blas_idx* n, const phist_blas_idx* k,
 const phist_Dblas_cmplx* alpha, const phist_Dblas_cmplx* a,  const phist_blas_idx* lda, phist_Dblas_cmplx* b, const phist_blas_idx* ldb, const phist_Dblas_cmplx* beta, phist_Dblas_cmplx* c, const phist_blas_idx* ldc);
+
+///////////////////////////////////////////////////////////////////////////////////////////
+//      XGEQR - QR factorization
+///////////////////////////////////////////////////////////////////////////////////////////
+
+void SGEQR( const phist_blas_idx* m, const phist_blas_idx* n, float* a, const phist_blas_idx* lda,
+                  float* tau, const phist_blas_idx* tsize, float* work, const phist_blas_idx* lwork,
+                  phist_blas_idx *info );
+void DGEQR( const phist_blas_idx* m, const phist_blas_idx* n, double* a, const phist_blas_idx* lda,
+                  double* tau, const phist_blas_idx* tsize, double* work, const phist_blas_idx* lwork,
+                  phist_blas_idx *info );
+void CGEQR( const phist_blas_idx* m, const phist_blas_idx* n, phist_Sblas_cmplx* a,
+                  const phist_blas_idx* lda, phist_Sblas_cmplx* tau, const phist_blas_idx* tsize,
+                  phist_Sblas_cmplx* work, const phist_blas_idx* lwork,
+                  phist_blas_idx *info );
+void ZGEQR( const phist_blas_idx* m, const phist_blas_idx* n, phist_Dblas_cmplx* a,
+                  const phist_blas_idx* lda, phist_Dblas_cmplx* tau, const phist_blas_idx* tsize,
+                  phist_Dblas_cmplx* work, const phist_blas_idx* lwork,
+                  phist_blas_idx *info );
+
+///////////////////////////////////////////////////////////////////////////////////////////
+//      XGEMQR - 'multiply by Q' after XGEQR
+///////////////////////////////////////////////////////////////////////////////////////////
+
+void SGEMQR( phist_blas_char* side, phist_blas_char* trans, const phist_blas_idx* m, const phist_blas_idx* n, const phist_blas_idx* k,
+             const float* A, const phist_blas_idx* lda, const float* tau, const phist_blas_idx *tsize, float* c, const phist_blas_idx *ldc, 
+             float* work, const phist_blas_idx* lwork, phist_blas_idx* info);
+void DGEMQR( phist_blas_char* side, phist_blas_char* trans, const phist_blas_idx* m, const phist_blas_idx* n, const phist_blas_idx* k,
+             const double* A, const phist_blas_idx* lda, const double* tau, const phist_blas_idx *tsize, double* c, const phist_blas_idx *ldc, 
+             double* work, const phist_blas_idx* lwork, phist_blas_idx* info);
+void CGEMQR( phist_blas_char* side, phist_blas_char* trans, const phist_blas_idx* m, const phist_blas_idx* n, const phist_blas_idx* k,
+             const phist_Sblas_cmplx* A, const phist_blas_idx* lda, const phist_Sblas_cmplx* tau, const phist_blas_idx *tsize, phist_Sblas_cmplx* c, const phist_blas_idx *ldc, 
+             phist_Sblas_cmplx* work, const phist_blas_idx* lwork, phist_blas_idx* info);
+void ZGEMQR( phist_blas_char* side, phist_blas_char* trans, const phist_blas_idx* m, const phist_blas_idx* n, const phist_blas_idx* k,
+             const phist_Dblas_cmplx* A, const phist_blas_idx* lda, const phist_Dblas_cmplx* tau, const phist_blas_idx *tsize, phist_Dblas_cmplx* c, const phist_blas_idx *ldc, 
+             phist_Dblas_cmplx* work, const phist_blas_idx* lwork, phist_blas_idx* info);
+
 
 #ifdef __cplusplus
 } // extern "C" 

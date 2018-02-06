@@ -144,8 +144,4 @@ int phist_ordered_fprintf(MPI_Comm comm, const char* fmt, ...);
 
 #include "phist_tasks.h"
 
-#ifndef DOXYGEN
-#include "phist_lapack.h"
-#endif
-
 #endif

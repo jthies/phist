@@ -34,11 +34,12 @@
  */
 #define PHIST_ORTHOG_RANDOMIZE_NULLSPACE 131072
 
-/*! \def PHIST_ORTHOG_TRIANGULAR_R2
+/*! \def PHIST_ORTHOG_TRIANGULAR_R1
     
-    For orthog routine: make sure the resulting factor R2 is upper triangular on output. 
+    For orthog routine: make sure the resulting factor R1 is upper triangular on output,
+    orthog computes [Q,R1,R2] s.t. Q*R1 = W - V*R2, with V an orthogonal basis on input.
  */
-#define PHIST_ORTHOG_TRIANGULAR_R2       262144
+#define PHIST_ORTHOG_TRIANGULAR_R1       262144
 
 //@}
 
