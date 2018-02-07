@@ -293,7 +293,7 @@ protected:
       SUBR(mvec_put_value)(vec1_,val,&iflag_);
       SUBR(mvec_random)(vec2_,&iflag_);
       SUBR(sparseMat_times_mvec)(st::one(),A,vec1_,st::zero(),vec2_,&iflag_);
-      if (iflag_) return (_MT_)iflag_;
+      if (iflag_) return MT(iflag_);
 
       PrintVector(PHIST_DEBUG,"input to spMVM",vec1_vp_,nloc_,lda_,stride_,mpi_comm_);
       PrintVector(PHIST_DEBUG,"result of spMVM",vec2_vp_,nloc_,lda_,stride_,mpi_comm_);
@@ -530,7 +530,7 @@ protected:
     // check that AX=X
     SUBR(mvec_random)(vec1,&iflag_);
     EXPECT_EQ(0,iflag_);
-    SUBR(mvec_put_value)(vec2,(_ST_)99.9,&iflag_);
+    SUBR(mvec_put_value)(vec2,ST(99.9),&iflag_);
     EXPECT_EQ(0,iflag_);
     SUBR(sparseMat_times_mvec)(st::one(),A,vec1,st::zero(),vec2,&iflag_);
     EXPECT_EQ(0,iflag_);
@@ -561,7 +561,7 @@ protected:
     // check that AX=X
     SUBR(mvec_random)(vec1_,&iflag_);
     EXPECT_EQ(0,iflag_);
-    SUBR(mvec_put_value)(vec2_,(_ST_)99.9,&iflag_);
+    SUBR(mvec_put_value)(vec2_,ST(99.9),&iflag_);
     EXPECT_EQ(0,iflag_);
     SUBR(sparseMat_times_mvec)(st::one(),A,vec1_,st::zero(),vec2_,&iflag_);
     EXPECT_EQ(0,iflag_);
@@ -629,7 +629,7 @@ protected:
       {
         for(int j = 0; j < nvec_; j++)
         {
-          orderedVec_vp[VIDX(i,j,lda)] = (_ST_)(ilower+i + j*nglob_);
+          orderedVec_vp[VIDX(i,j,lda)] = ST(ilower+i + j*nglob_);
         }
       }
       // copy to vec1_
@@ -722,7 +722,7 @@ protected:
       {
         for(int j = 0; j < nvec_; j++)
         {
-          orderedVec_vp[VIDX(i,j,lda)] = (_ST_)(ilower+i + j*nglob_);
+          orderedVec_vp[VIDX(i,j,lda)] = ST(ilower+i + j*nglob_);
         }
       }
       
@@ -1262,9 +1262,9 @@ TEST_F(CLASSNAME,mvecT_times_mvec_after_spmvm)
   for (int ii=0; ii< nloc_; ii++)
   {
     for (int j=0; j<nvec_; j++)
-      vec2_vp_[VIDX(ii,j,lda_)] = (_ST_) -st::one()*(_MT_)((j+1)*1.0l/(ilower+ii+1));
+      vec2_vp_[VIDX(ii,j,lda_)] = -st::one()*ST((j+1)*1.0l/(ilower+ii+1));
     for (int i=0; i<nvec_; i++)
-      vec1_vp_[VIDX(ii,i,lda_)] = (_ST_) st::one()*(_MT_)((i+1)*1.0l/(ilower+ii+2));
+      vec1_vp_[VIDX(ii,i,lda_)] = st::one()*ST((i+1)*1.0l/(ilower+ii+2));
   }
   SUBR(mvec_to_device)(vec1_,&iflag_);
   SUBR(mvec_to_device)(vec2_,&iflag_);
