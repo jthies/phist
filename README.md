@@ -32,8 +32,8 @@ Ghysels et al).
 assumed and 'X' may be any additional accelerator, CPU or core level programming scheme. The 'X' depends on the 
 underlying kernel library used, for instance, [ ghost ](https://bitbucket.org/essex/ghost) uses OpenMP, SIMD intrinsics 
 and CUDA, whereas Epetra implements no additional parallelism beyond MPI 
-(see [ this wiki page ](https://bitbucket.org/essex/phist/wiki/User_Guide/Kernel Libraries.wiki) for details on the supported kernel 
-libraries).
+(see [ this wiki page ](https://bitbucket.org/essex/phist/wiki/User_Guide/030 Kernel Libraries.wiki#!supported-kernel-libraries) 
+for details on the supported kernel libraries).
 
 More information can be found in the [ wiki ](https://bitbucket.org/essex/phist/wiki/Home.wiki)
 
@@ -45,7 +45,7 @@ The git repository can be checked out using the command
 
   git clone git@bitbucket.org:essex/phist
 
-Instructions for compiling PHIST can be found [ here ](https://bitbucket.org/essex/phist/wiki/User_Guide/00 Installation.wiki)
+Instructions for compiling PHIST can be found [ here ](https://bitbucket.org/essex/phist/wiki/User_Guide/000 Installation.wiki)
 
 Contact
 =======
