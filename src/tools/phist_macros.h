@@ -32,7 +32,7 @@
 #ifdef __cplusplus
   extern "C" {
 #endif
-  void phist_printf(int outlev, int rootOnly, char* msg, ...);
+  void phist_printf(int outlev, int rootOnly, const char* msg, ...);
 #ifdef __cplusplus
 } // extern "C"
 #endif
@@ -49,21 +49,21 @@
     if the given level<=PHIST_OUTLEV. The message is printed on all MPI ranks and prefixed with
     the MPI rank.
  */
-#define PHIST_OUT(level,msg, ...) phist_printf(level,0,(char* const)msg, ##__VA_ARGS__);
+#define PHIST_OUT(level,msg, ...) phist_printf(level,0,(const char*)msg, ##__VA_ARGS__);
 
 /*! similar to PHIST_OUT but only rank 0 in the phist default communicator prints the message, and the prefix is 
 omitted.
 */
-#define PHIST_SOUT(level,msg, ...) phist_printf(level,1,(char* const)msg, ##__VA_ARGS__);
+#define PHIST_SOUT(level,msg, ...) phist_printf(level,1,(const char*)msg, ##__VA_ARGS__);
 
 #ifdef PHIST_HAVE_MPI
 #define PHIST_ORDERED_OUT(level,mpicomm,msg, ...) {                                  \
         if(PHIST_OUTLEV >= level) {                                                  \
-                phist_ordered_fprintf(mpicomm, (char* const)msg, ##__VA_ARGS__);     \
+                phist_ordered_fprintf(mpicomm, (const char*)msg, ##__VA_ARGS__);     \
         }                                                                            \
 }
 #else
-#define PHIST_ORDERED_OUT(level,mpicomm,msg, ...) PHIST_SOUT(level, (char* const)msg, ##__VA_ARGS__);
+#define PHIST_ORDERED_OUT(level,mpicomm,msg, ...) PHIST_SOUT(level, (const char*)msg, ##__VA_ARGS__);
 #endif
 
 #define PHIST_WARN_MISSING_KERNEL(function_name) \

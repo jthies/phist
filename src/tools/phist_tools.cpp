@@ -114,7 +114,7 @@ std::string phist_str2upper(const std::string& s)
     return phist::output_FILE;
   }
 
-  extern "C" void phist_printf(int outlev, int rootOnly, char* msg, ...)
+  extern "C" void phist_printf(int outlev, int rootOnly, const char* msg, ...)
   {
     if (outlev>PHIST_OUTLEV) return;
     static int old_rank=-1;
@@ -437,7 +437,7 @@ extern "C" int phist_ordered_fprintf(MPI_Comm comm, const char* fmt, ...)
     global_length=char_disps[size];
     if (global_length>1e8)
     {
-      phist_printf(PHIST_WARNING,0,(char* const)"WARNING: you're gathering a very large string, PHIST_ORDERED_OUT is intended for short messages\n");
+      phist_printf(PHIST_WARNING,0,(const char*)"WARNING: you're gathering a very large string, PHIST_ORDERED_OUT is intended for short messages\n");
     }
     global_string=new char[global_length+1];
   }
@@ -450,7 +450,7 @@ extern "C" int phist_ordered_fprintf(MPI_Comm comm, const char* fmt, ...)
     global_string[global_length]='\0';
     if (phist::output_FILE!=nullptr)
     {
-      fprintf(phist::output_FILE, (char* const)global_string);
+      fprintf(phist::output_FILE, (const char*)global_string);
     }
     else if (phist::output_stream!=nullptr)
     {
