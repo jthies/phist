@@ -32,8 +32,8 @@ Ghysels et al).
 assumed and 'X' may be any additional accelerator, CPU or core level programming scheme. The 'X' depends on the 
 underlying kernel library used, for instance, [ ghost ](https://bitbucket.org/essex/ghost) uses OpenMP, SIMD intrinsics 
 and CUDA, whereas Epetra implements no additional parallelism beyond MPI 
-(see [ this wiki page ](https://bitbucket.org/essex/phist/wiki/User_Guide/03 Kernel Libraries.wiki#!supported-kernel-libraries) for details on the supported kernel 
-libraries).
+(see [ this wiki page ](https://bitbucket.org/essex/phist/wiki/User_Guide/030 Kernel Libraries.wiki#!supported-kernel-libraries) 
+for details on the supported kernel libraries).
 
 More high-level information can be found in the [ wiki ](https://bitbucket.org/essex/phist/wiki/Home.wiki). The main source of information on implementation details should be the headers and source code themselves,
 along with the examples found in phist/drivers/ and phist/examples/. It is possible to generate HTML documentation using Doxygen (just type 'make doc' in your build directory, and the output is written to
@@ -47,7 +47,7 @@ The git repository can be checked out using the command
 
   git clone git@bitbucket.org:essex/phist
 
-Instructions for compiling PHIST can be found [ here ](https://bitbucket.org/essex/phist/wiki/User_Guide/00 Installation.wiki)
+Instructions for compiling PHIST can be found [ here ](https://bitbucket.org/essex/phist/wiki/User_Guide/000 Installation.wiki)
 
 Contact
 =======
