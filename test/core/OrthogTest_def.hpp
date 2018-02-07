@@ -523,8 +523,8 @@ SUBR(sdMat_print)(R2,&iflag_);
   {
     if( typeImplemented_ && !problemTooSmall_ )
     {
-      _ST_ v1= (_ST_)0.9344646 - (_ST_)1.04357*st::cmplx_I();
-      _ST_ v2=-(_ST_)0.9554373 + (_ST_)1.08158*st::cmplx_I();
+      _ST_ v1= ST(0.9344646) - ST(1.04357)*st::cmplx_I();
+      _ST_ v2=-ST(0.9554373) + ST(1.08158)*st::cmplx_I();
       // fill V and W with constant entries!=1
       SUBR(mvec_put_value)(V_,v1,&iflag_);
       ASSERT_EQ(0,iflag_);
@@ -897,7 +897,7 @@ return;
       
       Belos::ICGSOrthoManager<_ST_,MV,OP> myOrtho("phist/orthog",Op,
                                                   max_blk_ortho, blk_tol, sing_tol);
-/*
+/* note: it seems that this ortho-manager doesn't treat the operator Op correctly
       Belos::DGKSOrthoManager<_ST_,MV,OP> theirOrtho("Belos/DGKS",Op,
                                                   max_blk_ortho, blk_tol, dep_tol, sing_tol);
 */

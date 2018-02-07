@@ -672,13 +672,13 @@ public:
       MTest::PrintSdMat(PHIST_DEBUG,"ones",M1_vp_,ldaM1_,stride_,mpi_comm_);
       V2Test::PrintVector(PHIST_DEBUG,"ones*ones",V2_vp_,nloc_,ldaV2_,stride_,mpi_comm_);
 #endif
-      ASSERT_REAL_EQ(mt::one(),MvecEqual(V2_,(ST)m_));
+      ASSERT_REAL_EQ(mt::one(),MvecEqual(V2_,ST(m_)));
       MTest::sdMat_parallel_check(M1_,&iflag_);
       ASSERT_EQ(0,iflag_);
       
       // with adding to factor*(input vector)
-      ST alpha=(ST)2.0+(ST)2.0*st::cmplx_I();
-      SUBR(mvec_put_value)(V2_,(ST)m_*alpha,&iflag_);
+      ST alpha=ST(2)+ST(2)*st::cmplx_I();
+      SUBR(mvec_put_value)(V2_,ST(m_)*alpha,&iflag_);
       ASSERT_EQ(0,iflag_);
       SUBR(mvec_times_sdMat)(st::one(),V1_,M1_,-st::one()/alpha,V2_,&iflag_);
       ASSERT_EQ(0,iflag_);
@@ -699,7 +699,7 @@ public:
     {
       // fill mvec with scalar
       const MT scalar = 5;
-      SUBR(mvec_put_value)(V1_, (ST)(scalar * st::one()), &iflag_);
+      SUBR(mvec_put_value)(V1_, ST(scalar), &iflag_);
       ASSERT_EQ(0, iflag_);
 
       #if PHIST_OUTLEV>=PHIST_DEBUG
@@ -712,7 +712,7 @@ public:
 
       // scale mvec with different scalar
       const MT scaleScalar = -1;
-      SUBR(mvec_scale)(V1_, (ST) (scaleScalar * st::one()), &iflag_);
+      SUBR(mvec_scale)(V1_, ST(scaleScalar), &iflag_);
       ASSERT_EQ(0, iflag_);
 
       #if PHIST_OUTLEV>=PHIST_DEBUG
@@ -767,7 +767,7 @@ public:
 
 
       // test alpa = 7+3i, beta = 0
-      alpha = (ST)7+(ST)3*st::cmplx_I();
+      alpha = ST(7)+ST(3)*st::cmplx_I();
       SUBR(mvec_times_sdMat)(alpha,V1_,M1_,beta,V2_,&iflag_);
         ASSERT_EQ(0,iflag_);
       SUBR(mvec_from_device)(V2_,&iflag_);
@@ -789,7 +789,7 @@ public:
 
 
       // test alpha = (-3+i)*alpha, beta = 3-i
-      beta = (ST)3-(ST)st::cmplx_I();
+      beta = ST(3)-st::cmplx_I();
       alpha = -beta * alpha;
       SUBR(mvec_times_sdMat)(alpha,V1_,M1_,beta,V2_,&iflag_);
         ASSERT_EQ(0,iflag_);
@@ -810,7 +810,7 @@ public:
       // fill V and W with ones
       SUBR(mvec_put_value)(V1_,st::one(),&iflag_);
       ASSERT_EQ(0,iflag_);
-      SUBR(mvec_put_value)(V2_,(ST)42.0*st::one(),&iflag_);
+      SUBR(mvec_put_value)(V2_,ST(42),&iflag_);
       ASSERT_EQ(0,iflag_);
       SUBR(sdMat_put_value)(M1_,st::one(),&iflag_);
       ASSERT_EQ(0,iflag_);
@@ -826,13 +826,13 @@ public:
       MTest::PrintSdMat(PHIST_DEBUG,"ones",M1_vp_,ldaM1_,stride_,mpi_comm_);
       V2Test::PrintVector(PHIST_DEBUG,"ones*ones",V2_vp_,nloc_,ldaV2_,stride_,mpi_comm_);
 #endif
-      ASSERT_REAL_EQ(mt::one(),MvecEqual(V2_,(ST)m_));
+      ASSERT_REAL_EQ(mt::one(),MvecEqual(V2_,ST(m_)));
       MTest::sdMat_parallel_check(M1_,&iflag_);
       ASSERT_EQ(0,iflag_);
       
       // with adding to factor*(input vector)
-      ST alpha=(ST)2+(ST)2*st::cmplx_I();
-      SUBR(mvec_put_value)(V2_,(ST)m_*alpha,&iflag_);
+      ST alpha=ST(2)+ST(2)*st::cmplx_I();
+      SUBR(mvec_put_value)(V2_,ST(m_)*alpha,&iflag_);
       ASSERT_EQ(0,iflag_);
       iflag_ = PHIST_ROBUST_REDUCTIONS;
       SUBR(mvec_times_sdMat)(st::one(),V1_,M1_,-st::one()/alpha,V2_,&iflag_);
@@ -871,7 +871,7 @@ public:
       TYPE(mvec_ptr) V_cols=nullptr;
       SUBR(mvec_view_block)(V1_,&V_cols,0,k_-1,&iflag_);
       ASSERT_EQ(0,iflag_);
-      ASSERT_REAL_EQ(mt::one(),MvecEqual(V_cols,(ST)m_));
+      ASSERT_REAL_EQ(mt::one(),MvecEqual(V_cols,ST(m_)));
    
       if (k_<m_)
       {
@@ -948,7 +948,7 @@ public:
       SUBR(mvec_view_block)(V1_,&V_cols,0,k_-1,&iflag_);
       ASSERT_EQ(0,iflag_);
 
-      ASSERT_REAL_EQ(mt::one(),MvecEqual(V_cols,(ST)m_));
+      ASSERT_REAL_EQ(mt::one(),MvecEqual(V_cols,ST(m_)));
    
       SUBR(mvec_delete)(V_cols,&iflag_);
       ASSERT_EQ(0,iflag_);

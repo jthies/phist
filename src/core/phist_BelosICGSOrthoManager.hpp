@@ -15,6 +15,10 @@
 #error "you must to include a 'phist_gen_X' header before this filee!"
 #endif
 
+#include "phist_trilinos_type_config.h"
+
+#ifdef PHIST_TRILINOS_TYPE_AVAIL
+
 // note: we should *not* include any phist headers here because they may override the
 // settings from the previously included "phist_gen_X.h" file. So instead we have to 
 // include all headers that this file needs in the source files phist_belos*.cpp.
@@ -96,8 +100,8 @@ namespace Belos {
       int iflag=iflag_in;
       int rankQiX; // rank of [Q[i],X] before orthog (we'll randomize the null-space, so unless iflag=-8 is returned,
                    // [Q[i] X] has full rank afterwards)
-      _MT_ rankTol=sing_tol_;
-      _MT_ orthoEps=blk_tol_;
+      _MT_ rankTol=_MT_(sing_tol_);
+      _MT_ orthoEps=_MT_(blk_tol_);
       int numSweeps=max_ortho_steps_;
       try {
       iflag=PHIST_ORTHOG_TRIANGULAR_R1;
@@ -121,6 +125,7 @@ namespace Belos {
     return rank_of_X;
   }
 } /* namespace Belos */
-
+#undef PHIST_TRILINOS_TYPE_AVAIL
+#endif /* PHIST_TRILINOS_TYPE_AVAIL */
 #endif /* PHIST_HAVE_BELOS */
 

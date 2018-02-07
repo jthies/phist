@@ -232,14 +232,14 @@ TEST_F(CLASSNAME,A_works)
   {
     for (int i=0; i<_NV_; i++)
     {
-      vec3_vp_[VIDX(0,i,lda_)] -= vec2_vp_[VIDX(0,i,lda_)] - (_ST_)0.5*vec2_vp_[VIDX(1,i,lda_)];
+      vec3_vp_[VIDX(0,i,lda_)] -= vec2_vp_[VIDX(0,i,lda_)] - ST(0.5)*vec2_vp_[VIDX(1,i,lda_)];
     }
   }
   if (mpi_rank_==mpi_size_-1)
   {
     for (int i=0; i<_NV_; i++)
     {
-      vec3_vp_[VIDX(nloc_-1,i,lda_)] -= vec2_vp_[VIDX(nloc_-1,i,lda_)] - (_ST_)0.5*vec2_vp_[VIDX(nloc_-2,i,lda_)];
+      vec3_vp_[VIDX(nloc_-1,i,lda_)] -= vec2_vp_[VIDX(nloc_-1,i,lda_)] - ST(0.5)*vec2_vp_[VIDX(nloc_-2,i,lda_)];
     }
   }
   ASSERT_REAL_EQ(mt::one(),ArrayEqual(vec3_vp_,nloc_,_NV_,lda_,stride_,st::zero(),vflag_));

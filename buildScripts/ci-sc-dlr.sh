@@ -180,15 +180,11 @@ cmake -DCMAKE_BUILD_TYPE=Release  \
       -DCMAKE_INSTALL_PREFIX=$INSTALL_PREFIX \
       ${ADD_CMAKE_FLAGS} \
       ..                                || update_error ${LINENO}
+echo "make doc"
 make doc &> doxygen.log                 || update_error ${LINENO}
+
+echo "Make libs"
 make -j 24 libs || make -j 1 libs       || update_error ${LINENO}
-if [[ ${KERNELS} =~ "tpetra" ]] && [[ ${VECT_EXT} =~ "CUDA" ]]; then
-# use nvcc_wrapper only to build the libs, we do not want any other code to depend on 
-# this kind of tweaks!
-  unset OMPI_CXX
-  unset OMPI_CC
-  unset OMPI_MPICXX_CXXFLAGS
-fi
 
 echo "Make drivers and test executables"
 make -j 24 || make -j 1 || update_error ${LINENO}
