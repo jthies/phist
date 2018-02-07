@@ -15,6 +15,10 @@
 #define PHIST_HIGH_PRECISION_KERNELS
 #endif
 
+#ifdef PHIST_HAVE_BELOS
+#include "phist_trilinos_type_config.h"
+#endif
+
 /*! Test fixure. */
 class CLASSNAME: public virtual TestWithType< _ST_ >
 #ifdef ORTHOG_WITH_HPD_B
@@ -831,7 +835,7 @@ return;
     }
   }
 
-#ifdef PHIST_HAVE_BELOS
+#if defined(PHIST_HAVE_BELOS)&&defined(PHIST_TRILINOS_TYPE_AVAIL)
 
   // compare our overloaded ICGS (based on orthog) with another Belos OrthoManager class.
   TEST_F(CLASSNAME,belos_ortho_manager)

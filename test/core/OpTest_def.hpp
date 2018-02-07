@@ -11,6 +11,8 @@
 #error "file not included correctly."
 #endif
 
+#include "phist_trilinos_type_config.h"
+
 /*! Test fixure. */
 class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,_N_,MATNAME>,
                  public virtual KernelTestWithVectors<_ST_,_N_,_NV_,0,5>, 
@@ -23,7 +25,7 @@ public:
   typedef KernelTestWithVectors<_ST_,_N_,_NV_,0,5> VTest;
   typedef KernelTestWithSdMats<_ST_,_NV_,_NV_,0> MTest;
 
-#ifdef PHIST_HAVE_BELOS
+#if defined(PHIST_HAVE_BELOS)&&defined(PHIST_TRILINOS_TYPE_AVAIL)
   typedef Belos::MultiVecTraits< _ST_, phist::BelosMV< _ST_ > > MVT;
   typedef Belos::OperatorTraits< _ST_, phist::BelosMV< _ST_ >, st::linearOp_t > OPT;
 #endif
@@ -140,7 +142,7 @@ public:
     return iflag_;
     }
 
-#ifdef PHIST_HAVE_BELOS
+#if defined(PHIST_HAVE_BELOS)&&defined(PHIST_TRILINOS_TYPE_AVAIL)
   int doBelosTests(TYPE(sparseMat_ptr) A)
   {
     if (typeImplemented_ && !problemTooSmall_ && haveMat_)
@@ -185,7 +187,7 @@ public:
   }
 
 
-#if defined(PHIST_HAVE_BELOS)
+#if defined(PHIST_HAVE_BELOS)&&defined(PHIST_TRILINOS_TYPE_AVAIL)
 
   // basic checks if the Apply function used in Belos gives the
   // same result as the standard phist sparseMat_times_mvec when

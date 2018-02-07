@@ -1063,7 +1063,9 @@ TEST_F(CLASSNAME,split_and_combine)
 }
 #endif
 
-#ifdef DO_BELOS_TESTS
+#include "phist_trilinos_type_config.h"
+
+#if defined(DO_BELOS_TESTS) && defined(PHIST_TRILINOS_TYPE_AVAIL)
   // runs all tests from the Belos MvTraits tester
   TEST_F(CLASSNAME, belos_iface)
   {
