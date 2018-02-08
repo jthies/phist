@@ -1067,7 +1067,7 @@ if (PHIST_KERNEL_LIB STREQUAL "tpetra")
   if ("CUDA" IN_LIST Tpetra_TPL_LIST)
     # compiling tpetra/kokkos with CUDA is tricky and requires special flags
     # and a special wrapper script to be used as the MPI C++ compiler
-
+    set(IS_TPETRA_CUDA 1)
     if (NOT CMAKE_CXX_COMPILER MATCHES "mpicxx" AND "$ENV{OMPI_CXX}" MATCHES "nvcc_wrapper" AND "$ENV{OMPI_MPICXX_CXXFLAGS}" MATCHES "-expt-extended-lambda")
       message(WARNING "NOTE: in order to compile Tpetra/Kokkos code with CUDA we recommend using OpenMPI"
                       "      and setting the environment variables CXX=mpicxx, OMPI_CXX=nvcc_wrapper, and OMPI_MPICXX_CXXFLAGS='-std=c++11 -expt-extended-lambda'."
@@ -1411,7 +1411,10 @@ endforeach()
 # Activate testing
 enable_testing()
 
-if (${PHIST_ENABLE_MPI})
+if (IS_TPETRA_CUDA)
+  # Tpetra will run only on the GPU, with 12 MPI processes this gets extremely slow
+  set(PHIST_MPI_TEST_NPROCS 1 2)
+elseif (${PHIST_ENABLE_MPI})
   set(PHIST_MPI_TEST_NPROCS 1 2 3 12)
 else()
   set(PHIST_MPI_TEST_NPROCS 1)
