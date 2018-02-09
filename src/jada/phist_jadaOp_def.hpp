@@ -604,7 +604,9 @@ extern "C" void SUBR(jadaPrec_create)(TYPE(const_linearOp_ptr) P_op,
     // need methode NONE with p_op as ab_op
     jdPr->k_op->destroy(jdPr->k_op,iflag);
     const char* method = "NONE";
-    PHIST_CHK_IERR(SUBR(JadaOp_create_variable)(jdPr->Prec_op,NULL,NULL,NULL,&(jdPr->sigma),jdPr->num_shifts,jdPr->k_op,method,0,1,iflag),*iflag);
+
+    
+PHIST_CHK_IERR(SUBR(JadaOp_create_variable)(jdPr->Prec_op,NULL,NULL,NULL,&(jdPr->sigma),jdPr->num_shifts,jdPr->k_op,method,0,1,iflag),*iflag);
     jdPrec->apply = SUBR(jadaOp_apply);
   }
   else
@@ -634,10 +636,15 @@ extern "C" void SUBR(jadaPrec_create)(TYPE(const_linearOp_ptr) P_op,
     which_apply[1] = 2;
     
     TYPE(const_linearOp_ptr)* k_ops = (TYPE(const_linearOp_ptr)*)malloc(k*sizeof(TYPE(const_linearOp_ptr)));
-	k_ops[0] = jdPr->Skew_op;
+    k_ops[0] = jdPr->Skew_op;
     k_ops[1] = jdPr->Prec_op;
     
-    PHIST_CHK_IERR(SUBR(linearOp_wrap_linearOp_product_k)(jdPr->k_op, k, k_ops,which_apply, &sigma,1, nvec, iflag),*iflag);
+    const _ST_** sigma_;
+    sigma_ = (const _ST_**)malloc(sizeof(const _ST_*));
+    sigma_[0] = sigma;
+
+    PHIST_CHK_IERR(SUBR(linearOp_wrap_linearOp_product_k)(jdPr->k_op, k, k_ops,which_apply, sigma_,1, nvec, 
+iflag),*iflag);
     jdPrec->apply = SUBR(jadaOp_apply);
   }
 }
