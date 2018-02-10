@@ -17,6 +17,7 @@ ADD_CMAKE_FLAGS="-DPHIST_BENCH_LARGE_N=-1" #optional CMake flags # -1 disables b
 WORKSPACE="$PWD/.."
 VECT_EXT="native"
 TRILINOS_VERSION="git"
+CUDA_VERSION=7.0.28
 # list of modules to load
 MODULES_BASIC="cmake cppcheck gcovr doxygen"
 # GCC_SANITIZE flag for debug mode, disabled for CUDA
@@ -110,7 +111,7 @@ else
   ADD_CMAKE_FLAGS+=" -DPHIST_USE_SOLVER_TPLS:BOOL=OFF"
 fi
 if [ "${VECT_EXT}" = "CUDA" ]; then
-  module load cuda
+  module load cuda/cuda-${CUDA_VERSION}
   SANITIZER=""
   nvidia-smi
   export CUDA_VISIBLE_DEVICES=0
