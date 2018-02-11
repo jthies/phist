@@ -17,7 +17,7 @@ ADD_CMAKE_FLAGS="-DPHIST_BENCH_LARGE_N=-1" #optional CMake flags # -1 disables b
 WORKSPACE="$PWD/.."
 VECT_EXT="native"
 TRILINOS_VERSION="git"
-CUDA_VERSION=7.0.28
+CUDA_VERSION=8.0.6
 # list of modules to load
 MODULES_BASIC="cmake cppcheck gcovr doxygen"
 # GCC_SANITIZE flag for debug mode, disabled for CUDA
