@@ -47,6 +47,7 @@ while getopts "k:e:f:c:v:w:t:h" o; do
             FLAGS=${OPTARG}
             ;;
         c)
+            
             ADD_CMAKE_FLAGS+=" ${OPTARG}"
             ;;
         v)
@@ -67,8 +68,6 @@ while getopts "k:e:f:c:v:w:t:h" o; do
     esac
 done
 shift $((OPTIND-1))
-
-echo "Options: KERNEL_LIB=${KERNELS}, PRGENV=${PRGENV}, FLAGS=${FLAGS}, ADD_CMAKE_FLAGS='${ADD_CMAKE_FLAGS}', VECT_EXT=${VECT_EXT}"
 
 declare -A MODULES_KERNELS
 MODULES_KERNELS=( 
@@ -133,10 +132,10 @@ if [[ $PRGENV =~ gcc* ]]; then
   module load lapack
   if [[ "${VECT_EXT}" != "CUDA" ]] && [[ "${PRGENV}" != "gcc-7.2.0-openmpi" ]]; then
     module load ccache
-    ADD_CMAKE_FLAGS+="-DPHIST_USE_CCACHE=ON"
+    ADD_CMAKE_FLAGS+=" -DPHIST_USE_CCACHE=ON"
     export CCACHE_DIR=/home_local/f_buildn/ESSEX_workspace/.ccache/
   else
-    ADD_CMAKE_FLAGS+="-DPHIST_USE_CCACHE=OFF"
+    ADD_CMAKE_FLAGS+=" -DPHIST_USE_CCACHE=OFF"
   fi
   if [[ "$PRGENV" =~ gcc-7* ]]; then
     # there's a problem in jada-tests, test STestSchurDecomp* with gcc 7.2.0 and -fsanitize=address, see #218
@@ -155,6 +154,8 @@ export KMP_DETERMINISTIC_REDUCTION=1 MKL_CBWR="COMPATIBLE"
 
 # "gcc -fsanitize=address" requires this
 ulimit -v unlimited
+
+echo "Options: KERNEL_LIB=${KERNELS}, PRGENV=${PRGENV}, FLAGS=${FLAGS}, ADD_CMAKE_FLAGS='${ADD_CMAKE_FLAGS}', VECT_EXT=${VECT_EXT}"
 
 ## actually build and run tests
 error=0
