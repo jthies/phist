@@ -1422,15 +1422,23 @@ endif()
 
 set(ALL_PHIST_TESTS "")
 
+# environment variables that should be set on every MPI process
+set(TEST_ENV "env ASAN_OPTIONS=\"exitcode=0\" LSAN_OPTIONS=\"exitcode=0\" env OMP_SCHEDULE=static env OMP_PROC_BIND=false")
+
+if (PHIST_KERNEL_LIB_TPETRA)
+  set(TEST_ENV "${TEST_ENV} env CUDA_LAUNCH_BLOCKING=1")
+endif()
+
 foreach(np ${PHIST_MPI_TEST_NPROCS})
   math(EXPR TEST_OMP_NUM_THREADS "12/${np}")
+  set (TEST_ENV_NTHREADS "${TEST_ENV} env PHIST_NUM_THREADS=${TEST_OMP_NUM_THREADS} env OMP_NUM_THREADS=${TEST_OMP_NUM_THREADS}")
   foreach(label ${PHIST_TESTS})
     set(TEST_OUTPUT_DIR "${CMAKE_CURRENT_BINARY_DIR}/test_output_np${np}/${label}")
     if( NOT PHIST_HAVE_MPI )
-      set(TEST_COMMAND env ASAN_OPTIONS=\"exitcode=0\" LSAN_OPTIONS=\"exitcode=0\" env PHIST_NUM_THREADS=${TEST_OMP_NUM_THREADS} env OMP_NUM_THREADS=${TEST_OMP_NUM_THREADS} env OMP_SCHEDULE=static
+      set(TEST_COMMAND ${TEST_ENV_NTHREADS} 
                        ./${PRODUCT_NAME}-${label}-test-${CMAKE_BUILD_TYPE} --gtest_death_test_style=threadsafe --gtest_output=xml:${TEST_OUTPUT_DIR}/xunit.xml)
     else()
-      set(TEST_COMMAND ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} ${np} env ASAN_OPTIONS=\"exitcode=0\" LSAN_OPTIONS=\"exitcode=0\" env PHIST_NUM_THREADS=${TEST_OMP_NUM_THREADS} env OMP_NUM_THREADS=${TEST_OMP_NUM_THREADS} env OMP_SCHEDULE=static
+      set(TEST_COMMAND ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} ${np} ${TEST_ENV_NTHREADS}
                        ./${PRODUCT_NAME}-${label}-test-${CMAKE_BUILD_TYPE} --gtest_death_test_style=threadsafe --gtest_output=xml:${TEST_OUTPUT_DIR}/xunit.xml)
     endif()
     set(CURRENT_TESTNAME test-${label}_np${np})
@@ -1515,15 +1523,6 @@ foreach(pyt ${PYTHON_TESTS})
   endif()
 endif()
 
-# For Tpetra, add some environment variables to the tests to avoid warnings and errors
-# tpetra/kokkos does not pin the threads from insides and runs into errors with CUDA unless
-# CUDA_LAUNCH_BLOCKING=1 is set.
-if (PHIST_KERNEL_LIB_TPETRA)
-  foreach(item ${ALL_PHIST_TESTS})
-    set_property(TEST ${item} APPEND PROPERTY ENVIRONMENT "OMP_PROC_BIND=false; CUDA_LAUNCH_BLOCKING=1")
-  endforeach()
-endif()
-  
 # Adding custom test target "check" because it is the only way to show the full output of test errors on console
 add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND} ${CTEST_OPTIONS})
 
