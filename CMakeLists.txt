@@ -1423,15 +1423,15 @@ endif()
 set(ALL_PHIST_TESTS "")
 
 # environment variables that should be set on every MPI process
-set(TEST_ENV "env ASAN_OPTIONS=\"exitcode=0\" LSAN_OPTIONS=\"exitcode=0\" env OMP_SCHEDULE=static env OMP_PROC_BIND=false")
+set(TEST_ENV env ASAN_OPTIONS=\"exitcode=0\" LSAN_OPTIONS=\"exitcode=0\" env OMP_SCHEDULE=static env OMP_PROC_BIND=false)
 
 if (PHIST_KERNEL_LIB_TPETRA)
-  set(TEST_ENV "${TEST_ENV} env CUDA_LAUNCH_BLOCKING=1")
+  set(TEST_ENV ${TEST_ENV} env CUDA_LAUNCH_BLOCKING=1)
 endif()
 
 foreach(np ${PHIST_MPI_TEST_NPROCS})
   math(EXPR TEST_OMP_NUM_THREADS "12/${np}")
-  set (TEST_ENV_NTHREADS "${TEST_ENV} env PHIST_NUM_THREADS=${TEST_OMP_NUM_THREADS} env OMP_NUM_THREADS=${TEST_OMP_NUM_THREADS}")
+  set (TEST_ENV_NTHREADS ${TEST_ENV} env PHIST_NUM_THREADS=${TEST_OMP_NUM_THREADS} env OMP_NUM_THREADS=${TEST_OMP_NUM_THREADS})
   foreach(label ${PHIST_TESTS})
     set(TEST_OUTPUT_DIR "${CMAKE_CURRENT_BINARY_DIR}/test_output_np${np}/${label}")
     if( NOT PHIST_HAVE_MPI )
