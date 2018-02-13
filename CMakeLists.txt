@@ -1440,7 +1440,7 @@ endif()
 set(ALL_PHIST_TESTS "")
 
 # environment variables that should be set on every MPI process
-set(TEST_ENV env ASAN_OPTIONS=\"exitcode=0\" LSAN_OPTIONS=\"exitcode=0\" env OMP_SCHEDULE=static env OMP_PROC_BIND=false)
+set(TEST_ENV env ASAN_OPTIONS=\"exitcode=0\" env LSAN_OPTIONS=\"exitcode=0\" env OMP_SCHEDULE=static env OMP_PROC_BIND=false)
 
 if (PHIST_KERNEL_LIB_TPETRA)
   set(TEST_ENV ${TEST_ENV} env CUDA_LAUNCH_BLOCKING=1)
@@ -1499,7 +1499,7 @@ foreach(pyt ${PYTHON_TESTS})
     set(pyt_name "${pyt_name}_py")
     set(TEST_OUTPUT_DIR ${PROJECT_BINARY_DIR}/test_output_np1/${pyt_name})
     file(MAKE_DIRECTORY ${TEST_OUTPUT_DIR})
-    set(TEST_COMMAND ${TEST_ENV} py.test -s -v --junitxml ${TEST_OUTPUT_DIR}/xunit.xml --junit-prefix=${CMAKE_BUILD_TYPE} ${pyt})
+    set(TEST_COMMAND ${TEST_ENV} ./py.test -s -v --junitxml ${TEST_OUTPUT_DIR}/xunit.xml --junit-prefix=${CMAKE_BUILD_TYPE} ${pyt})
     list(APPEND ALL_PHIST_TESTS ${pyt_name})
     add_test(NAME ${pyt_name} COMMAND ${TEST_COMMAND})
     set_tests_properties(${pyt_name} PROPERTIES ENVIRONMENT "LD_LIBRARY_PATH=${CMAKE_CURRENT_BINARY_DIR}:$ENV{LD_LIBRARY_PATH};PYTHONPATH=${PYSTDIR}:${PYTESTDIR}:$ENV{PYTHONPATH};${MPIEXEC_ENVIRONMENT};PHIST_NUM_THREADS=12;OMP_NUM_THREADS=12")    
