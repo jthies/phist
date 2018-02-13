@@ -450,7 +450,7 @@ extern "C" int phist_ordered_fprintf(MPI_Comm comm, const char* fmt, ...)
     global_string[global_length]='\0';
     if (phist::output_FILE!=nullptr)
     {
-      fprintf(phist::output_FILE, (const char*)global_string);
+      fprintf(phist::output_FILE, "%s",global_string);
     }
     else if (phist::output_stream!=nullptr)
     {
