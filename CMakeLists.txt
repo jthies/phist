@@ -1423,7 +1423,7 @@ endif()
 set(ALL_PHIST_TESTS "")
 
 # environment variables that should be set on every MPI process
-set(TEST_ENV env ASAN_OPTIONS=\"exitcode=0\" LSAN_OPTIONS=\"exitcode=0\" env OMP_SCHEDULE=static env OMP_PROC_BIND=false)
+set(TEST_ENV env ASAN_OPTIONS=\"exitcode=0\" env LSAN_OPTIONS=\"exitcode=0\" env OMP_SCHEDULE=static env OMP_PROC_BIND=false)
 
 if (PHIST_KERNEL_LIB_TPETRA)
   set(TEST_ENV ${TEST_ENV} env CUDA_LAUNCH_BLOCKING=1)
