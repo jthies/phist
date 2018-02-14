@@ -35,6 +35,10 @@ PHIST_TASK_BEGIN(likwidInitTask)
   }
 PHIST_TASK_END(iflag)
 #endif
+
+#ifdef PHIST_HAVE_MPI
+    MPI_Comm mpi_comm = phist_get_default_comm();
+#endif
   // at this point, check for the environment variable PHIST_RUN_DEBUGGER and if it is set,
   // go into an infinite loop that can only be broken after attaching a debugger
   // this code was copied from the OpenMPI  FAQ: http://www.open-mpi.de/faq/?category=debugging
@@ -44,18 +48,33 @@ PHIST_TASK_END(iflag)
     char hostname[256];
     gethostname(hostname, sizeof(hostname));
     PHIST_SOUT(PHIST_ERROR,"You have set the environment variable 'PHIST_ATTACH_GDB'.\n");
-    PHIST_ORDERED_OUT(PHIST_ERROR,MPI_COMM_WORLD,"PID %d on %s ready for attach.\n", getpid(), hostname);
+#ifdef PHIST_HAVE_MPI
+    PHIST_ORDERED_OUT(PHIST_ERROR,mpi_comm,"PID %d on %s ready for attach.\n", getpid(), hostname);
+#else
+    PHIST_OUT(PHIST_ERROR,"PID %d on %s ready for attach.\n", getpid(), hostname);
+#endif
     PHIST_SOUT(PHIST_ERROR,"To attach gdb to a process, run 'gdb <executable> <PID> on the respective node.\n");
     PHIST_SOUT(PHIST_ERROR,"Press any <ENTER> to continue...\n");
     int rank=0;
 #ifdef PHIST_HAVE_MPI
-    MPI_Comm_rank(MPI_COMM_WORLD,&rank);
+    MPI_Comm_rank(mpi_comm,&rank);
 #endif
     if (rank==0) fgetc(stdin);
   }
 #ifdef PHIST_HAVE_MPI
-  MPI_Barrier(MPI_COMM_WORLD);
+  MPI_Barrier(mpi_comm);
 #endif
+  // print information about the phist version and installation
+  PHIST_SOUT(PHIST_VERBOSE,
+  "\n=====================================================================\n"
+  "This is PHIST %s\n"
+  "        git revision %s\n"
+  "        kernel library: %s\n"
+  "        installation info:\n"
+  "---------------------------------------------------------------------\n"
+  "%s"
+  "=====================================================================\n\n",
+  phist_version(),phist_git_revision(),phist_kernel_lib(),phist_install_info());
 }
  
 

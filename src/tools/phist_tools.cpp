@@ -395,6 +395,21 @@ extern "C" const char* phist_kernel_lib()
 #endif
 }
 
+extern "C" const char* phist_version()
+{
+  return PHIST_VERSION_STRING;
+}
+
+extern "C" const char* phist_git_revision()
+{
+  return PHIST_GIT_REVISION;
+}
+        
+extern "C" const char* phist_install_info()
+{
+  return PHIST_INSTALL_INFO;
+}
+
 #ifdef PHIST_HAVE_CXX11_THREADLOCAL
 thread_local bool phist_CheckKernelFcnNesting::nestedKernelCall_ = false;
 #else

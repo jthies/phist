@@ -118,17 +118,31 @@ extern "C" {
   //! All output can be suppressed by calling this function with a NULL argument.
   void phist_set_C_output_stream(FILE* fp);
 
+  //! return the version of phist as a string (formatted e.g. as "1.7.2")
+  const char* phist_version();
+  //! return the exact git revision of the phist installation
+  const char* phist_git_revision();
+  //! return some other useful information on the phist installation as a multi-line 
+  //! string, e.g. compilers, compile flags etc.
+  const char* phist_install_info();
+
   //! Get the default output stream (C-style) to which phist is printing.
   //! May be NULL if a C++ stream was provided using phist_set_CXX_output_stream().
   FILE* phist_get_C_output_stream();
 
-const char* phist_retcode2str(int code);
+  //! return the name of the library that provides the kernels for this phist installation as a string,
+  //! e.g. "builtin","ghost","tpetra".
+  const char* phist_kernel_lib();
+
+  //! convert a standard return code from phist into a human-readable string.
+  const char* phist_retcode2str(int code);
+
 #ifdef PHIST_HAVE_GHOST
 #include <ghost/config.h>
 #include <ghost/types.h>
+//! for internal use only: convert a ghost error code into a human-readable string
 const char* phist_ghost_error2str(ghost_error code);
 #endif
-const char* phist_kernel_lib();
 
 # ifdef PHIST_HAVE_MPI
 

@@ -15,6 +15,15 @@
 /* git revision at which cmake was invoked */
 #cmakedefine PHIST_GIT_REVISION ${PHIST_GIT_REVISION}
 
+#define PHIST_INSTALL_INFO \
+"CMAKE_VERSION: ${CMAKE_VERSION}\n" \
+"CXX_COMPILER: ${CMAKE_C_COMPILER}\n" \
+"CXX_COMPILER: ${CMAKE_CXX_COMPILER}\n" \
+"Fortran_COMPILER: ${CMAKE_Fortran_COMPILER}\n" \
+"CXX_FLAGS: ${CMAKE_CXX_FLAGS}\n" \
+"C_FLAGS: ${CMAKE_C_FLAGS}\n" \
+"Fortran_FLAGS: ${CMAKE_Fortran_FLAGS}\n"
+
 /*! general verbosity of PHIST:
         0: only print errors
         1: errors and warnings
