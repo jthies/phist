@@ -1,5 +1,5 @@
 
-cmake_minimum_required(VERSION 3.2.0)
+cmake_minimum_required(VERSION 3.5.0)
 
 # some guidelines for extending/modifying the PHIST CMakeLists.txt file. 
 # Things may not be handled this way everywhere yet, but you should keep these
@@ -208,52 +208,73 @@ set(PHIST_PKG_CONFIG_CFLAGS)
 # the include directory.
 ########################################################################
 
-set(LAPACK_FOUND 0)
+set(TPL_LAPACKE_LIBRARIES "${TPL_LAPACKE_LIBRARIES}" CACHE STRING "full library names of lapacke, lapack and blas" FORCE)
+set(TPL_LAPACK_LIBRARIES "${TPL_LAPACK_LIBRARIES}" CACHE STRING "full library names of lapacke, lapack and blas" FORCE)
+set(TPL_LAPACKE_INCLUDE_DIRS "${TPL_LAPACKE_INCLUDE_DIRS}" CACHE STRING "path where to find lapacke.h or mkl_lapacke.h header" FORCE)
 
 if (TPL_LAPACKE_LIBRARIES)
   link_libraries(${TPL_LAPACKE_LIBRARIES})
   list(GET TPL_LAPACKE_LIBRARIES 0 LAPACKE_LIBRARY)
   get_filename_component(LAPACK_LIBDIR ${LAPACKE_LIBRARY} DIRECTORY)
 elseif(TPL_LAPACK_LIBRARIES)
- list(GET TPL_LAPACK_LIBRARIES 0 LAPACK_LIBRARY)
+  list(GET TPL_LAPACK_LIBRARIES 0 LAPACK_LIBRARY)
   get_filename_component(LAPACK_LIBDIR ${LAPACK_LIBRARY} DIRECTORY)
-  if (NOT LAPACK_LIBRARY MATCHES "mkl")
-    # MKL has lapacke integrated
-    find_library (LAPACKE_LIBRARY lapacke ${LAPACKE_LIBDIR})
-    if (LAPACKE_LIBRARY MATCHES "LAPACKE_LIBRARY-NOTFOUND")
-      message(FATAL_ERROR "Did not find the LAPACKe library based on the LAPACK_LIBRARIES you provided, please set"
-                          "LAPACKE_LIBRARIES and LAPACKE_INCLUDE_DIRS instead (including lapacke,lapack and blas library names/inc dirs)"
-                          "or leave it to CMake to locate BLAS, LAPACK and LAPACKe.")
-    endif()
-  endif()
-  link_libraries(${LAPACKE_LIBRARY} ${TPL_LAPACK_LIBRARIES})
 else()
+  # try to find lapack and blas using the standard CMake module.
+  # It searches for various vendors including Intel MKL, GOTO BLAS etc.
+  # To specify the lapack library to search for, the user can set the
+  # BLA_VENDOR variable either via -D or as environment variable.
   find_package(LAPACK REQUIRED QUIET)
   link_libraries(${LAPACK_LIBRARIES})
   list(GET LAPACK_LIBRARIES 0 LAPACK_LIBRARY)
   get_filename_component(LAPACK_LIBDIR ${LAPACK_LIBRARY} DIRECTORY)
+  set(TPL_LAPACK_LIBRARIES ${LAPACK_LIBRARIES} CACHE STRING "lapack library and dependencies" FORCE)
 endif()
 
-if (LAPACK_LIBRARIES MATCHES "mkl" OR TPL_LAPACKE_LIBRARIES MATCHES "mkl" OR TPL_LAPACK_LIBRARIES MATCHES "mkl")
+if (NOT TPL_LAPACKE_LIBRARIES)
+  if (NOT TPL_LAPACK_LIBRARIES)
+    message(FATAL_ERROR "did not find lapack via TPL_LAPACK_LIBRARIES, TPL_LAPACK_LIBRARIES or find_package. Aborting.")
+  elseif (TPL_LAPACK_LIBRARIES MATCHES "mkl")
+    # note: lapacke is included in the mkl library
+    set(TPL_LAPACKE_LIBRARIES ${TPL_LAPACK_LIBRARIES} CACHE STRING FORCE)
+  else()
+    find_library (LAPACKE_LIBRARY lapacke ${LAPACKE_LIBDIR})
+    if (LAPACKE_LIBRARY MATCHES "LAPACKE_LIBRARY-NOTFOUND")
+      message(FATAL_ERROR "Did not find the LAPACKe library based on the LAPACK_LIBRARIES you provided, please set"
+                          "LAPACKE_LIBRARIES and LAPACKE_INCLUDE_DIRS instead (including lapacke,lapack and blas library "
+                          "names/inc dirs) or leave it to CMake to locate BLAS, LAPACK and LAPACKe.")
+    else()
+      message(STATUS "found LAPACKe library: '${LAPACKE_LIBRARY}'")
+      set(TPL_LAPACKE_LIBRARIES ${LAPACKE_LIBRARY} ${TPL_LAPACK_LIBRARIES} CACHE STRING "LAPACKe library and dependencies" FORCE)
+    endif()
+  endif()
+endif()
+message(STATUS "TPL_LAPACKE_LIBRARIES has final value '${TPL_LAPACKE_LIBRARIES}'")
+if (NOT TPL_LAPACKE_LIBRARIES)
+    message(FATAL_ERROR "did not find LAPACKe via TPL_LAPACK_LIBRARIES or manually. Aborting.")
+endif()
+
+if (TPL_LAPACKE_LIBRARIES MATCHES "mkl")
   message(STATUS "found Intel(R) MKL")
   set(PHIST_HAVE_MKL 1)
-  # note: lapacke is included in the mkl library
 endif()
+  
+link_libraries(${TPL_LAPACKE_LIBRARIES})
 
 # find the lapacke.h header (for MKL it's called mkl_lapacke.h). We use the path to the lapack lib as a hint.
-if (TPL_LAPACKE_INCLUDE_DIRS)
-  include_directories(${TPL_LAPACKE_INCLUDE_DIRS})
-else()
+if (NOT TPL_LAPACKE_INCLUDE_DIRS)
   find_path (LAPACKE_INCLUDE_DIR NAMES lapacke.h mkl_lapacke.h 
                                  HINTS ${LAPACK_LIBDIR}
                                  PATH_SUFFIXES "lapacke")
   if (LAPACKE_INCLUDE_DIR MATCHES "LAPACKE_INCLUDE_DIR-NOTFOUND")
     message(WARNING "did not find lapacke header, if the build fails you may need to set TPL_LAPACKE_INCLUDE_DIRS explicitly.")
   else()
-    message(STATUS "found lapacke header in '${LAPACKE_INCLUDE_DIR}'")
-    include_directories(${LAPACKE_INCLUDE_DIR})
+    message(STATUS "found LAPACKe header in '${LAPACKE_INCLUDE_DIR}'")
+    set(TPL_LAPACKE_INCLUDE_DIRS ${LAPACKE_INCLUDE_DIR})
   endif()
 endif()
+
+include_directories(${TPL_LAPACKE_INCLUDE_DIRS})
 
 ########################################################################
 
