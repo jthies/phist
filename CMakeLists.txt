@@ -1294,14 +1294,6 @@ configure_package_config_file("${PROJECT_SOURCE_DIR}/phistConfig.cmake.in" "${PR
 write_basic_package_version_file("${PROJECT_BINARY_DIR}/phistConfigVersion.cmake" VERSION ${PHIST_VERSION} COMPATIBILITY SameMajorVersion)
 
 #######################################################################################
-# C++ BINDINGS                                                                        #
-#######################################################################################
-add_subdirectory(cxx_bindings)
-
-# add the C++ headers as a dependency of phist_solvers so that the 'install' target works also with 'make libs'
-add_dependencies(phist_kernels_${PHIST_KERNEL_LIB} cxx_headers)
-
-#######################################################################################
 # INSTALL                                                                             #
 #######################################################################################
 if (${BUILD_SHARED_LIBS})
@@ -1444,7 +1436,9 @@ foreach (infile ${TG_CXX_Examples})
   endforeach()
 endforeach()
 
-#
+#######################################################
+# TESTING
+#######################################################
 
 # Activate testing
 enable_testing()
@@ -1566,6 +1560,19 @@ add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND} ${CTEST_OPTIONS})
 
 # check the installation with an example project
 add_custom_target(test_install COMMAND ${PROJECT_SOURCE_DIR}/buildScripts/test_install.sh ${CMAKE_INSTALL_PREFIX})
+
+#######################################################################################
+# C++ BINDINGS                                                                        #
+#######################################################################################
+add_subdirectory(cxx_bindings)
+
+# add the C++ headers as a dependency of phist_solvers so that the 'install' target works also with 'make libs'
+add_dependencies(phist_kernels_${PHIST_KERNEL_LIB} cxx_headers)
+
+
+#######################################################################
+# DOCUMENTATION AND OTHER EXTRA TARGETS
+#######################################################################
 
 # Custom targets: doc, cppcheck, coverage, audit
 # Adding optinal target "doc" to generate Doxygen documentation
