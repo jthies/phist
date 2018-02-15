@@ -126,6 +126,9 @@ if [[ $PRGENV =~ gcc* ]]; then
       export CC=mpicc
       # note: the trilinos module should set OMPI_CXX=nvcc_wrapper for us, phist/cmake will check that
       export OMPI_MPICXX_CXXFLAGS="-expt-extended-lambda"
+      # we need a little more verbose output in the release build because
+      # otherwise the word "Tesla" will not appear in the output and a check after running the tests will fail.
+      ADD_CMAKE_FLAGS+=" -DPHIST_OUTLEV=3"
   else
     export FC=gfortran CC=gcc CXX=g++
   fi
@@ -195,7 +198,7 @@ echo "Running tests. Output is compressed and written to test.log.gz"
 make check &> test.log                  || update_error ${LINENO}
 if [ "${VECT_EXT}" = "CUDA" ]; then
   echo "Check if it actually ran on our Tesla card"
-  fgrep "1x Tesla" test.log             || update_error ${LINENO}
+  fgrep "Tesla" test.log             || update_error ${LINENO}
 fi
 gzip test.log                           || update_error ${LINENO}
 echo "Install..."
@@ -225,7 +228,7 @@ echo "Running tests. Output is compressed and written to test.log.gz"
 make check &> test.log                  || update_error ${LINENO}
 if [ "${VECT_EXT}" = "CUDA" ]; then
   echo "Check if it actually ran on our Tesla card"
-  fgrep "1x Tesla" test.log             || update_error ${LINENO}
+  fgrep "Tesla" test.log             || update_error ${LINENO}
 fi
 gzip test.log                           || update_error ${LINENO}
 make audit                              || update_error ${LINENO}
