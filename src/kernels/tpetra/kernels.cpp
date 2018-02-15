@@ -16,6 +16,10 @@
 #include "Kokkos_Core.hpp"
 #include "Tpetra_Core.hpp"
 
+#ifdef HAVE_TPETRA_CUDA
+#include "Kokkos_Cuda.hpp"
+#endif
+
 #include "Kokkos_hwloc.hpp"
 
 #include "Teuchos_StandardCatchMacros.hpp"
@@ -168,6 +172,10 @@ else
                                "PHIST_TRY_TO_PIN_THREADS in CMake if you don't want phist to take care of thread binding.");
 }
 #endif
+
+  std::ostringstream oss;
+  Kokkos::print_configuration( oss );
+  PHIST_SOUT(PHIST_VERBOSE,"%s\n",oss.str().c_str());
 
   PHIST_CHK_IERR(phist_kernels_common_init(argc, argv, iflag), *iflag);
 
