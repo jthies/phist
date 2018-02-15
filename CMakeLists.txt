@@ -1455,7 +1455,7 @@ endif()
 set(ALL_PHIST_TESTS "")
 
 # environment variables that should be set on every MPI process
-set(TEST_ENV env ASAN_OPTIONS=\"exitcode=0\" env LSAN_OPTIONS=\"exitcode=0\" env OMP_SCHEDULE=static env OMP_PROC_BIND=false OMPI_MCA_hwloc_base_binding_policy=none)
+set(TEST_ENV env ASAN_OPTIONS=\"exitcode=0\" env LSAN_OPTIONS=\"exitcode=0\" env OMP_SCHEDULE=static env OMP_PROC_BIND=false env OMPI_MCA_hwloc_base_binding_policy=none)
 
 if (PHIST_KERNEL_LIB_TPETRA)
   set(TEST_ENV ${TEST_ENV} env CUDA_LAUNCH_BLOCKING=1)
@@ -1540,7 +1540,7 @@ foreach(pyt ${PYTHON_TESTS})
     else()
       set(PHIST_TEST_DRIVERS_NUM_PROCS 1)
     endif()
-    set(PHIST_TEST_DRIVERS_NUM_THREADS 12)
+    set(PHIST_TEST_DRIVERS_NUM_THREADS 6)
     configure_file(${PROJECT_SOURCE_DIR}/python/test_phist_drivers.py.in ${CMAKE_CURRENT_BINARY_DIR}/test_phist_drivers.py)
     set(TEST_OUTPUT_DIR ${PROJECT_BINARY_DIR}/test_output_np${PHIST_TEST_DRIVERS_NUM_PROCS}/test_phist_drivers)
     file(MAKE_DIRECTORY ${TEST_OUTPUT_DIR})
