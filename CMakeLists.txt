@@ -565,9 +565,11 @@ if (${PHIST_ENABLE_MPI})
   set(MPIEXEC "mpirun" CACHE STRING "")
   set(MPIEXEC_NUMPROC_FLAG "-np" CACHE STRING "")
 # I found that setting this env variable may lead to the opposite effect (all MPI procs bound to one core)
-# most likely due to a bug in OpenMPI 3.0.0
+# most likely due to a bug in OpenMPI 3.0.0.
+# on the other hand, it seems I should set it for -np k>1, so I need a hack
 #  set(MPIEXEC_ENVIRONMENT "OMPI_MCA_hwloc_base_binding_policy=none" CACHE STRING "")
   set(MPIEXEC_ENVIRONMENT "" CACHE STRING "")
+  set(MPIEXEC_ENV_NPK "OMPI_MCA_hwloc_base_binding_policy=none" CACHE STRING "")
 
 else()
   set(PHIST_HAVE_MPI 0)
@@ -1485,8 +1487,10 @@ foreach(np ${PHIST_MPI_TEST_NPROCS})
     set_tests_properties(${CURRENT_TESTNAME} PROPERTIES TIMEOUT 1000)
     if(np EQUAL 1 AND INTEGRATION_BUILD AND PHIST_KERNEL_LIB STREQUAL "ghost" AND CUDA_LIBRARIES)
       set_tests_properties(${CURRENT_TESTNAME} PROPERTIES ENVIRONMENT GHOST_TYPE=cuda)
+    elseif(np EQUAL 1 AND INTEGRATION_BUILD)
+      set_tests_properties(${CURRENT_TESTNAME} PROPERTIES ENVIRONMENT "${MPIEXEC_ENVIRONMENT}")
     else()
-      set_tests_properties(${CURRENT_TESTNAME} PROPERTIES ENVIRONMENT "${MPIEXEC_ENVIRONMENT}; GHOST_TYPE=cuda")
+      set_tests_properties(${CURRENT_TESTNAME} PROPERTIES ENVIRONMENT "${MPIEXEC_ENV_NPK}")
     endif()
     if ( INTEGRATION_BUILD )
       # create the default test output that will appear on Jenkins if the test executable crashes
