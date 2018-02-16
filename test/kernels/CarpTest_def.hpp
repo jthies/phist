@@ -14,7 +14,9 @@
 
 using namespace phist::testing;
 
-#if !defined(IS_COMPLEX)&&defined(IS_DOUBLE)
+// NOTE: the last check (HAVE_CMPLX) is not strictly needed but right now the code won't
+// compile because the Z kernels are not defined, we could fix this.
+#if !defined(IS_COMPLEX)&&defined(IS_DOUBLE)&&defined(PHIST_HAVE_CMPLX)
 
 /*! Test fixure. 
   
@@ -295,6 +297,7 @@ public:
   {
     VTest::TearDownTestCase();
     SparseMatTest::TearDownTestCase();
+    MT_Test::TearDownTestCase();
   }
 
 

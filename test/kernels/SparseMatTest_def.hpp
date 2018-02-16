@@ -293,7 +293,7 @@ protected:
       SUBR(mvec_put_value)(vec1_,val,&iflag_);
       SUBR(mvec_random)(vec2_,&iflag_);
       SUBR(sparseMat_times_mvec)(st::one(),A,vec1_,st::zero(),vec2_,&iflag_);
-      if (iflag_) return (_MT_)iflag_;
+      if (iflag_) return MT(iflag_);
 
       PrintVector(PHIST_DEBUG,"input to spMVM",vec1_vp_,nloc_,lda_,stride_,mpi_comm_);
       PrintVector(PHIST_DEBUG,"result of spMVM",vec2_vp_,nloc_,lda_,stride_,mpi_comm_);
@@ -530,7 +530,7 @@ protected:
     // check that AX=X
     SUBR(mvec_random)(vec1,&iflag_);
     EXPECT_EQ(0,iflag_);
-    SUBR(mvec_put_value)(vec2,(_ST_)99.9,&iflag_);
+    SUBR(mvec_put_value)(vec2,ST(99.9),&iflag_);
     EXPECT_EQ(0,iflag_);
     SUBR(sparseMat_times_mvec)(st::one(),A,vec1,st::zero(),vec2,&iflag_);
     EXPECT_EQ(0,iflag_);
@@ -561,7 +561,7 @@ protected:
     // check that AX=X
     SUBR(mvec_random)(vec1_,&iflag_);
     EXPECT_EQ(0,iflag_);
-    SUBR(mvec_put_value)(vec2_,(_ST_)99.9,&iflag_);
+    SUBR(mvec_put_value)(vec2_,ST(99.9),&iflag_);
     EXPECT_EQ(0,iflag_);
     SUBR(sparseMat_times_mvec)(st::one(),A,vec1_,st::zero(),vec2_,&iflag_);
     EXPECT_EQ(0,iflag_);
@@ -629,7 +629,7 @@ protected:
       {
         for(int j = 0; j < nvec_; j++)
         {
-          orderedVec_vp[VIDX(i,j,lda)] = (_ST_)(ilower+i + j*nglob_);
+          orderedVec_vp[VIDX(i,j,lda)] = ST(ilower+i + j*nglob_);
         }
       }
       // copy to vec1_
@@ -722,7 +722,7 @@ protected:
       {
         for(int j = 0; j < nvec_; j++)
         {
-          orderedVec_vp[VIDX(i,j,lda)] = (_ST_)(ilower+i + j*nglob_);
+          orderedVec_vp[VIDX(i,j,lda)] = ST(ilower+i + j*nglob_);
         }
       }
       
@@ -1262,9 +1262,9 @@ TEST_F(CLASSNAME,mvecT_times_mvec_after_spmvm)
   for (int ii=0; ii< nloc_; ii++)
   {
     for (int j=0; j<nvec_; j++)
-      vec2_vp_[VIDX(ii,j,lda_)] = (_ST_) -st::one()*(_MT_)((j+1)*1.0l/(ilower+ii+1));
+      vec2_vp_[VIDX(ii,j,lda_)] = -st::one()*ST((j+1)*1.0l/(ilower+ii+1));
     for (int i=0; i<nvec_; i++)
-      vec1_vp_[VIDX(ii,i,lda_)] = (_ST_) st::one()*(_MT_)((i+1)*1.0l/(ilower+ii+2));
+      vec1_vp_[VIDX(ii,i,lda_)] = st::one()*ST((i+1)*1.0l/(ilower+ii+2));
   }
   SUBR(mvec_to_device)(vec1_,&iflag_);
   SUBR(mvec_to_device)(vec2_,&iflag_);
@@ -1446,6 +1446,72 @@ TEST_F(CLASSNAME,fromRowFuncAndContext)
 
 #endif
 
+#if _NV_>1
+
+  TEST_F(CLASSNAME, sparseMat_times_mvec_with_sequence_of_same_vec_views)
+  {
+    if( !typeImplemented_ || problemTooSmall_ )
+      return;
+
+    _ST_ alpha=st::one();
+    _ST_ beta=st::zero();
+
+    SUBR(mvec_random)(vec1_, &iflag_);
+    ASSERT_EQ(0,iflag_);
+
+    // save vec1_
+    SUBR(mvec_add_mvec)(st::one(), vec1_, st::zero(), vec2_, &iflag_);
+    ASSERT_EQ(0,iflag_);
+
+    // views and copies of current and previous column
+    TYPE(mvec_ptr) v0 = NULL, v0_copied=NULL;
+    TYPE(mvec_ptr) v1 = NULL, v1_copied=NULL;
+    
+    PHISTTEST_MVEC_CREATE(&v0_copied, map_, 1, &iflag_);
+    PHISTTEST_MVEC_CREATE(&v1_copied, map_, 1, &iflag_);
+    
+    for (int i=1; i<_NV_; i++)
+    {
+    
+      SUBR(mvec_view_block)(vec1_, &v0, i-1, i-1, &iflag_);
+    ASSERT_EQ(0,iflag_);
+      SUBR(mvec_view_block)(vec1_, &v1, i, i, &iflag_);
+    ASSERT_EQ(0,iflag_);
+
+    // note: copy the reference blocks from a backup mvec because the spMVM may have
+    // destroyed the data in vec1_
+    SUBR(mvec_get_block)(vec2_, v0_copied, i-1, i-1, &iflag_);
+    ASSERT_EQ(0,iflag_);
+    SUBR(mvec_get_block)(vec2_, v1_copied, i, i, &iflag_);
+    ASSERT_EQ(0,iflag_);
+
+    // first generate reference data (safe calculation)
+    SUBR(sparseMat_times_mvec)(alpha, A_, v0, beta, v1, &iflag_);
+    ASSERT_EQ(0,iflag_);
+    // calculation (unsafe aliasing!)
+    SUBR(sparseMat_times_mvec)(alpha, A_, v0_copied, beta, v1_copied, &iflag_);
+    ASSERT_EQ(0,iflag_);
+
+    SUBR(mvec_set_block)(vec2_, v1_copied, i, i, &iflag_);
+    ASSERT_EQ(0,iflag_);
+    
+    EXPECT_NEAR(1.0,MvecsEqual(vec1_,vec2_),std::sqrt(mt::eps()));
+  }
+
+  EXPECT_NEAR(1.0,MvecsEqual(vec1_,vec2_),std::sqrt(mt::eps()));
+
+  // delete views and copies
+    SUBR(mvec_delete)(v0, &iflag_);
+    ASSERT_EQ(0,iflag_);
+    SUBR(mvec_delete)(v1, &iflag_);
+    ASSERT_EQ(0,iflag_);
+    SUBR(mvec_delete)(v0_copied, &iflag_);
+    ASSERT_EQ(0,iflag_);
+    SUBR(mvec_delete)(v1_copied, &iflag_);
+    ASSERT_EQ(0,iflag_);
+  }
+#endif
+
 #ifdef PHIST_KERNEL_LIB_GHOST
 
 TEST_F(CLASSNAME, ghost_spmv_mode_overlap )
@@ -1508,6 +1574,8 @@ TEST_F(CLASSNAME, ghost_spmv_mode_task )
     ASSERT_NEAR(mt::one(), MvecsEqual(vec2_,vec3_,mt::one()),std::sqrt(mt::eps()));
 }
 #endif
+
+
 
 #endif // DONT_INSTANTIATE
 

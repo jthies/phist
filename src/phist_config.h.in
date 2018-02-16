@@ -1,6 +1,29 @@
 #ifndef PHIST_CONFIG_H
 #define PHIST_CONFIG_H
 
+/* access the version of phist as a string: "major.minor.patch" */
+#define PHIST_VERSION_STRING "${PHIST_VERSION}"
+
+/* components of the version number */
+#define PHIST_VERSION_MAJOR ${PHIST_VERSION_MAJOR}
+#define PHIST_VERSION_MINOR ${PHIST_VERSION_MINOR}
+#define PHIST_VERSION_PATCH  ${PHIST_VERSION_PATCH}
+
+/* access the version of phist: major|minor|patch */
+#cmakedefine PHIST_VERSION_INT ${PHIST_VERSION_INT}
+
+/* git revision at which cmake was invoked */
+#cmakedefine PHIST_GIT_REVISION ${PHIST_GIT_REVISION}
+
+#define PHIST_INSTALL_INFO \
+"CMAKE_VERSION: ${CMAKE_VERSION}\n" \
+"CXX_COMPILER: ${CMAKE_C_COMPILER}\n" \
+"CXX_COMPILER: ${CMAKE_CXX_COMPILER}\n" \
+"Fortran_COMPILER: ${CMAKE_Fortran_COMPILER}\n" \
+"CXX_FLAGS: ${CMAKE_CXX_FLAGS}\n" \
+"C_FLAGS: ${CMAKE_C_FLAGS}\n" \
+"Fortran_FLAGS: ${CMAKE_Fortran_FLAGS}\n"
+
 /*! general verbosity of PHIST:
         0: only print errors
         1: errors and warnings
@@ -11,12 +34,11 @@
 */
 #cmakedefine PHIST_OUTLEV ${PHIST_OUTLEV}
 
-/* enables some potentially expesive tests, for instance wether the index spaces of
+/* enables some potentially expensive tests, for instance whether the index spaces of
    input and output vectors to an operation are correct. By default, this is ON if
    CMAKE_BUILD_TYPE=Debug.
  */
 #cmakedefine PHIST_TESTING
-
 
 /* some compiler/system flags */
 #cmakedefine PHIST_HAVE_CXX11_LAMBDAS
@@ -149,11 +171,11 @@ kernel libs) ?
 #define PHIST_DEFAULT_SPMV_MODE ${PHIST_DEFAULT_SPMV_MODE}
 #endif
 
-#cmakedefine PHIST_KERNEL_LIB_BUILTIN_PIN_THREADS
+#cmakedefine PHIST_TRY_TO_PIN_THREADS
 
 /* disallow Trilinos versions newer than 11.12.x because they have a
    new interface to Tpetra/Kokkos/TSQR (cf. #124)
-*/
+
 # ifdef PHIST_HAVE_KOKKOS
 # include "Trilinos_version.h"
 #  if ((TRILINOS_MAJOR_VERSION>11)||((TRILINOS_MAJOR_VERSION==11)&&(TRILINOS_MINOR_VERSION>1112)))
@@ -164,7 +186,7 @@ kernel libs) ?
 #  define OLD_TRILINOS
 #  endif
 # endif
-
+*/
 /* some more sanity checks */
 /*
 # ifndef PHIST_HAVE_MPI

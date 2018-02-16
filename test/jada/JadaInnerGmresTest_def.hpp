@@ -432,7 +432,7 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,_N_,MATNAME>,
 
         SUBR(mvec_add_mvec)(st::one(),vec3_,st::zero(),tmp,&iflag_);
         ASSERT_EQ(0,iflag_);
-        jdOp_->apply((_ST_)0.3*st::one(),jdOp_->A,tmp,(_ST_)-0.9*st::one(),vec3_,&iflag_);
+        jdOp_->apply(ST(0.3),jdOp_->A,tmp,ST(-0.9),vec3_,&iflag_);
         ASSERT_EQ(0,iflag_);
 
         SUBR(mvec_delete)(tmp,&iflag_);

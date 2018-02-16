@@ -1,3 +1,4 @@
+
 cmake_minimum_required(VERSION 3.5.0)
 
 # some guidelines for extending/modifying the PHIST CMakeLists.txt file. 
@@ -19,6 +20,7 @@ list (APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/")
 project(phist C CXX Fortran)
 
 option(PHIST_USE_CCACHE "Enable/disable using ccache to speed up repeated builds if you use the GNU compiler and ccache is found." ON)
+option(PHIST_TRY_TO_PIN_THREADS "Try to pin the threads to cores, the exact implementation depends on the kernel library, hence the 'TRY'. A kernel library may or may not bind the threads without further warnings." On)
 
 SET(CMAKE_SKIP_INSTALL_ALL_DEPENDENCY TRUE)
 # here an odd version minor (e.g. 1.1.x, 1.3.x etc.) indicates a development version
@@ -28,9 +30,14 @@ SET(CMAKE_SKIP_INSTALL_ALL_DEPENDENCY TRUE)
 # the function claims to do, depending on the status of the repository.
 set(PHIST_VERSION_MAJOR 1)
 set(PHIST_VERSION_MINOR 3)
-set(PHIST_VERSION_PATCH 0)
+set(PHIST_VERSION_PATCH 99)
 set(PHIST_VERSION ${PHIST_VERSION_MAJOR}.${PHIST_VERSION_MINOR}.${PHIST_VERSION_PATCH})
+math(EXPR PHIST_VERSION_INT "( ( ${PHIST_VERSION_MAJOR} * 100 ) + ${PHIST_VERSION_MINOR} ) * 100 + ${PHIST_VERSION_PATCH}")
+
 set(PRODUCT_NAME phist-${PHIST_VERSION})
+
+execute_process(COMMAND git rev-parse --short --sq HEAD WORKING_DIRECTORY ${PROJECT_SOURCE_DIR} OUTPUT_VARIABLE rev)
+STRING(REPLACE "'" "\"" PHIST_GIT_REVISION ${rev})
 
 if("${CMAKE_BUILD_TYPE}" STREQUAL "")
   set(CMAKE_BUILD_TYPE "Release" CACHE STRING "Choose the type of build, options are: Release, RelWithDebug, Debug" FORCE)
@@ -80,7 +87,7 @@ option(PHIST_BUILTIN_RNG
 # use GHOST if found (must be ON if ghost is the kernel lib)
 option(PHIST_USE_GHOST
         "try to find the GHOST library even if it is not the kernel lib" 
-        ON)
+        OFF)
 
 # try to find MPACK for high precision lapack routines
 option(PHIST_USE_MPACK
@@ -132,6 +139,37 @@ if (CMAKE_C_COMPILER_ID STREQUAL "GNU")
 endif()
 
 ########################################################################
+# xSDK options
+########################################################################
+
+option(USE_XSDK_DEFAULTS "implement the default behavior suggested for xSDK packages (see https://xsdk.info)")
+
+option(XSDK_ENABLE_CXX
+        "generate C++ bindings for PHIST"
+        ON)
+
+option(XSDK_ENABLE_Fortran
+        "generate Fortran 2003 bindings for PHIST"
+        OFF)
+
+if (XSDK_ENABLE_Fortran)
+    message(WARNING "Due to a licensing issue you have to generate the Fortran 2003 bindings for PHIST "
+                        "after installing phist using the phist_fort tool available at "
+                        "https://bitbucket.org/essex/phist_fort/")
+endif()
+
+if (USE_XSDK_DEFAULTS)
+  set (XSDK_INDEX_SIZE 64 CACHE INTEGER "data type for global indices (32/64), default 64.")
+  #otherwise, leave it to the kernel library to decide.
+endif()
+
+if (XSDK_INDEX_SIZE EQUAL 32)
+  set(PHIST_FORCE_INT_GIDX_DEFAULT ON)
+elseif (XSDK_INDEX_SIZE EQUAL 64)
+  set(PHIST_FORCE_INT_GIDX_DEFAULT OFF)
+endif()
+
+########################################################################
 # Lists of libraries, executables, tests
 ########################################################################
 set(library_list)
@@ -148,8 +186,21 @@ set(PHIST_PKG_CONFIG_CFLAGS)
 
 ########################################################################
 # Deal with BLAS, LAPACK and LAPACKe
-# We first of all trust the CMake FindLAPACK module here.
-# In order to use a specific blas/lapack, e.g. set the variable
+#
+# As required by the xSDK, the user can explicitly set the following variables and we will respect them:
+#
+# TPL_LAPACKE_LIBRARIES (which should include the lapacke, lapack and blas libs with full names (no -L and -l options)
+# TPL_LAPACKE_INCLUDE_DIR
+#
+# and to conform to standard flags, we also allow setting
+#
+# TPL_LAPACK_LIBRARIES (which should include BLAS libraries)
+#
+# and will attempt to find lapacke ourselves.
+#
+# If none of the above are given, we trust the CMake FindLAPACK module here.
+# In order to use a specific blas/lapack (but you don't know the exact paths), 
+# you can set the variable BLA_VENDOR used in that module, e.g.:
 # BLA_VENDOR="Intel10_64lp" (note that you have to be rather specific here
 # due to the FindBLAS module!).
 # There is no FindLAPACKe module as of CMake 3.8, so I added one in phist/cmake/
@@ -157,46 +208,73 @@ set(PHIST_PKG_CONFIG_CFLAGS)
 # the include directory.
 ########################################################################
 
-if (NOT DEFINED BLA_VENDOR)
-  if (DEFINED ENV{MKLROOT})
-    message(STATUS "environment variable MKLROOT suggests MKL is available, try to use it to provide BLAS/LAPACK(e).")
-    set(BLA_VENDOR "Intel10_64lp")
-  endif()
+set(TPL_LAPACKE_LIBRARIES "${TPL_LAPACKE_LIBRARIES}" CACHE STRING "full library names of lapacke, lapack and blas" FORCE)
+set(TPL_LAPACK_LIBRARIES "${TPL_LAPACK_LIBRARIES}" CACHE STRING "full library names of lapacke, lapack and blas" FORCE)
+set(TPL_LAPACKE_INCLUDE_DIRS "${TPL_LAPACKE_INCLUDE_DIRS}" CACHE STRING "path where to find lapacke.h or mkl_lapacke.h header" FORCE)
+
+if (TPL_LAPACKE_LIBRARIES)
+  link_libraries(${TPL_LAPACKE_LIBRARIES})
+  list(GET TPL_LAPACKE_LIBRARIES 0 LAPACKE_LIBRARY)
+  get_filename_component(LAPACK_LIBDIR ${LAPACKE_LIBRARY} DIRECTORY)
+elseif(TPL_LAPACK_LIBRARIES)
+  list(GET TPL_LAPACK_LIBRARIES 0 LAPACK_LIBRARY)
+  get_filename_component(LAPACK_LIBDIR ${LAPACK_LIBRARY} DIRECTORY)
+else()
+  # try to find lapack and blas using the standard CMake module.
+  # It searches for various vendors including Intel MKL, GOTO BLAS etc.
+  # To specify the lapack library to search for, the user can set the
+  # BLA_VENDOR variable either via -D or as environment variable.
+  find_package(LAPACK REQUIRED QUIET)
+  link_libraries(${LAPACK_LIBRARIES})
+  list(GET LAPACK_LIBRARIES 0 LAPACK_LIBRARY)
+  get_filename_component(LAPACK_LIBDIR ${LAPACK_LIBRARY} DIRECTORY)
+  set(TPL_LAPACK_LIBRARIES ${LAPACK_LIBRARIES} CACHE STRING "lapack library and dependencies" FORCE)
 endif()
 
-find_package(LAPACK REQUIRED QUIET)
+if (NOT TPL_LAPACKE_LIBRARIES)
+  if (NOT TPL_LAPACK_LIBRARIES)
+    message(FATAL_ERROR "did not find lapack via TPL_LAPACK_LIBRARIES, TPL_LAPACK_LIBRARIES or find_package. Aborting.")
+  elseif (TPL_LAPACK_LIBRARIES MATCHES "mkl")
+    # note: lapacke is included in the mkl library
+    set(TPL_LAPACKE_LIBRARIES ${TPL_LAPACK_LIBRARIES} CACHE STRING FORCE)
+  else()
+    find_library (LAPACKE_LIBRARY lapacke ${LAPACKE_LIBDIR})
+    if (LAPACKE_LIBRARY MATCHES "LAPACKE_LIBRARY-NOTFOUND")
+      message(FATAL_ERROR "Did not find the LAPACKe library based on the LAPACK_LIBRARIES you provided, please set"
+                          "LAPACKE_LIBRARIES and LAPACKE_INCLUDE_DIRS instead (including lapacke,lapack and blas library "
+                          "names/inc dirs) or leave it to CMake to locate BLAS, LAPACK and LAPACKe.")
+    else()
+      message(STATUS "found LAPACKe library: '${LAPACKE_LIBRARY}'")
+      set(TPL_LAPACKE_LIBRARIES ${LAPACKE_LIBRARY} ${TPL_LAPACK_LIBRARIES} CACHE STRING "LAPACKe library and dependencies" FORCE)
+    endif()
+  endif()
+endif()
+message(STATUS "TPL_LAPACKE_LIBRARIES has final value '${TPL_LAPACKE_LIBRARIES}'")
+if (NOT TPL_LAPACKE_LIBRARIES)
+    message(FATAL_ERROR "did not find LAPACKe via TPL_LAPACK_LIBRARIES or manually. Aborting.")
+endif()
 
-if (LAPACK_LIBRARIES MATCHES "mkl")
+if (TPL_LAPACKE_LIBRARIES MATCHES "mkl")
   message(STATUS "found Intel(R) MKL")
   set(PHIST_HAVE_MKL 1)
-  include_directories($ENV{MKLROOT}/include)
-  link_libraries(${LAPACK_LIBRARIES})
-else()
-  if (BLAS_LIBRARIES MATCHES "-l*")
-    # no hint where to look for lapacke here
-    set(BLAS_LIBDIR "")
-  else()
-    get_filename_component(BLAS_LIBDIR ${BLAS_LIBRARIES} DIRECTORY)
-  endif()
-  find_library (LAPACKE_LIBRARY lapacke ${BLAS_LIBDIR})
-  if (LAPACKE_LIBRARY MATCHES "LAPACKE_LIBRARY-NOTFOUND")
-    message(WARNING "did not find liblapacke in ${BLAS_LIBDIR}")
-  else()
-    message(STATUS "found liblapacke: '${LAPACKE_LIBRARY}'")
-  endif()
-  find_path (LAPACKE_INCLUDE_DIR NAMES lapacke.h mkl_lapacke.h HINTS ${BLAS_LIBDIR})
-  if (LAPACKE_INCLUDE_DIR MATCHES "LAPACKE_INCLUDE_DIR-NOTFOUND")
-    message(WARNING "did not find lapacke header")
-  else()
-    message(STATUS "found lapacke header: '${LAPACKE_INCLUDE_DIR}'")
-    include_directories(${LAPACKE_INCLUDE_DIR})
-  endif()
-  # note: we try to force the linker to use lapacke from the same directory as blas,
-  # this is because of the buggy system lapack at DLR but should make sense anyway.
-  link_libraries(${LAPACKE_LIBRARY})
-  link_libraries(${LAPACK_LIBRARIES})
 endif()
   
+link_libraries(${TPL_LAPACKE_LIBRARIES})
+
+# find the lapacke.h header (for MKL it's called mkl_lapacke.h). We use the path to the lapack lib as a hint.
+if (NOT TPL_LAPACKE_INCLUDE_DIRS)
+  find_path (LAPACKE_INCLUDE_DIR NAMES lapacke.h mkl_lapacke.h 
+                                 HINTS ${LAPACK_LIBDIR}
+                                 PATH_SUFFIXES "lapacke")
+  if (LAPACKE_INCLUDE_DIR MATCHES "LAPACKE_INCLUDE_DIR-NOTFOUND")
+    message(WARNING "did not find lapacke header, if the build fails you may need to set TPL_LAPACKE_INCLUDE_DIRS explicitly.")
+  else()
+    message(STATUS "found LAPACKe header in '${LAPACKE_INCLUDE_DIR}'")
+    set(TPL_LAPACKE_INCLUDE_DIRS ${LAPACKE_INCLUDE_DIR})
+  endif()
+endif()
+
+include_directories(${TPL_LAPACKE_INCLUDE_DIRS})
 
 ########################################################################
 
@@ -495,11 +573,17 @@ endif()
 # setup which kernel library is being used.
 ##############################################################################
 
-set(PHIST_KERNEL_LIB "builtin" CACHE STRING "Select underlying kernel libraries for phist (builtin|ghost|epetra|tpetra|magma|petsc|Eigen)")
+set(PHIST_KERNEL_LIB "builtin" CACHE STRING "Select underlying kernel libraries for phist (builtin|ghost|epetra|tpetra|magma|petsc|Eigen|tpetra12)")
 message(STATUS "kernel lib " ${PHIST_KERNEL_LIB} " ...")
 
 set(REQUIRE_TRILI_PKG,"")
 set(OPTIONAL_TRILI_PKG,"")
+
+if (PHIST_USE_SOLVER_TPLS)
+  list(APPEND OPTIONAL_TRILI_PKG "Teuchos")
+  list(APPEND OPTIONAL_TRILI_PKG "Anasazi")
+  list(APPEND OPTIONAL_TRILI_PKG "Belos")
+endif()
 
 if  (PHIST_KERNEL_LIB STREQUAL "epetra")
   list(APPEND REQUIRE_TRILI_PKG "Epetra")
@@ -512,11 +596,6 @@ if  (PHIST_KERNEL_LIB STREQUAL "epetra")
     list(APPEND OPTIONAL_TRILI_PKG "Isorropia")
     list(APPEND OPTIONAL_TRILI_PKG "Zoltan")
   endif()
-  if (PHIST_USE_SOLVER_TPLS)
-    list(APPEND OPTIONAL_TRILI_PKG "Anasazi")
-    list(APPEND OPTIONAL_TRILI_PKG "Belos")
-  endif()
-
   if (PHIST_USE_PRECON_TPLS)
     list(APPEND OPTIONAL_TRILI_PKG "Ifpack")
     list(APPEND OPTIONAL_TRILI_PKG "ML")
@@ -527,11 +606,6 @@ elseif  (PHIST_KERNEL_LIB STREQUAL "tpetra")
   list(APPEND REQUIRE_TRILI_PKG "Kokkos")
   list(APPEND REQUIRE_TRILI_PKG "Teuchos")
   set(PHIST_KERNEL_LIB_TPETRA 1)
-
-  if (PHIST_USE_SOLVER_TPLS)
-    list(APPEND OPTIONAL_TRILI_PKG "Anasazi")
-    list(APPEND OPTIONAL_TRILI_PKG "Belos")
-  endif()
   if (PHIST_USE_PRECON_TPLS)
     list(APPEND OPTIONAL_TRILI_PKG "Ifpack2")
     list(APPEND OPTIONAL_TRILI_PKG "Amesos2")
@@ -549,10 +623,6 @@ elseif (PHIST_KERNEL_LIB STREQUAL "ghost")
 
   set(PHIST_DEFAULT_SPMV_MODE 0 CACHE STRING "default GHOST spmv mode (0: VECTOR, 8: OVERLAP, 16: TASK)")
 
-  if (PHIST_USE_SOLVER_TPLS)
-    list(APPEND OPTIONAL_TRILI_PKG "Anasazi")
-    list(APPEND OPTIONAL_TRILI_PKG "Belos")
-  endif()
   if (PHIST_USE_GRAPH_TPLS)
     list(APPEND OPTIONAL_TRILI_PKG "Zoltan")
   endif()
@@ -562,7 +632,6 @@ elseif (PHIST_KERNEL_LIB STREQUAL "ghost")
 elseif (PHIST_KERNEL_LIB STREQUAL "builtin")
   set(PHIST_KERNEL_LIB_BUILTIN 1)
   set(PHIST_MVECS_ROW_MAJOR 1)
-  option(PHIST_KERNEL_LIB_BUILTIN_PIN_THREADS "Try to pin the threads to cores using sched_setaffinity (based on simple heuristics; for Intel use env KMP_AFFINITY=\"granularity=fine,compact,1,0\"" On)
   if(PHIST_HAVE_AVX2)
     message(STATUS "Activated experimental high-precision builtin kernel routines!")
     set(PHIST_HIGH_PRECISION_KERNELS 1)
@@ -613,27 +682,27 @@ else()
   include_directories(${PROJECT_SOURCE_DIR}/drivers/matfuncs)
 endif()
 
+if (NOT DEFINED PHIST_FORCE_INT_GIDX_DEFAULT)
+
 #############################################################################
 # use 32-bit integers as global indices with Epetra by default. This is     #
 # because e.g. Isorropia/Zoltan and our own HYMLS require it. For larger    #
 # runs with Epetra it has to be switched off before compiling PHIST.        #
 #############################################################################
-if( "${PHIST_KERNEL_LIB}" MATCHES "epetra|petsc|Eigen" )
-  set(PHIST_FORCE_INT_GIDX_DEFAULT ON)
-else()
-  set(PHIST_FORCE_INT_GIDX_DEFAULT OFF)
+  if( "${PHIST_KERNEL_LIB}" MATCHES "epetra|petsc|Eigen" )
+    set(PHIST_FORCE_INT_GIDX_DEFAULT ON)
+  else()
+    set(PHIST_FORCE_INT_GIDX_DEFAULT OFF)
+  endif()
 endif()
 
 option(PHIST_FORCE_INT_GIDX "Use 32-bit global indices for compatiblity with other libs" 
 ${PHIST_FORCE_INT_GIDX_DEFAULT})
-if( "${PHIST_KERNEL_LIB}" MATCHES "petsc|Eigen" )
-  set(PHIST_FORCE_INT_GIDX ON)
-endif()
 
 ##############################################################################
 # enable single precision and complex valued calculation if supported
 ##############################################################################
-if( "${PHIST_KERNEL_LIB}" MATCHES "tpetra|ghost|magma|petsc|Eigen" )
+if( "${PHIST_KERNEL_LIB}" MATCHES "tpetra|ghost|magma|petsc|Eigen|tpetra12" )
   set(PHIST_SUPPORT_SP ON)
   set(PHIST_SUPPORT_COMPLEX ON)
 else()
@@ -703,7 +772,6 @@ if (PHIST_KERNEL_LIB STREQUAL "builtin")
                           ${PROJECT_SOURCE_DIR}/src/kernels/builtin/spmv_buff_cpy_kernels.f90
                           ${PROJECT_SOURCE_DIR}/src/kernels/builtin/kacz_kernels.f90
                           ${PROJECT_SOURCE_DIR}/src/kernels/builtin/sdmat_module.f90
-                          ${PROJECT_SOURCE_DIR}/src/kernels/trilinos_interface/phist_rcp_helpers.cpp
                           )
   if(PHIST_HIGH_PRECISION_KERNELS)
     set (PHIST_KERNEL_SOURCE ${PHIST_KERNEL_SOURCE}
@@ -729,8 +797,7 @@ else()
                            ${PROJECT_SOURCE_DIR}/drivers/matfuncs/matpde3d.f90
                            ${PROJECT_SOURCE_DIR}/drivers/matfuncs/tritoeplitz.f90
                            ${PROJECT_SOURCE_DIR}/drivers/matfuncs/brussolator.f90
-                           ${PROJECT_SOURCE_DIR}/src/kernels/phist_mpi_kernels.cpp
-                           ${PROJECT_SOURCE_DIR}/src/kernels/trilinos_interface/phist_rcp_helpers.cpp)
+                           ${PROJECT_SOURCE_DIR}/src/kernels/phist_mpi_kernels.cpp)
 endif()
 if (NOT ESSEX-PHYSICS_FOUND)
   LIST(APPEND PHIST_KERNEL_SOURCE ${PROJECT_SOURCE_DIR}/drivers/matfuncs/graphene.c
@@ -785,6 +852,7 @@ set (PHIST_KRYLOV_SOURCE ${PROJECT_SOURCE_DIR}/src/krylov/phist_simple_arnoldi.c
                          ${PROJECT_SOURCE_DIR}/src/krylov/phist_anasaziZ.cpp
                          ${PROJECT_SOURCE_DIR}/src/krylov/phist_carp_cg.cpp
                          ${PROJECT_SOURCE_DIR}/src/krylov/phist_iter_op.cpp
+                         ${PROJECT_SOURCE_DIR}/src/krylov/phist_blockedpcg.cpp
                          )
 if(PHIST_USE_CRAFT)
         set (PHIST_KRYLOV_SOURCE ${PHIST_KRYLOV_SOURCE}
@@ -821,8 +889,8 @@ include_directories(${PROJECT_SOURCE_DIR}/src/core)
 include_directories(${PROJECT_SOURCE_DIR}/src/krylov)
 include_directories(${PROJECT_SOURCE_DIR}/src/jada)
 include_directories(${PROJECT_SOURCE_DIR}/src/precon)
-include_directories(${PROJECT_SOURCE_DIR}/src/support)
 include_directories(${PROJECT_SOURCE_DIR}/drivers)
+include_directories(${PROJECT_BINARY_DIR}/cxx_bindings)
 
 if(PHIST_KERNEL_LIB STREQUAL "magma")
   find_package(MAGMA REQUIRED)
@@ -1033,6 +1101,18 @@ foreach(PKG ${OPTIONAL_TRILI_PKG})
   message(STATUS ${TPL_REPORT})
 endforeach()
 
+if (PHIST_KERNEL_LIB STREQUAL "tpetra")
+  if ("CUDA" IN_LIST Tpetra_TPL_LIST)
+    # compiling tpetra/kokkos with CUDA is tricky and requires special flags
+    # and a special wrapper script to be used as the MPI C++ compiler
+    set(IS_TPETRA_CUDA 1)
+    if (NOT CMAKE_CXX_COMPILER MATCHES "mpicxx" AND "$ENV{OMPI_CXX}" MATCHES "nvcc_wrapper" AND "$ENV{OMPI_MPICXX_CXXFLAGS}" MATCHES "-expt-extended-lambda")
+      message(WARNING "NOTE: in order to compile Tpetra/Kokkos code with CUDA we recommend using OpenMPI"
+                      "      and setting the environment variables CXX=mpicxx, OMPI_CXX=nvcc_wrapper, and OMPI_MPICXX_CXXFLAGS='-std=c++11 -expt-extended-lambda'."
+                      "      The nvcc_wrapper script is installed along with Trilinos. You can unset the OMPI variables after 'make libs' to avoid compiling everytingg with nvcc.")
+    endif()
+  endif()
+endif()
 
 option(PHIST_TIMEMONITOR "Gather detailed function-level timings" On)
 if( PHIST_TIMEMONITOR )
@@ -1214,14 +1294,6 @@ configure_package_config_file("${PROJECT_SOURCE_DIR}/phistConfig.cmake.in" "${PR
 write_basic_package_version_file("${PROJECT_BINARY_DIR}/phistConfigVersion.cmake" VERSION ${PHIST_VERSION} COMPATIBILITY SameMajorVersion)
 
 #######################################################################################
-# C++ BINDINGS                                                                        #
-#######################################################################################
-add_subdirectory(cxx_bindings)
-
-# add the C++ headers as a dependency of phist_solvers so that the 'install' target works also with 'make libs'
-add_dependencies(phist_solvers cxx_headers)
-
-#######################################################################################
 # INSTALL                                                                             #
 #######################################################################################
 if (${BUILD_SHARED_LIBS})
@@ -1273,14 +1345,16 @@ if( "${CMAKE_BUILD_TYPE}" MATCHES "Release" )
                   krylov
                   jada
                   bench
-                  precon)
+                  precon
+                  tools)
 else()
   set(PHIST_TESTS task
                   kernels
                   core
                   krylov
                   jada
-                  precon)
+                  precon
+                  tools)
 endif()
 
 foreach(label ${PHIST_TESTS})
@@ -1362,29 +1436,45 @@ foreach (infile ${TG_CXX_Examples})
   endforeach()
 endforeach()
 
-#
+#######################################################
+# TESTING
+#######################################################
 
 # Activate testing
 enable_testing()
 
-if (${PHIST_ENABLE_MPI})
+if (IS_TPETRA_CUDA)
+  # Tpetra will run only on the GPU, with 12 MPI processes this gets extremely slow
+  set(PHIST_MPI_TEST_NPROCS 1 2)
+elseif (${PHIST_ENABLE_MPI})
   set(PHIST_MPI_TEST_NPROCS 1 2 3 12)
 else()
   set(PHIST_MPI_TEST_NPROCS 1)
 endif()
 
+set(ALL_PHIST_TESTS "")
+
+# environment variables that should be set on every MPI process
+set(TEST_ENV env ASAN_OPTIONS=\"exitcode=0\" env LSAN_OPTIONS=\"exitcode=0\" env OMP_SCHEDULE=static env OMP_PROC_BIND=false env OMPI_MCA_hwloc_base_binding_policy=none)
+
+if (PHIST_KERNEL_LIB_TPETRA)
+  set(TEST_ENV ${TEST_ENV} env CUDA_LAUNCH_BLOCKING=1)
+endif()
+  string (REPLACE ";" " " TEST_ENV_STRING "${TEST_ENV}")
 foreach(np ${PHIST_MPI_TEST_NPROCS})
   math(EXPR TEST_OMP_NUM_THREADS "12/${np}")
+  set (TEST_ENV_NTHREADS ${TEST_ENV} env PHIST_NUM_THREADS=${TEST_OMP_NUM_THREADS} env OMP_NUM_THREADS=${TEST_OMP_NUM_THREADS})
   foreach(label ${PHIST_TESTS})
     set(TEST_OUTPUT_DIR "${CMAKE_CURRENT_BINARY_DIR}/test_output_np${np}/${label}")
     if( NOT PHIST_HAVE_MPI )
-      set(TEST_COMMAND env ASAN_OPTIONS=\"exitcode=0\" LSAN_OPTIONS=\"exitcode=0\" env PHIST_NUM_THREADS=${TEST_OMP_NUM_THREADS} env OMP_NUM_THREADS=${TEST_OMP_NUM_THREADS} env OMP_SCHEDULE=static
+      set(TEST_COMMAND ${TEST_ENV_NTHREADS} 
                        ./${PRODUCT_NAME}-${label}-test-${CMAKE_BUILD_TYPE} --gtest_death_test_style=threadsafe --gtest_output=xml:${TEST_OUTPUT_DIR}/xunit.xml)
     else()
-      set(TEST_COMMAND ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} ${np} env ASAN_OPTIONS=\"exitcode=0\" LSAN_OPTIONS=\"exitcode=0\" env PHIST_NUM_THREADS=${TEST_OMP_NUM_THREADS} env OMP_NUM_THREADS=${TEST_OMP_NUM_THREADS} env OMP_SCHEDULE=static
+      set(TEST_COMMAND ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} ${np} ${TEST_ENV_NTHREADS}
                        ./${PRODUCT_NAME}-${label}-test-${CMAKE_BUILD_TYPE} --gtest_death_test_style=threadsafe --gtest_output=xml:${TEST_OUTPUT_DIR}/xunit.xml)
     endif()
     set(CURRENT_TESTNAME test-${label}_np${np})
+    list(APPEND ALL_PHIST_TESTS ${CURRENT_TESTNAME})
     add_test(NAME ${CURRENT_TESTNAME} COMMAND ${TEST_COMMAND})
     set_tests_properties(${CURRENT_TESTNAME} PROPERTIES PASS_REGULAR_EXPRESSION "[. \n]*PASSED[. \n]*")
     set_tests_properties(${CURRENT_TESTNAME} PROPERTIES FAIL_REGULAR_EXPRESSION "[. \n]*FAILED[. \n]*")
@@ -1392,7 +1482,7 @@ foreach(np ${PHIST_MPI_TEST_NPROCS})
     if(np EQUAL 1 AND INTEGRATION_BUILD AND PHIST_KERNEL_LIB STREQUAL "ghost" AND CUDA_LIBRARIES)
       set_tests_properties(${CURRENT_TESTNAME} PROPERTIES ENVIRONMENT GHOST_TYPE=cuda)
     else()
-      set_tests_properties(${CURRENT_TESTNAME} PROPERTIES ENVIRONMENT "${MPIEXEC_ENVIRONMENT}; GHOST_TYPE=cuda")
+      set_tests_properties(${CURRENT_TESTNAME} PROPERTIES ENVIRONMENT "${MPIEXEC_ENVIRONMENT}")
     endif()
     if ( INTEGRATION_BUILD )
       # create the default test output that will appear on Jenkins if the test executable crashes
@@ -1424,7 +1514,8 @@ foreach(pyt ${PYTHON_TESTS})
     set(pyt_name "${pyt_name}_py")
     set(TEST_OUTPUT_DIR ${PROJECT_BINARY_DIR}/test_output_np1/${pyt_name})
     file(MAKE_DIRECTORY ${TEST_OUTPUT_DIR})
-    set(TEST_COMMAND py.test -s -v --junitxml ${TEST_OUTPUT_DIR}/xunit.xml --junit-prefix=${CMAKE_BUILD_TYPE} ${pyt})
+    set(TEST_COMMAND ${TEST_ENV} ./py.test -s -v --junitxml ${TEST_OUTPUT_DIR}/xunit.xml --junit-prefix=${CMAKE_BUILD_TYPE} ${pyt})
+    list(APPEND ALL_PHIST_TESTS ${pyt_name})
     add_test(NAME ${pyt_name} COMMAND ${TEST_COMMAND})
     set_tests_properties(${pyt_name} PROPERTIES ENVIRONMENT "LD_LIBRARY_PATH=${CMAKE_CURRENT_BINARY_DIR}:$ENV{LD_LIBRARY_PATH};PYTHONPATH=${PYSTDIR}:${PYTESTDIR}:$ENV{PYTHONPATH};${MPIEXEC_ENVIRONMENT};PHIST_NUM_THREADS=12;OMP_NUM_THREADS=12")    
     if(INTEGRATION_BUILD AND PHIST_KERNEL_LIB STREQUAL "ghost" AND CUDA_LIBRARIES)
@@ -1449,12 +1540,13 @@ foreach(pyt ${PYTHON_TESTS})
     else()
       set(PHIST_TEST_DRIVERS_NUM_PROCS 1)
     endif()
-    set(PHIST_TEST_DRIVERS_NUM_THREADS 12)
+    set(PHIST_TEST_DRIVERS_NUM_THREADS 6)
     configure_file(${PROJECT_SOURCE_DIR}/python/test_phist_drivers.py.in ${CMAKE_CURRENT_BINARY_DIR}/test_phist_drivers.py)
     set(TEST_OUTPUT_DIR ${PROJECT_BINARY_DIR}/test_output_np${PHIST_TEST_DRIVERS_NUM_PROCS}/test_phist_drivers)
     file(MAKE_DIRECTORY ${TEST_OUTPUT_DIR})
     set(TEST_COMMAND ${CMAKE_CURRENT_BINARY_DIR}/py.test --junitxml ${TEST_OUTPUT_DIR}/xunit.xml ./test_phist_drivers.py)
     set(pyt_name "phist_test_drivers_np${PHIST_TEST_DRIVERS_NUM_PROCS}") 
+    list(APPEND ALL_PHIST_TESTS ${pyt_name})
     add_test(NAME ${pyt_name} COMMAND ${TEST_COMMAND})
     set_tests_properties(${pyt_name} PROPERTIES ENVIRONMENT "${MPIEXEC_ENVIRONMENT}; PHIST_NUM_THREADS=2; OMP_NUM_THREADS=2 OMP_SCHEDULE=dynamic,8")
 
@@ -1465,6 +1557,22 @@ endif()
 
 # Adding custom test target "check" because it is the only way to show the full output of test errors on console
 add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND} ${CTEST_OPTIONS})
+
+# check the installation with an example project
+add_custom_target(test_install COMMAND ${PROJECT_SOURCE_DIR}/buildScripts/test_install.sh ${CMAKE_INSTALL_PREFIX})
+
+#######################################################################################
+# C++ BINDINGS                                                                        #
+#######################################################################################
+add_subdirectory(cxx_bindings)
+
+# add the C++ headers as a dependency of phist_solvers so that the 'install' target works also with 'make libs'
+add_dependencies(phist_kernels_${PHIST_KERNEL_LIB} cxx_headers)
+
+
+#######################################################################
+# DOCUMENTATION AND OTHER EXTRA TARGETS
+#######################################################################
 
 # Custom targets: doc, cppcheck, coverage, audit
 # Adding optinal target "doc" to generate Doxygen documentation

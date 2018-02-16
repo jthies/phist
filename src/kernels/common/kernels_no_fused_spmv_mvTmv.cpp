@@ -12,6 +12,7 @@ void SUBR(fused_spmv_mvTmv)(_ST_ alpha, TYPE(const_sparseMat_ptr) A, TYPE(const_
                              int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
+  PHIST_WARN_MISSING_KERNEL(__FUNCTION__);
 #include "phist_std_typedefs.hpp"
   TYPE(mvec_ptr) _W=W;
   _ST_ _alpha=alpha, _beta=beta;

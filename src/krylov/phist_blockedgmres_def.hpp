@@ -19,7 +19,7 @@ class TYPE(mvec_GC)
     y_=NULL;
     z_=NULL;
   }
-  
+
   ~TYPE(mvec_GC)()
   {
     int iflag;
@@ -31,7 +31,7 @@ class TYPE(mvec_GC)
     y_=NULL;
     z_=NULL;
   }
-  
+
   //! the actual objects
   TYPE(mvec_ptr) x_,y_,z_;
 
@@ -94,10 +94,10 @@ void SUBR(blockedGMRESstates_delete)(TYPE(blockedGMRESstate_ptr) state[], int nu
   *iflag=0;
 #ifndef PHIST_HAVE_TEUCHOS
   if (numSys==0) return;
-  
-    PHIST_CAST_PTR_FROM_VOID(TYPE(MvecRingBuffer), mvecBuff, state[0]->Vbuff, *iflag);    
+
+    PHIST_CAST_PTR_FROM_VOID(TYPE(MvecRingBuffer), mvecBuff, state[0]->Vbuff, *iflag);
     PHIST_CHK_IERR(mvecBuff->delete_mvecs(iflag), *iflag);
-    
+
     delete mvecBuff;
 #endif
 
@@ -121,10 +121,10 @@ void SUBR(blockedGMRESstates_delete)(TYPE(blockedGMRESstate_ptr) state[], int nu
 // reset blockedGMRES state.
 void SUBR(blockedGMRESstate_reset)(TYPE(blockedGMRESstate_ptr) S, TYPE(const_mvec_ptr) b, TYPE(const_mvec_ptr) x0, int *iflag)
 {
-#include "phist_std_typedefs.hpp"  
+#include "phist_std_typedefs.hpp"
   PHIST_ENTER_FCN(__FUNCTION__);
   *iflag=0;
-  
+
   int previous_status = S->status;
   S->status=-2; // not initialized, if this function fails in some way to set status the next _iterate call will complain
 
@@ -212,7 +212,7 @@ void SUBR(blockedGMRESstate_reset)(TYPE(blockedGMRESstate_ptr) S, TYPE(const_mve
 // calculate approximate solution.
 // first solves triangular system s=R\y for all states and then updates the solution of all the given
 // states in a vectorized way, x+=Vs
-void SUBR(blockedGMRESstates_updateSol)(TYPE(blockedGMRESstate_ptr) S[], int numSys, 
+void SUBR(blockedGMRESstates_updateSol)(TYPE(blockedGMRESstate_ptr) S[], int numSys,
         TYPE(const_linearOp_ptr) rightPrecon,
         TYPE(mvec_ptr) x, _MT_* resNorm, int scaleSolutionToOne, int* iflag)
 {
@@ -227,7 +227,7 @@ void SUBR(blockedGMRESstates_updateSol)(TYPE(blockedGMRESstate_ptr) S[], int num
   int maxId = 0;
   for(int i = 0; i < numSys; i++)
     maxId = std::max(maxId,S[i]->id);
-    
+
   // if there is no (right) preconditioner, update x+=Vs directly, otherwise
   // compute z=Vs first and then update x+=P\z
   TYPE(mvec_ptr) z=x;
@@ -323,7 +323,7 @@ void SUBR(blockedGMRESstates_updateSol)(TYPE(blockedGMRESstate_ptr) S[], int num
     PHIST_SOUT(PHIST_DEBUG,"rs=\n");
     for (int k=0;k<m;k++)
     {
-      PHIST_SOUT(PHIST_DEBUG,"%16.8f+%16.8fi\n",st::real(S[i]->rs_[k]),st::imag(S[i]->rs_[k]));      
+      PHIST_SOUT(PHIST_DEBUG,"%16.8f+%16.8fi\n",st::real(S[i]->rs_[k]),st::imag(S[i]->rs_[k]));
     }
 #endif
 
@@ -435,7 +435,7 @@ PHIST_TASK_BEGIN(ComputeTask)
       }
     }
   }
- 
+
   if (rightPrecon!=NULL)
   {
     PHIST_CHK_IERR(rightPrecon->apply(st::one(),rightPrecon->A,z,st::one(),x,iflag),*iflag);
@@ -509,7 +509,7 @@ void SUBR(blockedGMRESstates_iterate)(TYPE(const_linearOp_ptr) Aop, TYPE(const_l
 
   // work vectors for x, y = Aop(x) and z=P\r
   TYPE(mvec_GC) work;
-  
+
   // z is Precond\x, create it as a temporary vector
   if (Pop!=NULL)
   {
@@ -623,7 +623,7 @@ PHIST_SOUT(PHIST_INFO,"\n");
   {
     if (S[i]->curDimV_>0)
     {
-      PHIST_SOUT(PHIST_VERBOSE,"[%d]: %d\t%8.4e\t(%8.4e)\n", i, 
+      PHIST_SOUT(PHIST_VERBOSE,"[%d]: %d\t%8.4e\t(%8.4e)\n", i,
         S[i]->curDimV_-1,S[i]->normR_/S[i]->normR0_,S[i]->normR_);
     }
     else
@@ -641,12 +641,12 @@ PHIST_TASK_BEGIN(ComputeTask)
     int nextIndex;
     PHIST_CHK_IERR( mvecBuff->getNextUnused(nextIndex,iflag), *iflag);
     PHIST_CHK_IERR(SUBR( mvec_view_block ) (mvecBuff->at(nextIndex), &work.y_, minId, maxId, iflag), *iflag);
-    
+
     // apply (right) preconditioning *if this is not a restart*
     if (Pop!=NULL)
     {
       int numRestarted=0;
-      for (int i=0; i<numSys; i++) 
+      for (int i=0; i<numSys; i++)
       {
         numRestarted+=(S[i]->curDimV_==0)?1:0;
       }
@@ -668,7 +668,7 @@ PHIST_TASK_BEGIN(ComputeTask)
             int j=S[i]->curDimV_;
             if( j == 0 )
             {
-              // (re-)start: r_0 = b - A*x_0, so throw away the P\x and 
+              // (re-)start: r_0 = b - A*x_0, so throw away the P\x and
               // replace by x for this column
               TYPE(mvec_ptr) tmpX=NULL, tmpZ=NULL;
               PHIST_CHK_IERR(SUBR(mvec_view_block)(work.x_,&tmpX,S[i]->id-minId,S[i]->id-minId,iflag),*iflag);
@@ -784,7 +784,7 @@ PHIST_TASK_BEGIN(ComputeTask)
               // store in H
               ST *Hj=NULL;
               phist_lidx ldH;
-              PHIST_CHK_IERR(SUBR(sdMat_extract_view)(S[i]->H_,&Hj,&ldH,iflag),*iflag); 
+              PHIST_CHK_IERR(SUBR(sdMat_extract_view)(S[i]->H_,&Hj,&ldH,iflag),*iflag);
               Hj += (S[i]->curDimV_-1)*ldH;
               Hj[j_] += -tmp[S[i]->id-minId];
             }
@@ -814,7 +814,7 @@ PHIST_TASK_BEGIN(ComputeTask)
           // raw view of H
           ST *Hj=NULL;
           phist_lidx ldH;
-          PHIST_CHK_IERR(SUBR(sdMat_extract_view)(S[i]->H_,&Hj,&ldH,iflag),*iflag); 
+          PHIST_CHK_IERR(SUBR(sdMat_extract_view)(S[i]->H_,&Hj,&ldH,iflag),*iflag);
           Hj += (S[i]->curDimV_-1)*ldH;
           Hj[j] = ynorm[S[i]->id-minId];
         }
@@ -868,8 +868,8 @@ PHIST_TASK_BEGIN(ComputeTask)
   {
     PHIST_CHK_IERR(SUBR(mvec_view_block)(tmpVec_, &tmpVec, S[i]->id, S[i]->id, iflag), *iflag);
     ST *Hj=NULL;
-    phist_lidx ldH; 
-    PHIST_CHK_IERR(SUBR(sdMat_extract_view)(S[i]->H_,&Hj,&ldH,iflag),*iflag); 
+    phist_lidx ldH;
+    PHIST_CHK_IERR(SUBR(sdMat_extract_view)(S[i]->H_,&Hj,&ldH,iflag),*iflag);
     Hj += (S[i]->curDimV_-1)*ldH;
     _MT_ maxHerr = mt::zero();
     for(int j = 0; j < S[i]->curDimV_; j++)
@@ -899,8 +899,8 @@ PHIST_TASK_BEGIN(ComputeTask)
 
       // raw view of H
       ST *Hj=NULL;
-      phist_lidx ldH; 
-      PHIST_CHK_IERR(SUBR(sdMat_extract_view)(S[i]->H_,&Hj,&ldH,iflag),*iflag); 
+      phist_lidx ldH;
+      PHIST_CHK_IERR(SUBR(sdMat_extract_view)(S[i]->H_,&Hj,&ldH,iflag),*iflag);
       Hj += (j-1)*ldH;
       // apply previous Gives rotations to column j
       _ST_ tmp;
@@ -1021,5 +1021,190 @@ PHIST_TASK_END(iflag)
 
   *iflag=99;
   for (int i=0; i<numSys; i++) *iflag=std::min(*iflag,S[i]->status);
+}
+
+// implementation of restarted GMRES on severall systems simultaneously
+void SUBR( restartedGMRES_iterate ) ( TYPE(const_linearOp_ptr) Aop, TYPE(const_linearOp_ptr) Pop,
+        TYPE(mvec_ptr) rhs, TYPE(mvec_ptr) sol_in, int numSys,
+        int nIter[], _MT_ const tol[], int block_size, int max_blocks, int* iflag)
+{
+#include "phist_std_typedefs.hpp"
+  PHIST_ENTER_FCN(__FUNCTION__);
+  *iflag=0;
+  int useIMGS=0;
+
+  TYPE(blockedGMRESstate_ptr) states[block_size];
+  PHIST_CHK_IERR(SUBR(blockedGMRESstates_create)(states, block_size, Aop->domain_map, max_blocks, iflag), *iflag);
+
+  for (int i=0; i<block_size; i++) states[i]->tol=tol[i];
+
+  int num_converged=0;
+  int num_failed=0;
+  int status[numSys];
+  int total_iter[numSys];
+  int active_cols[block_size];
+
+  for (int i=0; i<numSys; i++)
+  {
+    status[i]=-2; // not started
+    total_iter[i]=0;
+  }
+  for (int i=0; i<block_size; i++) active_cols[i]=-1;
+
+  // for copying around single columns we may need a view object, whenever it is updated
+  // its memory is freed, and after the loop we delete it explicitly
+  TYPE(mvec_ptr) x_i=NULL;
+
+  while (num_converged+num_failed<numSys)
+  {
+
+    // first setup at most block_size systems at a time to work on,
+    // skipping any that have converged or failed (exceeded max_iters)
+
+    TYPE(mvec_ptr) b_i=NULL;
+
+    int num_active=0;
+    for (int i=0; i<numSys; i++)
+    {
+      if (status[i]==0||status[i]==3) continue; // converged (0) or failed (3)
+      if (status[i]==1||status[i]==2) {num_active++; continue;}// still busy
+
+      if (num_active==block_size) break;
+
+      // find first "free" state object
+      int pos=0;
+      while ( pos<=block_size && states[pos]->status>0 && states[pos]->status!=3) pos++;
+      if (pos==block_size) break; // everyone is still busy
+
+      // system i needs to be worked on, and states[num_active] is free to do it
+      status[i]=1;
+
+      PHIST_CHK_IERR(SUBR(mvec_view_block)(rhs,&b_i,i,i,iflag),*iflag);
+      // reset selected state object with 0 initial guess
+      PHIST_CHK_IERR(SUBR(blockedGMRESstate_reset)(states[pos], b_i, NULL, iflag), *iflag);
+      active_cols[pos]=i;
+      num_active++;
+    }
+
+    if (b_i) PHIST_CHK_IERR(SUBR(mvec_delete)(b_i,iflag),*iflag);
+
+    if (num_active==0) break;
+
+    // perform restarts if needed
+    for (int i=0; i<num_active; i++)
+    {
+      if (states[i]->status==2)
+      {
+        int id=active_cols[i];
+        PHIST_SOUT(PHIST_VERBOSE,"restart system %d (state %d)\n",id,i);
+        PHIST_CHK_IERR(SUBR(mvec_view_block)(sol_in,&x_i,id,id,iflag),*iflag);
+#if 0
+        TYPE(mvec_ptr) resid=NULL;
+        PHIST_CHK_IERR(SUBR(mvec_create)(&resid,Aop->domain_map,1,iflag),*iflag);
+        PHIST_CHK_IERR(SUBR(mvec_get_block)(rhs,resid,id,id,iflag),*iflag);
+                PHIST_CHK_IERR(Aop->apply(st::one(), Aop->A, x_i, -st::one(), resid, iflag), *iflag);
+        MT rnorm;
+        PHIST_CHK_IERR(SUBR(mvec_norm2)(resid,&rnorm,iflag),*iflag);
+        PHIST_SOUT(PHIST_VERBOSE,"res norm of restart vector: %e\n",rnorm);
+#endif
+        PHIST_CHK_IERR(SUBR(blockedGMRESstate_reset)(states[i], NULL, x_i, iflag), *iflag);
+      }
+    }
+
+    if (num_active>0)
+    {
+      PHIST_SOUT(PHIST_VERBOSE," working on %d systems: ",num_active);
+      for (int i=0;i<num_active;i++) PHIST_SOUT(PHIST_VERBOSE,"%d ",active_cols[i]);
+      PHIST_SOUT(PHIST_VERBOSE,"\n");
+    }
+
+    int _nIter=nIter[0];
+    PHIST_CHK_NEG_IERR(SUBR(blockedGMRESstates_iterate)(Aop, Pop,states, num_active, &_nIter, useIMGS, iflag), *iflag);
+    for (int i=0; i<num_active; i++)
+    {
+      status[active_cols[i]]=states[i]->status;
+      total_iter[active_cols[i]]=states[i]->totalIter;
+    }
+    // we need to update the solution for any systems that
+    // - have converged (status 0)
+    // - need a restart (status 1)
+    // - have failed (status 2)
+    int num_updates=0;
+    TYPE(blockedGMRESstate_ptr) update_states[num_active];
+    int update_cols[num_active];
+    for (int i=0; i<num_active; i++)
+    {
+      if (states[i]->status==0)
+      {
+        num_converged++;
+      }
+      else if (states[i]->status==3)
+      {
+        num_failed++;
+      }
+      // update solution for systems that are converged (0), need a restart (2) or have failed (3)
+      if (states[i]->status==0||states[i]->status>=2)
+      {
+        update_cols[num_updates]=active_cols[i];
+        update_states[num_updates]=states[i];
+        num_updates++;
+      }
+    }
+    if (num_updates>0)
+    {
+      PHIST_SOUT(PHIST_VERBOSE,"update systems: ");
+      for (int i=0; i<num_updates; i++) PHIST_SOUT(PHIST_VERBOSE," %d",update_cols[i]);
+      PHIST_SOUT(PHIST_VERBOSE,"\n");
+      // if we're updating a contiguous block of columns, use a view.
+      // Otherwise copy the columns to make them continuguous
+      bool contig=true;
+      for (int i=1; i<num_updates; i++) contig&=(update_cols[i]==update_cols[i-1]+1);
+      _MT_ res_norms[num_updates];
+      TYPE(mvec_ptr) x=NULL;
+      if (contig)
+      {
+        PHIST_CHK_IERR(SUBR(mvec_view_block)(sol_in,&x,update_cols[0],update_cols[num_updates-1],iflag),*iflag);
+      }
+      else
+      {
+        PHIST_CHK_IERR(SUBR(mvec_create)(&x,Aop->domain_map,num_updates,iflag),*iflag);
+        for (int i=0; i<num_updates; i++)
+        {
+          PHIST_CHK_IERR(SUBR(mvec_view_block)(sol_in,&x_i,update_cols[i],update_cols[i],iflag),*iflag);
+          PHIST_CHK_IERR(SUBR(mvec_set_block)(x,x_i,i,i,iflag),*iflag);
+        }
+      }
+      PHIST_CHK_IERR(SUBR(blockedGMRESstates_updateSol)(update_states,num_updates,Pop,x,res_norms,false,iflag),*iflag);
+      if (!contig) // need to copy back solution
+      {
+        for (int i=0; i<num_updates; i++)
+        {
+          PHIST_CHK_IERR(SUBR(mvec_view_block)(x,&x_i,i,i,iflag),*iflag);
+          PHIST_CHK_IERR(SUBR(mvec_set_block)(sol_in,x_i,update_cols[i],update_cols[i],iflag),*iflag);
+        }
+      }
+      PHIST_CHK_IERR(SUBR(mvec_delete)(x,iflag),*iflag);
+    }
+    for (int i=0; i<num_active; i++)
+    {
+      if (status[active_cols[i]]!=1&&status[active_cols[i]]!=2)
+      {
+        // state object is free again
+        PHIST_SOUT(PHIST_VERBOSE,"state[%d] free to use again after working on system %d\n",i,active_cols[i]);
+        PHIST_CHK_IERR(SUBR(blockedGMRESstate_reset)(states[i],NULL,NULL,iflag),*iflag);
+      }
+    }
+  }
+
+  // delete view of single column if it was used
+  if (x_i) PHIST_CHK_IERR(SUBR(mvec_delete)(x_i,iflag),*iflag);
+
+  for (int i=0; i<numSys; i++)
+  {
+    nIter[i] = total_iter[i];
+  }
+
+  // clean up the solver
+  PHIST_CHK_IERR(SUBR(blockedGMRESstates_delete)(states, block_size, iflag), *iflag);
 }
 

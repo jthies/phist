@@ -7,7 +7,9 @@
 /*                                                                                         */
 /*******************************************************************************************/
 #include "phist_config.h"
+
 #ifdef PHIST_HAVE_SP
+
 #include "phist_tools.h"
 #include "phist_kernels.h"
 #include "phist_harmonicjada.h"

@@ -70,7 +70,7 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,_N_,MATNAME>,
         for(int i = 0; i < _NV_; i++)
         {
           // there are hopefully no eigenvalues in this region so the matrix doesn't get nearly singular
-          sigma_[i] = (_ST_)30*st::one() + (_ST_)5*st::prand();
+          sigma_[i] = ST(30) + ST(5)*st::prand();
           negSigma_[i] = -sigma_[i];
         }
 

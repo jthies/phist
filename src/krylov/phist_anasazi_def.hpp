@@ -14,16 +14,8 @@
 # endif
 #endif
 */
-#ifdef PHIST_KERNEL_LIB_BUILTIN
-// this should be done for wrapping the actual phist void-pointers
-// as typed multivectors, this macro will expand to S/D/C/Zrcp because
-// overloading is not possible on return type only.
-#define PHIST_rcp phist::PHIST_TG_PREFIX(rcp)
-#else
-// For C++ objects (E/Tpetra libs) this results in Teuchos::rcp,
-// for GHOST we have our own implementation of the function
-#define PHIST_rcp phist::rcp
-#endif
+#define PHIST_rcp phist::mvec_rcp< _ST_ >
+
 // Anasazi: block krylov methods from Trilinos
 extern "C" void SUBR(anasazi)(      TYPE(const_linearOp_ptr) A_op, TYPE(const_linearOp_ptr) Ainv_op, 
                          TYPE(const_linearOp_ptr) B_op, int variant,
@@ -40,19 +32,10 @@ extern "C" void SUBR(anasazi)(      TYPE(const_linearOp_ptr) A_op, TYPE(const_li
   *iflag = PHIST_NOT_IMPLEMENTED;
 #else
 #include "phist_std_typedefs.hpp"  
-#ifdef PHIST_KERNEL_LIB_GHOST
-  typedef ghost_densemat MV;
-  typedef phist::GhostMV AnasaziMV;
-#elif defined(PHIST_KERNEL_LIB_TPETRA)
-  typedef phist::tpetra::Traits<ST>::mvec_t MV;
-  typedef MV AnasaziMV;
-#elif defined(PHIST_KERNEL_LIB_EPETRA)
-  typedef Epetra_MultiVector MV; 
-  typedef MV AnasaziMV;
-#else
+
   typedef st::mvec_t MV;
-  typedef phist::MultiVector< _ST_ > AnasaziMV;
-#endif
+  typedef phist::BelosMV< _ST_ > AnasaziMV;
+
   typedef st::linearOp_t OP; // gives Sop_t, Dop_t etc.
   typedef Anasazi::MultiVecTraits<ST,AnasaziMV> MVT;
 
@@ -95,7 +78,7 @@ extern "C" void SUBR(anasazi)(      TYPE(const_linearOp_ptr) A_op, TYPE(const_li
   // create a nice wrapper for std::cout. Note that we do not allow
   // the stream to 'delete' std::cout by passing 'false' to the rcp() function
   Teuchos::RCP<Teuchos::FancyOStream> out = 
-        Teuchos::rcp(new Teuchos::FancyOStream(Teuchos::rcp(&std::cout,false)));
+        Teuchos::rcp(new Teuchos::FancyOStream(Teuchos::rcp(phist_get_CXX_output_stream(),false)));
 
   // customize output behavior a little:
   out->setOutputToRootOnly(0);
@@ -130,7 +113,7 @@ extern "C" void SUBR(anasazi)(      TYPE(const_linearOp_ptr) A_op, TYPE(const_li
 #endif
   anasaziList->set("Verbosity",verb);
 
-  anasaziList->set("Output Stream",out->getOStream());
+  anasaziList->set("Output Stream",out);
   
   Teuchos::RCP<Anasazi::Eigenproblem<ST,AnasaziMV,OP> > eigenProblem
         = Teuchos::rcp(new Anasazi::BasicEigenproblem<ST,AnasaziMV,OP>());

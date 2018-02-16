@@ -40,5 +40,10 @@ void SUBR( blockedBiCGStab_iterate ) (TYPE(const_linearOp_ptr) Op,
                 TYPE(const_mvec_ptr) rhs, TYPE(mvec_ptr) sol, TYPE(const_mvec_ptr) V,
                 int numSys, int *nIter, _MT_ const tol[], int* iflag);
 
+//! BiCGStab for just one vector 
+void SUBR( BiCGStab ) (TYPE(const_linearOp_ptr) Op,
+                                TYPE(const_linearOp_ptr) rightPreconOp,
+                                TYPE(const_mvec_ptr) rhs, TYPE(mvec_ptr) sol,
+                                int* nIter, _MT_ const tol, int* iflag);
 //@}
 //@}

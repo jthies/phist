@@ -8,13 +8,21 @@
 /*******************************************************************************************/
 #include "phist_config.h"
 
-#ifdef PHIST_HAVE_SP
+#if defined(PHIST_HAVE_SP)&&defined(PHIST_HAVE_CMPLX)
+
+#if defined(PHIST_KERNEL_LIB_TPETRA)
+#include "TpetraCore_config.h"
+# ifndef HAVE_TPETRA_INST_COMPLEX_FLOAT
+# undef PHIST_HAVE_BELOS
+# endif
+#endif
 
 #include "phist_tools.h"
-#include "phist_kernels.h"
-#include "phist_operator.h"
+#include "phist_kernels.hpp"
+#include "phist_core.hpp"
 #include "phist_ScalarTraits.hpp"
 #include "phist_belos.h"
+#include "phist_MemOwner.hpp"
 
 #ifdef PHIST_HAVE_BELOS
 
@@ -24,30 +32,11 @@
 #include "Teuchos_StandardCatchMacros.hpp"
 #include "Teuchos_FancyOStream.hpp"
 
-#include "phist_rcp_helpers.hpp"
-
-# ifdef PHIST_KERNEL_LIB_GHOST
-#  include "ghost.h"
-#  include "Belos_GhostAdapter.hpp"
-# elif defined(PHIST_KERNEL_LIB_EPETRA)
-#  include "Epetra_MultiVector.h"
-#  include "BelosEpetraAdapter.hpp"
-# elif defined(PHIST_KERNEL_LIB_TPETRA)
-#  include "Tpetra_MultiVector.hpp"
-#  include "BelosTpetraAdapter.hpp"
-#  include "phist_tpetra_typedefs.hpp"
-# else
-// use general phist interface to Belos (may not be complete)
-#  warning "Belos not supported for this kernel lib"
-#  undef PHIST_HAVE_BELOS
-# endif
-
+#include "phist_BelosMV.hpp"
+#include "Belos_PhistAdapter.hpp"
 #include "phist_BelosOperatorTraits.hpp"
-#endif
 
-
-// GMRES solver manager from the Belos package
-#ifdef PHIST_HAVE_BELOS
+#include "BelosICGSOrthoManager.hpp"
 #include "BelosSolverManager.hpp"
 #include "BelosBlockGmresSolMgr.hpp"
 #include "BelosPseudoBlockGmresSolMgr.hpp"
@@ -55,9 +44,6 @@
 #include "BelosPseudoBlockCGSolMgr.hpp"
 #endif
 
-#ifdef PHIST_KERNEL_LIB_EPETRA
-#undef PHIST_HAVE_BELOS
-#endif
 
 #include "phist_gen_c.h"
 #include "phist_belos_def.hpp"

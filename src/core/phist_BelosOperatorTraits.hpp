@@ -20,9 +20,9 @@
 
 #ifdef PHIST_HAVE_BELOS
 
-#include "phist_rcp_helpers.hpp"
 #include "phist_operator.h"
 #include "phist_ScalarTraits.hpp"
+#include "phist_BelosMV.hpp"
 #include "BelosTypes.hpp"
 #include <BelosOperatorTraits.hpp>
 
@@ -42,17 +42,15 @@ namespace Belos {
   //
   ////////////////////////////////////////////////////////////////////
 
-  /// \brief Partial specialization of OperatorTraits for phist_linearOp_t.
-  /// Note: this is only going to work if MV is the class used by the kernel
-  /// library, for instance, you can't compile phist with PHIST_KERNEL_LIB=
-  /// tpetra and then use ghost vectors in Belos.
-  template <class Scalar, class MV> 
-  class OperatorTraits <Scalar, MV, typename phist::ScalarTraits<Scalar>::linearOp_t >
-  {
+/// \brief Partial specialization of OperatorTraits for phist_linearOp_t.
+template <typename ST>
+class OperatorTraits <ST, ::phist::BelosMV<ST>, typename phist::ScalarTraits<ST>::linearOp_t >
+{
   public:
 
-    typedef typename phist::ScalarTraits<Scalar>::linearOp_t phist_linearOp_t;
-    typedef typename phist::ScalarTraits<Scalar>::mvec_t phist_mvec_t;
+    typedef typename phist::ScalarTraits<ST>::linearOp_t phist_linearOp_t;
+    typedef typename phist::ScalarTraits<ST>::mvec_t phist_mvec_t;
+    typedef phist::BelosMV<ST> MV;
 
     static void 
     Apply (const phist_linearOp_t& Op, 
@@ -60,12 +58,12 @@ namespace Belos {
      MV& Y,
      ETrans trans=NOTRANS)
     {
-    TEUCHOS_TEST_FOR_EXCEPTION(trans!=NOTRANS,std::invalid_argument,
-          "Belos::OperatorTraits<Scalar,MV,phist_linearOp_t>:: Apply: only implemented for trans=NOTRANS up to now.");
-    int iflag;
-    Scalar alpha = phist::ScalarTraits<Scalar>::one();
-    Scalar beta = phist::ScalarTraits<Scalar>::zero();
-    Op.apply(alpha,Op.A,phist::ref2ptr(X), beta, phist::ref2ptr(Y),&iflag);
+      TEUCHOS_TEST_FOR_EXCEPTION(trans!=NOTRANS,std::invalid_argument,
+          "Belos::OperatorTraits<ST,MV,phist_linearOp_t>:: Apply: only implemented for trans=NOTRANS up to now.");
+      int iflag=0;
+      ST alpha = phist::ScalarTraits<ST>::one();
+      ST beta = phist::ScalarTraits<ST>::zero();
+      Op.apply(alpha,Op.A,X.get(), beta, Y.get(),&iflag);
     }
 
     static bool
@@ -73,7 +71,7 @@ namespace Belos {
     {
       return false;
     }
-  };
+};
 
 } // end of Belos namespace 
 #endif /* PHIST_HAVE_BELOS */

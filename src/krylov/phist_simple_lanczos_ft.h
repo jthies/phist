@@ -26,7 +26,7 @@
 
 #ifdef __cplusplus
 extern "C" {
-#endif	// CPP
+#endif        // CPP
 #ifdef PHIST_HAVE_SP
 #include "phist_gen_s.h"
 #include "phist_simple_lanczos_ft_decl.h"
@@ -42,6 +42,6 @@ extern "C" {
 
 #ifdef __cplusplus
 }
-#endif	// CPP
+#endif        // CPP
 
-#endif	// header
+#endif        // header

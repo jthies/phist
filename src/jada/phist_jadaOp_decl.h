@@ -57,4 +57,10 @@ void SUBR(jadaPrec_create)(TYPE(const_linearOp_ptr) P_op,
 //! The effect of the apply function will afterwards by Y <- alpha*(jadaPrec*jadaOp*X) + beta*Y,
 //! the projections used are determined by the AB_op and jadaPrec operators. If jadaPrec==NULL, 
 //! the operator is reset to it's original effect.
-void SUBR(jadaOp_set_leftPrecond)(TYPE(linearOp_ptr) jadaOp, TYPE(const_linearOp_ptr) jadaPrec, int* iflag);
+void SUBR(jadaOp_set_leftPrecond)(TYPE(linearOp_ptr) jadaOp, TYPE(const_linearOp_ptr) jadaPrec, int* iflag);		
+
+// create projection Operator
+// Y <- alpha*(I - W*V')X + beta*Y
+void SUBR(projection_Op_create)(TYPE(const_mvec_ptr) V, TYPE(const_mvec_ptr) W, TYPE(linearOp_ptr) proj_Op, int* iflag);
+
+void SUBR(projection_Op_delete)(TYPE(linearOp_ptr) proj_Op, int *iflag);					 

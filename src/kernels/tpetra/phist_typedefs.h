@@ -31,10 +31,11 @@
 
 #ifdef __cplusplus
 //! single precision complex type
-typedef std::complex<float> phist_s_complex;
-typedef std::complex<double> phist_d_complex;
+using phist_s_complex = std::complex<float>;
+//! double precision complex type
+using phist_d_complex = std::complex<double>;
 //! type of global indices
-typedef std::ptrdiff_t phist_gidx;
+using phist_gidx = std::ptrdiff_t;
 #else
 typedef float complex phist_s_complex;
 typedef double complex phist_d_complex;

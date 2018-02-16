@@ -22,10 +22,19 @@
 #include <cstdio>
 #include <exception>
 #include <string>
+#include <iostream>
 #else
 #include <stdio.h>
 #endif
 #include "phist_defs.h"
+#endif /* DOXYGEN */
+
+#ifdef __cplusplus
+  extern "C" {
+#endif
+  void phist_printf(int outlev, int rootOnly, const char* msg, ...);
+#ifdef __cplusplus
+} // extern "C"
 #endif
 
 /* print a warning that an untested / experimental function is called */
@@ -36,71 +45,46 @@
 #define PHIST_TOUCH(x) (void)(x);
 #endif
 
-#ifdef PHIST_HAVE_MPI
-#define PHIST_OUT(level,msg, ...) {\
-        if(PHIST_OUTLEV >= level) {\
-                FILE* PHIST_OUT_out= (level<=PHIST_WARNING)? stderr:stdout;\
-                int PHIST_OUT_me,PHIST_OUT_np,PHIST_OUT_ini,PHIST_OUT_fini;\
-                MPI_Initialized(&PHIST_OUT_ini); \
-                if (PHIST_OUT_ini) MPI_Finalized(&PHIST_OUT_fini); \
-                if (PHIST_OUT_ini && (!PHIST_OUT_fini)) { \
-                MPI_Comm_rank(MPI_COMM_WORLD,&PHIST_OUT_me);\
-                MPI_Comm_size(MPI_COMM_WORLD,&PHIST_OUT_np);\
-                } else {PHIST_OUT_me=0; PHIST_OUT_np=1;}\
-                if (PHIST_OUT_np>1) \
-                {fprintf(PHIST_OUT_out,"PE%d: " msg,PHIST_OUT_me,##__VA_ARGS__);}\
-                else \
-                {fprintf(PHIST_OUT_out,msg,##__VA_ARGS__);}\
-                fflush(PHIST_OUT_out);\
-        }\
-}
-#else
-#define PHIST_OUT(level,msg, ...) {\
-        if(PHIST_OUTLEV >= level) {\
-                FILE* PHIST_OUT_out= (level<=PHIST_WARNING)? stderr:stdout;\
-                fprintf(PHIST_OUT_out,msg,##__VA_ARGS__);\
-                fflush(PHIST_OUT_out);\
-                }\
-        }
-#endif
+/*! macro to print a C-style message (optionally with arguments) to the phist default stream
+    if the given level<=PHIST_OUTLEV. The message is printed on all MPI ranks and prefixed with
+    the MPI rank.
+ */
+#define PHIST_OUT(level,msg, ...) phist_printf(level,0,(const char*)msg, ##__VA_ARGS__);
+
+/*! similar to PHIST_OUT but only rank 0 in the phist default communicator prints the message, and the prefix is 
+omitted.
+*/
+#define PHIST_SOUT(level,msg, ...) phist_printf(level,1,(const char*)msg, ##__VA_ARGS__);
 
 #ifdef PHIST_HAVE_MPI
-#define PHIST_SOUT(level,msg, ...) {\
-        if(PHIST_OUTLEV >= level) {\
-                FILE* PHIST_OUT_out= (level<=PHIST_WARNING)? stderr:stdout;\
-                int PHIST_OUT_me,PHIST_OUT_ini,PHIST_OUT_fini;\
-                MPI_Initialized(&PHIST_OUT_ini); \
-                if (PHIST_OUT_ini) MPI_Finalized(&PHIST_OUT_fini); \
-                if (PHIST_OUT_ini && (!PHIST_OUT_fini)) { \
-                MPI_Comm_rank(MPI_COMM_WORLD,&PHIST_OUT_me);\
-                } else {PHIST_OUT_me=0;}\
-                if(PHIST_OUT_me==0){\
-                fprintf(PHIST_OUT_out,msg,##__VA_ARGS__);\
-                fflush(PHIST_OUT_out);}\
-        }\
-}
-#define PHIST_ORDERED_OUT(level,mpicomm,msg, ...) { \
-        if(PHIST_OUTLEV >= level) {\
-                FILE* PHIST_OUT_out= (level<=PHIST_WARNING)? stderr:stdout;\
-                phist_ordered_fprintf(PHIST_OUT_out,mpicomm,msg,##__VA_ARGS__);\
-        }\
+#define PHIST_ORDERED_OUT(level,mpicomm,msg, ...) {                                  \
+        if(PHIST_OUTLEV >= level) {                                                  \
+                phist_ordered_fprintf(mpicomm, (const char*)msg, ##__VA_ARGS__);     \
+        }                                                                            \
 }
 #else
-#define PHIST_SOUT(level,msg, ...) {\
-        if(PHIST_OUTLEV >= level) {\
-                FILE* PHIST_OUT_out= (level<=PHIST_WARNING)? stderr:stdout;\
-                fprintf(PHIST_OUT_out,msg,##__VA_ARGS__);\
-                fflush(PHIST_OUT_out);\
-        }\
-}
-#define PHIST_ORDERED_OUT(level,mpicomm,msg, ...) PHIST_SOUT(level,msg,##__VA_ARGS__);
+#define PHIST_ORDERED_OUT(level,mpicomm,msg, ...) PHIST_SOUT(level, (const char*)msg, ##__VA_ARGS__);
 #endif
 
+#define PHIST_WARN_MISSING_KERNEL(function_name) \
+  {\
+    static bool first_time=true;\
+    if (first_time)\
+    {\
+      PHIST_SOUT(PHIST_PERFWARNING,"using default implementation of function %s, if this kernel \n"\
+                               "figures prominently in your timings, you may want to provide an implementation \n"\
+                               "or try a different kernel library.\n",function_name);\
+      first_time=false;\
+    }\
+  }
+                                                                                        
 
 // "line-level" timings using PHIST_CHK macros
 #if defined(__cplusplus) && defined(PHIST_TIMEMONITOR_PERLINE)
-#include "phist_timemonitor.hpp"
-#include <string>
+#ifndef DOXYGEN
+# include "phist_timemonitor.hpp"
+# include <string>
+#endif /* DOXYGEN */
 #define PHIST_STRINGIFY_MACRO(l) #l
 #define PHIST_FILE_LINE_REMOVE_PATH(f) (strrchr(f, '/') ? strrchr(f, '/') + 1 : f)
 #define PHIST_FILE_LINE_MACRO(f,l) PHIST_FILE_LINE_REMOVE_PATH(f ":" PHIST_STRINGIFY_MACRO(l))

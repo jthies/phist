@@ -247,7 +247,7 @@ class CLASSNAME: public KernelTestWithSdMats<_ST_,_N_,_N_>
       // check that the first nselect are the largest/smallest etc globally
       if( nselect > 0 )
       {
-        MT val;
+        MT val=mt::zero();
         if (which==phist_LM||which==phist_SM) val=ct::abs(ev_[0]);
         else if (which==phist_LR||which==phist_SR) val=ct::real(ev_[0]);
         for (int i=1;i<nselect;i++)

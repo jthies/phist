@@ -51,15 +51,18 @@ public:
 #include "phist_gen_s.h"
 #include "KernelTestWithVectors_def.h"
 
-#include "phist_gen_c.h"
-#include "KernelTestWithVectors_def.h"
-
+# ifdef PHIST_HAVE_CMPLX
+# include "phist_gen_c.h"
+# include "KernelTestWithVectors_def.h"
+# endif
 #endif
 
 #include "phist_gen_d.h"
 #include "KernelTestWithVectors_def.h"
 
+#ifdef PHIST_HAVE_CMPLX
 #include "phist_gen_z.h"
 #include "KernelTestWithVectors_def.h"
+#endif
 
 #endif

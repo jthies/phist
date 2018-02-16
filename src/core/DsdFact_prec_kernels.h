@@ -18,10 +18,6 @@
 #define PHIST_DSDFACT_PREC_KERNELS_H
 
 #include "phist_config.h"
-/* needs to be included before system headers for some intel compilers+mpi */
-#ifdef PHIST_HAVE_MPI
-#include <mpi.h>
-#endif
 
 #ifdef PHIST_SDMATS_ROWMAJOR
 #error "functionality not implemented for row-major sdMats"

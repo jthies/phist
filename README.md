@@ -24,7 +24,7 @@ units' (SIMD/SIMT on GPUs). Standard schemes may not expose sufficient paralleli
 operation on 4, 8 or 32 elements independently. Hence PHIST may for instance solve multiple systems with 
 different shifts and right-hand sides (but the same matrix) simultaneously,
 replacing those that converge. Likewise, pipelining of operations during block orthogonalization allows using faster 
-fused kernels. Another 'pipelining' idea that will be exploited in future versions of PHIST is the reformuation of 
+fused kernels. Another 'pipelining' idea that will be exploited in future versions of PHIST is the reformulation of 
 schemes like CG and GMRES for allowing overlapping communication and computation (see papers on pipelined GMRES by 
 Ghysels et al).
 
@@ -35,7 +35,9 @@ and CUDA, whereas Epetra implements no additional parallelism beyond MPI
 (see [ this wiki page ](https://bitbucket.org/essex/phist/wiki/User_Guide/030 Kernel Libraries.wiki#!supported-kernel-libraries) 
 for details on the supported kernel libraries).
 
-More information can be found in the [ wiki ](https://bitbucket.org/essex/phist/wiki/Home.wiki)
+More high-level information can be found in the [ wiki ](https://bitbucket.org/essex/phist/wiki/Home.wiki). The main source of information on implementation details should be the headers and source code themselves,
+along with the examples found in phist/drivers/ and phist/examples/. It is possible to generate HTML documentation using Doxygen (just type 'make doc' in your build directory, and the output is written to
+phist/doc/html). However, this documentation is not always complete and well-formatted or structured.
 
 
 Trying it out

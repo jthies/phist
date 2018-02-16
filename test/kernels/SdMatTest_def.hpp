@@ -13,13 +13,24 @@
 #define PHIST_HIGH_PRECISION_KERNELS
 #endif
 
+#ifdef PHIST_KERNEL_LIB_TPETRA__disabled
+#define DO_TPETRA_TESTS 1
+#endif
+
+#ifdef DO_TPETRA_TESTS
+#include "Tpetra_MultiVector.hpp"
+#include "Kokkos_Core.hpp"
+#include "Kokkos_View.hpp"
+#include "Teuchos_FancyOStream.hpp"
+#endif
+
 /*! Test fixure. */
 class CLASSNAME: public KernelTestWithSdMats<_ST_,_NROWS_,_NCOLS_,_USE_VIEWS_> 
-  {
+{
 
 public:
 
-  typedef KernelTestWithSdMats<_ST_,_NROWS_,_NCOLS_,_USE_VIEWS_> MTest;
+  typedef KernelTestWithSdMats<ST,_NROWS_,_NCOLS_,_USE_VIEWS_> MTest;
 
   /*! Set up routine.
    */
@@ -32,7 +43,7 @@ public:
         ASSERT_EQ(0,iflag_);
       SUBR(sdMat_sync_values)(mat1_, comm_, &iflag_);
       ASSERT_EQ(0,iflag_);
-      SUBR(sdMat_put_value)(mat2_,(ST)42.0,&iflag_);
+      SUBR(sdMat_put_value)(mat2_,ST(42.0),&iflag_);
         ASSERT_EQ(0,iflag_);
       SUBR(sdMat_random)(mat3_,&iflag_);
         ASSERT_EQ(0,iflag_);
@@ -48,10 +59,129 @@ public:
     MTest::TearDown();
   }
 
+#if DO_TPETRA_TESTS
+
+  bool check_entries(TYPE(sdMat_ptr) M, int imin, int imax, int jmin, int jmax)
+  {
+/*
+    std::cout << "range: "<<imin<<":"<<imax<<","<<jmin<<":"<<jmax<<std::endl;
+    Teuchos::FancyOStream ofs(Teuchos::rcp(&std::cout,false));
+    ((Tpetra::MultiVector<ST,phist_lidx,phist_gidx>*)M)->describe(ofs,Teuchos::VERB_EXTREME);
+*/
+    ST* M_raw=nullptr;
+    phist_lidx ldM;
+    int nrows, ncols;
+    int iflag;
+    SUBR(sdMat_extract_view)(M,&M_raw, &ldM, &iflag);
+    if (iflag) return false;
+    SUBR(sdMat_get_nrows)(M,&nrows,&iflag);
+    if (iflag) throw iflag;
+    SUBR(sdMat_get_ncols)(M,&ncols,&iflag);
+    if (iflag) throw iflag;
+    if (nrows!=(imax-imin+1)) return false;
+    if (ncols!=(jmax-jmin+1)) return false;
+    bool result=true;
+    for (int j=0; j<ncols; j++)
+      for (int i=0; i<nrows; i++)
+      {
+        int ii=imin+i+1;
+        int jj=jmin+j+1;
+        result &= M_raw[MIDX(i,j,ldM)]==ST(ii*1000+jj);
+      }
+#if PHIST_OUTLEV>=PHIST_DEBUG
+    if (!result) 
+    {
+      std::ostringstream os;
+      os << "Tpetra view test: M("<<imin<<":"<<imax<<","<<jmin<<":"<<jmax<<") looks incorrect:\n";
+      for (int i=0; i<nrows; i++)
+      {
+        for (int j=0; j<ncols; j++)
+        {
+          os << "\t"<<M_raw[MIDX(i,j,ldM)];
+        }
+        os << "\n";
+      }
+      std::cout << os.str()<<std::endl;
+    }
+#endif
+    return result;
+  }
+  
+  bool check_entries_recursive(TYPE(sdMat_ptr) M, int imin, int imax, int jmin, int jmax)
+  {
+    TYPE(sdMat_ptr) Msub=nullptr;
+    int iflag=0;
+    bool result_this_level=check_entries(M,imin,imax,jmin,jmax);
+    if (!result_this_level || (imax-imin==1 && jmax-jmin==1)) return result_this_level;
+    bool other_results=true;
+    for (int i0=imin; i0<=imax; i0++)
+    for (int i1=i0; i1<=imax; i1++)
+    for (int j0=jmin; j0<=jmax; j0++)
+    for (int j1=j0; j1<=jmax; j1++)
+    {
+      if (i0==imin && i1==imax && j0==jmin && j1==jmax) continue;
+      int nrsub=i1-i0+1, ncsub=j1-j0+1;
+      SUBR(sdMat_view_block)(M,&Msub,i0-imin,i1-imin,j0-jmin,j1-jmin,&iflag);
+      if (iflag) throw iflag;
+      bool this_result=check_entries_recursive(Msub,i0,i1,j0,j1);
+      if (this_result==false) 
+      {
+        other_results=false;
+        PHIST_OUT(PHIST_DEBUG,"subview(%d:%d,%d:%d) was incorrect!\n",i0,i1,j0,j1);
+        break;
+      }
+    }
+    if (Msub!=nullptr) SUBR(sdMat_delete)(Msub,&iflag);
+    if (iflag) throw iflag;
+    return other_results;
+  }
+#endif
   /*! internal tests for forward/backward substition
    */
   void doForwardBackwardTestsWithPreparedMat3(int rank, int* perm);
 };
+
+
+#ifdef DO_TPETRA_TESTS
+
+  TEST_F(CLASSNAME, tpetra_data_layout)
+  {
+    if (!typeImplemented_) return;
+    typedef Tpetra::MultiVector<ST,phist_lidx,phist_gidx> tpetra_mvec;
+    ASSERT_TRUE(m_lda_>=nrows_);
+    tpetra_mvec* M=(tpetra_mvec*)mat1_;
+    auto Mview = M->getLocalView<Kokkos::HostSpace>();
+    bool offsets_match_lda=true;
+    for (int j=0; j<ncols_-1; j++)
+    {
+      for (int i=0; i<nrows_; i++)
+      {
+        offsets_match_lda &= (&(Mview(i,j+1)) - &(Mview(i,j))==m_lda_);
+      }
+    }
+    ASSERT_TRUE(offsets_match_lda);
+  }
+
+  TEST_F(CLASSNAME, DISABLED_tpetra_nested_view_block)
+  {
+    typedef Tpetra::MultiVector<ST,phist_lidx,phist_gidx> tpetra_mvec;
+
+    tpetra_mvec* M=(tpetra_mvec*)mat1_;
+    auto Mkokkos = M->getLocalView<Kokkos::HostSpace>();
+    
+    for (int i=0; i<nrows_; i++)
+    {
+      for (int j=0; j<ncols_; j++)
+      {
+        Mkokkos(i,j) = ST((i+1)*1000+(j+1));
+      }
+    }
+    bool all_views_correct=check_entries_recursive(mat1_,0,nrows_-1,0,ncols_-1);
+    ASSERT_TRUE(all_views_correct);
+  }
+
+#endif
+
 
   TEST_F(CLASSNAME, get_attributes)
   {
@@ -88,7 +218,7 @@ public:
     if (typeImplemented_)
     {
       int stride=1;
-      _ST_ val=st::prand();
+      ST val=st::prand();
       SUBR(sdMat_put_value)(mat1_,val,&iflag_);
       ASSERT_EQ(0,iflag_);
       EXPECT_REAL_EQ(mt::one(),ArrayEqual(mat1_vp_,nrows_,ncols_,m_lda_,stride,val,mflag_));
@@ -102,10 +232,9 @@ public:
   {
     if (typeImplemented_)
     {
-      int stride=1;
       SUBR(sdMat_random)(mat1_,&iflag_);
       ASSERT_EQ(0,iflag_);
-      _ST_ sum1=st::zero();
+      ST sum1=st::zero();
       for (int i=0; i<nrows_; i++)
       {
         for (int j=0; j<ncols_; j++)
@@ -115,7 +244,7 @@ public:
       }
       SUBR(sdMat_from_device)(mat1_,&iflag_);
       ASSERT_EQ(0,iflag_);
-      _ST_ sum2=st::zero();
+      ST sum2=st::zero();
       for (int i=0; i<nrows_; i++)
       {
         for (int j=0; j<ncols_; j++)
@@ -184,7 +313,7 @@ public:
   {
     if (typeImplemented_)
     {
-      _ST_ a0=(_ST_)((mpi_rank_+1)*1234);
+      ST a0=ST((mpi_rank_+1)*1234);
       SUBR(sdMat_put_value)(mat1_,a0,&iflag_);
       ASSERT_EQ(0,iflag_);
       SUBR(sdMat_put_value)(mat2_,a0,&iflag_);
@@ -212,7 +341,7 @@ public:
       ASSERT_EQ(0,iflag_);
       SUBR(sdMat_to_device)(mat2_,&iflag_);
       ASSERT_EQ(0,iflag_);
-      TYPE(sdMat_ptr) mat1v=NULL;
+      TYPE(sdMat_ptr) mat1v=nullptr;
       SUBR(sdMat_view_block)(mat1_,&mat1v,i0,i1,j0,j1,&iflag_);
       ASSERT_EQ(0,iflag_);
       SUBR(sdMat_sync_values)(mat1v,comm_,&iflag_);
@@ -237,6 +366,8 @@ public:
       ASSERT_EQ(0,iflag_);
 
       ASSERT_REAL_EQ(mt::one(),SdMatsEqual(mat1_,mat2_));
+      ASSERT_EQ(true,pointerUnchanged(mat1_,mat1_vp_,m_lda_));
+      ASSERT_EQ(true,pointerUnchanged(mat2_,mat2_vp_,m_lda_));
     }
 
   }
@@ -246,19 +377,18 @@ public:
   {
     if (typeImplemented_)
     {
-      int stride = 1;
       ST alpha = st::zero();
       ST beta  = st::prand();
       PHIST_OUT(9,"axpy, alpha=%f+%f i, beta=%f+%f i\n",st::real(alpha),
           st::imag(alpha),st::real(beta),st::imag(beta));
 #if PHIST_OUTLEV>=PHIST_DEBUG
-      MTest::PrintSdMat(PHIST_DEBUG,"before scale",mat2_vp_,m_lda_,stride,mpi_comm_);
+      MTest::PrintSdMat(PHIST_DEBUG,"before scale",mat2_vp_,m_lda_,1,mpi_comm_);
 #endif
       SUBR(sdMat_add_sdMat)(alpha,mat1_,beta,mat2_,&iflag_);
 #if PHIST_OUTLEV>=PHIST_DEBUG
-      MTest::PrintSdMat(PHIST_DEBUG,"after scale",mat2_vp_,m_lda_,stride,mpi_comm_);
+      MTest::PrintSdMat(PHIST_DEBUG,"after scale",mat2_vp_,m_lda_,1,mpi_comm_);
 #endif
-      ASSERT_NEAR(mt::one(),SdMatEqual(mat2_,beta*((ST)42.0)),mt::sqrt(mt::eps()));
+      ASSERT_NEAR(mt::one(),SdMatEqual(mat2_,beta*ST(42.0)),mt::sqrt(mt::eps()));
     }
   }
 
@@ -278,7 +408,7 @@ public:
       {
         for(int j = 0; j < ncols_; j++)
         {
-          mat1_vp_[MIDX(i,j,m_lda_)] = alpha*mat1_vp_[MIDX(i,j,m_lda_)]+(ST)42.0*beta;
+          mat1_vp_[MIDX(i,j,m_lda_)] = alpha*mat1_vp_[MIDX(i,j,m_lda_)]+ST(42.0)*beta;
         }
       }
       ASSERT_NEAR(mt::one(),SdMatsEqual(mat1_,mat2_),mt::sqrt(mt::eps()));
@@ -301,7 +431,7 @@ public:
       {
         for(int j = 0; j < ncols_; j++)
         {
-          mat3_vp_[MIDX(i,j,m_lda_)] = alpha*st::conj(mat1_vp_[MIDX(j,i,m_lda_)])+(ST)42.0*beta;
+          mat3_vp_[MIDX(i,j,m_lda_)] = alpha*st::conj(mat1_vp_[MIDX(j,i,m_lda_)])+ST(42.0)*beta;
         }
       }
       ASSERT_NEAR(mt::one(),SdMatsEqual(mat3_,mat2_),mt::sqrt(mt::eps()));
@@ -312,27 +442,24 @@ public:
   // view certain rows and columns of a serial dense matrix,
   // manipulate them and check the original matrix has changed.
   TEST_F(CLASSNAME, view_block)
-    {
+  {
     if (typeImplemented_)
-      {
-      int stride=1;
+    {
       int imin=std::min(2,nrows_-1);
       int imax=std::min(4,nrows_-1);
       int jmin=std::min(1,ncols_-1);
       int jmax=std::min(3,ncols_-1);
-      TYPE(sdMat_ptr) m1_view=NULL;
+      int stride=1;
+      TYPE(sdMat_ptr) m1_view=nullptr;
       SUBR(sdMat_view_block)(mat1_,&m1_view,imin,imax,jmin,jmax,&iflag_);
       ASSERT_EQ(0,iflag_);
 
-      _ST_* val_ptr;
+      ST* val_ptr;
       phist_lidx lda;
       SUBR(sdMat_extract_view)(m1_view,&val_ptr,&lda,&iflag_);
       ASSERT_EQ(0,iflag_);
-#if PHIST_SDMAT_ROW_MAJOR
-      if( imax-imin > 1 ) {
-#else
-      if( jmax-jmin > 1 ) {
-#endif
+      if( jmax-jmin > 1 ) 
+      {
         ASSERT_EQ(lda,m_lda_);
       }
 
@@ -345,18 +472,15 @@ public:
       
       SUBR(sdMat_extract_view)(m1_view,&val_ptr,&lda,&iflag_);
       ASSERT_EQ(0,iflag_);
-#if PHIST_SDMAT_ROW_MAJOR
-      if( imax-imin > 1 ) {
-#else
-      if( jmax-jmin > 1 ) {
-#endif
+      if( jmax-jmin > 1 ) 
+      {
         ASSERT_EQ(lda,m_lda_);
       }
       ASSERT_REAL_EQ(mt::one(),ArraysEqual(mat1_vp_+MIDX(imin,jmin,m_lda_),val_ptr,imax-imin+1,jmax-jmin+1,m_lda_,stride,mflag_));
 
       // set all the viewed entries to a certain value and check that the original vector is
       // changed.
-      _ST_ val = random_number();
+      ST val = random_number();
       SUBR(sdMat_put_value)(m1_view,val,&iflag_);
       ASSERT_EQ(0,iflag_);
 
@@ -370,8 +494,8 @@ public:
 
       SUBR(sdMat_delete)(m1_view,&iflag_);
       ASSERT_EQ(0,iflag_);
-      }
     }
+  }
 
   // create a view of a view and check if this behaves as the user would suspect
   // (not knowing wether a sdmat is actually a view or not!)
@@ -380,7 +504,7 @@ public:
     if (typeImplemented_)
     {
       // first set some data of the whole array
-      _ST_ outer_val = st::prand();
+      ST outer_val = st::prand();
       SUBR(sdMat_put_value)(mat1_,outer_val,&iflag_);
       ASSERT_EQ(0,iflag_);
       
@@ -389,12 +513,12 @@ public:
       int imax=std::min(7,nrows_-1);
       int jmin=std::min(2,ncols_-1);
       int jmax=std::min(5,ncols_-1);
-      TYPE(sdMat_ptr) view = NULL;
+      TYPE(sdMat_ptr) view = nullptr;
       SUBR(sdMat_view_block)(mat1_,&view,imin,imax,jmin,jmax,&iflag_);
       ASSERT_EQ(0,iflag_);
 
       // set the data in the view to some other value
-      _ST_ view_val = st::prand();
+      ST view_val = st::prand();
       SUBR(sdMat_put_value)(view,view_val,&iflag_);
       ASSERT_EQ(0,iflag_);
 
@@ -406,12 +530,12 @@ public:
       int imax2=std::min(4,nrows_view-1);
       int jmin2=std::min(1,ncols_view-1);
       int jmax2=std::min(3,ncols_view-1);
-      TYPE(sdMat_ptr) view2 = NULL;
+      TYPE(sdMat_ptr) view2 = nullptr;
       SUBR(sdMat_view_block)(view, &view2, imin2,imax2,jmin2, jmax2, &iflag_);
       ASSERT_EQ(0,iflag_);
       
       // set data in the inner view to yet another value
-      _ST_ inner_val = st::prand();
+      ST inner_val = st::prand();
       SUBR(sdMat_put_value)(view2, inner_val, &iflag_);
       ASSERT_EQ(0,iflag_);
 
@@ -469,7 +593,7 @@ public:
       int imax=std::min(4,nrows_-1);
       int jmin=std::min(1,ncols_-1);
       int jmax=std::min(3,ncols_-1);
-      TYPE(sdMat_ptr) m1_copy=NULL;
+      TYPE(sdMat_ptr) m1_copy=nullptr;
       
       // set m2=m1 to check later
       SUBR(sdMat_add_sdMat)(st::one(),mat1_,st::zero(),mat2_,&iflag_);
@@ -490,13 +614,13 @@ public:
       PHIST_SOUT(PHIST_DEBUG,"This should be a copy of those columns:\n");
       SUBR(sdMat_print)(m1_copy,&iflag_);
 #endif      
-      _ST_* val_ptr;
+      ST* val_ptr;
       phist_lidx lda;
       SUBR(sdMat_extract_view)(m1_copy,&val_ptr,&lda,&iflag_);
       ASSERT_EQ(0,iflag_);
       
       //note: can't use ArraysEqual here because we (may) have different strides      
-      _MT_ maxval=mt::zero();
+      MT maxval=mt::zero();
       for (int i=imin;i<=imax;i++)
         {
         for (int j=jmin;j<jmax;j++)
@@ -513,7 +637,7 @@ public:
 
       // set all the copied entries to a certain value and check that the original vector 
       // is not changed.
-      _ST_ val = random_number();
+      ST val = random_number();
       SUBR(sdMat_put_value)(m1_copy,val,&iflag_);
       ASSERT_EQ(0,iflag_);
       
@@ -567,7 +691,7 @@ public:
         }
       ASSERT_EQ(0,iflag_);
       // check result
-      ASSERT_NEAR(mt::one(),ArrayEqual(mat2_vp_,nrows_,ncols_,m_lda_,1,(ST)42.0,mflag_),mt::sqrt(mt::eps()));
+      ASSERT_NEAR(mt::one(),ArrayEqual(mat2_vp_,nrows_,ncols_,m_lda_,1,ST(42.0),mflag_),mt::sqrt(mt::eps()));
     }
   }
 
@@ -606,7 +730,7 @@ public:
         }
       }
       // check result
-      ASSERT_NEAR(mt::one(),ArrayEqual(mat2_vp_,nrows_,ncols_,m_lda_,1,(ST)42.0,mflag_),mt::sqrt(mt::eps()));
+      ASSERT_NEAR(mt::one(),ArrayEqual(mat2_vp_,nrows_,ncols_,m_lda_,1,ST(42.0),mflag_),mt::sqrt(mt::eps()));
 
     }
   }
@@ -647,7 +771,7 @@ public:
         }
       }
       // check result
-      ASSERT_NEAR(mt::one(),ArrayEqual(mat2_vp_,nrows_,ncols_,m_lda_,1,(ST)42.0,mflag_),mt::sqrt(mt::eps()));
+      ASSERT_NEAR(mt::one(),ArrayEqual(mat2_vp_,nrows_,ncols_,m_lda_,1,ST(42.0),mflag_),mt::sqrt(mt::eps()));
 
     }
   }
@@ -657,14 +781,14 @@ public:
     if (typeImplemented_ )
     {
       phist_lidx ncols2=std::max(3,ncols_-1);
-      TYPE(sdMat_ptr) matA=mat1_, matB=NULL, matC=NULL;
+      TYPE(sdMat_ptr) matA=mat1_, matB=nullptr, matC=nullptr;
       SUBR(sdMat_create)(&matB,ncols_,ncols2,comm_,&iflag_);
       ASSERT_EQ(0,iflag_);
       SUBR(sdMat_create)(&matC,nrows_,ncols2,comm_,&iflag_);
       ASSERT_EQ(0,iflag_);
       
       phist_lidx ldA=m_lda_,ldB,ldC;
-      _ST_ *matA_vp=mat1_vp_,*matB_vp=NULL,*matC_vp=NULL;
+      ST *matA_vp=mat1_vp_,*matB_vp=nullptr,*matC_vp=nullptr;
       
       SUBR(sdMat_extract_view)(matB,&matB_vp,&ldB,&iflag_);
       ASSERT_EQ(0,iflag_);
@@ -683,7 +807,7 @@ public:
       ASSERT_EQ(0,iflag_);
       SUBR(sdMat_random)(matB,&iflag_);
       ASSERT_EQ(0,iflag_);
-      _ST_ valC=st::one()*(_ST_)42.0 - st::cmplx_I()*((_ST_)3.14);
+      ST valC=st::one()*ST(42.0) - st::cmplx_I()*ST(3.14);
       SUBR(sdMat_put_value)(matC,valC,&iflag_);
       ASSERT_EQ(0,iflag_);
       
@@ -710,7 +834,7 @@ public:
       ASSERT_EQ(0,iflag_);
       SUBR(sdMat_random)(matC,&iflag_);
       ASSERT_EQ(0,iflag_);
-      _ST_ valB=st::one()*(_ST_)1.234 - st::cmplx_I()*((_ST_)2.99);
+      ST valB=st::one()*ST(1.234) - st::cmplx_I()*(ST(2.99));
       SUBR(sdMat_put_value)(matB,valB,&iflag_);
       ASSERT_EQ(0,iflag_);
 
@@ -737,7 +861,7 @@ public:
       ASSERT_EQ(0,iflag_);
       SUBR(sdMat_random)(matB,&iflag_);
       ASSERT_EQ(0,iflag_);
-      _ST_ valA=st::one()*(_ST_)1.5 - st::cmplx_I()*((_ST_)5.1);
+      ST valA=st::one()*ST(1.5) - st::cmplx_I()*ST(5.1);
       SUBR(sdMat_put_value)(matA,valA,&iflag_);
       ASSERT_EQ(0,iflag_);
       
@@ -827,7 +951,7 @@ public:
 
 #ifdef PHIST_KERNEL_LIB_BUILTIN
       // verify prand doesn't "outsync" sdMat_random
-      _ST_ val = st::prand();
+      ST val = st::prand();
       SUBR(sdMat_random)(mat1_, &iflag_);
       ASSERT_EQ(0,iflag_);
       ASSERT_REAL_EQ(mt::one(), ArrayParallelReplicated(mat1_vp_,nrows_,ncols_,m_lda_,stride,mflag_));
@@ -848,7 +972,7 @@ public:
       ASSERT_EQ(0,iflag_);
 
       // set up 4 block views in one matrix to multiply around
-      TYPE(sdMat_ptr) v11 = NULL, v12 = NULL, v21 = NULL, v22 = NULL;
+      TYPE(sdMat_ptr) v11 = nullptr, v12 = nullptr, v21 = nullptr, v22 = nullptr;
       SUBR(sdMat_view_block)(mat1_, &v11, 1,2, 1,2, &iflag_);
       ASSERT_EQ(0,iflag_);
       SUBR(sdMat_view_block)(mat1_, &v21, 3,4, 1,3, &iflag_);
@@ -859,7 +983,7 @@ public:
       ASSERT_EQ(0,iflag_);
 
       // set up left/right and upper/lower block view to add around
-      TYPE(sdMat_ptr) vu = NULL, vd = NULL, vl = NULL, vr = NULL;
+      TYPE(sdMat_ptr) vu = nullptr, vd = nullptr, vl = nullptr, vr = nullptr;
       SUBR(sdMat_view_block)(mat1_, &vu, 0,2, 1,6, &iflag_);
       ASSERT_EQ(0,iflag_);
       SUBR(sdMat_view_block)(mat1_, &vd, 3,5, 1,6, &iflag_);
@@ -875,7 +999,7 @@ public:
       ASSERT_EQ(0,iflag_);
 
       // set up 4 block views in one matrix to multiply around
-      TYPE(sdMat_ptr) ref_v11 = NULL, ref_v12 = NULL, ref_v21 = NULL, ref_v22 = NULL;
+      TYPE(sdMat_ptr) ref_v11 = nullptr, ref_v12 = nullptr, ref_v21 = nullptr, ref_v22 = nullptr;
       SUBR(sdMat_view_block)(mat2_, &ref_v11, 1,2, 1,2, &iflag_);
       ASSERT_EQ(0,iflag_);
       SUBR(sdMat_view_block)(mat2_, &ref_v21, 3,4, 1,3, &iflag_);
@@ -886,7 +1010,7 @@ public:
       ASSERT_EQ(0,iflag_);
 
       // set up left/right and upper/lower block view to add around
-      TYPE(sdMat_ptr) ref_vu = NULL, ref_vd = NULL, ref_vl = NULL, ref_vr = NULL;
+      TYPE(sdMat_ptr) ref_vu = nullptr, ref_vd = nullptr, ref_vl = nullptr, ref_vr = nullptr;
       SUBR(sdMat_view_block)(mat2_, &ref_vu, 0,2, 1,6, &iflag_);
       ASSERT_EQ(0,iflag_);
       SUBR(sdMat_view_block)(mat2_, &ref_vd, 3,5, 1,6, &iflag_);
@@ -898,8 +1022,8 @@ public:
 
 
       // do some operations, always start with result in reference mat2_ views than same on aliasing views in mat1_ and compare
-      _ST_ alpha = 0.7;
-      _ST_ beta = 0.3;
+      ST alpha = 0.7;
+      ST beta = 0.3;
 
       // sdMat_add_sdMat up/down
       SUBR(sdMat_add_sdMat)(alpha, vu, beta, ref_vd, &iflag_);
@@ -990,3 +1114,4 @@ public:
     }
   }
 #endif
+

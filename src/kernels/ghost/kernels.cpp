@@ -20,7 +20,6 @@
 #include "typedefs.hpp"
 
 #include "phist_ghost_internal.h"
-#include "phist_GhostMV.hpp"
 
 #include <ghost.h>
 #include <ghost/machine.h>
@@ -32,16 +31,8 @@
 #include <limits>
 #include <map>
 
-#if defined(PHIST_HAVE_BELOS)||defined(PHIST_HAVE_KOKKOS)
-# if defined(GHOST_IDX64_LOCAL)
-# warning "The interfaces between GHOST and Belos/TSQR cause problems unless you compile GHOST with LONGIDX_GLOBAL but *without* LONGIDX_LOCAL"
-# endif
-#endif
-
 namespace phist 
 {
-
-  int GhostMV::countObjects=0;
 
   namespace ghost_internal
   {
@@ -248,6 +239,7 @@ extern "C" void phist_kernels_init(int* argc, char*** argv, int* iflag)
   // This will not handle the situation correctly where multiple MPI processes
   // are started on a node and rank 1 gets the GPU automatically, I think (cf. #128)
   const char* GHOST_TYPE=getenv("GHOST_TYPE");
+
   if (GHOST_TYPE && !strcasecmp(GHOST_TYPE,"cuda")) num_threads=-1;
   if (num_threads!=-1)
   {
@@ -261,6 +253,14 @@ extern "C" void phist_kernels_init(int* argc, char*** argv, int* iflag)
   ghost_hwconfig_set(hwconfig);
 
   ghost_init(*argc, *argv);
+
+  if (std::getenv("OMP_SCHEDULE") == nullptr)
+  {
+    PHIST_OUT(PHIST_PERFWARNING,"GHOST uses OpenMP scheduling according to the environment variable 'OMP_SCHEDULE'.\n"
+                                "We recommend setting it to e.g. 'static' because the default ('dynamic,1') usually\n"
+                                "leads to rather poor performance.\n");
+  }
+
 
   char *str = NULL;
   ghost_string(&str);
@@ -279,12 +279,6 @@ extern "C" void phist_kernels_init(int* argc, char*** argv, int* iflag)
   ghost_pumap_string(&str);
   PHIST_ORDERED_OUT(PHIST_INFO,MPI_COMM_WORLD,"%s\n",str);
   free(str); str = NULL;
-
-#if defined(PHIST_HAVE_KOKKOS)&&defined(PHIST_HAVE_BELOS)
-   PHIST_SOUT(PHIST_INFO,"TSQR using node-type %s\n",node_type::name().c_str());
-#else
-   PHIST_SOUT(PHIST_DEBUG,"TSQR not available\n");
-#endif
 
   // initialize ghost's task-queue (required for tasks!)
   // (ghost does this also automatically when enqueuing the first task, but we might use
@@ -313,7 +307,7 @@ extern "C" void phist_comm_create(phist_comm_ptr* vcomm, int* iflag)
   *iflag=0;
   // concept doesn't exist in ghost, return MPI_Comm
   MPI_Comm* comm = new MPI_Comm;
-  *comm=MPI_COMM_WORLD;
+  *comm=phist_get_default_comm();
   *vcomm=(phist_comm_ptr)comm;
 }
 

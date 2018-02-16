@@ -78,7 +78,7 @@ extern "C" void phist_comm_create(phist_comm_ptr* vcomm, int* iflag)
 {
   *iflag=0;
 #ifdef PHIST_HAVE_MPI
-  Epetra_Comm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+  Epetra_Comm *comm = new Epetra_MpiComm(phist_get_default_comm());
 #else
   Epetra_Comm *comm = new Epetra_SerialComm;
 #endif
@@ -244,11 +244,16 @@ extern "C" void phist_maps_compatible(phist_const_map_ptr vmap1, phist_const_map
 #include "phist_gen_s.h"
 #include "../common/kernels_no_impl.c"
 
-#include "phist_gen_c.h"
-#include "../common/kernels_no_impl.cpp"
+# ifdef PHIST_HAVE_CMPLX
+# include "phist_gen_c.h"
+# include "../common/kernels_no_impl.cpp"
+# endif
 #endif
+
+#ifdef PHIST_HAVE_CMPLX
 #include "phist_gen_z.h"
 #include "../common/kernels_no_impl.cpp"
+#endif
 
 #include "phist_gen_d.h"
 #include "kernels_def.hpp"

@@ -15,6 +15,7 @@ extern "C" void SUBR(fused_spmv_pair)(_ST_ alpha,
                                                                                     
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
+  PHIST_WARN_MISSING_KERNEL(__FUNCTION__);
 #include "phist_std_typedefs.hpp"
   // call two kernels
   // don't freeze inside here if the first one returns an error on only some processes

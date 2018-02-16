@@ -19,7 +19,7 @@ public:
 static void SetUpTestCase()
 {
   KernelTest::SetUpTestCase();
-  TestWithType::SetUpTestCase();
+  TestWithType< _ST_ >::SetUpTestCase();
 
   if (typeImplemented_)
   {
@@ -247,6 +247,7 @@ static void TearDownTestCase()
   mat1_ = mat2_ = mat3_ = mat4_ = NULL;
   mem1_ = mem2_ = mem3_ = mem4_ = NULL;
 
+  TestWithType< _ST_ >::TearDownTestCase();
   KernelTest::TearDownTestCase();
 }
 

@@ -11,7 +11,7 @@
 #ifdef PHIST_HAVE_IFPACK2
 
 #ifndef PHIST_KERNEL_LIB_TPETRA
-# error "Ifpack only works with Tpetra kernel library!"
+# error "Ifpack2 only works with Tpetra kernel library!"
 #endif
 
 #include "phist_void_aliases.h"
@@ -27,17 +27,36 @@
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
 
+#include "phist_DisallowPreconTraits.hpp"
+
+#include "Teuchos_config.h"
+#include "TpetraCore_config.h"
+
 namespace phist {
+
+/* do not allow instantiating Ifpac2 objects with data types not supported by the 
+   Trilinos instaallation.
+ */
+#if !defined(HAVE_TEUCHOS_FLOAT)||!defined(HAVE_TPETRA_INST_FLOAT)
+PHIST_DISALLOW_PRECON_TRAITS(float,phist_IFPACK)
+#endif
+#if !defined(HAVE_TEUCHOS_FLOAT)||!defined(HAVE_TEUCHOS_COMPLEX)||!defined(HAVE_TPETRA_INST_COMPLEX_FLOAT)
+PHIST_DISALLOW_PRECON_TRAITS(phist_s_complex,phist_IFPACK)
+#endif
+#if !defined(HAVE_TEUCHOS_COMPLEX)||!defined(HAVE_TPETRA_INST_COMPLEX_DOUBLE)
+PHIST_DISALLOW_PRECON_TRAITS(phist_d_complex,phist_IFPACK)
+#endif
 
 template<typename ST>
 class PreconTraits<ST,phist_IFPACK>
 {
 
-  typedef typename tpetra::Traits<ST>::mvec_t mvec_t;
-  typedef typename tpetra::Traits<ST>::sparseMat_t sparseMat_t;
+  typedef typename tpetra::Traits<ST>::mvec_t mvec_type;
+  typedef typename tpetra::Traits<ST>::sparseMat_t sparseMat_type;
+  typedef typename sparseMat_type::node_type node_type;
   typedef typename phist::ScalarTraits<ST>::mvec_t* phist_mvec_ptr;
   typedef typename phist::ScalarTraits<ST>::mvec_t const* phist_const_mvec_ptr;
-  typedef Ifpack2::Preconditioner<ST,phist_lidx,phist_gidx,tpetra::node_type> prec_type;
+  typedef Ifpack2::Preconditioner<ST,phist_lidx,phist_gidx,node_type> prec_type;
   typedef phist::ScalarTraits<ST> st;
 
   public:
@@ -66,8 +85,8 @@ class PreconTraits<ST,phist_IFPACK>
   {
     PHIST_ENTER_FCN(__FUNCTION__);
     *iflag=0;
-    PHIST_CAST_PTR_FROM_VOID(const sparseMat_t, A, vA,*iflag);
-    const sparseMat_t* B = (const sparseMat_t*)vB;
+    PHIST_CAST_PTR_FROM_VOID(const sparseMat_type, A, vA,*iflag);
+    const sparseMat_type* B = (const sparseMat_type*)vB;
     
     Teuchos::RCP<Teuchos::ParameterList> ifpack_list=Teuchos::rcp(new Teuchos::ParameterList());
     
@@ -81,7 +100,7 @@ class PreconTraits<ST,phist_IFPACK>
     // computing A-sigma*B is possible in Epetra but not implemented here
     PHIST_CHK_IERR(*iflag= (sigma!=st::zero())? -99:0,*iflag);
     
-    Teuchos::RCP<const sparseMat_t> A_ptr = Teuchos::rcp(A,false);
+    Teuchos::RCP<const sparseMat_type> A_ptr = Teuchos::rcp(A,false);
 
     Teuchos::RCP<prec_type> Prec = Factory.create(PrecType, A_ptr);
     PHIST_CHK_IERR(*iflag=Prec!=Teuchos::null?0:PHIST_BAD_CAST,*iflag);
@@ -116,13 +135,13 @@ class PreconTraits<ST,phist_IFPACK>
     PHIST_ENTER_FCN(__FUNCTION__);
     *iflag=0;
     PHIST_CAST_PTR_FROM_VOID(const prec_type, P, vP,*iflag);
-    PHIST_CAST_PTR_FROM_VOID(const mvec_t, X, vX,*iflag);
-    PHIST_CAST_PTR_FROM_VOID(      mvec_t, Y, vY,*iflag);
+    PHIST_CAST_PTR_FROM_VOID(const mvec_type, X, vX,*iflag);
+    PHIST_CAST_PTR_FROM_VOID(      mvec_type, Y, vY,*iflag);
 
-    Teuchos::RCP<mvec_t> Y2 = Teuchos::rcp(Y,false);
+    Teuchos::RCP<mvec_type> Y2 = Teuchos::rcp(Y,false);
     if (beta!=st::zero())
     {
-      Y2=Teuchos::rcp(new mvec_t(*Y));
+      Y2=Teuchos::rcp(new mvec_type(*Y));
     }
     PHIST_CHK_IERR(P->apply(*X,*Y2),*iflag);
     if (beta!=st::zero())

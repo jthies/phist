@@ -49,7 +49,7 @@ int omp_get_num_threads() {return 1;}
 void omp_set_num_threads(int nt) {return;}
 }
 #endif
-#ifdef PHIST_KERNEL_LIB_BUILTIN_PIN_THREADS
+#ifdef PHIST_TRY_TO_PIN_THREADS
 #include <string>
 #include <map>
 #include <sstream>
@@ -70,8 +70,8 @@ void pinThreads()
   }
   // MPI rank
   int myRank, nRanks;
-  PHIST_CHK_IERR( iflag = MPI_Comm_rank(MPI_COMM_WORLD, &myRank), iflag);
-  PHIST_CHK_IERR( iflag = MPI_Comm_size(MPI_COMM_WORLD, &nRanks), iflag);
+  PHIST_CHK_IERR( iflag = MPI_Comm_rank(phist_get_default_comm(), &myRank), iflag);
+  PHIST_CHK_IERR( iflag = MPI_Comm_size(phist_get_default_comm(), &nRanks), iflag);
   // nodes
   int ranksPerNode = 1;
   int myRankInNode = 0;
@@ -209,7 +209,7 @@ void phist_kernels_init(int* argc, char*** argv, int* iflag)
   }
   
 
-#ifdef PHIST_KERNEL_LIB_BUILTIN_PIN_THREADS
+#ifdef PHIST_TRY_TO_PIN_THREADS
   pinThreads();
 #endif
 
@@ -267,12 +267,16 @@ void phist_maps_compatible(phist_const_map_ptr map1, phist_const_map_ptr map2, i
 #include "phist_gen_s.h"
 #include "../common/kernels_no_impl.cpp"
 
-#include "phist_gen_c.h"
-#include "../common/kernels_no_impl.cpp"
+# ifdef PHIST_HAVE_CMPLX
+# include "phist_gen_c.h"
+# include "../common/kernels_no_impl.cpp"
+# endif
 #endif
 
+#ifdef PHIST_HAVE_CMPLX
 #include "phist_gen_z.h"
 #include "../common/kernels_no_impl.cpp"
+#endif
 
 } //extern "C"
 

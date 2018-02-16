@@ -6,7 +6,11 @@
 /* Contact: Jonas Thies (Jonas.Thies@DLR.de)                                               */
 /*                                                                                         */
 /*******************************************************************************************/
+
 #include "phist_config.h"
+
+#ifdef PHIST_HAVE_SP
+
 /* needs to be included before system headers for some intel compilers+mpi */
 #ifdef PHIST_HAVE_MPI
 #include <mpi.h>
@@ -40,6 +44,8 @@
 # endif
 #endif
 
+#include "phist_kernel_perfmodels.hpp"
+
 #ifdef PHIST_HAVE_LIKWID
 #include <likwid.h>
 #endif
@@ -50,15 +56,19 @@
 
 using namespace phist::tpetra;
 
-extern "C" void phist_tpetra_node_create(node_type** node, phist_const_comm_ptr vcomm, int* iflag);
+#include "Teuchos_config.h"
+#include "TpetraCore_config.h"
 
-#ifdef PHIST_HAVE_SP
 #include "phist_gen_s.h"
-#include "kernels_def.hpp"
-#include "carp_def.hpp"
-#include "../common/kernels_no_io.cpp"
-#include "../common/kernels_no_inplace_VC.cpp"
-#include "../common/kernels_no_VC_add_WD.cpp"
-#include "../common/kernels_no_fused.cpp"
-#include "../common/kernels_no_gpu.cpp"
+# if defined(HAVE_TEUCHOS_FLOAT)&&defined(HAVE_TPETRA_INST_FLOAT)
+# include "kernels_def.hpp"
+# include "carp_def.hpp" 
+# else
+# warning "Your phist_config.h defines PHIST_HAVE_SP, but your Trilinos installation does not \
+support the float data type, so all 'S' kernels will return with *iflag=-99 (PHIST_NOT_IMPLEMENTED). In order \
+to change this check Teuchos_config.h for HAVE_TEUCHOS_FLOAT, and TpetraCore_config.h for \
+HAVE_TPETRA_INST_FLOAT, and install Trilinos such that they are defined. To get rid of this warning, set the \
+CMake variable PHIST_ENABLE_SP=OFF."
+# include "../common/kernels_no_impl.cpp"
+# endif
 #endif

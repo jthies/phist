@@ -22,19 +22,8 @@
 #include "../kernels/KernelTestWithSdMats.h"
 
 #ifdef PHIST_HAVE_BELOS
-# ifdef PHIST_KERNEL_LIB_TPETRA
-# include "phist_tpetra_typedefs.hpp"
-# include "BelosTpetraAdapter.hpp"
-# elif defined(PHIST_KERNEL_LIB_EPETRA)
-# include "Epetra_MultiVector.h"
-# include "BelosEpetraAdapter.hpp"
-# elif defined(PHIST_KERNEL_LIB_GHOST)
-# include "Belos_GhostAdapter.hpp"
-# endif
-#endif
-
-#ifdef PHIST_HAVE_BELOS
-#include "phist_rcp_helpers.hpp"
+#include "phist_BelosMV.hpp"
+#include "Belos_PhistAdapter.hpp"
 #include "phist_BelosOperatorTraits.hpp"
 #include "BelosMVOPTester.hpp"
 #endif

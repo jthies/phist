@@ -26,6 +26,16 @@ typedef struct TYPE(private_linearOp_pair)
   mutable TYPE(mvec_ptr) Xtmp;
 } TYPE(private_linearOp_pair);
 
+// same with triple of linearOps
+typedef struct TYPE(private_linearOp_triple)
+{
+  TYPE(const_linearOp_ptr) A;
+  TYPE(const_linearOp_ptr) B;
+  TYPE(const_linearOp_ptr) C;
+  mutable TYPE(mvec_ptr) Xtmp;
+  mutable TYPE(mvec_ptr) Xtmp2;
+} TYPE(private_linearOp_triple);
+
 //! just to have some function to point to
 void SUBR(private_linearOp_destroy_nothing)(TYPE(linearOp_ptr) op, int* iflag)
 {
@@ -46,6 +56,16 @@ void SUBR(private_linearOp_destroy_linearOp_pair_wrapper)(TYPE(linearOp_ptr) op,
   TYPE(private_linearOp_pair)* pair = (TYPE(private_linearOp_pair)*)(op->A);
   if (pair->Xtmp!=NULL) PHIST_CHK_IERR(SUBR(mvec_delete)(pair->Xtmp,iflag),*iflag);
   delete pair; // delete the struct, not the wrapped operators
+  *iflag=0;
+}
+
+//! just to have some function to point to
+void SUBR(private_linearOp_destroy_linearOp_triple_wrapper)(TYPE(linearOp_ptr) op, int* iflag)
+{
+  TYPE(private_linearOp_triple)* triple = (TYPE(private_linearOp_triple)*)(op->A);
+  if (triple->Xtmp!=NULL) PHIST_CHK_IERR(SUBR(mvec_delete)(triple->Xtmp,iflag),*iflag);
+  if (triple->Xtmp2!=NULL) PHIST_CHK_IERR(SUBR(mvec_delete)(triple->Xtmp2,iflag),*iflag);
+  delete triple; // delete the struct, not the wrapped operators
   *iflag=0;
 }
 
@@ -100,7 +120,7 @@ void SUBR(private_linearOp_apply_sparseMat_pair_shifted)
   PHIST_CHK_IERR(SUBR(fused_spmv_pair)(alpha,shift1,A,shift2,B,X,beta,Y,iflag),*iflag);
 }
 
-// helper function to compute Y=beta*Y + alpha*A*B*X (apply function ofor linearOp_product)
+// helper function to compute Y=beta*Y + alpha*A*B*X (apply function for linearOp_product)
 void SUBR(private_linearOp_apply_linearOp_product)
 (_ST_ alpha, const void* AB, TYPE(const_mvec_ptr) X, _ST_ beta, TYPE(mvec_ptr) Y, int* iflag)
 {
@@ -131,6 +151,55 @@ void SUBR(private_linearOp_apply_linearOp_product)
   TYPE(mvec_ptr) BX = _AB->Xtmp;
   PHIST_CHK_IERR(SUBR(linearOp_apply)(st::one(),B,X,st::zero(),BX,iflag),*iflag);
   PHIST_CHK_IERR(SUBR(linearOp_apply)(alpha,A,BX,beta,Y,iflag),*iflag);  
+}
+
+// helper function to compute Y=beta*Y + alpha*A*B*C*X (apply function for linearOp_product_triple)
+void SUBR(private_linearOp_apply_linearOp_product_triple)
+(_ST_ alpha, const void* ABC, TYPE(const_mvec_ptr) X, _ST_ beta, TYPE(mvec_ptr) Y, int* iflag)
+{
+#include "phist_std_typedefs.hpp"
+  // get separate pointers to A and B and C
+  TYPE(private_linearOp_triple) *_ABC = (TYPE(private_linearOp_triple)*)ABC;
+  TYPE(const_linearOp_ptr) A = _ABC->A;
+  TYPE(const_linearOp_ptr) B = _ABC->B;
+  TYPE(const_linearOp_ptr) C = _ABC->C;
+  
+  // check if Xtmp or Xtmp2 needs reallocation
+  int nvX, nvXtmp=-1, nvXtmp2=-1;
+  PHIST_CHK_IERR(SUBR(mvec_num_vectors)(X,&nvX,iflag),*iflag);
+  if (_ABC->Xtmp!=NULL)
+  {
+    PHIST_CHK_IERR(SUBR(mvec_num_vectors)(_ABC->Xtmp,&nvXtmp,iflag),*iflag);
+  }
+    if (_ABC->Xtmp2!=NULL)
+  {
+    PHIST_CHK_IERR(SUBR(mvec_num_vectors)(_ABC->Xtmp2,&nvXtmp2,iflag),*iflag);
+  }
+  
+  if (nvX!=nvXtmp)
+  {
+    if (_ABC->Xtmp!=NULL)
+    {
+      PHIST_CHK_IERR(SUBR(mvec_delete)(_ABC->Xtmp,iflag),*iflag);
+      _ABC->Xtmp=NULL;
+    }
+    PHIST_CHK_IERR(SUBR(mvec_create)(&(_ABC->Xtmp),C->range_map,nvX,iflag),*iflag);
+  }
+    if (nvX!=nvXtmp2)
+  {
+    if (_ABC->Xtmp2!=NULL)
+    {
+      PHIST_CHK_IERR(SUBR(mvec_delete)(_ABC->Xtmp2,iflag),*iflag);
+      _ABC->Xtmp2=NULL;
+    }
+    PHIST_CHK_IERR(SUBR(mvec_create)(&(_ABC->Xtmp2),B->range_map,nvX,iflag),*iflag);
+  }
+  
+  TYPE(mvec_ptr) CX = _ABC->Xtmp;
+  TYPE(mvec_ptr) BCX = _ABC->Xtmp2;
+  PHIST_CHK_IERR(SUBR(linearOp_apply)(st::one(),C,X,st::zero(),CX,iflag),*iflag);
+  PHIST_CHK_IERR(SUBR(linearOp_apply)(st::one(),B,CX,st::zero(),BCX,iflag),*iflag);  
+  PHIST_CHK_IERR(SUBR(linearOp_apply)(alpha,A,BCX,beta,Y,iflag),*iflag);  
 }
 
 //
@@ -170,6 +239,27 @@ TYPE(const_linearOp_ptr) A, TYPE(const_linearOp_ptr) B, int* iflag)
   op->destroy=&SUBR(private_linearOp_destroy_linearOp_pair_wrapper);
 }
 
+void SUBR(linearOp_wrap_linearOp_product_triple)(TYPE(linearOp_ptr) op,
+TYPE(const_linearOp_ptr) A, TYPE(const_linearOp_ptr) B, TYPE(const_linearOp_ptr) C, int* iflag)
+{
+  // setup maps etc.
+  TYPE(private_linearOp_triple) *triple=new TYPE(private_linearOp_triple);
+  triple->A=A;
+  triple->B=B;
+  triple->C=C;
+  triple->Xtmp=NULL;
+  triple->Xtmp2=NULL;
+  op->A=(void*)(triple);
+  op->aux=NULL;
+  
+  op->range_map=A->range_map;
+  op->domain_map=C->domain_map;
+  
+  op->apply=&SUBR(private_linearOp_apply_linearOp_product_triple);
+  op->apply_shifted=NULL;
+  op->update=NULL;
+  op->destroy=&SUBR(private_linearOp_destroy_linearOp_triple_wrapper);
+}
 
 //
 void SUBR(private_idOp_apply)(_ST_ alpha, const void* A, TYPE(const_mvec_ptr) X,

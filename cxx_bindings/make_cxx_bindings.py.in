@@ -19,7 +19,10 @@ header  = \
  """
 
 def class_template(class_name):
-    return '''
+    return '#ifndef PHIST_'+class_name+'_HPP\n'\
+           '#define PHIST_'+class_name+'_HPP\n'\
+'''
+
 namespace phist {
 
 template<typename ST>
@@ -31,27 +34,11 @@ template<typename ST>
 }//namespace phist
 
 '''+\
-'#define CLASS_DECL_HPP '+'\"phist_'+class_name+'_decl.hpp\"\n'+\
+'#define PHIST_CLASSFILE_DEF '+'\"phist_'+class_name+'_decl.hpp\"\n'+\
 '''
-
-#ifdef PHIST_HAVE_SP
-
-#include \"phist_gen_s.h\"
-#include CLASS_DECL_HPP
-
-#include "phist_gen_c.h"
-#include CLASS_DECL_HPP
+#include \"phist_gen_all.h\"
 
 #endif
-
-#include "phist_gen_d.h"
-#include CLASS_DECL_HPP
-
-#include "phist_gen_z.h"
-#include CLASS_DECL_HPP
-
-#include "phist_gen_clean.h"
-#undef CLASS_DECL_HPP
 '''
 
 # loop over all subdirectories in src/ (aka modules)

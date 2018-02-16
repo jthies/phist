@@ -54,7 +54,7 @@ void phist_comm_create(phist_comm_ptr* vcomm, int* iflag)
 {
   MPI_Comm *comm = NULL;
   PHIST_CHK_IERR( *iflag = PetscNew(&comm), *iflag);
-  PHIST_CHK_IERR( *iflag = PetscCommDuplicate(MPI_COMM_WORLD, comm, NULL), *iflag);
+  PHIST_CHK_IERR( *iflag = PetscCommDuplicate(phist_get_default_comm(), comm, NULL), *iflag);
   *vcomm = comm;
 }
 void phist_comm_delete(phist_comm_ptr vcomm, int* iflag)
