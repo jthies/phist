@@ -1486,7 +1486,7 @@ foreach(np ${PHIST_MPI_TEST_NPROCS})
     if(np EQUAL 1 AND INTEGRATION_BUILD AND PHIST_KERNEL_LIB STREQUAL "ghost" AND CUDA_LIBRARIES)
       set_tests_properties(${CURRENT_TESTNAME} PROPERTIES ENVIRONMENT GHOST_TYPE=cuda)
     else()
-      set_tests_properties(${CURRENT_TESTNAME} PROPERTIES ENVIRONMENT "${MPIEXEC_ENVIRONMENT}; GHOST_TYPE=cuda")
+      set_tests_properties(${CURRENT_TESTNAME} PROPERTIES ENVIRONMENT "${MPIEXEC_ENVIRONMENT}")
     endif()
     if ( INTEGRATION_BUILD )
       # create the default test output that will appear on Jenkins if the test executable crashes
