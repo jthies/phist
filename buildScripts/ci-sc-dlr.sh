@@ -149,12 +149,14 @@ elif [[ "$PRGENV" =~ intel* ]]; then
   
   module load mkl
   # make CMake find and use MKL:
-  ADD_CMAKE_FLAGS+="-DBLA_VENDOR=Intel10_64lp"
 fi
 
-# Make Intel OpenMP and MKL deterministic (e.g. calculate identical results on different MPI procs)
-export KMP_DETERMINISTIC_REDUCTION=1 MKL_CBWR="COMPATIBLE"
-
+# make sure that the correct BLAS/LAPACK are used
+if [[ "$PRGENV" =~ intel* ]]; then
+  ADD_CMAKE_FLAGS+="-DBLA_VENDOR=\"Intel10_64lp\""
+else
+  ADD_CMAKE_FLAGS+="-DBLA_VENDOR=\"Generic\""
+fi
 # "gcc -fsanitize=address" requires this
 ulimit -v unlimited
 
