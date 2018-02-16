@@ -564,11 +564,7 @@ if (${PHIST_ENABLE_MPI})
   endif()
   set(MPIEXEC "mpirun" CACHE STRING "")
   set(MPIEXEC_NUMPROC_FLAG "-np" CACHE STRING "")
-# I found that setting this env variable may lead to the opposite effect (all MPI procs bound to one core)
-# most likely due to a bug in OpenMPI 3.0.0
-#  set(MPIEXEC_ENVIRONMENT "OMPI_MCA_hwloc_base_binding_policy=none" CACHE STRING "")
-  set(MPIEXEC_ENVIRONMENT "" CACHE STRING "")
-
+  set(MPIEXEC_ENVIRONMENT "OMPI_MCA_hwloc_base_binding_policy=none" CACHE STRING "")
 else()
   set(PHIST_HAVE_MPI 0)
 endif()
