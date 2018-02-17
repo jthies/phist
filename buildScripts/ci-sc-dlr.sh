@@ -153,9 +153,9 @@ fi
 
 # make sure that the correct BLAS/LAPACK are used
 if [[ "$PRGENV" =~ intel* ]]; then
-  ADD_CMAKE_FLAGS+="-DBLA_VENDOR=\"Intel10_64lp\""
+  ADD_CMAKE_FLAGS+=" -DBLA_VENDOR='Intel10_64lp'"
 else
-  ADD_CMAKE_FLAGS+="-DBLA_VENDOR=\"Generic\""
+  ADD_CMAKE_FLAGS+=" -DBLA_VENDOR='Generic'"
 fi
 # "gcc -fsanitize=address" requires this
 ulimit -v unlimited
