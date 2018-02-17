@@ -12,21 +12,6 @@
 //! \defgroup blockedGMRES blocked GMRES solver for general linear systems
 //@{
 
-//! high-level user interface that does not require knowledge of the state object. This interface
-//! should be used if you only want run a restarted GMRES solver on one or more systems
-
-//! restarted GMRES implementation that may work on several vectors simultaneously,
-//! building a separate Krylov subspace for each of them.
-//!
-//! On input, *nIter indicates the total max number of iterations allowed, maxIter, for any system.
-//! On output, *nIter indicates the number of GMRES iterations.
-//!
-//! On output, sol_in gives the solution of the restarted GMRES
-//!
-void SUBR( restartedGMRES_iterate ) (TYPE(const_linearOp_ptr) Aop, TYPE(const_linearOp_ptr) Pop,
-        TYPE(mvec_ptr) rhs, TYPE(mvec_ptr) sol_in, int numSys,
-        int* nIter, _MT_ const tol[], int block_size, int max_blocks, int* iflag);
-
 //! gmres state object
 
 //! iteration status object for the pipelined GMRES

@@ -1024,7 +1024,7 @@ PHIST_TASK_END(iflag)
 }
 
 // implementation of restarted GMRES on severall systems simultaneously
-void SUBR( restartedGMRES_iterate ) ( TYPE(const_linearOp_ptr) Aop, TYPE(const_linearOp_ptr) Pop,
+void SUBR( restartedBlockedGMRES ) ( TYPE(const_linearOp_ptr) Aop, TYPE(const_linearOp_ptr) Pop,
         TYPE(mvec_ptr) rhs, TYPE(mvec_ptr) sol_in, int numSys,
         int nIter[], _MT_ const tol[], int block_size, int max_blocks, int* iflag)
 {
@@ -1208,3 +1208,10 @@ void SUBR( restartedGMRES_iterate ) ( TYPE(const_linearOp_ptr) Aop, TYPE(const_l
   PHIST_CHK_IERR(SUBR(blockedGMRESstates_delete)(states, block_size, iflag), *iflag);
 }
 
+// restarted GMRES interface for a single linear system
+void SUBR( restartedGMRES ) ( TYPE(const_linearOp_ptr) Aop, TYPE(const_linearOp_ptr) Pop,
+        TYPE(mvec_ptr) rhs, TYPE(mvec_ptr) sol,
+        int *nIter, _MT_ tol, int m, int* iflag)
+{
+  SUBR( restartedBlockedGMRES ) ( Aop, Pop, rhs, sol, 1, nIter, &tol, 1, m, iflag);
+}

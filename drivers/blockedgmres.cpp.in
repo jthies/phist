@@ -22,12 +22,9 @@
 #include "phist_macros.h"
 #include "phist_kernels.h"
 #include "phist_operator.h"
+#include "phist_linear_solvers.h"
 #include "phist_precon.h"
 #include "phist_belos.h"
-
-#include "phist_blockedgmres.h"
-#include "phist_precon.h"
-
 
 #include ${PHIST_TG_HFILE}
 
@@ -143,7 +140,7 @@ int main(int argc, char** argv)
   for(int i=0; i<num_rhs; i++) _tol[i]=tol;
   int nIter[num_rhs];
   for(int i=0; i<num_rhs; i++) nIter[i]=max_iters;
-  PHIST_ICHK_IERR(SUBR( restartedGMRES_iterate )(A_op,P_op,B,X,num_rhs,nIter, _tol, block_size, max_blocks, &iflag),iflag);
+  PHIST_ICHK_IERR(SUBR( restartedBlockedGMRES )(A_op,P_op,B,X,num_rhs,nIter, _tol, block_size, max_blocks, &iflag),iflag);
  
   /* compute residual norms */
   PHIST_ICHK_IERR(SUBR(sparseMat_times_mvec)(st::one(),A,X,st::zero(),R,&iflag),iflag);
