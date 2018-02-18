@@ -22,7 +22,7 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-#define PHIST_CLASSFILE_DEF "phist_linear_solvers_decl.hpp"
+#define PHIST_CLASSFILE_DEF "phist_linear_solvers_decl.h"
 #include "phist_gen_all.h"
 #ifdef __cplusplus
 }

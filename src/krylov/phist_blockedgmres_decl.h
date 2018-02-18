@@ -109,7 +109,7 @@ typedef TYPE(blockedGMRESstate) const * TYPE(const_blockedGMRESstate_ptr);
 //! \warning you cannot mix together states from different calls to blockedGMRESstates_create! The way to
 //! insert a new system into a state array is via reset() with a non-NULL right-hand side b.
 //!
-void SUBR( blockedGMRESstates_iterate ) (TYPE(const_linearOp_ptr) Op,
+void SUBR(blockedGMRESstates_iterate)(TYPE(const_linearOp_ptr) Op,
                 TYPE(const_linearOp_ptr) rightPrecon,
                 TYPE(blockedGMRESstate_ptr) S_array[], int numSys, int *nIter, int useIMGS, int* iflag);
 
@@ -122,14 +122,14 @@ void SUBR( blockedGMRESstates_iterate ) (TYPE(const_linearOp_ptr) Op,
 //! The array of pointers must be allocated beforehand, but the individual structs
 //! are allocated by this method.
 //!
-void SUBR( blockedGMRESstates_create ) (TYPE(blockedGMRESstate_ptr) S_array[], int numSys, phist_const_map_ptr map, int maxBas, int* iflag);
+void SUBR(blockedGMRESstates_create)(TYPE(blockedGMRESstate_ptr) S_array[], int numSys, phist_const_map_ptr map, int maxBas, int* iflag);
 
 //!
 //! delete an set of gmresState objects. Only the individual structs are destroyed,
 //! The caller has to delete the array and nullify it.
 //! \warning you cannot delete individual states, but must pass the whole array created with blockedGMRESstates_create
 //!
-void SUBR( blockedGMRESstates_delete ) (TYPE(blockedGMRESstate_ptr) S_array[], int numSys, int* iflag);
+void SUBR(blockedGMRESstates_delete)(TYPE(blockedGMRESstate_ptr) S_array[], int numSys, int* iflag);
 
 //!
 //! this function can be used to force a clean restart of the associated GMRES
@@ -145,7 +145,7 @@ void SUBR( blockedGMRESstates_delete ) (TYPE(blockedGMRESstate_ptr) S_array[], i
 //! To free the resources used by this state object, call _reset with b=x0=NULL. Subsequent
 //! use of the object requires a nother call to _reset with at least b!=NULL.
 //!
-void SUBR( blockedGMRESstate_reset ) (TYPE(blockedGMRESstate_ptr) S, TYPE(const_mvec_ptr) b, TYPE(const_mvec_ptr) x0, int *iflag);
+void SUBR(blockedGMRESstate_reset)(TYPE(blockedGMRESstate_ptr) S, TYPE(const_mvec_ptr) b, TYPE(const_mvec_ptr) x0, int *iflag);
 
 //!
 //! For each of the state objects i passed in, update the current approximation x(:,i) using
@@ -154,7 +154,7 @@ void SUBR( blockedGMRESstate_reset ) (TYPE(blockedGMRESstate_ptr) S, TYPE(const_
 //! solution. The function is 'vectorized' in the same way as iterate, so an array of states
 //! and multivector x can be passed in.
 //!
-void SUBR( blockedGMRESstates_updateSol ) (TYPE(blockedGMRESstate_ptr) S_array[], int numSys,
+void SUBR(blockedGMRESstates_updateSol)(TYPE(blockedGMRESstate_ptr) S_array[], int numSys,
                 TYPE(const_linearOp_ptr) rightPrecon,
                 TYPE(mvec_ptr) x, _MT_ *resNorm, int scaleSolutionToOne, int* iflag);
 

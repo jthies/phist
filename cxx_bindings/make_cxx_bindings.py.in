@@ -9,7 +9,7 @@ from collections import OrderedDict
 
 # first define some constant parts of the files that we generate
 
-verbose=False
+verbose=True
 
 header  = \
 """/*******************************************************************************************************
@@ -100,6 +100,7 @@ namespace phist
         whole_file = open(mod_dir + "/" + c_file_name, 'rU').read()
                 
         subroutines=re.findall("SUBR\(.*?\)\(.*?\)\;", whole_file, re.DOTALL)
+        print(subroutines)
         for s in subroutines:
             name=re.findall("SUBR\((.*?)\)",s,re.DOTALL)[0]
             if verbose: print("        - function '"+name+"'")
