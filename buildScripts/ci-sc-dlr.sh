@@ -153,7 +153,8 @@ fi
 
 # make sure that the correct BLAS/LAPACK are used
 if [[ "$PRGENV" =~ intel* ]]; then
-  ADD_CMAKE_FLAGS+=" -DBLA_VENDOR='Intel10_64lp'"
+  module load mkl
+  ADD_CMAKE_FLAGS+=" -DBLA_VENDOR=Intel10_64lp_seq"
 else
   ADD_CMAKE_FLAGS+=" -DBLA_VENDOR='Generic'"
 fi
