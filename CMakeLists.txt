@@ -1,5 +1,5 @@
 
-cmake_minimum_required(VERSION 3.5.0)
+cmake_minimum_required(VERSION 3.8.0)
 
 # some guidelines for extending/modifying the PHIST CMakeLists.txt file. 
 # Things may not be handled this way everywhere yet, but you should keep these
@@ -209,7 +209,7 @@ set(PHIST_PKG_CONFIG_CFLAGS)
 ########################################################################
 
 set(TPL_LAPACKE_LIBRARIES "${TPL_LAPACKE_LIBRARIES}" CACHE STRING "full library names of lapacke, lapack and blas" FORCE)
-set(TPL_LAPACK_LIBRARIES "${TPL_LAPACK_LIBRARIES}" CACHE STRING "full library names of lapacke, lapack and blas" FORCE)
+set(TPL_LAPACK_LIBRARIES "${TPL_LAPACK_LIBRARIES}" CACHE STRING "full library names of lapack and blas" FORCE)
 set(TPL_LAPACKE_INCLUDE_DIRS "${TPL_LAPACKE_INCLUDE_DIRS}" CACHE STRING "path where to find lapacke.h or mkl_lapacke.h header" FORCE)
 
 if (TPL_LAPACKE_LIBRARIES)
@@ -236,7 +236,7 @@ if (NOT TPL_LAPACKE_LIBRARIES)
     message(FATAL_ERROR "did not find lapack via TPL_LAPACK_LIBRARIES, TPL_LAPACK_LIBRARIES or find_package. Aborting.")
   elseif (TPL_LAPACK_LIBRARIES MATCHES "mkl")
     # note: lapacke is included in the mkl library
-    set(TPL_LAPACKE_LIBRARIES ${TPL_LAPACK_LIBRARIES} CACHE STRING FORCE)
+    set(TPL_LAPACKE_LIBRARIES ${TPL_LAPACK_LIBRARIES} CACHE STRING "full library names of lapack and blas." FORCE)
   else()
     find_library (LAPACKE_LIBRARY lapacke ${LAPACKE_LIBDIR})
     if (LAPACKE_LIBRARY MATCHES "LAPACKE_LIBRARY-NOTFOUND")
