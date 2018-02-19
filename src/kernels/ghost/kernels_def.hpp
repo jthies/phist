@@ -1725,12 +1725,12 @@ extern "C" void SUBR(mvecT_times_mvec)(_ST_ alpha, TYPE(const_mvec_ptr) vV, TYPE
   /*
   PHIST_CHK_GERR(ghost_gemm(C,V,trans,W,(char*)"N",(void*)&alpha,(void*)&beta,GHOST_GEMM_ALL_REDUCE,GHOST_GEMM_DEFAULT),*iflag);
   */
+ghost_error gemm_err=GHOST_SUCCESS, other_err= GHOST_SUCCESS, reduce_err=GHOST_SUCCESS;
 PHIST_TASK_DECLARE(ComputeTask)
 PHIST_TASK_BEGIN(ComputeTask)
   int iflag_in=PHIST_SDMAT_RUN_ON_DEVICE;
   PHIST_SDMAT_OP_BEGIN(vC,CC,locC);
-  ghost_error gemm_err = ghost_gemm(C,V,trans,W,(char*)"N",(void*)&alpha,(void*)&mybeta,GHOST_GEMM_NO_REDUCE,GHOST_GEMM_DEFAULT);
-  ghost_error other_err = GHOST_SUCCESS;
+  gemm_err = ghost_gemm(C,V,trans,W,(char*)"N",(void*)&alpha,(void*)&mybeta,GHOST_GEMM_NO_REDUCE,GHOST_GEMM_DEFAULT);
   if( gemm_err == GHOST_ERR_NOT_IMPLEMENTED )
   {
     // copy result
@@ -1752,13 +1752,20 @@ PHIST_TASK_BEGIN(ComputeTask)
     }
   }
   PHIST_SDMAT_OP_END(CC,locC);
-  PHIST_CHK_GERR(gemm_err,*iflag);
-  PHIST_CHK_GERR(other_err,*iflag);
+
+// do not return on error here to avoid hanging in the reduction below
 PHIST_TASK_END(iflag);
+  *iflag=gemm_err; 
 
 PHIST_TASK_POST_STEP(iflag);
 
-  PHIST_CHK_GERR(ghost_densemat_reduce(C,GHOST_ALLREDUCE),*iflag);
+  reduce_err=ghost_densemat_reduce(C,GHOST_ALLREDUCE);
+
+  // catch errors at the end
+  PHIST_CHK_GERR(gemm_err,*iflag);
+  PHIST_CHK_GERR(other_err,*iflag);
+  PHIST_CHK_GERR(reduce_err,*iflag);
+
 }
 
 
