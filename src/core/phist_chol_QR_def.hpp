@@ -52,55 +52,26 @@ extern "C" void SUBR(chol_QRp)(TYPE(mvec_ptr) V, TYPE(sdMat_ptr) R, int perm[], 
     PHIST_CHK_IERR(SUBR(mvec_get_comm)(V,&comm,iflag),*iflag);
     TYPE(sdMat_ptr) R_1 = NULL;
     PHIST_CHK_IERR(SUBR(sdMat_create)(&R_1,m,m,comm,iflag),*iflag);
-#if PHIST_OUTLEV>=PHIST_DEBUG
-int nrows;
-PHIST_CHK_IERR(SUBR(mvec_my_length)(V,&nrows,iflag),*iflag);
-if (nrows<=100)
-{
-PHIST_SOUT(PHIST_INFO,"%%CHOLQR\nV=[...\n");
-SUBR(mvec_print)(V,iflag);
-PHIST_SOUT(PHIST_INFO,"];\n");
-}
-#endif
+
     // S=V'V
     if (robust) *iflag = PHIST_ROBUST_REDUCTIONS;
     PHIST_CHK_IERR(SUBR(mvecT_times_mvec)(st::one(),V,V,st::zero(),R,iflag),*iflag);
-#if PHIST_OUTLEV>=PHIST_DEBUG
-PHIST_SOUT(PHIST_INFO,"%%CHOLQR: M=V'V\nM=[...\n");
-SUBR(sdMat_print)(R,iflag);
-PHIST_SOUT(PHIST_INFO,"];\n");
-#endif
+
     int rank;
     if (robust) *iflag = PHIST_ROBUST_REDUCTIONS;
     PHIST_CHK_IERR(SUBR(sdMat_cholesky)(R,perm,&rank,rankTol,iflag),*iflag);
     // since R is output, sync it with devices
     PHIST_CHK_IERR(SUBR(sdMat_to_device)(R,iflag),*iflag);
-#if PHIST_OUTLEV>=PHIST_DEBUG
-PHIST_SOUT(PHIST_INFO,"%%CHOLQR: cholesky(V'V) has rank %d\nR=[...\n",rank);
-SUBR(sdMat_print)(R,iflag);
-PHIST_SOUT(PHIST_INFO,"];\n");
-#endif
+
     // construct inv(R)
     PHIST_CHK_IERR(SUBR(sdMat_identity)(R_1,iflag),*iflag);
     if (robust) *iflag=PHIST_ROBUST_REDUCTIONS;
     PHIST_CHK_IERR(SUBR(sdMat_backwardSubst_sdMat)(R,perm,rank,R_1,iflag),*iflag);
     PHIST_CHK_IERR(SUBR(sdMat_to_device)(R_1,iflag),*iflag);
-#if PHIST_OUTLEV>=PHIST_DEBUG
-PHIST_SOUT(PHIST_INFO,"%%CHOLQR: inv(R)=\nR_1=[");
-SUBR(sdMat_print)(R_1,iflag);
-PHIST_SOUT(PHIST_INFO,"];\n");
-#endif
+
     if (robust) *iflag=PHIST_ROBUST_REDUCTIONS;
     PHIST_CHK_IERR(SUBR(mvec_times_sdMat_inplace)(V,R_1,iflag),*iflag);
 
-#if PHIST_OUTLEV>=PHIST_DEBUG
-if (nrows<=100)
-{
-PHIST_SOUT(PHIST_INFO,"CHOLQR: Q=V*R_I (%s)\nQ0=[...",rank==m?"(full rank)":"(before randomizing null space)");
-SUBR(mvec_print)(V,iflag);
-PHIST_SOUT(PHIST_INFO,"];\n");
-}
-#endif
     if (rank < m)
     {
       // randomize the null space
