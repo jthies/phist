@@ -37,7 +37,11 @@ math(EXPR PHIST_VERSION_INT "( ( ${PHIST_VERSION_MAJOR} * 100 ) + ${PHIST_VERSIO
 set(PRODUCT_NAME phist-${PHIST_VERSION})
 
 execute_process(COMMAND git rev-parse --short --sq HEAD WORKING_DIRECTORY ${PROJECT_SOURCE_DIR} OUTPUT_VARIABLE rev)
-STRING(REPLACE "'" "\"" PHIST_GIT_REVISION ${rev})
+if (rev)
+    STRING(REPLACE "'" "\"" PHIST_GIT_REVISION ${rev})
+else()
+    SET(PHIST_GIT_REVISION "\"${PHIST_VERSION}\"")
+endif()
 
 if("${CMAKE_BUILD_TYPE}" STREQUAL "")
   set(CMAKE_BUILD_TYPE "Release" CACHE STRING "Choose the type of build, options are: Release, RelWithDebug, Debug" FORCE)
