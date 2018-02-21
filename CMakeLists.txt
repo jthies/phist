@@ -202,7 +202,9 @@ set(PHIST_PKG_CONFIG_CFLAGS)
 #
 # and will attempt to find lapacke ourselves.
 #
-# If none of the above are given, we trust the CMake FindLAPACK module here.
+# If none of the above are given, we try to find the libraries ourselves.
+# For the Intel compiler we set the linker flag "-mkl=sequential".
+# Otherwise, we trust the CMake FindLAPACK module.
 # In order to use a specific blas/lapack (but you don't know the exact paths), 
 # you can set the variable BLA_VENDOR used in that module, e.g.:
 # BLA_VENDOR="Intel10_64lp" (note that you have to be rather specific here
@@ -217,12 +219,14 @@ set(TPL_LAPACK_LIBRARIES "${TPL_LAPACK_LIBRARIES}" CACHE STRING "full library na
 set(TPL_LAPACKE_INCLUDE_DIRS "${TPL_LAPACKE_INCLUDE_DIRS}" CACHE STRING "path where to find lapacke.h or mkl_lapacke.h header" FORCE)
 
 if (TPL_LAPACKE_LIBRARIES)
-  link_libraries(${TPL_LAPACKE_LIBRARIES})
   list(GET TPL_LAPACKE_LIBRARIES 0 LAPACKE_LIBRARY)
   get_filename_component(LAPACK_LIBDIR ${LAPACKE_LIBRARY} DIRECTORY)
 elseif(TPL_LAPACK_LIBRARIES)
   list(GET TPL_LAPACK_LIBRARIES 0 LAPACK_LIBRARY)
   get_filename_component(LAPACK_LIBDIR ${LAPACK_LIBRARY} DIRECTORY)
+elseif (CMAKE_C_COMPILER_ID STREQUAL "Intel")
+  set(TPL_LAPACKE_LIBRARIES "MKL_VIA_LINKER_FLAG")
+  set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -mkl=seuqential")
 else()
   # try to find lapack and blas using the standard CMake module.
   # It searches for various vendors including Intel MKL, GOTO BLAS etc.
@@ -258,12 +262,13 @@ if (NOT TPL_LAPACKE_LIBRARIES)
     message(FATAL_ERROR "did not find LAPACKe via TPL_LAPACK_LIBRARIES or manually. Aborting.")
 endif()
 
-if (TPL_LAPACKE_LIBRARIES MATCHES "mkl")
+if (TPL_LAPACKE_LIBRARIES MATCHES "mkl" OR TPL_LAPACKE_LIBRARIES MATCHES "MKL_VIA_LINKER_FLAG")
   message(STATUS "found Intel(R) MKL")
   set(PHIST_HAVE_MKL 1)
 endif()
-  
-link_libraries(${TPL_LAPACKE_LIBRARIES})
+if (NOT TPL_LAPACKE_LIBRARIES MATCHES "MKL_VIA_LINKER_FLAG")
+  link_libraries(${TPL_LAPACKE_LIBRARIES})
+endif()
 
 # find the lapacke.h header (for MKL it's called mkl_lapacke.h). We use the path to the lapack lib as a hint.
 if (NOT TPL_LAPACKE_INCLUDE_DIRS)

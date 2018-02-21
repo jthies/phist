@@ -151,13 +151,10 @@ elif [[ "$PRGENV" =~ intel* ]]; then
   # make CMake find and use MKL:
 fi
 
-# make sure that the correct BLAS/LAPACK are used
-if [[ "$PRGENV" =~ intel* ]]; then
-  module load mkl
-  ADD_CMAKE_FLAGS+=" -DBLA_VENDOR=Intel10_64lp_seq"
-else
-  ADD_CMAKE_FLAGS+=" -DBLA_VENDOR='Generic'"
-fi
+# make sure that the correct BLAS/LAPACK are used. If the Intel compiler is used, this
+# flag is ignored and MKL is used instead.
+ADD_CMAKE_FLAGS+=" -DBLA_VENDOR='Generic'"
+
 # "gcc -fsanitize=address" requires this
 ulimit -v unlimited
 
