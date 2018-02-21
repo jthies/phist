@@ -226,7 +226,8 @@ elseif(TPL_LAPACK_LIBRARIES)
   get_filename_component(LAPACK_LIBDIR ${LAPACK_LIBRARY} DIRECTORY)
 elseif (CMAKE_C_COMPILER_ID STREQUAL "Intel")
   set(TPL_LAPACKE_LIBRARIES "MKL_VIA_LINKER_FLAG")
-  set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -mkl=seuqential")
+  set(MKL_FLAG "-mkl=sequential")
+  set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${MKL_FLAG}")
 else()
   # try to find lapack and blas using the standard CMake module.
   # It searches for various vendors including Intel MKL, GOTO BLAS etc.
@@ -384,9 +385,9 @@ elseif (CMAKE_C_COMPILER_ID STREQUAL "Intel")
 
   message(STATUS "using INTEL compiler flags")
 
-  set (CMAKE_C_FLAGS        "-align -Wno-unused-variable -mkl")
-  set (CMAKE_CXX_FLAGS      "-align -Wno-unused-variable -mkl")
-  set (CMAKE_Fortran_FLAGS  "-fpp -mkl -align array64byte")
+  set (CMAKE_C_FLAGS        "-align -Wno-unused-variable ${MKL_FLAG}")
+  set (CMAKE_CXX_FLAGS      "-align -Wno-unused-variable ${MKL_FLAG}")
+  set (CMAKE_Fortran_FLAGS  "-fpp ${MKL_FLAG} -align array64byte")
 
   if( PHIST_ENABLE_OPENMP )
     set(PHIST_HAVE_OPENMP 1)
