@@ -421,13 +421,13 @@ void SUBR(sdMat_qr)(TYPE(sdMat_ptr) Q, TYPE(sdMat_ptr) R, int* iflag)
   _ST_ tau[ldT*k];
   _ST_ work[nb*k];
 
-  PHIST_CHK_IERR(PHIST_TG_PREFIX(GEQRT)(&k,&k,&nb,R_raw,&ldR,tau,&ldT,work,iflag),*iflag);
+  PHIST_CHK_IERR(PHIST_TG_PREFIX(GEQRT)(&k,&k,&nb,(st::blas_scalar_t*)R_raw,&ldR,(st::blas_scalar_t*)tau,&ldT,(st::blas_scalar_t*)work,iflag),*iflag);
 
   PHIST_CHK_IERR(SUBR(sdMat_identity)(Q,iflag),*iflag);
   phist_blas_char side='L', trans='N';
   PHIST_CHK_IERR(PHIST_TG_PREFIX(GEMQRT)( &side, &trans, &k, &k, &k, &nb,
-                           R_raw, &ldR, tau, &ldT, Q_raw, &ldQ, 
-                           work, iflag),*iflag);
+                           (st::blas_scalar_t*)R_raw, &ldR, (st::blas_scalar_t*)tau, &ldT, (st::blas_scalar_t*)Q_raw, &ldQ, 
+                           (st::blas_scalar_t*)work, iflag),*iflag);
 
   // zero-out the lower triangular part of R, which currently still contains data from the QR decomp
   for (int j=0; j<k; j++)
