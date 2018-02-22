@@ -61,7 +61,7 @@ GHOST or Trilinos/Tpetra).
                     
         args = ['-DPHIST_KERNEL_LIB=%s' % kernel_lib,
                 '-DPHIST_OUTLEV=%d' % outlev,
-                '-DTPL_APACK_LIBRARIES=%s' % lapack_libs,
+                '-DTPL_LAPACK_LIBRARIES=%s' % lapack_libs,
                 '-DPHIST_ENABLE_MPI:BOOL=%s' % ('ON' if '+mpi' in spec else 'OFF'),
                 '-DBUILD_SHARED_LIBS:BOOL=%s' % ('ON' if '+shared' in spec else 'OFF'),
                 ];
@@ -74,7 +74,7 @@ GHOST or Trilinos/Tpetra).
     variant('quiet',default=False,description='be less verbose')
     variant(name='kernel_lib',   default='builtin',
             description='select the kernel library (backend) for phist',
-            values=['builtin','epetra','tpetra','petsc','petsc+complex','ghost'])
+            values=['builtin','epetra','tpetra','petsc','petsc+complex','eigen','ghost'])
 
     # ###################### Dependencies ##########################
 
@@ -88,5 +88,6 @@ GHOST or Trilinos/Tpetra).
     depends_on('trilinos@11:12', when='kernel_lib=epetra')
     depends_on('petsc~complex', when='kernel_lib=petsc')
     depends_on('petsc+complex', when='kernel_lib=petsc+complex')
+    depends_on('eigen', when='kernel_lib=eigen')
 
 
