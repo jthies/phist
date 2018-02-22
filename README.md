@@ -1,6 +1,12 @@
 PHIST - a Pipelined Hybrid Parallel Iterative Solver Toolkit
 ============================================================
 
+PHIST provides implementations of and interfaces to block iterative solvers for sparse linear and eigenvalue problems.
+In contrast to other libraries we support multiple backends (e.g. Trilinos, PETSc and our own optimized kernels),
+and interfaces in multiple languages such as C, C++, Fortran 2003 and Python. PHIST has a clear focus on 
+portability and hardware performance: in particular we support row-major storage of block vectors and using GPUs (via 
+GHOST or Trilinos/Tpetra).
+
 Disclaimer
 ==========
 
