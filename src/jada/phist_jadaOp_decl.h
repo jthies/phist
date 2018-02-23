@@ -52,6 +52,8 @@ void SUBR(jadaPrec_create)(TYPE(const_linearOp_ptr) P_op,
                            int projType,
                            int* iflag);
 
+void SUBR(jadaPrec_delete)(TYPE(linearOp_ptr) jdPrec, int *iflag);
+
 //! add a left preconditioner created by jadaPrec_create to a jadaOp.
 
 //! The effect of the apply function will afterwards by Y <- alpha*(jadaPrec*jadaOp*X) + beta*Y,
@@ -95,3 +97,5 @@ void SUBR(JadaOp_create_variable)(TYPE(const_linearOp_ptr)    AB_op,
                          TYPE(linearOp_ptr)          jdOp, const char* method,
                          int onlyPrec, int num_sigma,
 						 int*                  iflag);					 
+
+void SUBR(jadaOp_variable_delete)(TYPE(linearOp_ptr)  jdOp, int *iflag);
