@@ -56,4 +56,6 @@ class XToolsTest: public ::testing::Test
     PHIST_OUT(0,"Hello, World!");
     oss_expect << "PE"<<mpi_rank_<<": Hello, World!";
     ASSERT_EQ(oss_expect.str(),oss.str());
+    // reset to avoid problems when the stringsteam is deleted
+    phist_set_CXX_output_stream(std::cout);
   }
