@@ -23,7 +23,7 @@ class XToolsTest: public ::testing::Test
 
   public:
 
-  int iflag_, mpi_rank_, mpi_size_;
+  int mpi_rank_, mpi_size_;
 
   /*! Set up routine.
    */
@@ -55,42 +55,5 @@ class XToolsTest: public ::testing::Test
     phist_set_CXX_output_stream(oss);
     PHIST_OUT(0,"Hello, World!");
     oss_expect << "PE"<<mpi_rank_<<": Hello, World!";
-    // it is crucial to reset the output stream because otherwise
-    // the string gets deleted and we get a segfault in the PHIST_OUT.
-    phist_set_CXX_output_stream(std::cout);
     ASSERT_EQ(oss_expect.str(),oss.str());
   }
-
-#if defined(PHIST_KERNEL_LIB_GHOST)
-
-#include "phist_ghost_internal.h"
-
-/*! make sure that the PHIST_CHK_GERR macro propagates CUDA errors to all MPI processes if PHIST_GLOBALIZE_CUDA_ERRORS 
-is defined.
- */
- TEST_F(XToolsTest, globalize_errors_with_CUDA)
- {
-   int num_gpus = phist::ghost_internal::get_num_GPUs();
-   iflag_= -mpi_rank_;
-   int iflag_expected = iflag_;
-
-#if defined(PHIST_GLOBALIZE_CUDA_ERRORS)
-   if (num_gpus>0 && num_gpus<mpi_size_)
-   {
-     // iflag should be 'global MINned' if it was negative on some proc
-     iflag_expected=-(mpi_size_-1);
-   }
-#endif
-   phist::ghost_internal::globalize_cuda_errors(&iflag_);
-   ASSERT_EQ(iflag_expected,iflag_);
- }
-
- TEST_F(XToolsTest, do_not_globalize_warnings_with_CUDA)
- {
-   int num_gpus = phist::ghost_internal::get_num_GPUs();
-   iflag_= mpi_rank_+1;
-   int iflag_expected = iflag_;
-   phist::ghost_internal::globalize_cuda_errors(&iflag_);
-   ASSERT_EQ(iflag_expected,iflag_);
- }
-#endif

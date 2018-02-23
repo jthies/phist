@@ -121,6 +121,18 @@ PHIST_OUT(PHIST_ERROR,"Error code %d (%s) returned from call %s\n(file %s, line 
 (FLAG),(phist_retcode2str(FLAG)),(#func),(__FILE__),(__LINE__)); return;}}}
 #endif
 
+#ifdef PHIST_HAVE_GHOST
+# ifndef DOXYGEN
+# include <ghost/config.h>
+# include <ghost/types.h>
+# endif
+// check return value from GHOST
+#define PHIST_CHK_GERR(func,FLAG) { PHIST_TIMEMONITOR_PERLINE_MACRO \
+ghost_error PHIST_CHK_gerr=func; FLAG=PHIST_SUCCESS; if (PHIST_CHK_gerr!=GHOST_SUCCESS) { FLAG=PHIST_FUNCTIONAL_ERROR;\
+PHIST_OUT(PHIST_ERROR,"Error code %d (%s) returned from call %s\n(file %s, line %d)\n",\
+(FLAG),(phist_ghost_error2str(PHIST_CHK_gerr)),(#func),(__FILE__),(__LINE__)); return;}\
+}
+#endif
 //! checks an iflag flag passed to a void function for negative value, assigns it to FLAG,
 //! prints an error message and returns if non-zero (to be used in void functions)
 #ifndef PHIST_CHK_NEG_IERR

@@ -24,35 +24,13 @@ const int MPI_COMM_WORLD=0;
 
 #ifndef DOXYGEN
 #include <map>
-#include <ghost/config.h>
-#include <ghost/types.h>
 #endif
-
-// check return value from GHOST
-#define PHIST_CHK_GERR(func,FLAG) { PHIST_TIMEMONITOR_PERLINE_MACRO \
-ghost_error PHIST_CHK_gerr=func; FLAG=PHIST_SUCCESS; \
-if (PHIST_CHK_gerr!=GHOST_SUCCESS) { FLAG=PHIST_FUNCTIONAL_ERROR; };\
-phist::ghost_internal::globalize_cuda_errors(&(FLAG));\
-if (PHIST_CHK_gerr!=GHOST_SUCCESS) { \
-PHIST_OUT(PHIST_ERROR,"Error code %d (%s) returned from call %s\n(file %s, line %d)\n",\
-(FLAG),(phist_ghost_error2str(PHIST_CHK_gerr)),(#func),(__FILE__),(__LINE__)); return;}\
-}
 
 namespace phist 
 {
   //! some helper functions and objects that should not be exposed to phist users
   namespace ghost_internal 
   {
-  
-    //! return the number of MPI processes
-    int get_num_procs();
-
-    //! return the number of GPU processes among the MPI processes
-    int get_num_GPUs();
-  
-    //! if PHIST_GLOBALIZE_CUDA_ERRORS is defined and this is a heterogenous CPU/GPU run,
-    //! perform a global reduction before checking ghost errors.
-    void globalize_cuda_errors(int* iflag);
 
     //! this calls ghost_context_create with the given arguments and retries with a proc_weight of 1 if there are empty partitions
     //! If the matrix source is not NULL (i.e. the matrix is read from disk or created from a row function) 
