@@ -157,6 +157,13 @@ kernel libs) ?
    this flag is defined, all kernels are executed in order.
  */
 #cmakedefine PHIST_USE_GHOST_TASKS ${PHIST_USE_GHOST_TASKS}
+/* ghost allows heterogenous execution and therefore a kernel may e.g.
+   return an error on some MPI processes while others succeed and run into
+   the next MPI call while others have left the scene. This flag is mostly
+   intended for development and testing, it introduces a global barrier after
+   each kernel call and should certainly be disabled for production runs.
+ */
+#cmakedefine PHIST_GLOBALIZE_CUDA_ERRORS
 #cmakedefine PHIST_SELL_C ${PHIST_SELL_C}
 #cmakedefine PHIST_SELL_SIGMA ${PHIST_SELL_SIGMA}
 /* default mode flag passed to ghost_spmv, see ghost/spmv.h for details.

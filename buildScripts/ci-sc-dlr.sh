@@ -110,6 +110,9 @@ else
   ADD_CMAKE_FLAGS+=" -DPHIST_USE_SOLVER_TPLS:BOOL=OFF"
 fi
 if [ "${VECT_EXT}" = "CUDA" ]; then
+  # avoid hanging MPI processes if a CUDA error occurs (only relevant for ghost
+  # right now - Tpetra runs everything or nothing on GPUs.
+  ADD_CMAKE_FLAGS+=" -DPHIST_GLOBALIZE_CUDA_ERRORS:BOOL=ON"
   module load cuda/cuda-${CUDA_VERSION}
   SANITIZER=""
   nvidia-smi

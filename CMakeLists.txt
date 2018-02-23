@@ -627,6 +627,7 @@ elseif (PHIST_KERNEL_LIB STREQUAL "ghost")
   set(PHIST_USE_GHOST ON)
   set(PHIST_MVECS_ROW_MAJOR 1 CACHE STRING "wether multi-vectors should be stored in row-major ordering")
   set(PHIST_USE_GHOST_TASKS 1 CACHE STRING "execute all kernels as GHOST tasks, recommended for performance, but it makes debugging easier to turn it off from time to time")
+  option(PHIST_GLOBALIZE_CUDA_ERRORS "introduce global error checks after each heterogenous CPU/GPU ghost kernel (for testing purposes, this is a performance killer!)" OFF)
 
   set(PHIST_SELL_C -1 CACHE STRING "chunk size C for the SELL-C-sigma format (-1: automatic choice)")
   set(PHIST_SELL_SIGMA -1 CACHE STRING "sorting scope sigma for the SELL-C-sigma format (-1: automatic choice)")

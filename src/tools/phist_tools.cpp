@@ -148,7 +148,7 @@ std::string phist_str2upper(const std::string& s)
       if ((text_size = vsnprintf(buffer, sizeof buffer, msg, args)) < 1024)
       {
         // Output fits in buffer
-        *phist::output_stream << prefix << buffer << std::flush;
+        *(phist::output_stream) << prefix << buffer << std::flush;
       }
       else
       {
