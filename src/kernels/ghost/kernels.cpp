@@ -37,41 +37,6 @@ namespace phist
   namespace ghost_internal
   {
 
-  int get_num_procs()
-  {
-    int comm_size;
-    MPI_Comm_size(phist_get_default_comm(), &comm_size);
-    return comm_size;
-  }
-
-  int get_num_GPUs()
-  {
-#ifndef GHOST_HAVE_CUDA
-    return 0;
-#else
-    static int num_GPUs=-1;
-  if (num_GPUs<0)
-  {
-    ghost_type gtype;
-    ghost_type_get(&gtype);
-    if (gtype==GHOST_TYPE_CUDA)
-    {
-      num_GPUs=1;
-    }
-    else
-    {
-      num_GPUs=0;
-    }
-# ifdef PHIST_HAVE_MPI
-    // everyone should have the max value found among MPI processes
-    MPI_Allreduce(MPI_IN_PLACE,&num_GPUs,1,MPI_INT,MPI_SUM,phist_get_default_comm());
-# endif
-  }
-#endif
-  return num_GPUs;
-}
-
-
 //! returns a value to guide partitioning based on a benchmark of the memory bandwidth.  
 //! The benchmark is run once when this function is called first, subsequently the same  
 //! weight will be returned unless you set force_value>0. If force_vale<=0 is given, the 
@@ -105,7 +70,25 @@ void get_C_sigma(int* C, int* sigma, int flags, MPI_Comm comm)
 {
   // on the first call, figure out if there is a GPU process and set C=32 if so.
   // This requires global communication!!!
-  int any_GPUs=get_num_GPUs();
+  static int any_GPUs=-1;
+  if (any_GPUs<0)
+  {
+    ghost_type gtype;
+    ghost_type_get(&gtype);
+    if (gtype==GHOST_TYPE_CUDA)
+    {
+      any_GPUs=1;
+    }
+    else
+    {
+      any_GPUs=0;
+    }
+
+#ifdef PHIST_HAVE_MPI
+    // everyone should have the max value found among MPI processes
+    MPI_Allreduce(MPI_IN_PLACE,&any_GPUs,1,MPI_INT,MPI_SUM,comm);
+#endif
+  }
 
   // if the user sets both to postive values in the config file (via CMake), respect this choice
   // and do not override it by either flags or the presence of GPU processes. An exception is that
@@ -205,24 +188,6 @@ int get_perm_flag(int iflag, int outlev)
   return oflag;
 }
 
-
-void globalize_cuda_errors(int* iflag)
-{
-#if defined(PHIST_HAVE_MPI)&&defined(GHOST_HAVE_CUDA)&&defined(PHIST_GLOBALIZE_CUDA_ERRORS)
-  // figure out if some but not all MPI ranks are GPU
-  // processes. In that case, we globalize the return codes from GHOST to
-  // avoid hanging jobs
-  int comm_size=get_num_procs();
-  int num_GPUs=get_num_GPUs();
-  bool hetero=(num_GPUs!=0)&&(num_GPUs!=comm_size);
-  // compute the minimum over all iflags. If it is 0, do not modify the local
-  // iflag because this may discard warning messages (positive iflag)
-  int iflag_min=*iflag;
-  if (hetero) MPI_Allreduce(MPI_IN_PLACE,&iflag_min,1, MPI_INT, MPI_MIN, phist_get_default_comm());
-  if (iflag_min<0) *iflag=iflag_min;
-#endif
-  return;
-}
  
     //! private helper function to create a vtraits object
     ghost_densemat_traits default_vtraits()
