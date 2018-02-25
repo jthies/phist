@@ -273,8 +273,13 @@ endif()
 
 # find the lapacke.h header (for MKL it's called mkl_lapacke.h). We use the path to the lapack lib as a hint.
 if (NOT TPL_LAPACKE_INCLUDE_DIRS)
+  if (PHIST_HAVE_MKL)
+    set(LAPACKE_INCLUDE_HINT "${LAPACK_LIBDIR}/../../include")
+  else()
+    set(LAPACKE_INCLUDE_HINT LAPACK_LIBDIR)
+  endif()
   find_path (LAPACKE_INCLUDE_DIR NAMES lapacke.h mkl_lapacke.h 
-                                 HINTS ${LAPACK_LIBDIR}
+                                 HINTS ${LAPACKE_INCLUDE_HINT}
                                  PATH_SUFFIXES "lapacke")
   if (LAPACKE_INCLUDE_DIR MATCHES "LAPACKE_INCLUDE_DIR-NOTFOUND")
     message(WARNING "did not find lapacke header, if the build fails you may need to set TPL_LAPACKE_INCLUDE_DIRS explicitly.")
