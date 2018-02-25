@@ -1,5 +1,5 @@
 
-cmake_minimum_required(VERSION 3.5.0)
+cmake_minimum_required(VERSION 3.8.0)
 
 # some guidelines for extending/modifying the PHIST CMakeLists.txt file. 
 # Things may not be handled this way everywhere yet, but you should keep these
