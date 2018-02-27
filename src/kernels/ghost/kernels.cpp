@@ -307,7 +307,11 @@ extern "C" void phist_comm_create(phist_comm_ptr* vcomm, int* iflag)
   *iflag=0;
   // concept doesn't exist in ghost, return MPI_Comm
   MPI_Comm* comm = new MPI_Comm;
+#ifdef PHIST_HAVE_MPI
   *comm=phist_get_default_comm();
+#else
+  *comm=(MPI_Comm)0;
+#endif
   *vcomm=(phist_comm_ptr)comm;
 }
 
