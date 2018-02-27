@@ -1,5 +1,5 @@
 
-cmake_minimum_required(VERSION 3.5.0)
+cmake_minimum_required(VERSION 3.8.0)
 
 # some guidelines for extending/modifying the PHIST CMakeLists.txt file. 
 # Things may not be handled this way everywhere yet, but you should keep these
@@ -225,7 +225,8 @@ elseif(TPL_LAPACK_LIBRARIES)
   list(GET TPL_LAPACK_LIBRARIES 0 LAPACK_LIBRARY)
   get_filename_component(LAPACK_LIBDIR ${LAPACK_LIBRARY} DIRECTORY)
 elseif (CMAKE_C_COMPILER_ID STREQUAL "Intel")
-  set(TPL_LAPACKE_LIBRARIES "MKL_VIA_LINKER_FLAG")
+  set(TPL_LAPACKE_LIBRARIES "MKL_VIA_FLAG")
+  set(TPL_LAPACKE_INCLUDE_DIRS "MKL_VIA_FLAG")
   set(MKL_FLAG "-mkl=sequential")
   set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${MKL_FLAG}")
 else()
@@ -263,11 +264,11 @@ if (NOT TPL_LAPACKE_LIBRARIES)
     message(FATAL_ERROR "did not find LAPACKe via TPL_LAPACK_LIBRARIES or manually. Aborting.")
 endif()
 
-if (TPL_LAPACKE_LIBRARIES MATCHES "mkl" OR TPL_LAPACKE_LIBRARIES MATCHES "MKL_VIA_LINKER_FLAG")
+if (TPL_LAPACKE_LIBRARIES MATCHES "mkl" OR TPL_LAPACKE_LIBRARIES MATCHES "MKL_VIA_FLAG")
   message(STATUS "found Intel(R) MKL")
   set(PHIST_HAVE_MKL 1)
 endif()
-if (NOT TPL_LAPACKE_LIBRARIES MATCHES "MKL_VIA_LINKER_FLAG")
+if (NOT TPL_LAPACKE_LIBRARIES MATCHES "MKL_VIA_FLAG")
   link_libraries(${TPL_LAPACKE_LIBRARIES})
 endif()
 
@@ -283,8 +284,9 @@ if (NOT TPL_LAPACKE_INCLUDE_DIRS)
     set(TPL_LAPACKE_INCLUDE_DIRS ${LAPACKE_INCLUDE_DIR})
   endif()
 endif()
-
-include_directories(${TPL_LAPACKE_INCLUDE_DIRS})
+if (NOT LAPACKE_INCLUDE_DIRS MATCHES "MKL_VIA_FLAG")
+  include_directories(${TPL_LAPACKE_INCLUDE_DIRS})
+endif()
 
 ########################################################################
 
