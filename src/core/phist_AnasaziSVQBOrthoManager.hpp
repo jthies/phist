@@ -114,8 +114,8 @@ namespace Anasazi {
         if (iflag==-8) rank_of_X=rankQiX-ncolsQi;
       }
 
-      if (Qi!=Teuchos::null) MVT::CopySdMatToTeuchos(Cphist, *C[0]);
-      MVT::CopySdMatToTeuchos(Bphist, *B);
+      if (Cphist!=nullptr && C[0]!=Teuchos::null) MVT::CopySdMatToTeuchos(Cphist, *C[0]);
+      if (B!=Teuchos::null) MVT::CopySdMatToTeuchos(Bphist, *B);
       if (iflag==1) PHIST_SOUT(PHIST_VERBOSE,"orthog suggests rank([Q,X])=%d on input.\n",rankQiX);
     }
     return rank_of_X;

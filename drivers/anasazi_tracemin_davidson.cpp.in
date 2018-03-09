@@ -40,7 +40,7 @@ void SUBR(print_usage)(char* argv[],int pos)
                            "'matrix B' may be set to \"I\" for standard EVPs.\n",
                            argv[0]);
     // print usage message for creating/reading a matrix
-    SUBR(create_matrix)(NULL, NULL, "usage",&iflag);
+    SUBR(create_matrix)(nullptr, nullptr, "usage",&iflag);
 }
 
 int main(int argc, char** argv)
@@ -50,14 +50,14 @@ int main(int argc, char** argv)
 
   comm_ptr comm;
   sparseMat_ptr A,B;
-  linearOp_ptr A_op, B_op; // this is a wrapper for the CRS matrix which we pass to the actual solver
+  linearOp_ptr A_op, B_op=nullptr; // this is a wrapper for the CRS matrix which we pass to the actual solver
   linearOp_ptr P_op; // wrapper for a preconditioning operator
   
   const_map_ptr map; // map (element distribution) of vectors according to 
                        // the distribution of matrix rows
   mvec_ptr X,R;// multivectors for eigenvectors and residuals
 
-  char *matname, *matnameB=NULL;
+  char *matname, *matnameB=nullptr;
     
   // default input parameters:
   MT tol=1.0e-6;
@@ -105,7 +105,7 @@ PHIST_MAIN_TASK_BEGIN
     num_blocks=(how_many+10)/block_size;
   }
 
-  bool haveB=(matnameB!=NULL);
+  bool haveB=(matnameB!=nullptr);
   if (haveB) haveB=(strcmp(matnameB,"I")!=0);
 
   if (~haveB)
@@ -122,7 +122,7 @@ PHIST_MAIN_TASK_BEGIN
   }
   else
   {
-    B=NULL;
+    B=nullptr;
   }
   
   /* we assume domain map = range map here, which is reasonable for something
@@ -135,11 +135,11 @@ PHIST_MAIN_TASK_BEGIN
   
   /* create operator wrapper for computing Y=A*X using a CRS matrix */
   A_op = new TYPE(linearOp);
-  B_op = NULL;
-  P_op = NULL;
+  B_op = nullptr;
+  P_op = nullptr;
   PHIST_ICHK_IERR(SUBR(linearOp_wrap_sparseMat)(A_op,A,&iflag),iflag);
   
-  if (B!=NULL)
+  if (B!=nullptr)
   {
     B_op = new TYPE(linearOp);
     PHIST_ICHK_IERR(SUBR(linearOp_wrap_sparseMat)(B_op,B,&iflag),iflag);
@@ -149,9 +149,9 @@ PHIST_MAIN_TASK_BEGIN
   MT resid[how_many];
   int num_iters=max_iters;
 
-  P_op=NULL; //TODO
+  P_op=nullptr; //TODO
 
-  SUBR(anasazi)(A_op,P_op,B_op,variant,NULL,which,tol,&how_many,
+  SUBR(anasazi)(A_op,P_op,B_op,variant,nullptr,which,tol,&how_many,
         &num_iters,block_size,num_blocks,
         sym,X,eigs,&iflag);
 
@@ -178,7 +178,7 @@ PHIST_MAIN_TASK_BEGIN
   }
     
   PHIST_ICHK_IERR(SUBR(sparseMat_delete)(A,&iflag),iflag);
-  if (B!=NULL)
+  if (B!=nullptr)
   {
     PHIST_ICHK_IERR(SUBR(sparseMat_delete)(B,&iflag),iflag);
   }
