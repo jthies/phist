@@ -54,7 +54,11 @@ namespace Anasazi {
     }
 
     Teuchos::RCP< phist::BelosMV< _ST_ > > X_or_MX=MX;
+    Teuchos::RCP< const phist::BelosMV< _ST_ > > Qi=Teuchos::null;
+    pt::const_mvec_ptr vQi=nullptr;
+    
     if (MX==Teuchos::null) X_or_MX=Teuchos::rcp(&X,false);
+    if (Q.size()>0) {Qi=Q[0]; vQi=Qi->get();}
 
     phist_const_comm_ptr comm;
     pk::mvec_get_comm(X.get(),&comm,&iflag);
@@ -75,21 +79,15 @@ namespace Anasazi {
       throw phist::Exception(PHIST_NOT_IMPLEMENTED);
     }
 
-    bool only_normalize=Q.size()==0);
-
     int rank_of_X=ncolsX;
-
-    // in contrast to orthog, this routine allows orthogonalizing against
-    // several blocks. Hence the outer loop
-    for (int i=0; i<Q.size(); i++)
+    
     {
-
-      int ncolsQi = MVT::GetNumberVecs(*Q[i]);
+      int ncolsQi = (Qi!=Teuchos::null)? MVT::GetNumberVecs(*Qi) : 0;
       if (ncolsQi!=ncolsQ)
       {
         ncolsQ=ncolsQi;
         if (Cphist) pk::sdMat_delete(Cphist,&iflag);
-        pk::sdMat_create(&Cphist,ncolsQ,ncolsX,comm,&iflag);
+        if (ncolsQ>0) pk::sdMat_create(&Cphist,ncolsQ,ncolsX,comm,&iflag);
         // make sure after the loop the last Cphist is deleted
         _Cphist.set(Cphist);
       }
@@ -104,7 +102,7 @@ namespace Anasazi {
       try {
       iflag=PHIST_ORTHOG_TRIANGULAR_R1;
       phist::core< _ST_ >::orthog_impl
-          (Q[i]->get(),X.get(),_Op.get(),X_or_MX->get(),
+          (vQi,X.get(),_Op.get(),X_or_MX->get(),
           XtMX,Bphist,Cphist,
           numSweeps,&rankQiX,rankTol,orthoEps,
           &iflag);
@@ -116,7 +114,7 @@ namespace Anasazi {
         if (iflag==-8) rank_of_X=rankQiX-ncolsQi;
       }
 
-      MVT::CopySdMatToTeuchos(Cphist, *C[i]);
+      if (Qi!=Teuchos::null) MVT::CopySdMatToTeuchos(Cphist, *C[0]);
       MVT::CopySdMatToTeuchos(Bphist, *B);
       if (iflag==1) PHIST_SOUT(PHIST_VERBOSE,"orthog suggests rank([Q,X])=%d on input.\n",rankQiX);
     }
