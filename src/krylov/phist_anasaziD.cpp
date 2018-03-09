@@ -9,15 +9,18 @@
 #include "phist_config.h"
 
 #include "phist_tools.h"
-#include "phist_kernels.h"
-#include "phist_operator.h"
+#include "phist_types.hpp"
+#include "phist_kernels.hpp"
+#include "phist_core.hpp"
 #include "phist_ScalarTraits.hpp"
+#include "phist_MemOwner.hpp"
 #include "phist_anasazi.h"
 
 #ifdef PHIST_HAVE_ANASAZI
 
-#  include "Belos_PhistAdapter.hpp"
-#  include "Anasazi_PhistAdapter.hpp"
+// glue code
+#include "Belos_PhistAdapter.hpp"
+#include "Anasazi_PhistAdapter.hpp"
 #include "phist_AnasaziOperatorTraits.hpp"
 
 // Trilinos stuff
@@ -27,9 +30,10 @@
 #include "Teuchos_FancyOStream.hpp"
 
 #include "AnasaziBasicEigenproblem.hpp"
+#include "AnasaziSVQBOrthoManager.hpp"
 #include "AnasaziSolverManager.hpp"
 #include "AnasaziBlockKrylovSchurSolMgr.hpp"
-# include "AnasaziTraceMinDavidsonSolMgr.hpp"
+#include "AnasaziTraceMinDavidsonSolMgr.hpp"
 #endif
 
 #include "phist_gen_d.h"

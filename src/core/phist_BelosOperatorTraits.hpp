@@ -11,14 +11,9 @@
 
 #include "phist_config.h"
 
-/* needs to be included before system headers for some intel compilers+mpi */
-#ifndef DOXYGEN
-
-#ifdef PHIST_HAVE_MPI
-#include <mpi.h>
-#endif
-
 #ifdef PHIST_HAVE_BELOS
+
+#ifndef DOXYGEN
 
 #include "phist_operator.h"
 #include "phist_ScalarTraits.hpp"
@@ -26,11 +21,7 @@
 #include "BelosTypes.hpp"
 #include <BelosOperatorTraits.hpp>
 
-#endif
-
 #endif //DOXYGEN
-
-#ifdef PHIST_HAVE_BELOS
 
 // this file is mostly copied from the Belos Tpetra adapter implementation in Trilinos 11.2.4
 
@@ -75,5 +66,4 @@ class OperatorTraits <ST, ::phist::BelosMV<ST>, typename phist::ScalarTraits<ST>
 
 } // end of Belos namespace 
 #endif /* PHIST_HAVE_BELOS */
-#endif 
-// end of file BELOS_GHOST_ADAPTER_HPP
+#endif // end of file BELOS_PHIST_ADAPTER_HPP
