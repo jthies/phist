@@ -40,7 +40,7 @@ void SUBR(print_usage)(char* argv[],int pos)
                            "Which may be of the form \"TARGET\" <real value>\n",
                            argv[0]);
     // print usage message for creating/reading a matrix
-    SUBR(create_matrix)(NULL, NULL, "usage",&iflag);
+    SUBR(create_matrix)(nullptr, nullptr, "usage",&iflag);
 }
 
 int main(int argc, char** argv)
@@ -49,8 +49,8 @@ int main(int argc, char** argv)
   int i, iflag;
 
   comm_ptr comm;
-  sparseMat_ptr A=NULL, B=NULL;
-  linearOp_ptr A_op, B_op; // this is a wrapper for the CRS matrix which we pass to the actual solver
+  sparseMat_ptr A=nullptr, B=nullptr;
+  linearOp_ptr A_op, B_op=nullptr; // this is a wrapper for the CRS matrix which we pass to the actual solver
   linearOp_ptr Ainv_op; // wrapper for an iterative linear solver for computing interior 
                     // eigenvalues (used if which=TARGET)
   
@@ -109,7 +109,7 @@ PHIST_MAIN_TASK_BEGIN
   iflag=0;//PHIST_SPARSEMAT_PERM_GLOBAL;
   PHIST_ICHK_IERR(SUBR(create_matrix)(&A,comm,matname,&iflag),iflag);
 
-  if (matBname!=NULL && strcmp(matBname,"I"))
+  if (matBname!=nullptr && strcmp(matBname,"I"))
   {
     iflag=0;
     PHIST_ICHK_IERR(SUBR(create_matrix)(&B,comm,matBname,&iflag),iflag);
@@ -125,9 +125,9 @@ PHIST_MAIN_TASK_BEGIN
   
   /* create operator wrapper for computing Y=A*X using a CRS matrix */
   A_op = new TYPE(linearOp);
-  Ainv_op = NULL;
+  Ainv_op = nullptr;
   PHIST_ICHK_IERR(SUBR(linearOp_wrap_sparseMat)(A_op,A,&iflag),iflag);
-  if (B!=NULL)
+  if (B!=nullptr)
   {
     B_op = new TYPE(linearOp);
     PHIST_ICHK_IERR(SUBR(linearOp_wrap_sparseMat)(B_op,B,&iflag),iflag);
@@ -151,7 +151,7 @@ PHIST_MAIN_TASK_BEGIN
   MT resid[how_many];
   int num_iters=max_iters;
   
-  SUBR(anasazi)(A_op,Ainv_op,B_op,variant,NULL,which,tol,&how_many,
+  SUBR(anasazi)(A_op,Ainv_op,B_op,variant,nullptr,which,tol,&how_many,
         &num_iters,block_size,num_blocks,
         sym,X,eigs,&iflag);
 
