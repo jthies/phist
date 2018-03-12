@@ -1,3 +1,5 @@
+#include "scamac_matrix_Anderson.h"
+#include "scamac_matrix_Exciton.h"
 #include "scamac_matrix_FreeBosonChain.h"
 #include "scamac_matrix_FreeFermionChain.h"
 #include "scamac_matrix_Harmonic.h"

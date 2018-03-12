@@ -1,3 +1,33 @@
+if (!strcmp(gen->name,"Anderson")) {
+  if (!strcmp(parname,"Lx")) {
+    ( (scamac_matrix_Anderson_params_st *) gen->par)->Lx = val;
+    return SCAMAC_EOK;
+  }
+
+  if (!strcmp(parname,"Ly")) {
+    ( (scamac_matrix_Anderson_params_st *) gen->par)->Ly = val;
+    return SCAMAC_EOK;
+  }
+
+  if (!strcmp(parname,"Lz")) {
+    ( (scamac_matrix_Anderson_params_st *) gen->par)->Lz = val;
+    return SCAMAC_EOK;
+  }
+
+  // Unknown parameter
+  return SCAMAC_EINVALID | 2 << SCAMAC_ESHIFT;
+}
+
+if (!strcmp(gen->name,"Exciton")) {
+  if (!strcmp(parname,"L")) {
+    ( (scamac_matrix_Exciton_params_st *) gen->par)->L = val;
+    return SCAMAC_EOK;
+  }
+
+  // Unknown parameter
+  return SCAMAC_EINVALID | 2 << SCAMAC_ESHIFT;
+}
+
 if (!strcmp(gen->name,"FreeBosonChain")) {
   if (!strcmp(parname,"n_species")) {
     ( (scamac_matrix_FreeBosonChain_params_st *) gen->par)->n_species = val;
@@ -14,8 +44,8 @@ if (!strcmp(gen->name,"FreeBosonChain")) {
     return SCAMAC_EOK;
   }
 
-  printf("%s: Unknown integer parameter\n",__func__);
-  exit(EXIT_FAILURE);
+  // Unknown parameter
+  return SCAMAC_EINVALID | 2 << SCAMAC_ESHIFT;
 }
 
 if (!strcmp(gen->name,"FreeFermionChain")) {
@@ -34,8 +64,8 @@ if (!strcmp(gen->name,"FreeFermionChain")) {
     return SCAMAC_EOK;
   }
 
-  printf("%s: Unknown integer parameter\n",__func__);
-  exit(EXIT_FAILURE);
+  // Unknown parameter
+  return SCAMAC_EINVALID | 2 << SCAMAC_ESHIFT;
 }
 
 if (!strcmp(gen->name,"Harmonic")) {
@@ -44,8 +74,8 @@ if (!strcmp(gen->name,"Harmonic")) {
     return SCAMAC_EOK;
   }
 
-  printf("%s: Unknown integer parameter\n",__func__);
-  exit(EXIT_FAILURE);
+  // Unknown parameter
+  return SCAMAC_EINVALID | 2 << SCAMAC_ESHIFT;
 }
 
 if (!strcmp(gen->name,"Hubbard")) {
@@ -59,18 +89,8 @@ if (!strcmp(gen->name,"Hubbard")) {
     return SCAMAC_EOK;
   }
 
-  if (!strcmp(parname,"boundary_conditions")) {
-    ( (scamac_matrix_Hubbard_params_st *) gen->par)->boundary_conditions = val;
-    return SCAMAC_EOK;
-  }
-
-  if (!strcmp(parname,"seed")) {
-    ( (scamac_matrix_Hubbard_params_st *) gen->par)->seed = val;
-    return SCAMAC_EOK;
-  }
-
-  printf("%s: Unknown integer parameter\n",__func__);
-  exit(EXIT_FAILURE);
+  // Unknown parameter
+  return SCAMAC_EINVALID | 2 << SCAMAC_ESHIFT;
 }
 
 if (!strcmp(gen->name,"OneFermion")) {
@@ -80,8 +100,8 @@ if (!strcmp(gen->name,"OneFermion")) {
     return SCAMAC_EOK;
   }
 
-  printf("%s: Unknown integer parameter\n",__func__);
-  exit(EXIT_FAILURE);
+  // Unknown parameter
+  return SCAMAC_EINVALID | 2 << SCAMAC_ESHIFT;
 }
 
 if (!strcmp(gen->name,"SpinChainXXZ")) {
@@ -100,8 +120,8 @@ if (!strcmp(gen->name,"SpinChainXXZ")) {
     return SCAMAC_EOK;
   }
 
-  printf("%s: Unknown integer parameter\n",__func__);
-  exit(EXIT_FAILURE);
+  // Unknown parameter
+  return SCAMAC_EINVALID | 2 << SCAMAC_ESHIFT;
 }
 
 if (!strcmp(gen->name,"Tridiagonal")) {
@@ -110,8 +130,8 @@ if (!strcmp(gen->name,"Tridiagonal")) {
     return SCAMAC_EOK;
   }
 
-  printf("%s: Unknown integer parameter\n",__func__);
-  exit(EXIT_FAILURE);
+  // Unknown parameter
+  return SCAMAC_EINVALID | 2 << SCAMAC_ESHIFT;
 }
 
 if (!strcmp(gen->name,"TridiagonalComplex")) {
@@ -120,8 +140,8 @@ if (!strcmp(gen->name,"TridiagonalComplex")) {
     return SCAMAC_EOK;
   }
 
-  printf("%s: Unknown integer parameter\n",__func__);
-  exit(EXIT_FAILURE);
+  // Unknown parameter
+  return SCAMAC_EINVALID | 2 << SCAMAC_ESHIFT;
 }
 
 if (!strcmp(gen->name,"TridiagonalReal")) {
@@ -130,7 +150,7 @@ if (!strcmp(gen->name,"TridiagonalReal")) {
     return SCAMAC_EOK;
   }
 
-  printf("%s: Unknown integer parameter\n",__func__);
-  exit(EXIT_FAILURE);
+  // Unknown parameter
+  return SCAMAC_EINVALID | 2 << SCAMAC_ESHIFT;
 }
 

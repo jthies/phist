@@ -9,11 +9,15 @@
 
 ScamacErrorCode scamac_workspace_alloc(const ScamacGenerator * gen, ScamacWorkspace ** ws) {
 
-  if ( (!gen) || (!ws) ) {
-    return SCAMAC_ENULL;
+  if (!gen) {
+    return SCAMAC_ENULL | 1 << SCAMAC_ESHIFT;
   }
+  if (!ws) {
+    return SCAMAC_ENULL | 2 << SCAMAC_ESHIFT;
+  }
+  
   if (gen->needs_finalization) {
-    return SCAMAC_EFAIL; // forgot to call "scamac_generator_finalize" !
+    return SCAMAC_EINVALID | 1 << SCAMAC_ESHIFT; // forgot to call "scamac_generator_finalize" !
   }
 
   ScamacErrorCode err;
@@ -86,7 +90,7 @@ ScamacErrorCode scamac_generator_check(const ScamacGenerator * gen, char ** desc
   ScamacErrorCode err;
 
   if (!gen) {
-    return SCAMAC_ENULL;
+    return SCAMAC_ENULL | 1 << SCAMAC_ESHIFT;
   }
 
   /* for wrappers */
@@ -118,7 +122,7 @@ ScamacErrorCode scamac_generator_check(const ScamacGenerator * gen, char ** desc
         *desc = malloc(100 * sizeof **desc);
         snprintf(*desc, 100, "Oops - internal error in: scamac_generator_check");
       }
-      return SCAMAC_EFAIL;
+      return SCAMAC_EFAIL | SCAMAC_EINTERNAL;
     }
   } else {
     if (desc) {
@@ -154,25 +158,25 @@ ScamacErrorCode scamac_generator_finalize(ScamacGenerator * gen) {
   ScamacErrorCode err;
 
   if (!gen) {
-    return SCAMAC_ENULL;
+    return SCAMAC_ENULL | 1 << SCAMAC_ESHIFT;
   }
 
   if (gen -> needs_finalization) {
     err = scamac_generator_check(gen, NULL);
-    if (err && (err != SCAMAC_EWARNING)) {
+    if (SCAMAC_DISWARN(err)) {
       return err;
     }
 
     /* for wrappers: unwrap parameters  */
     if (gen -> fct_unwrap_par && gen -> wrapped_par) {
       err = gen->fct_unwrap_par(gen->wrapped_par, gen->par);
-      if (err && (err != SCAMAC_EWARNING)) {
+      if (SCAMAC_DISWARN(err)) {
         return err;
       }
       gen->needs_unwrapping=false;
       // check unwrapped parameters: No error should occur now.
       err = scamac_generator_check(gen, NULL);
-      if (err && (err != SCAMAC_EWARNING)) {
+      if (SCAMAC_DISWARN(err)) {
         return (err | SCAMAC_EINTERNAL);
       }
     }

@@ -52,22 +52,43 @@ typedef int ScamacIdx;
 #endif
 
 /* error codes */
+/* we support up to 2^6 = 63 error codes + 1 "EOK"
+ * The error codes ENULL ... ECORRUPTED can be OR'ed with the position of the problematic input value,
+ * that is if the i-th parameter is problematic, with 1 <= i <= 31, functions return, e.g,
+ * SCAMAC_EINVALID | (i << SCAMAC_ESHIFT) or SCAMAC_EINVALID | (i << SCAMAC_ESHIFT) | SCAMAC_EINTERNAL
+ * The shift is given by SCAMAC_ESHIFT = 7
+ */
 /* This definition must agree with the list of error names
-   in scamac_desc_err() in scamac_collection.c */
+   in scamac_error_desc() in scamac_collection.c */
+#define SCAMAC_ESHIFT 6
+#define SCAMAC_EMASK ((1U << SCAMAC_ESHIFT) - 1)
 typedef enum {
+// +++ basic status
 // routine completed successfully
   SCAMAC_EOK=0,
 // routine failed for an unspecified reason
   SCAMAC_EFAIL,
-// an input parameter has an unknown value (e.g., a flag)
-  SCAMAC_EUNKNOWN,
-  SCAMAC_ESHORTROW,
-// an (integer) input parameter falls out of the valid range (e.g, is negative when a positive value is expected)
-  SCAMAC_ERANGE,
-// a combination of input parameters is invalid
-  SCAMAC_EINVALID,
+// +++
+// +++ problems with specific function parameters (on input)
 // a null pointer was supplied in the wrong place
   SCAMAC_ENULL,
+// an input parameter, or the combination of all parameters, is invalid
+  SCAMAC_EINVALID,
+// an (integer or double) input parameter is outside of the valid range (e.g, is negative when a positive value is expected)
+  SCAMAC_ERANGE,
+// an object passed to a routine, probably constructed elsewhere, is corrupted. Can signal an internal error, 
+// or improper use of ScaMaC routines & algorithms.
+// example: If a complex matrix is passed to a routine that expects a real matrix, EINVALID is returned.
+// But if the valtype of the matrix is neither real nor complex, ECORRUPTED is returned, because that's not a valid matrix at all.
+  SCAMAC_ECORRUPTED,
+// +++
+// +++
+// the requested computation is outside of the scope of the function (e.g., Lanczos for non-symmetric matrices)
+  SCAMAC_ESCOPE,
+// the combination of all input parameters is invalid (but each individual parameter may be valid)
+  SCAMAC_EINPUT,
+// +++
+// +++ problems during execution or on return
 // index/matrix dimension exceeds possible integer range (2^31 ~ 2E9 for int32, 2^63 ~ 9E18 for int64)
   SCAMAC_EOVERFLOW,
 // memory allocation failed
@@ -78,28 +99,74 @@ typedef enum {
   SCAMAC_EHUGECOMP,
 // a (parameter) warning. Not necessarily an error
   SCAMAC_EWARNING,
-// replace
-  SCAMAC_EINVAL,
 // algorithm (e.g., Lanczos) not converged
-  SCAMAC_ENOTCONVERGED
+  SCAMAC_ENOTCONVERGED,
+// row to short
+  SCAMAC_ESHORTROW,
+// the error originates from an internal call to a ScaMaC routine. This is a flag that can be combined with the other error codes,
+// as in SCAMAC_EFAIL | SCAMAC_EINTERNAL
+  SCAMAC_EINTERNAL = (1U << (2*SCAMAC_ESHIFT))
 } ScamacErrorCode;
-// the error occurred due to internal problems
-#define SCAMAC_EINTERNAL (1U << 10)
 
+// discard warnings (SCAMAC_EWARNING)
+#define SCAMAC_DISWARN(err) \
+( ((err & SCAMAC_EMASK) == SCAMAC_EWARNING) ? SCAMAC_EOK : err)
 
-// macro for error handling. Replace as you wish.
-#define SCAMAC_CHKERR(n) do {if (n) {fprintf(stderr,"%s: Failed with error code: %d [%s]\n",__func__,n,scamac_desc_err(n));exit(EXIT_FAILURE);}} while (0)
+// macros for error handling. Replace as you wish.
+// Calls exit(EXIT_FAILURE) on abort.
+#define SCAMAC_CHKERR(err)						\
+  do { \
+    if (err) {								\
+      fprintf(stderr, "\n*** ABORT ***\n%s\n\nfunction >%s< at line %d failed with\n\n", \
+	      __FILE__, __func__,  __LINE__);			\
+      fprintf(stderr,"%s%s\n",scamac_error_desc(err),scamac_error_dpar(err)); \
+      fprintf(stderr,"*************\n"); \
+      exit(EXIT_FAILURE);						\
+    }									\
+  } while (0)
 
-#define SCAMAC_TRY(exp)  \
-    do { \
-      ScamacErrorCode err; \
-      err = exp; \
-      if (err) { \
-        fprintf(stderr, "%s : line %d\n in function >%s<,\n >%s< failed with error code: %d [%s]\n",\
-                __FILE__, __LINE__, __func__, #exp, err, scamac_desc_err(err)); \
-        exit(EXIT_FAILURE); \
-      } \
-    } while (0)
+#define SCAMAC_TRY(exp)							\
+  do {									\
+    ScamacErrorCode err;						\
+    err = exp;								\
+    if (err) {								\
+      fprintf(stderr, "\n*** ABORT ***\n%s\n\nin function >%s< at line %d\n\n>%s< failed with\n\n", \
+	      __FILE__, __func__,  __LINE__, #exp);			\
+      fprintf(stderr,"%s%s\n",scamac_error_desc(err),scamac_error_dpar(err)); \
+      fprintf(stderr,"*************\n"); \
+      exit(EXIT_FAILURE);						\
+    }									\
+  } while (0)
+
+// macros for error handling with MPI. Replace as you wish.
+// Calls MPI_Abort on abort.
+#define SCAMAC_CHKERR_MPI(err)						\
+  do { \
+    if (err) {								\
+      int mpi_rank; \
+      MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank); \
+      fprintf(stderr, "\n*** ABORT *** Process %d\n%s\n\nfunction >%s< at line %d failed with\n\n", \
+	      mpi_rank, __FILE__, __func__,  __LINE__);			\
+      fprintf(stderr,"%s%s\n",scamac_error_desc(err),scamac_error_dpar(err)); \
+      fprintf(stderr,"*************\n"); \
+      MPI_Abort(MPI_COMM_WORLD, 1);						\
+    }									\
+  } while (0)
+
+#define SCAMAC_TRY_MPI(exp)							\
+  do {									\
+    ScamacErrorCode err;						\
+    err = exp;								\
+    if (err) {								\
+      int mpi_rank; \
+      MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank); \
+      fprintf(stderr, "\n*** ABORT *** Process %d\n%s\n\nin function >%s< at line %d\n\n>%s< failed with\n\n", \
+	      mpi_rank, __FILE__, __func__,  __LINE__, #exp);			\
+      fprintf(stderr,"%s%s\n",scamac_error_desc(err),scamac_error_dpar(err)); \
+      fprintf(stderr,"*************\n"); \
+      MPI_Abort(MPI_COMM_WORLD, 1);						\
+    }									\
+  } while (0)
 
 
 /* abstract objects */
@@ -139,5 +206,7 @@ typedef int ScamacPar;
 #define SCAMAC_PAR_INT 1
 #define SCAMAC_PAR_DOUBLE 2
 #define SCAMAC_PAR_BOOL 3
+#define SCAMAC_PAR_RNGSEED 4
+#define SCAMAC_PAR_OPTION 5
 
 #endif /* SCAMAC_INCLUDE_H */

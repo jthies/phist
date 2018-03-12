@@ -73,15 +73,15 @@ int main(int argc,char **argv) {
 
   err = scamac_generator_finalize(my_gen);
   if (err) {
-    ierr = PetscPrintf(PETSC_COMM_WORLD,"Problem: scamac_generator_finalize failed [%s]\n",scamac_desc_err(err)); CHKERRQ(ierr);
+    ierr = PetscPrintf(PETSC_COMM_WORLD,"Problem: scamac_generator_finalize failed [%s]\n",scamac_error_desc(err)); CHKERRQ(ierr);
     SETERRQ(PETSC_COMM_WORLD,1,"Abort due to error reported by ScaMaC");
   }
 
   ierr = PetscPrintf(PETSC_COMM_WORLD,"Example\n-------\n%s\n",scamac_generator_query_name(my_gen)); CHKERRQ(ierr);
 
-  err=scamac_generator_parameter_desc(my_gen, &scamac_str);
+  err=scamac_generator_parameter_desc(my_gen, "desc", &scamac_str);
   if (err) {
-    ierr = PetscPrintf(PETSC_COMM_WORLD,"Problem: scamac_generator_parameter_desc failed [%s]\n",scamac_desc_err(err)); CHKERRQ(ierr);
+    ierr = PetscPrintf(PETSC_COMM_WORLD,"Problem: scamac_generator_parameter_desc failed [%s]\n",scamac_error_desc(err)); CHKERRQ(ierr);
     SETERRQ(PETSC_COMM_WORLD,1,"Abort due to error reported by ScaMaC");
   }
   ierr = PetscPrintf(PETSC_COMM_WORLD,"\nParameters\n----------\n%s\n\n",scamac_str); CHKERRQ(ierr);
@@ -100,7 +100,7 @@ int main(int argc,char **argv) {
   ScamacWorkspace * my_ws = NULL;
   err=scamac_workspace_alloc(my_gen, &my_ws);
   if (err) {
-    ierr = PetscPrintf(PETSC_COMM_WORLD,"Problem: scamac_workspace_alloc failed [%s]\n",scamac_desc_err(err)); CHKERRQ(ierr);
+    ierr = PetscPrintf(PETSC_COMM_WORLD,"Problem: scamac_workspace_alloc failed [%s]\n",scamac_error_desc(err)); CHKERRQ(ierr);
     SETERRQ(PETSC_COMM_WORLD,1,"Abort due to error reported by ScaMaC");
   }
 
@@ -109,7 +109,7 @@ int main(int argc,char **argv) {
 
   err=scamac_alloc_cind_val(my_gen,SCAMAC_DEFAULT,&cind,&val);
   if (err) {
-    ierr = PetscPrintf(PETSC_COMM_WORLD,"Problem: scamac_alloc_cind_val failed [%s]\n",scamac_desc_err(err)); CHKERRQ(ierr);
+    ierr = PetscPrintf(PETSC_COMM_WORLD,"Problem: scamac_alloc_cind_val failed [%s]\n",scamac_error_desc(err)); CHKERRQ(ierr);
     SETERRQ(PETSC_COMM_WORLD,1,"Abort due to error reported by ScaMaC");
   }
 
@@ -130,7 +130,7 @@ int main(int argc,char **argv) {
     ScamacIdx nzr;
     err = scamac_generate_row(my_gen,my_ws,II,SCAMAC_DEFAULT,&nzr,cind,val);
     if (err) {
-      ierr = PetscPrintf(PETSC_COMM_WORLD,"Problem: scamac_generate_row failed [%s]\n",scamac_desc_err(err)); CHKERRQ(ierr);
+      ierr = PetscPrintf(PETSC_COMM_WORLD,"Problem: scamac_generate_row failed [%s]\n",scamac_error_desc(err)); CHKERRQ(ierr);
       SETERRQ(PETSC_COMM_WORLD,1,"Abort due to error reported by ScaMaC");
     }
 
@@ -154,13 +154,13 @@ int main(int argc,char **argv) {
 
   err = scamac_workspace_free(my_ws);
   if (err) {
-    ierr = PetscPrintf(PETSC_COMM_WORLD,"Problem: scamac_workspace_free failed [%s]\n",scamac_desc_err(err)); CHKERRQ(ierr);
+    ierr = PetscPrintf(PETSC_COMM_WORLD,"Problem: scamac_workspace_free failed [%s]\n",scamac_error_desc(err)); CHKERRQ(ierr);
     SETERRQ(PETSC_COMM_WORLD,1,"Abort due to error reported by ScaMaC");
   }
 
   err = scamac_generator_destroy(my_gen);
   if (err) {
-    ierr = PetscPrintf(PETSC_COMM_WORLD,"Problem: scamac_generator_destroy failed [%s]\n",scamac_desc_err(err)); CHKERRQ(ierr);
+    ierr = PetscPrintf(PETSC_COMM_WORLD,"Problem: scamac_generator_destroy failed [%s]\n",scamac_error_desc(err)); CHKERRQ(ierr);
     SETERRQ(PETSC_COMM_WORLD,1,"Abort due to error reported by ScaMaC");
   }
 

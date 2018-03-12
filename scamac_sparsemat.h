@@ -91,6 +91,7 @@ ScamacIdx scamac_sparsemat_maxrowlength(const scamac_sparsemat_st *sm);
  *  \param[out] symm_value Is the matrix symmetric (for real sm) or Hermitian (for complex sm)?
  *  \note symm_pattern==false implies symm_value==false
  *  \return Error code
+ *  \todo Check for zero entries!
  */
 ScamacErrorCode scamac_sparsemat_check_symmetry(const scamac_sparsemat_st * sm, bool * symm_pattern, bool * symm_value);
 

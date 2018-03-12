@@ -1,7 +1,7 @@
 Disclaimer
 ----------
 
-This ScaMaC version (0.7) is a development version, and not ready for distribution.
+This ScaMaC version (0.8) is a development version, and not ready for distribution.
 No guarantee is given, no responsibility assumed.
 This version has been tested on 4 different systems (3 Linux + 1 MacOs) without problems.
 No functionality is really broken and the interface is nearly converged,
@@ -43,41 +43,57 @@ Installation
    The cmake script supports various options, which can be set during the call to CMake,
    or after CMake has finished through "ccmake .", which starts an interactive session.
    Options [with default value ON/OFF] include:
-   SCAMAC_USE_64               [ON ]   -- build with int64 index type
+   SCAMAC_USE_64               [ON ]   -- build library with int64 index type
    SCAMAC_USE_BLAS             [OFF]   -- use external BLAS    (required for spectrum/Lanczos)
    SCAMAC_USE_LAPACK           [OFF]   -- use external LAPACK  (required for spectrum/Lanczos)
-   SCAMAC_USE_OPENMP           [OFF]   -- build with OpenMP    (required for min. work ex.)
+   SCAMAC_USE_OPENMP           [ON]    -- build with OpenMP    (required for min. work ex.)
    SCAMAC_USE_PNG              [OFF]   -- build with libpng    (required for pattern plots)
-   SCAMAC_USE_SLEPC            [OFF]   -- build min. work. ex. with SLEPc
 
 4. Build the library, the ScaMaC toolkit ("scamact"), and all minimal working examples with "make".
-   "make install" puts the created files into the default locations:
+   Try "make test" afterwards.
+   "make install" puts all libraries & executables into the following default locations:
     libraries "libscamac" and "libscamactools" -> GOO/lib
     headers -> GOO/include
     toolkit "scamact" -> GOO/toolbox
     minimal working examples -> GOO/mwe
+    minimal working examples that require external libraries -> GOO/mwe_external
 
-5. If CMake option "SCAMAC_USE_SLEPC = ON":
-   The CMake script recognizes the environment variables PETSC_DIR, PETSC_ARCH, SLEPC_DIR,
-   which should point at the respective PETSc and SLEPc directories.
-   Otherwise, you must supply the correct values to the CMake script (e.g., via ccmake).
-   After installation of the ScaMaC libraries (see step 4),
-   "make mwe_slepc" in the build directory "GOO" builds the SLEPc example.
-   [We here rely on the PETSc/SLEPc makefiles. This is somewhat inelegant, but work's for now.]
+5. To build the minimal working examples in GOO/mwe_external:
+   - for mwe_slepc:
+     set environment variables PETSC_DIR, PETSC_ARCH, SLEPC_DIR for your PETSc/SLEPc installation
+     "make mwe_slepc" in GOO/mwe_external" builds the SLEPc example.
+     [We here rely on the PETSc/SLEPc makefiles.]
+   - for mwe_mpi:
+     "make mwe_mpi_count" in GOO/mwe_external" builds the MPI example with mpicc.
 
 
 Usage
 -----
 
+For matrix generation, only libscamac.a is required.
+With minimal requirements, compilation is possible in the form of
+$(CC) -I$(SCAMAC_INCDIR) -o mwe mwe.c -L$(SCAMAC_LIBDIR) -lscamac -lm
+for example
+gcc -IGOO/include -o mwe_serial_query mwe_serial_query.c -LGOO/lib -lscamac -lm
+will work.
+
 Basic use of the ScaMaC library functions is illustrated through the minimal working examples:
 
- - mwe_simple.c            : Basic example - generate a matrix row by row.
- - mwe_openmp.c            : Basic example with OpenMP - parallel generation of the matrix rows with several OpenMP threads.
+ - mwe_serial_query.c      : Basic example - obtain the dimension of a matrix, without generating any rows.
+ - mwe_serial_scale.c      : Basic example - scale up the dimension of a matrix by using different matrix parameters.
+                             [This example is expected to terminate with an "error OVERFLOW" message.]
+ - mwe_serial_count.c      : Basic example - generate a matrix row by row, and count the non-zeros.
+ - mwe_openmp_count.c      : Basic example with OpenMP - generate the matrix rows in parallel, and count the non-zeros.
  - mwe_openmp_statistics.c : Assemble statistics of a ScaMaC matrix.
- - mwe_plot.c              : Plot the sparsity pattern of a ScaMaC matrix.
- - mwe_openmp_plot.c
+ - mwe_plot_serial.c       : Plot the sparsity pattern of a ScaMaC matrix.
+ - mwe_plot_openmp.c       : ~~~
 
- - mwe_slepc.c             : Integration with SLEPc eigensolvers.
+ - mwe_mpi_count.c         : Basic example with MPI - generate the matrix rows in parallel, and count the non-zeros.
+ - mwe_slepc.c             : Integration with SLEPc eigensolvers -- compute an eigenvalue.
+
+With the exception of mwe_serial_scale, all MWEs expect an argument string on the command line, in the form given below, say,
+mwe_* Anderson,Lx=100,Ly=50,Lz=20,t=2.0,ranpot=4.0,seed=0x3245,boundary_conditions=periodic
+which sets some parameters while the others keep their default values.
 
 The ScaMaC toolkit "scamact" (beware of incorrect hyphenation!) provides several options for exploration of the ScaMaC matrices.
 For example, try the following:

@@ -117,7 +117,7 @@ int scamac_spins_decode(const scamac_dof_spins_st * dof, ScamacIdx idx, scamac_r
     }
     return 0;
   } else {
-    return SCAMAC_EINVAL;
+    return SCAMAC_ERANGE;
   }
 }
 

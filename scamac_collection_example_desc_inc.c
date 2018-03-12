@@ -1,3 +1,25 @@
+if (!strcmp(matname,"Anderson")) {
+if (desc) {
+ char * my_desc = malloc(76 * sizeof *my_desc);
+ strncpy(my_desc, "matrix type: symmetric real\n\nAnderson model of localization in 1D, 2D, 3D",75);
+ my_desc[75]=0;
+ *desc=my_desc;
+}
+if (valtype) {*valtype=SCAMAC_VAL_REAL;}
+if (symmetry) {*symmetry=SCAMAC_SYMMETRIC;}
+return SCAMAC_EOK;
+}
+if (!strcmp(matname,"Exciton")) {
+if (desc) {
+ char * my_desc = malloc(55 * sizeof *my_desc);
+ strncpy(my_desc, "matrix type: hermitian complex\n\nExciton on a lattice",54);
+ my_desc[54]=0;
+ *desc=my_desc;
+}
+if (valtype) {*valtype=SCAMAC_VAL_COMPLEX;}
+if (symmetry) {*symmetry=SCAMAC_HERMITIAN;}
+return SCAMAC_EOK;
+}
 if (!strcmp(matname,"FreeBosonChain")) {
 if (desc) {
  char * my_desc = malloc(54 * sizeof *my_desc);

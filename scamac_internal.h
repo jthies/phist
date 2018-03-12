@@ -66,7 +66,7 @@ struct scamac_workspace_st {
 #define SCAMAC_DESC_ERR(cond,conddesc)  \
     do { \
       if (cond) { \
-        err=SCAMAC_EINVAL; \
+        err=SCAMAC_EINPUT; \
         if (desc) {scamac_string_append(&str,conddesc"\n");} \
       } \
     } while (0)

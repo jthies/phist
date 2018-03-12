@@ -11,14 +11,16 @@
 
 
 /* output in Matrix Market format */
-int scamac_sparsemat_io_write_mm(const scamac_sparsemat_st *sm, char * fname) {
-
-  if (!sm || !fname) {
-    return SCAMAC_EINVAL;
+ScamacErrorCode scamac_sparsemat_io_write_mm(const scamac_sparsemat_st *sm, char * fname) {
+  if (!sm) {
+    return SCAMAC_ENULL | 1 << SCAMAC_ESHIFT;
+  }
+  if (!fname) {
+    return SCAMAC_ENULL | 2 << SCAMAC_ESHIFT;
   }
 
   if (!sm->nr || !sm->nc || !sm->ne) {//empty matrix
-    return SCAMAC_EINVAL;
+    return SCAMAC_EINVALID | 1 << SCAMAC_ESHIFT;
   }
 
   FILE * f;
@@ -51,23 +53,23 @@ int scamac_sparsemat_io_write_mm(const scamac_sparsemat_st *sm, char * fname) {
 
   fclose(f);
 
-  return 0;
+  return SCAMAC_EOK;
 
 }
 
 /* output in Harwell-Boeing format */
-int scamac_sparsemat_io_write_hb(const scamac_sparsemat_st *sm, char * fname) {
-  if (!sm || !fname) {
-    return SCAMAC_EINVAL;
+ScamacErrorCode scamac_sparsemat_io_write_hb(const scamac_sparsemat_st *sm, char * fname) {
+  if (!sm) {
+    return SCAMAC_ENULL | 1 << SCAMAC_ESHIFT;
+  }
+  if (!fname) {
+    return SCAMAC_ENULL | 2 << SCAMAC_ESHIFT;
   }
 
   if (!sm->nr || !sm->nc || !sm->ne) {//empty matrix
-    return SCAMAC_EINVAL;
+    return SCAMAC_EINVALID | 1 << SCAMAC_ESHIFT;
   }
-
-  FILE * f;
-  f=fopen(fname,"w");  // suffix ".rb"
-
+    
   char TITLE[72+1], KEY[8+1];
   ScamacIdx TOTCRD, PTRCRD, INDCRD, VALCRD, RHSCRD;
   char TOTCRDs[14+1], PTRCRDs[14+1], INDCRDs[14+1], VALCRDs[14+1], RHSCRDs[14+1];
@@ -83,8 +85,8 @@ int scamac_sparsemat_io_write_hb(const scamac_sparsemat_st *sm, char * fname) {
     MXTYPE[0]='R';
   } else {
     MXTYPE[0]='C';
-    printf("%s: Feature not yet implemented\n",__func__);
-    exit(EXIT_FAILURE);
+    // complex matrix not yet implemented
+    return SCAMAC_ESCOPE | 1 << SCAMAC_ESHIFT;
   }
   MXTYPE[1]='U'; // we make no use of symmetry
   MXTYPE[2]='A';
@@ -99,7 +101,6 @@ int scamac_sparsemat_io_write_hb(const scamac_sparsemat_st *sm, char * fname) {
   NCOL=sm->nc;
   NNZERO=sm->ne;
   NELTVL=0;  // no elemental matrix
-
 
   snprintf(TOTCRDs,14+1,"%"SCAMACPRIDX,TOTCRD);
   snprintf(PTRCRDs,14+1,"%"SCAMACPRIDX,PTRCRD);
@@ -117,6 +118,8 @@ int scamac_sparsemat_io_write_hb(const scamac_sparsemat_st *sm, char * fname) {
   snprintf(VALFMT,20+1,"(3E25.17)"); // sufficient for double precision
   snprintf(RHSFMT,20+1,"(3E25.17)"); // not needed
 
+  FILE * f;
+  f=fopen(fname,"w");  // suffix ".rb"
 
   // header: 4 lines.
   fprintf(f,"%-72.72s%-8.8s\n",TITLE,KEY);
@@ -180,25 +183,28 @@ int scamac_sparsemat_io_write_hb(const scamac_sparsemat_st *sm, char * fname) {
 
   fclose(f);
 
-  return 0;
+  return SCAMAC_EOK;
 
 }
 
 /* output in MATLAB binary format */
-int scamac_sparsemat_io_write_matlab(const scamac_sparsemat_st *sm, char * fname) {
+ScamacErrorCode scamac_sparsemat_io_write_matlab(const scamac_sparsemat_st *sm, char * fname) {
   assert(CHAR_BIT == 8);
-  if (!sm || !fname) {
-    return SCAMAC_EINVAL;
-  }
-
   assert(sizeof *(sm->rptr) == 4);
   assert(sizeof *(sm->cind) == 4);
   assert(sizeof *(sm->val ) == 8);
 
-  if (!sm->nr || !sm->nc || !sm->ne) {//empty matrix
-    return SCAMAC_EINVAL;
+   if (!sm) {
+    return SCAMAC_ENULL | 1 << SCAMAC_ESHIFT;
+  }
+  if (!fname) {
+    return SCAMAC_ENULL | 2 << SCAMAC_ESHIFT;
   }
 
+  if (!sm->nr || !sm->nc || !sm->ne) {//empty matrix
+    return SCAMAC_EINVALID | 1 << SCAMAC_ESHIFT;
+  }
+  
   FILE * f;
   f=fopen(fname,"wb");
 
@@ -304,23 +310,25 @@ int scamac_sparsemat_io_write_matlab(const scamac_sparsemat_st *sm, char * fname
 
   fclose(f);
 
-  return 0;
+  return SCAMAC_EOK;
 
 }
 
 /* output in GHOST binary format */
-int scamac_sparsemat_io_write_ghost(const scamac_sparsemat_st *sm, char * fname) {
-  if (!sm || !fname) {
-    return SCAMAC_EINVAL;
+ScamacErrorCode scamac_sparsemat_io_write_ghost(const scamac_sparsemat_st *sm, char * fname) {
+  if (!sm) {
+    return SCAMAC_ENULL | 1 << SCAMAC_ESHIFT;
+  }
+  if (!fname) {
+    return SCAMAC_ENULL | 2 << SCAMAC_ESHIFT;
   }
 
   if (!sm->nr || !sm->nc || !sm->ne) {//empty matrix
-    return SCAMAC_EINVAL;
+    return SCAMAC_EINVALID | 1 << SCAMAC_ESHIFT;
   }
 
   if ( sizeof *(sm->rptr) != 8 || sizeof *(sm->cind) != 8 || sizeof *(sm->val) !=8) {
-    printf("%s: Wrong size of sparse matrix. Abort.\n",__func__);
-    exit(EXIT_FAILURE);
+    return SCAMAC_EINVALID | 1 << SCAMAC_ESHIFT;
   }
 
   FILE * f;
@@ -358,7 +366,7 @@ int scamac_sparsemat_io_write_ghost(const scamac_sparsemat_st *sm, char * fname)
 
   fclose(f);
 
-  return 0;
+  return SCAMAC_EOK;
 
 }
 

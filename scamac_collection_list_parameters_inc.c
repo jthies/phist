@@ -1,3 +1,40 @@
+if (!strcmp(matname,"Anderson")) {
+my_string = malloc(377* sizeof *my_string);
+if (!my_string) {return SCAMAC_EMALLOCFAIL;}
+strncpy(&my_string[0], "int Lx [dimensions of cuboid: Lx]\n",34);
+strncpy(&my_string[34], "int Ly [dimensions of cuboid: Lx]\n",34);
+strncpy(&my_string[68], "int Lz [dimensions of cuboid: Lx]\n",34);
+strncpy(&my_string[102], "double t [hopping strength]\n",28);
+strncpy(&my_string[130], "double ranpot [random on-site potential [-ranpot, ranpot]]\n",59);
+strncpy(&my_string[189], "option boundary_conditions {open,periodic} [open or periodic boundary conditions]\n",82);
+strncpy(&my_string[271], "rngseed seed [random seed]\n",27);
+strncpy(&my_string[298], "option sweep {simple,backforth} [mode of traversal of cuboid]\n",62);
+my_string[359]=0;
+*desc = my_string;
+return SCAMAC_EOK;
+}
+
+if (!strcmp(matname,"Exciton")) {
+my_string = malloc(376* sizeof *my_string);
+if (!my_string) {return SCAMAC_EMALLOCFAIL;}
+strncpy(&my_string[0], "double so [spin orbit]\n",23);
+strncpy(&my_string[23], "double ex [exchange]\n",21);
+strncpy(&my_string[44], "double mlh [mass light hole]\n",29);
+strncpy(&my_string[73], "double mhh [mass heavy hole]\n",29);
+strncpy(&my_string[102], "double me [mass electron]\n",26);
+strncpy(&my_string[128], "double eps [dielectric constant]\n",33);
+strncpy(&my_string[161], "double lc [eff. Coulomb length]\n",32);
+strncpy(&my_string[193], "double kx [momentum kx]\n",24);
+strncpy(&my_string[217], "double ky [momentum ky]\n",24);
+strncpy(&my_string[241], "double kz [momentum kz]\n",24);
+strncpy(&my_string[265], "double a [lattice constant]\n",28);
+strncpy(&my_string[293], "int L [cube length]\n",20);
+strncpy(&my_string[313], "option symm {para,ortho} [symmetry]\n",36);
+my_string[348]=0;
+*desc = my_string;
+return SCAMAC_EOK;
+}
+
 if (!strcmp(matname,"FreeBosonChain")) {
 my_string = malloc(218* sizeof *my_string);
 if (!my_string) {return SCAMAC_EMALLOCFAIL;}
@@ -36,16 +73,16 @@ return SCAMAC_EOK;
 }
 
 if (!strcmp(matname,"Hubbard")) {
-my_string = malloc(294* sizeof *my_string);
+my_string = malloc(329* sizeof *my_string);
 if (!my_string) {return SCAMAC_EMALLOCFAIL;}
 strncpy(&my_string[0], "double t [hopping strength]\n",28);
 strncpy(&my_string[28], "double U [Hubbard interaction]\n",31);
 strncpy(&my_string[59], "int n_sites [number of sites]\n",30);
 strncpy(&my_string[89], "int n_fermions [number of fermions per spin orientation]\n",57);
-strncpy(&my_string[146], "int boundary_conditions [SCAMAC_OBC or SCAMAC_PBC]\n",51);
-strncpy(&my_string[197], "double ranpot [random on-site potential [-ranpot, ranpot]]\n",59);
-strncpy(&my_string[256], "int seed [random seed]\n",23);
-my_string[278]=0;
+strncpy(&my_string[146], "option boundary_conditions {open,periodic} [open or periodic boundary conditions]\n",82);
+strncpy(&my_string[228], "double ranpot [random on-site potential [-ranpot, ranpot]]\n",59);
+strncpy(&my_string[287], "rngseed seed [random seed]\n",27);
+my_string[313]=0;
 *desc = my_string;
 return SCAMAC_EOK;
 }

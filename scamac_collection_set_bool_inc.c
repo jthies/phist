@@ -1,11 +1,21 @@
+if (!strcmp(gen->name,"Anderson")) {
+  // Unknown parameter
+  return SCAMAC_EINVALID | 2 << SCAMAC_ESHIFT;
+}
+
+if (!strcmp(gen->name,"Exciton")) {
+  // Unknown parameter
+  return SCAMAC_EINVALID | 2 << SCAMAC_ESHIFT;
+}
+
 if (!strcmp(gen->name,"FreeBosonChain")) {
   if (!strcmp(parname,"PBC")) {
     ( (scamac_matrix_FreeBosonChain_params_st *) gen->par)->PBC = val;
     return SCAMAC_EOK;
   }
 
-  printf("%s: Unknown bool parameter\n",__func__);
-  exit(EXIT_FAILURE);
+  // Unknown parameter
+  return SCAMAC_EINVALID | 2 << SCAMAC_ESHIFT;
 }
 
 if (!strcmp(gen->name,"FreeFermionChain")) {
@@ -14,18 +24,18 @@ if (!strcmp(gen->name,"FreeFermionChain")) {
     return SCAMAC_EOK;
   }
 
-  printf("%s: Unknown bool parameter\n",__func__);
-  exit(EXIT_FAILURE);
+  // Unknown parameter
+  return SCAMAC_EINVALID | 2 << SCAMAC_ESHIFT;
 }
 
 if (!strcmp(gen->name,"Harmonic")) {
-  printf("%s: Unknown bool parameter\n",__func__);
-  exit(EXIT_FAILURE);
+  // Unknown parameter
+  return SCAMAC_EINVALID | 2 << SCAMAC_ESHIFT;
 }
 
 if (!strcmp(gen->name,"Hubbard")) {
-  printf("%s: Unknown bool parameter\n",__func__);
-  exit(EXIT_FAILURE);
+  // Unknown parameter
+  return SCAMAC_EINVALID | 2 << SCAMAC_ESHIFT;
 }
 
 if (!strcmp(gen->name,"OneFermion")) {
@@ -35,27 +45,27 @@ if (!strcmp(gen->name,"OneFermion")) {
     return SCAMAC_EOK;
   }
 
-  printf("%s: Unknown bool parameter\n",__func__);
-  exit(EXIT_FAILURE);
+  // Unknown parameter
+  return SCAMAC_EINVALID | 2 << SCAMAC_ESHIFT;
 }
 
 if (!strcmp(gen->name,"SpinChainXXZ")) {
-  printf("%s: Unknown bool parameter\n",__func__);
-  exit(EXIT_FAILURE);
+  // Unknown parameter
+  return SCAMAC_EINVALID | 2 << SCAMAC_ESHIFT;
 }
 
 if (!strcmp(gen->name,"Tridiagonal")) {
-  printf("%s: Unknown bool parameter\n",__func__);
-  exit(EXIT_FAILURE);
+  // Unknown parameter
+  return SCAMAC_EINVALID | 2 << SCAMAC_ESHIFT;
 }
 
 if (!strcmp(gen->name,"TridiagonalComplex")) {
-  printf("%s: Unknown bool parameter\n",__func__);
-  exit(EXIT_FAILURE);
+  // Unknown parameter
+  return SCAMAC_EINVALID | 2 << SCAMAC_ESHIFT;
 }
 
 if (!strcmp(gen->name,"TridiagonalReal")) {
-  printf("%s: Unknown bool parameter\n",__func__);
-  exit(EXIT_FAILURE);
+  // Unknown parameter
+  return SCAMAC_EINVALID | 2 << SCAMAC_ESHIFT;
 }
 

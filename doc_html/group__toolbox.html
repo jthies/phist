@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">ScaMaC
-   &#160;<span id="projectnumber">0.7</span>
+   &#160;<span id="projectnumber">0.8</span>
    </div>
    <div id="projectbrief">A Scalable Matrix Collection</div>
   </td>
@@ -160,9 +160,8 @@ ScamacErrorCode&#160;</td><td class="memItemRight" valign="bottom"><a class="el"
 ScamacErrorCode&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__toolbox.html#ga6c9d788e1a316e5e3483be0821a5b2a9">scamac_statistics_update</a> (scamac_matrix_statistics_st *st, ScamacIdx irow, ScamacIdx nzr, const ScamacIdx *cind, const double *val)</td></tr>
 <tr class="memdesc:ga6c9d788e1a316e5e3483be0821a5b2a9"><td class="mdescLeft">&#160;</td><td class="mdescRight">update statistics with data from a matrix row not yet included <br /></td></tr>
 <tr class="separator:ga6c9d788e1a316e5e3483be0821a5b2a9"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ga1855842d7bd0000d6f407d170d6d51d2"><td class="memItemLeft" align="right" valign="top"><a id="ga1855842d7bd0000d6f407d170d6d51d2"></a>
-ScamacErrorCode&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__toolbox.html#ga1855842d7bd0000d6f407d170d6d51d2">scamac_statistics_combine</a> (scamac_matrix_statistics_st *stcomb, const scamac_matrix_statistics_st *st)</td></tr>
-<tr class="memdesc:ga1855842d7bd0000d6f407d170d6d51d2"><td class="mdescLeft">&#160;</td><td class="mdescRight">combine two parts of a matrix statistics for different sets of rows <br /></td></tr>
+<tr class="memitem:ga1855842d7bd0000d6f407d170d6d51d2"><td class="memItemLeft" align="right" valign="top">ScamacErrorCode&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__toolbox.html#ga1855842d7bd0000d6f407d170d6d51d2">scamac_statistics_combine</a> (scamac_matrix_statistics_st *stcomb, const scamac_matrix_statistics_st *st)</td></tr>
+<tr class="memdesc:ga1855842d7bd0000d6f407d170d6d51d2"><td class="mdescLeft">&#160;</td><td class="mdescRight">combine two parts of a matrix statistics for different sets of rows  <a href="#ga1855842d7bd0000d6f407d170d6d51d2">More...</a><br /></td></tr>
 <tr class="separator:ga1855842d7bd0000d6f407d170d6d51d2"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:gaaa7aeea8e96e8654a830de7efdf67cf7"><td class="memItemLeft" align="right" valign="top"><a id="gaaa7aeea8e96e8654a830de7efdf67cf7"></a>
 ScamacErrorCode&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__toolbox.html#gaaa7aeea8e96e8654a830de7efdf67cf7">scamac_statistics_print</a> (const scamac_matrix_statistics_st *st, char **desc)</td></tr>
@@ -235,7 +234,7 @@ ScamacErrorCode&#160;</td><td class="memItemRight" valign="bottom"><a class="el"
 </div><div class="memdoc">
 
 <p>collect matrix statistics and/or pattern from generator </p>
-<p>A matrix statistics is a small object, and no allocation of the struct is necessary. A matrix pattern is a large object, and will be allocated in this routine. It should be free'd with <a class="el" href="group__toolbox.html#ga3039d3b64d65bb91a22412292c93517c" title="free memory allocated for pattern ">scamac_pattern_free()</a> afterwards. </p>
+<p>A matrix statistics is a small object, and no allocation of the struct is necessary. A matrix pattern is a large object, and will be allocated in this routine. It should be free'd with <a class="el" href="group__toolbox.html#ga3039d3b64d65bb91a22412292c93517c" title="free memory allocated for pattern ">scamac_pattern_free()</a> afterwards. </p><dl class="todo"><dt><b><a class="el" href="todo.html#_todo000002">Todo:</a></b></dt><dd>Enable OpenMP support. </dd></dl>
 
 </div>
 </div>
@@ -314,6 +313,7 @@ ScamacErrorCode&#160;</td><td class="memItemRight" valign="bottom"><a class="el"
 </dl>
 <dl class="section note"><dt>Note</dt><dd>symm_pattern==false implies symm_value==false </dd></dl>
 <dl class="section return"><dt>Returns</dt><dd>Error code </dd></dl>
+<dl class="todo"><dt><b><a class="el" href="todo.html#_todo000001">Todo:</a></b></dt><dd>Check for zero entries! </dd></dl>
 
 </div>
 </div>
@@ -466,6 +466,37 @@ ScamacErrorCode&#160;</td><td class="memItemRight" valign="bottom"><a class="el"
   </dd>
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>Error code </dd></dl>
+
+</div>
+</div>
+<a id="ga1855842d7bd0000d6f407d170d6d51d2"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ga1855842d7bd0000d6f407d170d6d51d2">&#9670;&nbsp;</a></span>scamac_statistics_combine()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">ScamacErrorCode scamac_statistics_combine </td>
+          <td>(</td>
+          <td class="paramtype">scamac_matrix_statistics_st *&#160;</td>
+          <td class="paramname"><em>stcomb</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const scamac_matrix_statistics_st *&#160;</td>
+          <td class="paramname"><em>st</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>combine two parts of a matrix statistics for different sets of rows </p>
+<dl class="todo"><dt><b><a class="el" href="todo.html#_todo000003">Todo:</a></b></dt><dd>allow for val == NULL </dd></dl>
 
 </div>
 </div>

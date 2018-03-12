@@ -14,6 +14,7 @@ ScamacErrorCode scamac_matrix_Hubbard_check(const scamac_matrix_Hubbard_params_s
   SCAMAC_DESC_ERR(par->n_sites <= 0,    "n_sites <= 0");
   SCAMAC_DESC_ERR(par->n_fermions <= 0, "n_fermions <= 0");
   SCAMAC_DESC_ERR(par->n_fermions > par->n_sites, "n_fermions > n_sites");
+  SCAMAC_DESC_WARN(par->n_sites > 1000,  "very large n_sites (>1000).");
   if (desc) {
     *desc = scamac_string_get(&str);
   }
@@ -90,15 +91,11 @@ ScamacErrorCode scamac_matrix_Hubbard_tables_create(const scamac_matrix_Hubbard_
   }
   my_tab->ns = scamac_multidx_nidx(my_tab->midx);
   my_tab->maxrowlength = 2 * par->n_sites + 1;
-  my_tab->rg=NULL;
+  // my_tab->rg=NULL;
   my_tab->onsite=NULL;
   if (par->ranpot > 0.0) {
-    my_tab->rg = scamac_rng_alloc(par->seed);
     my_tab->onsite = malloc(par->n_sites * sizeof *(my_tab->onsite));
-    int i;
-    for (i=0; i<par->n_sites; i++) {
-      my_tab->onsite[i] = scamac_rng_get_double(my_tab->rg, -par->ranpot, par->ranpot, i);
-    }
+    scamac_ranvec_double(par->seed, 0, par->n_sites,  -par->ranpot, par->ranpot, my_tab->onsite);
   }
   *tab = my_tab;
   if (info) {
@@ -133,9 +130,9 @@ ScamacErrorCode scamac_matrix_Hubbard_tables_destroy(scamac_matrix_Hubbard_table
     if (tab->onsite) {
       free(tab->onsite);
     }
-    if (tab->rg) {
-      scamac_rng_free(tab->rg);
-    }
+    //   if (tab->rg) {
+    //  scamac_rng_free(tab->rg);
+    // }
     free(tab);
   }
   return SCAMAC_EOK;
@@ -176,7 +173,7 @@ ScamacErrorCode scamac_matrix_Hubbard_generate_row(const scamac_matrix_Hubbard_p
                                         irow));
         }
       }
-      if (par->boundary_conditions == SCAMAC_PBC) {
+      if (par->boundary_conditions == Hubbard_periodic) {
         scamac_rep_fermions_copy(tab->dof[k], ws->repinit[k], ws->rep[k]);
         double val = scamac_op_fermions_hop(tab->dof[k], ws->rep[k], 0,par->n_sites-1);
         if ((val != 0.0) || fl_keepzeros) {

@@ -48,14 +48,14 @@ int main(int argc, char *argv[]) {
   err = scamac_parse_argstr(examplestr, &my_gen, &errstr);
   if (err) {
     printf("Problem with example string:\n%s\n",errstr);
-    exit(EXIT_FAILURE);
+    SCAMAC_CHKERR(err);
   }
 
   err = scamac_generator_check(my_gen, &errstr);
   if (err) {
-    printf("Problem with example parameters:\n%s\n",errstr);
-    if (err != SCAMAC_EWARNING) {
-      exit(EXIT_FAILURE);
+    printf("*** Problem with example parameters:\n%s\n",errstr);
+    if (SCAMAC_DISWARN(err)) {
+      SCAMAC_CHKERR(err);
     } else {
       printf("Continue anyways -- you have been warned\n");
     }
@@ -65,7 +65,7 @@ int main(int argc, char *argv[]) {
   printf("Example\n-------\n%s\n",scamac_generator_query_name(my_gen));
 
   char * data_s;
-  SCAMAC_TRY(scamac_generator_parameter_desc(my_gen, &data_s));
+  SCAMAC_TRY(scamac_generator_parameter_desc(my_gen, "desc", &data_s));
   printf("\nParameters\n----------\n%s\n\n",data_s);
   free(data_s);
 

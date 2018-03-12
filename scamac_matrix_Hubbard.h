@@ -14,13 +14,16 @@
 #include "scamac_dof_fermions.h"
 #include "scamac_rng.h"
 
+ 
 /* >>>>
  * symmetric real
  * Hubbard models are fermionic
  * solid state models
  *
  * <<<< */
-
+ 
+typedef enum {Hubbard_open, Hubbard_periodic} scamac_option_Hubbard_bc_ty;
+ 
 typedef struct {
   /* hopping strength */
   /* = 1.0 */
@@ -34,14 +37,14 @@ typedef struct {
   /* number of fermions per spin orientation */
   /* = 5 */
   int n_fermions;
-  // SCAMAC_OBC or SCAMAC_PBC
-  int boundary_conditions;
+  // open or periodic boundary conditions
+  scamac_option_Hubbard_bc_ty boundary_conditions;
   /* random on-site potential [-ranpot, ranpot] */
   /* = 0.0 */
   double ranpot;
   /* random seed */
   /* = 1 */
-  int seed;
+  scamac_rng_seed_ty seed;
 } scamac_matrix_Hubbard_params_st;
 
 typedef struct {
@@ -49,7 +52,7 @@ typedef struct {
   int maxrowlength;
   scamac_multidx_st *midx;
   scamac_dof_fermions_st ** dof;
-  scamac_rng_st *rg;
+  //  scamac_rng_st *rg;
   double * onsite;
 } scamac_matrix_Hubbard_tables_st;
 

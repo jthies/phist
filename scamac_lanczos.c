@@ -371,7 +371,7 @@ ScamacErrorCode scamac_lanczos_ev_mat(const scamac_sparsemat_st *sm, double tol,
   } else if (sm->valtype == SCAMAC_VAL_COMPLEX) {
     err = scamac_lanczos_ev_mat_cplx(sm, tol, ev1, ev2, eps1, eps2);
   } else {
-    err = SCAMAC_EINVAL;
+    err = SCAMAC_ECORRUPTED;
   }
   return err;
 }

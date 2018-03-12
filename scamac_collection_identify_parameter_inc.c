@@ -1,3 +1,74 @@
+if (!strcmp(matname,"Anderson")) {
+  if (!strcmp(parname,"Lx")) {
+    return SCAMAC_PAR_INT;
+  }
+  if (!strcmp(parname,"Ly")) {
+    return SCAMAC_PAR_INT;
+  }
+  if (!strcmp(parname,"Lz")) {
+    return SCAMAC_PAR_INT;
+  }
+  if (!strcmp(parname,"t")) {
+    return SCAMAC_PAR_DOUBLE;
+  }
+  if (!strcmp(parname,"ranpot")) {
+    return SCAMAC_PAR_DOUBLE;
+  }
+  if (!strcmp(parname,"boundary_conditions")) {
+    return SCAMAC_PAR_OPTION;
+  }
+  if (!strcmp(parname,"seed")) {
+    return SCAMAC_PAR_RNGSEED;
+  }
+  if (!strcmp(parname,"sweep")) {
+    return SCAMAC_PAR_OPTION;
+  }
+return SCAMAC_PAR_NONE;
+}
+
+if (!strcmp(matname,"Exciton")) {
+  if (!strcmp(parname,"so")) {
+    return SCAMAC_PAR_DOUBLE;
+  }
+  if (!strcmp(parname,"ex")) {
+    return SCAMAC_PAR_DOUBLE;
+  }
+  if (!strcmp(parname,"mlh")) {
+    return SCAMAC_PAR_DOUBLE;
+  }
+  if (!strcmp(parname,"mhh")) {
+    return SCAMAC_PAR_DOUBLE;
+  }
+  if (!strcmp(parname,"me")) {
+    return SCAMAC_PAR_DOUBLE;
+  }
+  if (!strcmp(parname,"eps")) {
+    return SCAMAC_PAR_DOUBLE;
+  }
+  if (!strcmp(parname,"lc")) {
+    return SCAMAC_PAR_DOUBLE;
+  }
+  if (!strcmp(parname,"kx")) {
+    return SCAMAC_PAR_DOUBLE;
+  }
+  if (!strcmp(parname,"ky")) {
+    return SCAMAC_PAR_DOUBLE;
+  }
+  if (!strcmp(parname,"kz")) {
+    return SCAMAC_PAR_DOUBLE;
+  }
+  if (!strcmp(parname,"a")) {
+    return SCAMAC_PAR_DOUBLE;
+  }
+  if (!strcmp(parname,"L")) {
+    return SCAMAC_PAR_INT;
+  }
+  if (!strcmp(parname,"symm")) {
+    return SCAMAC_PAR_OPTION;
+  }
+return SCAMAC_PAR_NONE;
+}
+
 if (!strcmp(matname,"FreeBosonChain")) {
   if (!strcmp(parname,"t")) {
     return SCAMAC_PAR_DOUBLE;
@@ -14,7 +85,7 @@ if (!strcmp(matname,"FreeBosonChain")) {
   if (!strcmp(parname,"PBC")) {
     return SCAMAC_PAR_BOOL;
   }
-return -1;
+return SCAMAC_PAR_NONE;
 }
 
 if (!strcmp(matname,"FreeFermionChain")) {
@@ -33,7 +104,7 @@ if (!strcmp(matname,"FreeFermionChain")) {
   if (!strcmp(parname,"PBC")) {
     return SCAMAC_PAR_BOOL;
   }
-return -1;
+return SCAMAC_PAR_NONE;
 }
 
 if (!strcmp(matname,"Harmonic")) {
@@ -46,7 +117,7 @@ if (!strcmp(matname,"Harmonic")) {
   if (!strcmp(parname,"n_bos")) {
     return SCAMAC_PAR_INT;
   }
-return -1;
+return SCAMAC_PAR_NONE;
 }
 
 if (!strcmp(matname,"Hubbard")) {
@@ -63,15 +134,15 @@ if (!strcmp(matname,"Hubbard")) {
     return SCAMAC_PAR_INT;
   }
   if (!strcmp(parname,"boundary_conditions")) {
-    return SCAMAC_PAR_INT;
+    return SCAMAC_PAR_OPTION;
   }
   if (!strcmp(parname,"ranpot")) {
     return SCAMAC_PAR_DOUBLE;
   }
   if (!strcmp(parname,"seed")) {
-    return SCAMAC_PAR_INT;
+    return SCAMAC_PAR_RNGSEED;
   }
-return -1;
+return SCAMAC_PAR_NONE;
 }
 
 if (!strcmp(matname,"OneFermion")) {
@@ -84,7 +155,7 @@ if (!strcmp(matname,"OneFermion")) {
   if (!strcmp(parname,"PBC")) {
     return SCAMAC_PAR_BOOL;
   }
-return -1;
+return SCAMAC_PAR_NONE;
 }
 
 if (!strcmp(matname,"SpinChainXXZ")) {
@@ -106,7 +177,7 @@ if (!strcmp(matname,"SpinChainXXZ")) {
   if (!strcmp(parname,"boundary_conditions")) {
     return SCAMAC_PAR_INT;
   }
-return -1;
+return SCAMAC_PAR_NONE;
 }
 
 if (!strcmp(matname,"Tridiagonal")) {
@@ -122,7 +193,7 @@ if (!strcmp(matname,"Tridiagonal")) {
   if (!strcmp(parname,"phi")) {
     return SCAMAC_PAR_DOUBLE;
   }
-return -1;
+return SCAMAC_PAR_NONE;
 }
 
 if (!strcmp(matname,"TridiagonalComplex")) {
@@ -141,7 +212,7 @@ if (!strcmp(matname,"TridiagonalComplex")) {
   if (!strcmp(parname,"subdiag")) {
     return SCAMAC_PAR_DOUBLE;
   }
-return -1;
+return SCAMAC_PAR_NONE;
 }
 
 if (!strcmp(matname,"TridiagonalReal")) {
@@ -157,6 +228,6 @@ if (!strcmp(matname,"TridiagonalReal")) {
   if (!strcmp(parname,"subdiag")) {
     return SCAMAC_PAR_DOUBLE;
   }
-return -1;
+return SCAMAC_PAR_NONE;
 }
 

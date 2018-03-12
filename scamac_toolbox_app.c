@@ -95,7 +95,7 @@ int main(int argc, char *argv[]) {
     if (!err) {
       SCAMAC_TRY(scamac_generator_finalize(my_gen));
       char * data_s;
-      SCAMAC_TRY(scamac_generator_parameter_desc(my_gen,&data_s));
+      SCAMAC_TRY(scamac_generator_parameter_desc(my_gen, "desc", &data_s));
       ScamacIdx nrow = scamac_generator_query_nrow(my_gen);
       ScamacIdx ncol = scamac_generator_query_ncol(my_gen);
       printf("=== Example: %s ===\n\n=== parameters ===\n",argv[2]);
@@ -213,7 +213,7 @@ int main(int argc, char *argv[]) {
     // read options
     bool opt_force = false;
     bool opt_quiet = false;
-    bool opt_progress = false;
+    // bool opt_progress = false;
     bool opt_maxdim = false;
     ScamacIdx maxdim = 0;
     const ScamacIdx maxdim_spectrum = 1000;
@@ -233,7 +233,8 @@ int main(int argc, char *argv[]) {
         continue;
       }
       if (!strcmp(argv[iarg],"--progress") || !strcmp(argv[iarg],"-p")) {
-        opt_progress = true;
+       // opt_progress = true;
+       // TODO
         iarg++;
         continue;
       }
@@ -307,7 +308,7 @@ int main(int argc, char *argv[]) {
         printf("Example\n-------\n%s\n",scamac_generator_query_name(my_gen));
 
         char * data_s;
-        SCAMAC_TRY(scamac_generator_parameter_desc(my_gen,&data_s));
+        SCAMAC_TRY(scamac_generator_parameter_desc(my_gen, "desc", &data_s));
 
         printf("\nParameters\n----------\n%s\n\n",data_s);
       }

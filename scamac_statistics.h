@@ -28,7 +28,7 @@ typedef struct {
   ScamacIdx n_nz_row_max_left, n_nz_row_max_right; // only max - min always = 0
   ScamacIdx n_zero_row, n_zero_diag;
   // bandwidth
-  ScamacIdx bw_left,bw_right,bw;
+  ScamacIdx bw_left,bw_right;
 
   // value statistics
   double v_min_re,v_max_re;
@@ -63,6 +63,7 @@ typedef struct {
  *  \details A matrix statistics is a small object, and no allocation of the struct is necessary.
  *           A matrix pattern is a large object, and will be allocated in this routine.
  *           It should be free'd with scamac_pattern_free() afterwards.
+ *  \todo Enable OpenMP support.
  */
 ScamacErrorCode scamac_collect_statistics_and_pattern(const ScamacGenerator * gen, ScamacFlag flag, scamac_matrix_statistics_st * st, scamac_matrix_pattern_st ** pt);
 
@@ -76,6 +77,7 @@ ScamacErrorCode scamac_statistics_empty  (scamac_matrix_statistics_st * st, Scam
 ScamacErrorCode scamac_statistics_update (scamac_matrix_statistics_st * st, ScamacIdx irow, ScamacIdx nzr, const ScamacIdx * cind, const double * val);
 /** \brief  combine two parts of a matrix statistics for different sets of rows
  *  \ingroup toolbox
+ *  \todo allow for val == NULL
  */
 ScamacErrorCode scamac_statistics_combine(scamac_matrix_statistics_st * stcomb, const scamac_matrix_statistics_st * st);
 /** \brief  create description of statistics for output, printing etc.

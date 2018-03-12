@@ -100,7 +100,7 @@ ScamacErrorCode scamac_statistics_empty  (scamac_matrix_statistics_st * st, Scam
     return SCAMAC_ERANGE;
   }
   if ((valtype != SCAMAC_VAL_REAL) && (valtype != SCAMAC_VAL_COMPLEX)) {
-    return SCAMAC_EUNKNOWN;
+    return SCAMAC_EINVALID | (4 << SCAMAC_ESHIFT);
   }
   st->nrow=nrow;
   st->ncol=ncol;
@@ -118,7 +118,6 @@ ScamacErrorCode scamac_statistics_empty  (scamac_matrix_statistics_st * st, Scam
   st->n_zero_diag=0;
   st->bw_left=0;
   st->bw_right=0;
-  st->bw=0;
 
   st->v_min_re=0.0;
   st->v_max_re=0.0;
@@ -301,7 +300,6 @@ ScamacErrorCode scamac_statistics_combine(scamac_matrix_statistics_st * stcomb, 
   stcomb->n_zero_diag += st->n_zero_diag;
   stcomb->bw_left=MAX(stcomb->bw_left,st->bw_left);
   stcomb->bw_right=MAX(stcomb->bw_right,st->bw_right);
-  stcomb->bw=MAX(stcomb->bw_left,stcomb->bw_right);
 
   stcomb->v_min_re=MIN(stcomb->v_min_re,st->v_min_re);
   stcomb->v_max_re=MAX(stcomb->v_max_re,st->v_max_re);
@@ -360,7 +358,7 @@ ScamacErrorCode scamac_statistics_print  (const scamac_matrix_statistics_st * st
   scamac_string_append(&mystr, buf);
   snprintf(buf,nbuf,"zero diagonal elements: %"SCAMACPRIDX"\n",st->n_zero_diag);
   scamac_string_append(&mystr, buf);
-  snprintf(buf,nbuf,"bandwidth: %"SCAMACPRIDX"\n",st->bw);
+  snprintf(buf,nbuf,"bandwidth: %"SCAMACPRIDX"\n",MAX(st->bw_left,st->bw_right));
   scamac_string_append(&mystr, buf);
   snprintf(buf,nbuf,"bandwidth (left): %"SCAMACPRIDX"\n",st->bw_left);
   scamac_string_append(&mystr, buf);

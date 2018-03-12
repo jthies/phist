@@ -1,11 +1,86 @@
+if (!strcmp(gen->name,"Anderson")) {
+  if (!strcmp(parname,"t")) {
+    ( (scamac_matrix_Anderson_params_st *) gen->par)->t = val;
+    return SCAMAC_EOK;
+  }
+
+  if (!strcmp(parname,"ranpot")) {
+    ( (scamac_matrix_Anderson_params_st *) gen->par)->ranpot = val;
+    return SCAMAC_EOK;
+  }
+
+  // Unknown parameter
+  return SCAMAC_EINVALID | 2 << SCAMAC_ESHIFT;
+}
+
+if (!strcmp(gen->name,"Exciton")) {
+  if (!strcmp(parname,"so")) {
+    ( (scamac_matrix_Exciton_params_st *) gen->par)->so = val;
+    return SCAMAC_EOK;
+  }
+
+  if (!strcmp(parname,"ex")) {
+    ( (scamac_matrix_Exciton_params_st *) gen->par)->ex = val;
+    return SCAMAC_EOK;
+  }
+
+  if (!strcmp(parname,"mlh")) {
+    ( (scamac_matrix_Exciton_params_st *) gen->par)->mlh = val;
+    return SCAMAC_EOK;
+  }
+
+  if (!strcmp(parname,"mhh")) {
+    ( (scamac_matrix_Exciton_params_st *) gen->par)->mhh = val;
+    return SCAMAC_EOK;
+  }
+
+  if (!strcmp(parname,"me")) {
+    ( (scamac_matrix_Exciton_params_st *) gen->par)->me = val;
+    return SCAMAC_EOK;
+  }
+
+  if (!strcmp(parname,"eps")) {
+    ( (scamac_matrix_Exciton_params_st *) gen->par)->eps = val;
+    return SCAMAC_EOK;
+  }
+
+  if (!strcmp(parname,"lc")) {
+    ( (scamac_matrix_Exciton_params_st *) gen->par)->lc = val;
+    return SCAMAC_EOK;
+  }
+
+  if (!strcmp(parname,"kx")) {
+    ( (scamac_matrix_Exciton_params_st *) gen->par)->kx = val;
+    return SCAMAC_EOK;
+  }
+
+  if (!strcmp(parname,"ky")) {
+    ( (scamac_matrix_Exciton_params_st *) gen->par)->ky = val;
+    return SCAMAC_EOK;
+  }
+
+  if (!strcmp(parname,"kz")) {
+    ( (scamac_matrix_Exciton_params_st *) gen->par)->kz = val;
+    return SCAMAC_EOK;
+  }
+
+  if (!strcmp(parname,"a")) {
+    ( (scamac_matrix_Exciton_params_st *) gen->par)->a = val;
+    return SCAMAC_EOK;
+  }
+
+  // Unknown parameter
+  return SCAMAC_EINVALID | 2 << SCAMAC_ESHIFT;
+}
+
 if (!strcmp(gen->name,"FreeBosonChain")) {
   if (!strcmp(parname,"t")) {
     ( (scamac_matrix_FreeBosonChain_params_st *) gen->par)->t = val;
     return SCAMAC_EOK;
   }
 
-  printf("%s: Unknown double parameter\n",__func__);
-  exit(EXIT_FAILURE);
+  // Unknown parameter
+  return SCAMAC_EINVALID | 2 << SCAMAC_ESHIFT;
 }
 
 if (!strcmp(gen->name,"FreeFermionChain")) {
@@ -14,8 +89,8 @@ if (!strcmp(gen->name,"FreeFermionChain")) {
     return SCAMAC_EOK;
   }
 
-  printf("%s: Unknown double parameter\n",__func__);
-  exit(EXIT_FAILURE);
+  // Unknown parameter
+  return SCAMAC_EINVALID | 2 << SCAMAC_ESHIFT;
 }
 
 if (!strcmp(gen->name,"Harmonic")) {
@@ -29,8 +104,8 @@ if (!strcmp(gen->name,"Harmonic")) {
     return SCAMAC_EOK;
   }
 
-  printf("%s: Unknown double parameter\n",__func__);
-  exit(EXIT_FAILURE);
+  // Unknown parameter
+  return SCAMAC_EINVALID | 2 << SCAMAC_ESHIFT;
 }
 
 if (!strcmp(gen->name,"Hubbard")) {
@@ -49,8 +124,8 @@ if (!strcmp(gen->name,"Hubbard")) {
     return SCAMAC_EOK;
   }
 
-  printf("%s: Unknown double parameter\n",__func__);
-  exit(EXIT_FAILURE);
+  // Unknown parameter
+  return SCAMAC_EINVALID | 2 << SCAMAC_ESHIFT;
 }
 
 if (!strcmp(gen->name,"OneFermion")) {
@@ -60,8 +135,8 @@ if (!strcmp(gen->name,"OneFermion")) {
     return SCAMAC_EOK;
   }
 
-  printf("%s: Unknown double parameter\n",__func__);
-  exit(EXIT_FAILURE);
+  // Unknown parameter
+  return SCAMAC_EINVALID | 2 << SCAMAC_ESHIFT;
 }
 
 if (!strcmp(gen->name,"SpinChainXXZ")) {
@@ -80,8 +155,8 @@ if (!strcmp(gen->name,"SpinChainXXZ")) {
     return SCAMAC_EOK;
   }
 
-  printf("%s: Unknown double parameter\n",__func__);
-  exit(EXIT_FAILURE);
+  // Unknown parameter
+  return SCAMAC_EINVALID | 2 << SCAMAC_ESHIFT;
 }
 
 if (!strcmp(gen->name,"Tridiagonal")) {
@@ -100,8 +175,8 @@ if (!strcmp(gen->name,"Tridiagonal")) {
     return SCAMAC_EOK;
   }
 
-  printf("%s: Unknown double parameter\n",__func__);
-  exit(EXIT_FAILURE);
+  // Unknown parameter
+  return SCAMAC_EINVALID | 2 << SCAMAC_ESHIFT;
 }
 
 if (!strcmp(gen->name,"TridiagonalComplex")) {
@@ -125,8 +200,8 @@ if (!strcmp(gen->name,"TridiagonalComplex")) {
     return SCAMAC_EOK;
   }
 
-  printf("%s: Unknown double parameter\n",__func__);
-  exit(EXIT_FAILURE);
+  // Unknown parameter
+  return SCAMAC_EINVALID | 2 << SCAMAC_ESHIFT;
 }
 
 if (!strcmp(gen->name,"TridiagonalReal")) {
@@ -145,7 +220,7 @@ if (!strcmp(gen->name,"TridiagonalReal")) {
     return SCAMAC_EOK;
   }
 
-  printf("%s: Unknown double parameter\n",__func__);
-  exit(EXIT_FAILURE);
+  // Unknown parameter
+  return SCAMAC_EINVALID | 2 << SCAMAC_ESHIFT;
 }
 
