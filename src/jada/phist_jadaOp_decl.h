@@ -6,6 +6,7 @@
 /* Contact: Jonas Thies (Jonas.Thies@DLR.de)                                               */
 /*                                                                                         */
 /*******************************************************************************************/
+
 //! create projected and shifted operator for Jacobi-Davidson,
 //! op*X = (I-BV*V')(A*X+B*X*sigma)(I-V*BV')
 //! by setting the appropriate pointers. No data is copied.
@@ -22,6 +23,7 @@ void SUBR(jadaOp_create)(TYPE(const_linearOp_ptr)    AB_op,
                          const _ST_            sigma[], int                   nvec,
                          TYPE(linearOp_ptr)          jdOp,    int*                  iflag);
 
+//!
 void SUBR(jadaOp_delete)(TYPE(linearOp_ptr)  jdOp, int *iflag);
 
 //! create a preconditioner for the inner solve in Jacobi-Davidson.                                      
@@ -52,6 +54,7 @@ void SUBR(jadaPrec_create)(TYPE(const_linearOp_ptr) P_op,
                            int projType,
                            int* iflag);
 
+//!
 void SUBR(jadaPrec_delete)(TYPE(linearOp_ptr) jdPrec, int *iflag);
 
 //! add a left preconditioner created by jadaPrec_create to a jadaOp.
@@ -59,7 +62,7 @@ void SUBR(jadaPrec_delete)(TYPE(linearOp_ptr) jdPrec, int *iflag);
 //! The effect of the apply function will afterwards by Y <- alpha*(jadaPrec*jadaOp*X) + beta*Y,
 //! the projections used are determined by the AB_op and jadaPrec operators. If jadaPrec==NULL, 
 //! the operator is reset to it's original effect.
-void SUBR(jadaOp_set_leftPrecond)(TYPE(linearOp_ptr) jadaOp, TYPE(const_linearOp_ptr) jadaPrec, int* iflag);		
+void SUBR(jadaOp_set_leftPrecond)(TYPE(linearOp_ptr) jadaOp, TYPE(const_linearOp_ptr) jadaPrec, int* iflag); 
 
 //! create projection Operator
 //! Y <- alpha*(I - W*V')X + beta*Y
@@ -81,21 +84,22 @@ void SUBR(skew_projection_Op_create)(TYPE(const_linearOp_ptr) P_op,
 //! "PRE": op*X = (A+B*sigma)(I-V*BV')*X (with pre-projection)
 //! "POST": op*X = (I-BV*V')(A+B*sigma)*X (with post-projection)
 //! "PRE_POST": op*X = (I-BV*V')(A+B*sigma)(I-V*BV')*X (with pre- and post-projection)
-//! "SKEW": op*X = (I-(K\V)*((BV)'K\V)^{-1}*(BV)')*(K\+sigma*I)*X (with skew-projection and 
+//! "SKEW": op*X = (I-(K\V)*((BV)'K\V)^{-1}*(BV)')*(K\+sigma*I)*X (with skew-projection and
 //! preconditioner K)
-//! "ALL": op*X = P_{skew}*(K\+sigma*I)*P_{proj}^T*(A+B*sigma)*P_{proj}*X (with pre-, post-, 
+//! "ALL": op*X = P_{skew}*(K\+sigma*I)*P_{proj}^T*(A+B*sigma)*P_{proj}*X (with pre-, post-,
 //! skew-projection and preconditioner)
 
 //! onlyPrec will change the methods "SKEW" and "ALL":
 //! onlyPrec == 0: we use skew-projection and preconditioner
 //! onlyPrec == 1: we only use the preconditioner
 void SUBR(JadaOp_create_variable)(TYPE(const_linearOp_ptr)    AB_op,
-						 TYPE(const_linearOp_ptr)     Proj_op,
+                         TYPE(const_linearOp_ptr)     Proj_op,
                          TYPE(const_linearOp_ptr)     Skew_op,
                          TYPE(const_linearOp_ptr)     Prec_op,
                          const _ST_**            sigma, int                   nvec,
                          TYPE(linearOp_ptr)          jdOp, const char* method,
                          int onlyPrec, int num_sigma,
-						 int*                  iflag);					 
+                         int*                  iflag);
 
+//!
 void SUBR(jadaOp_variable_delete)(TYPE(linearOp_ptr)  jdOp, int *iflag);

@@ -129,7 +129,7 @@ void SUBR(private_linearOp_apply_sparseMat_pair_shifted)
   TYPE(private_sparseMat_pair) *_AB = (TYPE(private_sparseMat_pair)*)AB;
   TYPE(const_sparseMat_ptr) A = _AB->A;
   TYPE(const_sparseMat_ptr) B = _AB->B;
-  
+
   // start by figuring out the number of vectors (=#shifts)
   int nvec;
   PHIST_CHK_IERR(SUBR(mvec_num_vectors)(X,&nvec,iflag),*iflag);
@@ -152,7 +152,7 @@ void SUBR(private_linearOp_apply_linearOp_product)
   TYPE(private_linearOp_pair) *_AB = (TYPE(private_linearOp_pair)*)AB;
   TYPE(const_linearOp_ptr) A = _AB->A;
   TYPE(const_linearOp_ptr) B = _AB->B;
-  
+
   // check if Xtmp needs reallocation
   int nvX, nvXtmp=-1;
   PHIST_CHK_IERR(SUBR(mvec_num_vectors)(X,&nvX,iflag),*iflag);
@@ -160,7 +160,7 @@ void SUBR(private_linearOp_apply_linearOp_product)
   {
     PHIST_CHK_IERR(SUBR(mvec_num_vectors)(_AB->Xtmp,&nvXtmp,iflag),*iflag);
   }
-  
+
   if (nvX!=nvXtmp)
   {
     if (_AB->Xtmp!=NULL)
@@ -170,10 +170,10 @@ void SUBR(private_linearOp_apply_linearOp_product)
     }
     PHIST_CHK_IERR(SUBR(mvec_create)(&(_AB->Xtmp),B->range_map,nvX,iflag),*iflag);
   }
-  
+
   TYPE(mvec_ptr) BX = _AB->Xtmp;
   PHIST_CHK_IERR(SUBR(linearOp_apply)(st::one(),B,X,st::zero(),BX,iflag),*iflag);
-  PHIST_CHK_IERR(SUBR(linearOp_apply)(alpha,A,BX,beta,Y,iflag),*iflag);  
+  PHIST_CHK_IERR(SUBR(linearOp_apply)(alpha,A,BX,beta,Y,iflag),*iflag);
 }
 
 // helper function to compute Y=beta*Y + alpha*A*B*C*X (apply function for linearOp_product_triple)
@@ -186,7 +186,7 @@ void SUBR(private_linearOp_apply_linearOp_product_triple)
   TYPE(const_linearOp_ptr) A = _ABC->A;
   TYPE(const_linearOp_ptr) B = _ABC->B;
   TYPE(const_linearOp_ptr) C = _ABC->C;
-  
+
   // check if Xtmp or Xtmp2 needs reallocation
   int nvX, nvXtmp=-1, nvXtmp2=-1;
   PHIST_CHK_IERR(SUBR(mvec_num_vectors)(X,&nvX,iflag),*iflag);
@@ -198,7 +198,7 @@ void SUBR(private_linearOp_apply_linearOp_product_triple)
   {
     PHIST_CHK_IERR(SUBR(mvec_num_vectors)(_ABC->Xtmp2,&nvXtmp2,iflag),*iflag);
   }
-  
+
   if (nvX!=nvXtmp)
   {
     if (_ABC->Xtmp!=NULL)
@@ -217,16 +217,16 @@ void SUBR(private_linearOp_apply_linearOp_product_triple)
     }
     PHIST_CHK_IERR(SUBR(mvec_create)(&(_ABC->Xtmp2),B->range_map,nvX,iflag),*iflag);
   }
-  
+
   TYPE(mvec_ptr) CX = _ABC->Xtmp;
   TYPE(mvec_ptr) BCX = _ABC->Xtmp2;
   PHIST_CHK_IERR(SUBR(linearOp_apply)(st::one(),C,X,st::zero(),CX,iflag),*iflag);
-  PHIST_CHK_IERR(SUBR(linearOp_apply)(st::one(),B,CX,st::zero(),BCX,iflag),*iflag);  
-  PHIST_CHK_IERR(SUBR(linearOp_apply)(alpha,A,BCX,beta,Y,iflag),*iflag);  
+  PHIST_CHK_IERR(SUBR(linearOp_apply)(st::one(),B,CX,st::zero(),BCX,iflag),*iflag);
+  PHIST_CHK_IERR(SUBR(linearOp_apply)(alpha,A,BCX,beta,Y,iflag),*iflag);
 }
 
 //
-void SUBR(linearOp_wrap_sparseMat_pair)(TYPE(linearOp_ptr) op, 
+void SUBR(linearOp_wrap_sparseMat_pair)(TYPE(linearOp_ptr) op,
         TYPE(const_sparseMat_ptr) A, TYPE(const_sparseMat_ptr) B, int *iflag)
 {
   // setup maps etc.
@@ -252,10 +252,10 @@ TYPE(const_linearOp_ptr) A, TYPE(const_linearOp_ptr) B, int* iflag)
   pair->Xtmp=NULL;
   op->A=(void*)(pair);
   op->aux=NULL;
-  
+
   op->range_map=A->range_map;
   op->domain_map=B->domain_map;
-  
+
   op->apply=&SUBR(private_linearOp_apply_linearOp_product);
   op->apply_shifted=NULL;
   op->update=NULL;
@@ -274,11 +274,11 @@ TYPE(const_linearOp_ptr) A, TYPE(const_linearOp_ptr) B, TYPE(const_linearOp_ptr)
   triple->Xtmp2=NULL;
   op->A=(void*)(triple);
   op->aux=NULL;
-  
+
   op->range_map=A->range_map;
   op->domain_map=C->domain_map;
-  
-  op->apply=&SUBR(private_linearOp_apply_linearOp_product_triple);	//Y=beta*Y + alpha*A*B*C*X
+
+  op->apply=&SUBR(private_linearOp_apply_linearOp_product_triple);    //Y=beta*Y + alpha*A*B*C*X
   op->apply_shifted=NULL;
   op->update=NULL;
   op->destroy=&SUBR(private_linearOp_destroy_linearOp_triple_wrapper);
@@ -291,81 +291,81 @@ void SUBR(private_linearOp_apply_linearOp_product_k)
 #include "phist_std_typedefs.hpp"
   TYPE(private_linearOp_k) *Op_k = (TYPE(private_linearOp_k)*)k_ops;
   TYPE(const_linearOp_ptr)* k_Ops = Op_k->k_Ops;
-  
+
   //at beginning: Xtmp=X
   if (Op_k->Xtmp!=NULL)
   {
     PHIST_CHK_IERR(SUBR(mvec_delete)(Op_k->Xtmp,iflag),*iflag);
-	Op_k->Xtmp=NULL;
+    Op_k->Xtmp=NULL;
   }
   Op_k->Xtmp=(TYPE(mvec_ptr))X;
 
   int nvX, nvXtmp2=-1;
   PHIST_CHK_IERR(SUBR(mvec_num_vectors)(X,&nvX,iflag),*iflag);
-  
+
   // check if Xtmp2 needs reallocation
   if (Op_k->Xtmp2!=NULL)
   {
     PHIST_CHK_IERR(SUBR(mvec_num_vectors)(Op_k->Xtmp2,&nvXtmp2,iflag),*iflag);
-	if (nvX!=nvXtmp2)
+    if (nvX!=nvXtmp2)
     {
       PHIST_CHK_IERR(SUBR(mvec_delete)(Op_k->Xtmp2,iflag),*iflag);
       Op_k->Xtmp2=NULL;
-    }	  
-  } 
-  
+    }
+  }
+
   //iterate over all operators
   int sigma_cnt=Op_k->num_sigma-1;
   for (int i=(Op_k->nops)-1; i>=0; i--) {
-	
-	//apply
-	if(Op_k->which_apply[i]==0) {
-	  if(nvX!=nvXtmp2){
-		PHIST_CHK_IERR(SUBR(mvec_create)(&(Op_k->Xtmp2),k_Ops[i]->range_map,nvX,iflag),*iflag);
-	  }
-	  
-	  PHIST_CHK_IERR(SUBR(linearOp_apply)(st::one(),k_Ops[i],Op_k->Xtmp,st::zero(),Op_k->Xtmp2,iflag),*iflag);	  
-	}	
-	
-	//applyT
-	else if(Op_k->which_apply[i]==1) {
-	  if(nvX!=nvXtmp2){
-		PHIST_CHK_IERR(SUBR(mvec_create)(&(Op_k->Xtmp2),k_Ops[i]->domain_map,nvX,iflag),*iflag);
-	  }
-	  
-	  PHIST_CHK_IERR(SUBR(linearOp_applyT)(st::one(),k_Ops[i],Op_k->Xtmp,st::zero(),Op_k->Xtmp2,iflag),*iflag);	  
-	}
-	
-	//apply_shifted
-	else if(Op_k->which_apply[i]==2) {
+
+    //apply
+    if(Op_k->which_apply[i]==0) {
       if(nvX!=nvXtmp2){
-		PHIST_CHK_IERR(SUBR(mvec_create)(&(Op_k->Xtmp2),k_Ops[i]->range_map,nvX,iflag),*iflag);
-	  }	  
-	  
-	  PHIST_CHK_IERR(SUBR(linearOp_apply_shifted)(st::one(),k_Ops[i],Op_k->sigma[sigma_cnt],Op_k->Xtmp,st::zero(),Op_k->Xtmp2,iflag),*iflag);
+        PHIST_CHK_IERR(SUBR(mvec_create)(&(Op_k->Xtmp2),k_Ops[i]->range_map,nvX,iflag),*iflag);
+      }
+
+      PHIST_CHK_IERR(SUBR(linearOp_apply)(st::one(),k_Ops[i],Op_k->Xtmp,st::zero(),Op_k->Xtmp2,iflag),*iflag);
+    }
+
+    //applyT
+    else if(Op_k->which_apply[i]==1) {
+      if(nvX!=nvXtmp2){
+        PHIST_CHK_IERR(SUBR(mvec_create)(&(Op_k->Xtmp2),k_Ops[i]->domain_map,nvX,iflag),*iflag);
+      }
+
+      PHIST_CHK_IERR(SUBR(linearOp_applyT)(st::one(),k_Ops[i],Op_k->Xtmp,st::zero(),Op_k->Xtmp2,iflag),*iflag);
+    }
+
+    //apply_shifted
+    else if(Op_k->which_apply[i]==2) {
+      if(nvX!=nvXtmp2){
+        PHIST_CHK_IERR(SUBR(mvec_create)(&(Op_k->Xtmp2),k_Ops[i]->range_map,nvX,iflag),*iflag);
+      }
+
+      PHIST_CHK_IERR(SUBR(linearOp_apply_shifted)(st::one(),k_Ops[i],Op_k->sigma[sigma_cnt],Op_k->Xtmp,st::zero(),Op_k->Xtmp2,iflag),*iflag);
       sigma_cnt--;
-	}
-	
-	// which_apply has an unalowed component
-	else {
-	  PHIST_SOUT(PHIST_ERROR, "which_apply has an unalowed component %d\n", Op_k->which_apply[i],
-							  "(file %s, line %d)\n",__FUNCTION__,__FILE__,__LINE__);
+    }
+
+    // which_apply has an unalowed component
+    else {
+      PHIST_SOUT(PHIST_ERROR, "which_apply has an unalowed component %d\n", Op_k->which_apply[i],
+                              "(file %s, line %d)\n",__FUNCTION__,__FILE__,__LINE__);
       *iflag=-1;
       return;
-	}
+    }
 
-	if(i!=(Op_k->nops)-1){
-	  PHIST_CHK_IERR(SUBR(mvec_delete)(Op_k->Xtmp,iflag),*iflag);
-	  Op_k->Xtmp=NULL;
-	}
-	Op_k->Xtmp = Op_k->Xtmp2;
-	Op_k->Xtmp2=NULL;
-	nvXtmp2=-1;
+    if(i!=(Op_k->nops)-1){
+      PHIST_CHK_IERR(SUBR(mvec_delete)(Op_k->Xtmp,iflag),*iflag);
+      Op_k->Xtmp=NULL;
+    }
+    Op_k->Xtmp = Op_k->Xtmp2;
+    Op_k->Xtmp2=NULL;
+    nvXtmp2=-1;
   }
-  
+
   // Y <- alpha*Xtmp + beta*Y
   PHIST_CHK_IERR(SUBR(mvec_add_mvec)(alpha,Op_k->Xtmp,beta,Y,iflag),*iflag);
-}  
+}
 
 
 void SUBR(linearOp_wrap_linearOp_product_k)(TYPE(linearOp_ptr) op,
@@ -383,12 +383,12 @@ int k, TYPE(const_linearOp_ptr)* k_ops, int* which_apply, const _ST_** sigma, in
   Op_k->which_apply=which_apply;
   op->A=(void*)(Op_k);
   op->aux=NULL;
-  
-  
+
+
   op->range_map=k_ops[0]->range_map;
   op->domain_map=k_ops[k-1]->domain_map;
-  
-  op->apply=&SUBR(private_linearOp_apply_linearOp_product_k);	//Y=beta*Y + alpha*A1_which_apply1*...*Ak_which_applyk*X
+
+  op->apply=&SUBR(private_linearOp_apply_linearOp_product_k);    //Y=beta*Y + alpha*A1_which_apply1*...*Ak_which_applyk*X
   op->apply_shifted=NULL;
   op->update=NULL;
   op->destroy=&SUBR(private_linearOp_destroy_linearOp_k_wrapper);
@@ -418,7 +418,7 @@ void SUBR(private_idOp_fused_apply_mvTmv)(_ST_ alpha, const void* A, TYPE(const_
 }
 
 //
-void SUBR(private_idOp_apply_shifted)(_ST_ alpha, const void* A, _ST_ const *sigma, 
+void SUBR(private_idOp_apply_shifted)(_ST_ alpha, const void* A, _ST_ const *sigma,
         TYPE(const_mvec_ptr) X,  _ST_ beta, TYPE(mvec_ptr) Y, int* iflag)
 {
 #include "phist_std_typedefs.hpp"
@@ -432,7 +432,7 @@ void SUBR(private_idOp_apply_shifted)(_ST_ alpha, const void* A, _ST_ const *sig
 }
 
 // setup identity operator that returns Y=alpha*X + beta*Y
-void SUBR(linearOp_identity)(TYPE(linearOp_ptr) op, 
+void SUBR(linearOp_identity)(TYPE(linearOp_ptr) op,
                              phist_const_map_ptr  range_map,
                              phist_const_map_ptr domain_map, int* iflag)
 {
@@ -450,14 +450,14 @@ void SUBR(linearOp_identity)(TYPE(linearOp_ptr) op,
 }
 
  //! pointer to function for computing Y=alpha*A*X+beta*Y
- void SUBR(linearOp_apply)(_ST_ alpha, TYPE(const_linearOp_ptr) A_op, 
+ void SUBR(linearOp_apply)(_ST_ alpha, TYPE(const_linearOp_ptr) A_op,
         TYPE(const_mvec_ptr) X, _ST_ beta,  TYPE(mvec_ptr) Y, int* iflag)
   {
     PHIST_CHK_IERR(*iflag=(A_op->apply==NULL)? PHIST_BAD_CAST:0,*iflag);
     PHIST_CHK_IERR(A_op->apply(alpha,A_op->A,X,beta,Y,iflag),*iflag);
   }
 //! apply transpose
- void SUBR(linearOp_applyT)(_ST_ alpha, TYPE(const_linearOp_ptr) A_op, 
+ void SUBR(linearOp_applyT)(_ST_ alpha, TYPE(const_linearOp_ptr) A_op,
         TYPE(const_mvec_ptr) X, _ST_ beta,  TYPE(mvec_ptr) Y, int* iflag)
   {
     PHIST_CHK_IERR(*iflag=(A_op->applyT==NULL)? PHIST_BAD_CAST:0,*iflag);
@@ -480,7 +480,7 @@ void SUBR(linearOp_identity)(TYPE(linearOp_ptr) op,
     PHIST_CHK_IERR(A_op->fused_apply_mvTmv(alpha,A_op->A,V,beta,W,WtW,VtW,iflag),*iflag);
   }
 
-  
+
   void SUBR(linearOp_update)(TYPE(linearOp_ptr) A_op, _ST_ sigma,
                         TYPE(const_mvec_ptr) Vkern,
                         TYPE(const_mvec_ptr) BVkern,
@@ -488,7 +488,7 @@ void SUBR(linearOp_identity)(TYPE(linearOp_ptr) op,
   {
     PHIST_CHK_IERR(A_op->update(A_op->A,A_op->aux,sigma,Vkern,BVkern,iflag),*iflag);
   }
-  
+
   //! this function can be used to clean up any data the operator may *own*,
   //! if the operator is just a wrapper for some other object that is created
   //! and deleted separately, this function should not do anything.
