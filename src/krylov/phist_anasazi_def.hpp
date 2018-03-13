@@ -17,7 +17,7 @@
 */
 #define PHIST_rcp phist::mvec_rcp< _ST_ >
 
-//#include "phist_AnasaziSVQBOrthoManager.hpp"
+#include "phist_AnasaziSVQBOrthoManager.hpp"
 
 // Anasazi: block krylov methods from Trilinos
 extern "C" void SUBR(anasazi)(      TYPE(const_linearOp_ptr) A_op, TYPE(const_linearOp_ptr) Ainv_op, 
