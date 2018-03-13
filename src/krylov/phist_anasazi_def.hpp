@@ -100,7 +100,7 @@ extern "C" void SUBR(anasazi)(      TYPE(const_linearOp_ptr) A_op, TYPE(const_li
   anasaziList->set("Block Size",blockDim);
   anasaziList->set("Num Blocks",numBlocks);
   anasaziList->set("Maximum Restarts",(int)(*nIter/numBlocks));
-  anasaziList->set("Orthogonalization","ICGS");
+  anasaziList->set("Orthogonalization","SVQB");
   anasaziList->set("Convergence Tolerance",tol);
   int verb=::Anasazi::Errors+::Anasazi::Warnings;
 #if PHIST_OUTLEV>=PHIST_INFO
