@@ -97,7 +97,9 @@ typedef enum phist_Eprojection
 } phist_Eprojection;
 
 #ifdef __cplusplus
-#include <iostream>
+# ifndef DOXYGEN
+# include <iostream>
+# endif
 extern "C" {
 #endif
 // defined in phist_tools.c

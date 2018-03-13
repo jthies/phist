@@ -6,6 +6,8 @@
 /* Contact: Jonas Thies (Jonas.Thies@DLR.de)                                               */
 /*                                                                                         */
 /*******************************************************************************************/
+#ifndef PHIST_TYPES_HPP
+#define PHIST_TYPES_HPP
 
 #include "phist_typedefs.h"
 #include "phist_ScalarTraits.hpp"
@@ -21,12 +23,15 @@ class types
     typedef typename ScalarTraits<ST>::magn_t MT;
     typedef ScalarTraits<MT> mt;
     
+    typedef typename st::mvec_t  mvec;
     typedef typename st::mvec_t* mvec_ptr;
     typedef typename st::mvec_t const* const_mvec_ptr;
 
+    typedef typename st::sdMat_t sdMat;
     typedef typename st::sdMat_t* sdMat_ptr;
     typedef typename st::sdMat_t const* const_sdMat_ptr;
 
+    typedef typename st::sparseMat_t sparseMat;
     typedef typename st::sparseMat_t* sparseMat_ptr;
     typedef typename st::sparseMat_t const* const_sparseMat_ptr;
 
@@ -36,3 +41,4 @@ class types
 };
 
 }
+#endif

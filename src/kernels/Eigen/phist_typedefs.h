@@ -10,14 +10,18 @@
 #define PHIST_TYPEDEFS_H
 
 #include "phist_config.h"
+
+#ifndef DOXYGEN
 /* needs to be included before system headers for some intel compilers+mpi */
 #ifdef PHIST_HAVE_MPI
 #include <mpi.h>
 #endif
-
+#endif /* DOXYGEN */
 //! complex data types
 #ifdef __cplusplus
+#ifndef DOXYGEN
 #include <complex>
+#endif
 typedef std::complex<float> phist_s_complex;
 typedef std::complex<double> phist_d_complex;
 #else

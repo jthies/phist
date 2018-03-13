@@ -23,7 +23,8 @@
 #endif
 
 #ifdef __cplusplus
-# include <cstdio>
+#include <cstdio>
+#include <iostream>
 #else
 # include <stdio.h>
 #endif
@@ -32,13 +33,13 @@
 #include <likwid.h>
 #endif
 
-#endif //DOXYGEN
-
-# include "phist_macros.h"
-
 #ifdef PHIST_HAVE_GHOST
 #include <ghost.h>
 #endif
+
+#endif //DOXYGEN
+
+# include "phist_macros.h"
 
 #ifdef __cplusplus
 
@@ -67,21 +68,87 @@ unsigned int phist_cacheline_size()
   return clsize;
 }
 
+  //! redirect all subsequent output in phist to this output stream
+  //! (if this function is not called, the default stream is std:cout)
+  //!
+  //! Any subsequent call to phist_set_CXX_output_stream or phist_set_C_output_stream
+  //! overrides the previous setting.
+  //!
+  //! All output can be suppressed by calling this function with a nullptr argument.
+  void phist_set_CXX_output_stream(std::ostream& ostr);
+
+  //! retrieve the C++ stream to which phistj is printing.
+  //! May be nullptr if a C output stream was set using phist_set_C_output_stream.
+  std::ostream* phist_get_CXX_output_stream();
+
 extern "C" {
 #endif
-const char* phist_retcode2str(int code);
+
+#ifdef PHIST_HAVE_MPI
+  //! set the standard MPI communicator used to create all subsequent objects
+  //! (the one wrapped and returned by phist_comm_create)
+  //!
+  //! CAVEAT: for many kernel libaries (e.g. builtin, ghost, tpetra) we implement 
+  //!         a pinning strategy (i.e. bind MPI processes and threads to physical 
+  //!         cores of the machine). This is typically done in phist_kernels_init,
+  //!         so we recommend setting the communicator *before* that function. If 
+  //!         you want to be able to spawn new MPI processes, you may want to set 
+  //!         PHIST_TRY_TO_PIN_THREADS=OFF using cmake and use this function to   
+  //!         update the communicator.
+  void phist_set_default_comm(MPI_Comm new_comm);
+  
+  //! return the MPI communicator used internally by default
+  MPI_Comm phist_get_default_comm();
+  
+  //! this function should be called from Fortran to set the MPI communicator
+  //! analogously to phist_set_default_comm.
+  void phist_set_default_comm_f(MPI_Fint f_comm);
+
+  //! this function should be called from Fortran to get a valid MPI communicator
+  //! analogously to phist_get_default_comm. For a fortran binding of this       
+  //! function, see src/kernels/builtin/env_module.f90.
+  MPI_Fint phist_get_default_comm_f();
+#endif
+  //! redirect all subsequent output in phist to this C output stream
+  //! (if this function is not called, the default stream is stdout)
+  //!
+  //! Any subsequent call to phist_set_CXX_output_stream or phist_set_C_output_stream
+  //! overrides the previous setting.
+  //!
+  //! All output can be suppressed by calling this function with a NULL argument.
+  void phist_set_C_output_stream(FILE* fp);
+
+  //! return the version of phist as a string (formatted e.g. as "1.7.2")
+  const char* phist_version();
+  //! return the exact git revision of the phist installation
+  const char* phist_git_revision();
+  //! return some other useful information on the phist installation as a multi-line 
+  //! string, e.g. compilers, compile flags etc.
+  const char* phist_install_info();
+
+  //! Get the default output stream (C-style) to which phist is printing.
+  //! May be NULL if a C++ stream was provided using phist_set_CXX_output_stream().
+  FILE* phist_get_C_output_stream();
+
+  //! return the name of the library that provides the kernels for this phist installation as a string,
+  //! e.g. "builtin","ghost","tpetra".
+  const char* phist_kernel_lib();
+
+  //! convert a standard return code from phist into a human-readable string.
+  const char* phist_retcode2str(int code);
+
 #ifdef PHIST_HAVE_GHOST
 #include <ghost/config.h>
 #include <ghost/types.h>
+//! for internal use only: convert a ghost error code into a human-readable string
 const char* phist_ghost_error2str(ghost_error code);
 #endif
-const char* phist_kernel_lib();
 
 # ifdef PHIST_HAVE_MPI
 
 //! pretty-print process-local strings in order. This function should
 //! not be used directly but via the wrapper macro PHIST_ORDERED_OUT(...)
-int phist_ordered_fprintf(FILE* stream, MPI_Comm comm, const char* fmt, ...);
+int phist_ordered_fprintf(MPI_Comm comm, const char* fmt, ...);
 
 # endif
 
@@ -90,9 +157,5 @@ int phist_ordered_fprintf(FILE* stream, MPI_Comm comm, const char* fmt, ...);
 #endif
 
 #include "phist_tasks.h"
-
-#ifndef DOXYGEN
-#include "phist_lapack.h"
-#endif
 
 #endif

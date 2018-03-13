@@ -236,7 +236,7 @@ MTest::PrintSdMat(PHIST_DEBUG,"L^T",mat1_vp_,m_lda_,1,mpi_comm_);
         for(int j = 1; j < ncols_; j++)
         {
           if( i <= j )
-            mat1_vp_[MIDX(i,j,m_lda_)] = ST(k--)+(ST)0.1*(ST)(j-i)*(ST)(mt::prand()-0.5)*st::cmplx_I();
+            mat1_vp_[MIDX(i,j,m_lda_)] = ST(k--)+ST(0.1*(j-i))*ST(mt::prand()-0.5)*st::cmplx_I();
           else
             mat1_vp_[MIDX(i,j,m_lda_)] = st::zero();
         }

@@ -15,6 +15,10 @@ phist_krylov_decl.hpp
 phist_precon.hpp
 phist_precon_decl.hpp)
 
+foreach (hpp_file ${STATIC_HPP_FILES})
+  configure_file(${PROJECT_SOURCE_DIR}/cxx_bindings/${hpp_file} ${CMAKE_CURRENT_BINARY_DIR} COPYONLY)
+endforeach()
+
 set(ALL_HPP_FILES ${HPP_FILES} ${STATIC_HPP_FILES})
 
 # put correct path into py-script and copy it
@@ -39,7 +43,7 @@ target_link_libraries(test_cxx_bindings ${library_list})
 add_dependencies(test_cxx_bindings cxx_headers)
 
 enable_testing()
-add_test(NAME cxx_bindings COMMAND test_cxx_bindings)
+add_test(NAME cxx_bindings COMMAND ${TEST_ENV} ./test_cxx_bindings)
 set_tests_properties(cxx_bindings PROPERTIES PASS_REGULAR_EXPRESSION "[. \n]*PASSED[. \n]*")
 set_tests_properties(cxx_bindings PROPERTIES FAIL_REGULAR_EXPRESSION ". \n]*FAILED[. \n]*")
 set_tests_properties(cxx_bindings PROPERTIES TIMEOUT 30)

@@ -15,7 +15,7 @@
 
 #include "phist_config.h"
 
-#if defined(PHIST_HAVE_SP)&&define(PHIST_HAVE_CMPLX)
+#if defined(PHIST_HAVE_SP)&&defined(PHIST_HAVE_CMPLX)
 
 /* needs to be included before system headers for some intel compilers+mpi */
 #ifdef PHIST_HAVE_MPI

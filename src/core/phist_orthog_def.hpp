@@ -18,6 +18,7 @@ extern "C" void SUBR(orthog)(TYPE(const_mvec_ptr) V,
 {
   PHIST_ENTER_FCN(__FUNCTION__);
 #include "phist_std_typedefs.hpp"
+  int iflag_in=*iflag;
 #ifdef PHIST_HIGH_PRECISION_KERNELS_FORCE
   int robust=1;
 #else
@@ -37,10 +38,8 @@ extern "C" void SUBR(orthog)(TYPE(const_mvec_ptr) V,
   PHIST_CHK_IERR(SUBR(mvec_num_vectors)(W,&k,iflag),*iflag);
   if (V!=NULL) PHIST_CHK_IERR(SUBR(mvec_num_vectors)(V,&m,iflag),*iflag);
 
-    phist_const_map_ptr map=NULL;
-    PHIST_CHK_IERR(SUBR(mvec_get_map)(W,&map,iflag),*iflag);
     phist_const_comm_ptr comm=NULL;
-    PHIST_CHK_IERR(phist_map_get_comm(map,&comm,iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(mvec_get_comm)(W,&comm,iflag),*iflag);
   
   TYPE(mvec_ptr) BW= W;
   
@@ -48,10 +47,12 @@ extern "C" void SUBR(orthog)(TYPE(const_mvec_ptr) V,
   PHIST_CHK_IERR(SUBR(sdMat_create)(&WtW,k,k,comm,iflag),*iflag);
   SdMatOwner<_ST_> _WtW(WtW);
   
+  MvecOwner< _ST_ > _BW;
 
   if (B!=NULL)
   {
-    PHIST_CHK_IERR(SUBR(mvec_create)(&BW,map,k,iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(mvec_clone_shape)(&BW,W,iflag),*iflag);
+    _BW.set(BW);
     if (robust) *iflag=PHIST_ROBUST_REDUCTIONS;
     // note: we pass in WtW as the "VtW" argument because it should contain W'BW
     PHIST_CHK_IERR(B->fused_apply_mvTmv(st::one(),B->A,W,st::zero(),BW,NULL,WtW,iflag),*iflag);
@@ -61,8 +62,39 @@ extern "C" void SUBR(orthog)(TYPE(const_mvec_ptr) V,
     if (robust) *iflag=PHIST_ROBUST_REDUCTIONS;
     PHIST_CHK_IERR(SUBR(mvecT_times_mvec)(st::one(),W,W,st::zero(),WtW,iflag),*iflag);
   }
-  
+
+  *iflag=iflag_in;
+  SUBR(orthog_impl)(V,W,B,BW,WtW,R1,R2,numSweeps,rankVW,rankTol,orthoEps,iflag);
+}
+
+extern "C" void SUBR(orthog_impl)(TYPE(const_mvec_ptr) V,
+                     TYPE(mvec_ptr) W,
+                     TYPE(const_linearOp_ptr) B,
+                     TYPE(mvec_ptr) BW,
+                     TYPE(sdMat_ptr) WtW,
+                     TYPE(sdMat_ptr) R1,
+                     TYPE(sdMat_ptr) R2,
+                     int numSweeps,
+                     int* rankVW,
+                     _MT_ rankTol,
+                     _MT_ orthoEps,
+                     int* iflag)
+{
+  PHIST_ENTER_FCN(__FUNCTION__);
+#include "phist_std_typedefs.hpp"
+#ifdef PHIST_HIGH_PRECISION_KERNELS_FORCE
+  int robust=1;
+#else
+  int robust    =(*iflag&PHIST_ROBUST_REDUCTIONS);
+#endif
+  int randomize =(*iflag&PHIST_ORTHOG_RANDOMIZE_NULLSPACE);
+  int triangular_R1=(*iflag&PHIST_ORTHOG_TRIANGULAR_R1);
   int dim0;
+
+  int m=0,k;
+
+  PHIST_CHK_IERR(SUBR(mvec_num_vectors)(W,&k,iflag),*iflag);
+  if (V!=NULL) PHIST_CHK_IERR(SUBR(mvec_num_vectors)(V,&m,iflag),*iflag);
 
   if (V!=NULL)
   {
@@ -84,6 +116,8 @@ extern "C" void SUBR(orthog)(TYPE(const_mvec_ptr) V,
   int num_attempts=0;
   const int max_attempts=5;
   TYPE(sdMat_ptr) R1p=NULL,R1pp=NULL,R2p=NULL;
+  phist_const_comm_ptr comm;
+  PHIST_CHK_IERR(SUBR(mvec_get_comm)(W,&comm,iflag),*iflag);
   if (randomize&&dim0>0)
   {
     if (m>0) PHIST_CHK_IERR(SUBR(sdMat_create)(&R2p,m,k,comm,iflag),*iflag);
@@ -158,10 +192,29 @@ extern "C" void SUBR(orthog)(TYPE(const_mvec_ptr) V,
     PHIST_CHK_IERR(SUBR(sdMat_delete)(R1_r,iflag),*iflag);
   }
   
-  if (B!=NULL)
+  // if the user explicitly asks for a triangular R1 factor, we have to permute
+  // the final orthogonal Q (which is stored in W at this point).
+  // We have Q*R1     = W - V*R2 = Q*P*R1p, so
+  // first compute R1=P*R1p where R1p overwrites R1 and P is stored explicitly
+  // then  update Q <- Q*P in-place.
+  if (triangular_R1 && k>1)
   {
-    PHIST_CHK_IERR(SUBR(mvec_delete)(BW,iflag),*iflag);
+    if (R1p==NULL)
+    {
+      PHIST_CHK_IERR(SUBR(sdMat_create)(&R1p,k,k,comm,iflag),*iflag);
+      _R1p.set(R1p);
+    }
+    TYPE(sdMat_ptr) P=R1p;
+    PHIST_CHK_IERR(SUBR(sdMat_from_device)(R1,iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(sdMat_qr)(P,R1,iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(sdMat_to_device)(R1,iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(sdMat_to_device)(P,iflag),*iflag);
+    // update the output Q
+    PHIST_CHK_IERR(SUBR(mvec_times_sdMat_inplace)(W,P,iflag),*iflag);
+    // for B-rothogonalization, also update BQ
+    if (BW!=W) PHIST_CHK_IERR(SUBR(mvec_times_sdMat_inplace)(BW,P,iflag),*iflag);
   }
+  
   if (num_attempts==max_attempts)
   {
     *iflag=-8;
@@ -171,6 +224,3 @@ extern "C" void SUBR(orthog)(TYPE(const_mvec_ptr) V,
     *iflag=+1;
   }
 }
-
-
-

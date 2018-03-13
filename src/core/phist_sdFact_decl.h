@@ -70,3 +70,11 @@ void SUBR(sdMat_pseudo_inverse)(TYPE(sdMat_ptr) A_gen, int* rank, _MT_ rankTol, 
 //! We also allow Sigma to have dimension (min(m,n),1), in that case we return the
 //! diagonal entries of Sigma only (the actual singular values).
 void SUBR(sdMat_svd)(TYPE(sdMat_ptr) A, TYPE(sdMat_ptr) U, TYPE(sdMat_ptr) Sigma, TYPE(sdMat_ptr) Vt, int* iflag);
+
+//! given a m x m matrix A, compute the explicit QR factorization A=Q*R.
+
+//! A should be provided via the R argument.
+//! If A is singular, some columns of Q may be 0. The function calls the lapack
+//! subroutines XGEQR and XGEMQR to explicitly construct the Q factor. On output,
+//! A is overwritten by R.
+void SUBR(sdMat_qr)(TYPE(sdMat_ptr) Q, TYPE(sdMat_ptr) R, int* iflag);

@@ -46,10 +46,10 @@ public:
   static const int k_=_K_;
   
   //! V is n x m
-  TYPE(mvec_ptr) V1_ = NULL, V2_ = NULL;
+  TYPE(mvec_ptr) V1_ = nullptr, V2_ = nullptr;
 
   //! M is m x m
-  TYPE(sdMat_ptr) M1_ = NULL, M2_ = NULL;
+  TYPE(sdMat_ptr) M1_ = nullptr, M2_ = nullptr;
   
   _ST_ *V1_vp_,*V2_vp_,*M1_vp_,*M2_vp_;
   
@@ -103,14 +103,14 @@ public:
     }
     else
     {
-      V1_ = NULL;
-      V1_vp_ = NULL;
-      V2_ = NULL;
-      V2_vp_ = NULL;
-      M1_ = NULL;
-      M1_vp_ = NULL;
-      M2_ = NULL;
-      M2_vp_ = NULL;
+      V1_ = nullptr;
+      V1_vp_ = nullptr;
+      V2_ = nullptr;
+      V2_vp_ = nullptr;
+      M1_ = nullptr;
+      M1_vp_ = nullptr;
+      M2_ = nullptr;
+      M2_vp_ = nullptr;
     }
     stride_=1;
   }
@@ -135,6 +135,7 @@ public:
     V1Test::TearDownTestCase();
 
     KernelTestWithMap<_N_>::TearDownTestCase();
+    TestWithType<_ST_>::TearDownTestCase();
   }
 };
 
@@ -188,9 +189,9 @@ public:
       for (int ii=0; ii< nloc_; ii++)
       {
         for (int j=0; j<k_; j++)
-          V2_vp_[VIDX(ii,j,ldaV2_)] = -st::one()*(_MT_)(j+1);
+          V2_vp_[VIDX(ii,j,ldaV2_)] = -ST(j+1);
         for (int i=0; i<m_; i++)
-          V1_vp_[VIDX(ii,i,ldaV1_)] = st::one()*(_MT_)((i+1)*1.0l/nglob_);
+          V1_vp_[VIDX(ii,i,ldaV1_)] = ST((i+1)*1.0l/nglob_);
       }
       SUBR(mvec_to_device)(V1_,&iflag_);
       ASSERT_EQ(0,iflag_);
@@ -218,9 +219,9 @@ public:
       for (int ii=0; ii< nloc_; ii++)
       {
         for (int j=0; j<k_; j++)
-          V2_vp_[VIDX(ii,j,ldaV2_)] = (_ST_) -st::one()*(_MT_)((j+1)*1.0l/(ilower+ii+1));
+          V2_vp_[VIDX(ii,j,ldaV2_)] = -st::one()*ST((j+1)*1.0l/(ilower+ii+1));
         for (int i=0; i<m_; i++)
-          V1_vp_[VIDX(ii,i,ldaV1_)] = (_ST_) st::one()*(_MT_)((i+1)*1.0l/(ilower+ii+2));
+          V1_vp_[VIDX(ii,i,ldaV1_)] = (_ST_) st::one()*ST((i+1)*1.0l/(ilower+ii+2));
       }
       SUBR(mvec_to_device)(V1_,&iflag_);
       ASSERT_EQ(0,iflag_);
@@ -297,7 +298,7 @@ public:
           }
         }
       
-        TYPE(sdMat_ptr) M=NULL;
+        TYPE(sdMat_ptr) M=nullptr;
         SUBR(sdMat_create)(&M,m_,k_,comm_,&iflag_);
         ASSERT_EQ(0,iflag_);
       
@@ -337,7 +338,7 @@ public:
       for (int ii=0; ii< nloc_; ii++)
       {
         for (int j=0; j<k_; j++)
-          V1_vp_[VIDX(ii,j,ldaV1_)] = -st::one()*(_MT_)(j+1);
+          V1_vp_[VIDX(ii,j,ldaV1_)] = -ST(j+1);
       }
       SUBR(mvec_to_device)(V1_,&iflag_);
       ASSERT_EQ(0,iflag_);
@@ -411,9 +412,9 @@ public:
       for (int ii=0; ii< nloc_; ii++)
       {
         for (int j=0; j<k_; j++)
-          V2_vp_[VIDX(ii,j,ldaV2_)] = -st::one()*(_MT_)(j+1);
+          V2_vp_[VIDX(ii,j,ldaV2_)] = -ST(j+1);
         for (int i=0; i<m_; i++)
-          V1_vp_[VIDX(ii,i,ldaV1_)] = st::one()*(_MT_)((i+1)*1./nglob_);
+          V1_vp_[VIDX(ii,i,ldaV1_)] = ST((i+1)*1./nglob_);
       }
       iflag_ = PHIST_ROBUST_REDUCTIONS;
       SUBR(mvecT_times_mvec)(st::one(),V1_,V2_,st::zero(),M1_,&iflag_);
@@ -438,9 +439,9 @@ public:
       for (int ii=0; ii< nloc_; ii++)
       {
         for (int j=0; j<k_; j++)
-          V2_vp_[VIDX(ii,j,ldaV2_)] = (_ST_) -st::one()*(_MT_)((j+1)*1.0l/(ilower+ii+1));
+          V2_vp_[VIDX(ii,j,ldaV2_)] = -ST((j+1)*1.0l/(ilower+ii+1));
         for (int i=0; i<m_; i++)
-          V1_vp_[VIDX(ii,i,ldaV1_)] = (_ST_) st::one()*(_MT_)((i+1)*1.0l/(ilower+ii+2));
+          V1_vp_[VIDX(ii,i,ldaV1_)] = ST((i+1)*1.0l/(ilower+ii+2));
       }
       SUBR(mvec_to_device)(V1_,&iflag_);
       ASSERT_EQ(0,iflag_);
@@ -492,7 +493,7 @@ public:
       for (int ii=0; ii< nloc_; ii++)
       {
         for (int j=0; j<k_; j++)
-          V1_vp_[VIDX(ii,j,ldaV1_)] = -st::one()*(_MT_)(j+1);
+          V1_vp_[VIDX(ii,j,ldaV1_)] = -ST(j+1);
       }
       iflag_ = PHIST_ROBUST_REDUCTIONS;
       SUBR(mvecT_times_mvec)(st::one(),V1_,V1_,st::zero(),M1_,&iflag_);
@@ -671,13 +672,13 @@ public:
       MTest::PrintSdMat(PHIST_DEBUG,"ones",M1_vp_,ldaM1_,stride_,mpi_comm_);
       V2Test::PrintVector(PHIST_DEBUG,"ones*ones",V2_vp_,nloc_,ldaV2_,stride_,mpi_comm_);
 #endif
-      ASSERT_REAL_EQ(mt::one(),MvecEqual(V2_,(ST)m_));
+      ASSERT_REAL_EQ(mt::one(),MvecEqual(V2_,ST(m_)));
       MTest::sdMat_parallel_check(M1_,&iflag_);
       ASSERT_EQ(0,iflag_);
       
       // with adding to factor*(input vector)
-      ST alpha=(ST)2.0+(ST)2.0*st::cmplx_I();
-      SUBR(mvec_put_value)(V2_,(ST)m_*alpha,&iflag_);
+      ST alpha=ST(2)+ST(2)*st::cmplx_I();
+      SUBR(mvec_put_value)(V2_,ST(m_)*alpha,&iflag_);
       ASSERT_EQ(0,iflag_);
       SUBR(mvec_times_sdMat)(st::one(),V1_,M1_,-st::one()/alpha,V2_,&iflag_);
       ASSERT_EQ(0,iflag_);
@@ -698,7 +699,7 @@ public:
     {
       // fill mvec with scalar
       const MT scalar = 5;
-      SUBR(mvec_put_value)(V1_, (ST)(scalar * st::one()), &iflag_);
+      SUBR(mvec_put_value)(V1_, ST(scalar), &iflag_);
       ASSERT_EQ(0, iflag_);
 
       #if PHIST_OUTLEV>=PHIST_DEBUG
@@ -711,7 +712,7 @@ public:
 
       // scale mvec with different scalar
       const MT scaleScalar = -1;
-      SUBR(mvec_scale)(V1_, (ST) (scaleScalar * st::one()), &iflag_);
+      SUBR(mvec_scale)(V1_, ST(scaleScalar), &iflag_);
       ASSERT_EQ(0, iflag_);
 
       #if PHIST_OUTLEV>=PHIST_DEBUG
@@ -766,7 +767,7 @@ public:
 
 
       // test alpa = 7+3i, beta = 0
-      alpha = (ST)7+(ST)3*st::cmplx_I();
+      alpha = ST(7)+ST(3)*st::cmplx_I();
       SUBR(mvec_times_sdMat)(alpha,V1_,M1_,beta,V2_,&iflag_);
         ASSERT_EQ(0,iflag_);
       SUBR(mvec_from_device)(V2_,&iflag_);
@@ -788,7 +789,7 @@ public:
 
 
       // test alpha = (-3+i)*alpha, beta = 3-i
-      beta = (ST)3-(ST)st::cmplx_I();
+      beta = ST(3)-st::cmplx_I();
       alpha = -beta * alpha;
       SUBR(mvec_times_sdMat)(alpha,V1_,M1_,beta,V2_,&iflag_);
         ASSERT_EQ(0,iflag_);
@@ -809,7 +810,7 @@ public:
       // fill V and W with ones
       SUBR(mvec_put_value)(V1_,st::one(),&iflag_);
       ASSERT_EQ(0,iflag_);
-      SUBR(mvec_put_value)(V2_,(ST)42.0*st::one(),&iflag_);
+      SUBR(mvec_put_value)(V2_,ST(42),&iflag_);
       ASSERT_EQ(0,iflag_);
       SUBR(sdMat_put_value)(M1_,st::one(),&iflag_);
       ASSERT_EQ(0,iflag_);
@@ -825,13 +826,13 @@ public:
       MTest::PrintSdMat(PHIST_DEBUG,"ones",M1_vp_,ldaM1_,stride_,mpi_comm_);
       V2Test::PrintVector(PHIST_DEBUG,"ones*ones",V2_vp_,nloc_,ldaV2_,stride_,mpi_comm_);
 #endif
-      ASSERT_REAL_EQ(mt::one(),MvecEqual(V2_,(ST)m_));
+      ASSERT_REAL_EQ(mt::one(),MvecEqual(V2_,ST(m_)));
       MTest::sdMat_parallel_check(M1_,&iflag_);
       ASSERT_EQ(0,iflag_);
       
       // with adding to factor*(input vector)
-      ST alpha=(ST)2+(ST)2*st::cmplx_I();
-      SUBR(mvec_put_value)(V2_,(ST)m_*alpha,&iflag_);
+      ST alpha=ST(2)+ST(2)*st::cmplx_I();
+      SUBR(mvec_put_value)(V2_,ST(m_)*alpha,&iflag_);
       ASSERT_EQ(0,iflag_);
       iflag_ = PHIST_ROBUST_REDUCTIONS;
       SUBR(mvec_times_sdMat)(st::one(),V1_,M1_,-st::one()/alpha,V2_,&iflag_);
@@ -867,10 +868,10 @@ public:
       MTest::PrintSdMat(PHIST_DEBUG,"ones",M1_vp_,ldaM1_,stride_,mpi_comm_);
       V1Test::PrintVector(PHIST_DEBUG,"ones*ones",V1_vp_,nloc_,ldaV2_,stride_,mpi_comm_);
 #endif
-      TYPE(mvec_ptr) V_cols=NULL;
+      TYPE(mvec_ptr) V_cols=nullptr;
       SUBR(mvec_view_block)(V1_,&V_cols,0,k_-1,&iflag_);
       ASSERT_EQ(0,iflag_);
-      ASSERT_REAL_EQ(mt::one(),MvecEqual(V_cols,(ST)m_));
+      ASSERT_REAL_EQ(mt::one(),MvecEqual(V_cols,ST(m_)));
    
       if (k_<m_)
       {
@@ -911,7 +912,7 @@ public:
       V2Test::PrintVector(PHIST_DEBUG,"result_out_of_place",V2_vp_,nloc_,ldaV2_,stride_,mpi_comm_);
 #endif
   
-      TYPE(mvec_ptr) V_cols=NULL;
+      TYPE(mvec_ptr) V_cols=nullptr;
       SUBR(mvec_view_block)(V1_,&V_cols,0,k_-1,&iflag_);
       ASSERT_EQ(0,iflag_);
 
@@ -943,11 +944,11 @@ public:
       SUBR(mvec_times_sdMat_inplace)(V1_,M1_,&iflag_);
       ASSERT_EQ(0,iflag_);
 
-      TYPE(mvec_ptr) V_cols=NULL;
+      TYPE(mvec_ptr) V_cols=nullptr;
       SUBR(mvec_view_block)(V1_,&V_cols,0,k_-1,&iflag_);
       ASSERT_EQ(0,iflag_);
 
-      ASSERT_REAL_EQ(mt::one(),MvecEqual(V_cols,(ST)m_));
+      ASSERT_REAL_EQ(mt::one(),MvecEqual(V_cols,ST(m_)));
    
       SUBR(mvec_delete)(V_cols,&iflag_);
       ASSERT_EQ(0,iflag_);
@@ -979,7 +980,7 @@ public:
       SUBR(mvec_times_sdMat_inplace)(V1_,M1_,&iflag_);
       ASSERT_EQ(0,iflag_);
   
-      TYPE(mvec_ptr) V_cols=NULL;
+      TYPE(mvec_ptr) V_cols=nullptr;
       SUBR(mvec_view_block)(V1_,&V_cols,0,k_-1,&iflag_);
       ASSERT_EQ(0,iflag_);
 
@@ -1028,11 +1029,11 @@ public:
       
       ASSERT_EQ(jmax-jmin,imax-imin);
 
-      mvec_ptr V=NULL;
+      mvec_ptr V=nullptr;
       SUBR(mvec_view_block)(V1_,&V, jmin,jmax,&iflag_);
       ASSERT_EQ(0,iflag_);
 
-      sdMat_ptr M=NULL;
+      sdMat_ptr M=nullptr;
       SUBR(sdMat_view_block)(M1_,&M, imin,imax,jmin,jmax,&iflag_);
       ASSERT_EQ(0,iflag_);
 
@@ -1215,19 +1216,19 @@ public:
         PHIST_SOUT(PHIST_DEBUG, "Test offsets: off1: %d, off2: %d, m1: %d, m2: %d, off1_M: %d, off2_M: %d\n", off1[i], off2[i], m1[i], m2[i], off1_M[i], off2_M[i]);
 
         // create views to parts of mvecs and sdmats
-        mvec_ptr V1 = NULL;
+        mvec_ptr V1 = nullptr;
         SUBR(mvec_view_block)(V1_,&V1,off1[i],off1[i]+m1[i]-1,&iflag_);
         ASSERT_EQ(0,iflag_);
-        mvec_ptr V2 = NULL;
+        mvec_ptr V2 = nullptr;
         SUBR(mvec_view_block)(V2_,&V2,off2[i],off2[i]+m2[i]-1,&iflag_);
         ASSERT_EQ(0,iflag_);
-        sdMat_ptr M1 = NULL;
+        sdMat_ptr M1 = nullptr;
         SUBR(sdMat_view_block)(M1_,&M1,off1_M[i],off1_M[i]+m1[i]-1,off2_M[i],off2_M[i]+m2[i]-1,&iflag_);
         ASSERT_EQ(0,iflag_);
-        sdMat_ptr M2 = NULL;
+        sdMat_ptr M2 = nullptr;
         SUBR(sdMat_view_block)(M2_,&M2,off1[i],off1[i]+m1[i]-1,off2[i],off2[i]+m2[i]-1,&iflag_);
         ASSERT_EQ(0,iflag_);
-        sdMat_ptr M3=NULL;
+        sdMat_ptr M3=nullptr;
         SUBR(sdMat_create)(&M3, m1[i], m2[i], comm_, &iflag_);
         ASSERT_EQ(0,iflag_);
         _ST_* M3_vp;

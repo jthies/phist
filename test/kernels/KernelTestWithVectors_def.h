@@ -439,6 +439,7 @@ static void TearDownTestCase()
   }
 
   KernelTestWithMap<_Nglob>::TearDownTestCase();
+  TestWithType< _ST_ >::TearDownTestCase();
 }
 
 

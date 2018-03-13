@@ -40,7 +40,7 @@ public:
     VTest::SetUp();
     MTest::SetUp();
     
-    haveMat_ = (A_ != NULL);
+    haveMat_ = (A_ != nullptr);
   }
 
   /*! Clean up.
@@ -65,13 +65,12 @@ protected:
 
 
 // test that we correctly get w'w and w=alpha*A*v+beta*w, and that it is ok to
-// set the vdotw argument to NULL
+// set the vdotw argument to nullptr
 TEST_F(CLASSNAME,fused_spmv_mvdot)
 {
     if( !typeImplemented_ || problemTooSmall_ )
       return;
 
-    int stride = 1;
     SUBR(mvec_random)(vec1_,&iflag_);
     ASSERT_EQ(0,iflag_);
     SUBR(mvec_random)(vec2_,&iflag_);
@@ -97,8 +96,8 @@ TEST_F(CLASSNAME,fused_spmv_mvdot)
     
     for (int i=0; i<nvec_;i++) 
     {
-      dot_xy[i]=(_ST_)-9.87654+(_ST_)1.23456*st::cmplx_I();
-      dot_yy[i]=(_ST_)-42.9+(_ST_)3.0*st::cmplx_I();
+      dot_xy[i]=ST(-9.87654)+ST(1.23456)*st::cmplx_I();
+      dot_yy[i]=ST(-42.9)+ST(3.0)*st::cmplx_I();
     }
 
     // actually do y=Ax with y'y and x'y
@@ -133,7 +132,6 @@ TEST_F(CLASSNAME,fused_spmv_mvTmv)
     if( !typeImplemented_ || problemTooSmall_ )
       return;
 
-    int stride = 1;
     SUBR(mvec_random)(vec1_,&iflag_);
     ASSERT_EQ(0,iflag_);
     SUBR(mvec_random)(vec2_,&iflag_);
@@ -168,7 +166,7 @@ TEST_F(CLASSNAME,fused_spmv_mvTmv)
     
 }
 
-// check that we can set W, WtW or VtW to NULL. WtV and WtW should be independent of alpha and beta.
+// check that we can set W, WtW or VtW to nullptr. WtV and WtW should be independent of alpha and beta.
 TEST_F(CLASSNAME,fused_spmv_mvTmv_with_null_args)
 {
     if( !typeImplemented_ || problemTooSmall_ )
@@ -185,7 +183,7 @@ TEST_F(CLASSNAME,fused_spmv_mvTmv_with_null_args)
     _ST_ beta = st::prand();
 
     // pathological case without output args should not segfault and return iflag=0
-    SUBR(fused_spmv_mvTmv)(alpha,A_,vec1_,beta,NULL,NULL,NULL,&iflag_);
+    SUBR(fused_spmv_mvTmv)(alpha,A_,vec1_,beta,nullptr,nullptr,nullptr,&iflag_);
     ASSERT_EQ(0,iflag_);
     
     // standard operation with all output args for comparison
@@ -196,11 +194,11 @@ return;
     _ST_ alpha2 = st::prand();
     _ST_ beta2 = st::prand();
 
-    SUBR(fused_spmv_mvTmv)(alpha2,A_,vec1_,beta2,NULL,mat3_,NULL,&iflag_);
+    SUBR(fused_spmv_mvTmv)(alpha2,A_,vec1_,beta2,nullptr,mat3_,nullptr,&iflag_);
     ASSERT_EQ(0,iflag_);
     ASSERT_NEAR(mt::one(), SdMatsEqual(mat1_,mat3_), mt::sqrt(mt::eps()));
 
-    SUBR(fused_spmv_mvTmv)(alpha2,A_,vec1_,beta2,NULL,NULL,mat3_,&iflag_);
+    SUBR(fused_spmv_mvTmv)(alpha2,A_,vec1_,beta2,nullptr,nullptr,mat3_,&iflag_);
     ASSERT_EQ(0,iflag_);
     ASSERT_NEAR(mt::one(), SdMatsEqual(mat2_,mat3_), mt::sqrt(mt::eps()));
     
@@ -228,7 +226,7 @@ TEST_F(CLASSNAME,fused_spmv_mvdot_mvadd)
     ASSERT_EQ(0,iflag_);
 
     SUBR(fused_spmv_mvdot_mvadd)(alpha,A_,vec1_,beta,vec2_,
-        st::one(), -st::one(), vec3_, NULL,NULL,&iflag_);    
+        st::one(), -st::one(), vec3_, nullptr,nullptr,&iflag_);    
     ASSERT_EQ(0,iflag_);
 
     ASSERT_NEAR(mt::one(), MvecEqual(vec3_,st::zero()), std::sqrt(VTest::releps()));

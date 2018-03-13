@@ -117,6 +117,9 @@ class WrapLambdaForGhostTask
         if( deterministicOneThread )
           nThreads = 1;
         ghost_task_flags flags = GHOST_TASK_DEFAULT;
+#ifndef PHIST_TRY_TO_PIN_THREADS
+        flags = (ghost_task_flags)((uint32_t)flags|GHOST_TASK_NOT_PIN);
+#endif
         PHIST_CHK_GERR(ghost_task_create(task, nThreads, 0, void_lambda_caller, (void*) new LFunc(context), flags, NULL, 0), *iflag);
       }
 

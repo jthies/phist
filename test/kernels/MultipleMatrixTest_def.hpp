@@ -47,8 +47,8 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_,_USE_VIEWS_,
   static void SetUpTestCase()
   {
     ST_Test::SetUpTestCase();
-    KernelTest::SetUpTestCase();
     if (!typeImplemented_) return;
+    KernelTest::SetUpTestCase();
     int sparseMatCreateFlag=getSparseMatCreateFlag(_N_,_NV_);
     // initialize all of the row functions that we use in this class
     ghost_gidx gdim[2];
@@ -122,6 +122,7 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_,_USE_VIEWS_,
 
   static void TearDownTestCase()
   {
+    ST_Test::TearDownTestCase();
     if (!typeImplemented_) return;
     VTest::TearDownTestCase();
     if (A_) SUBR(sparseMat_delete)(A_,&iflag_);
@@ -129,6 +130,8 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_,_USE_VIEWS_,
     if (Al_) SUBR(sparseMat_delete)(Al_,&iflag_);
     if (Ar_) SUBR(sparseMat_delete)(Ar_,&iflag_);
     ASSERT_EQ(0,iflag_);
+    KernelTestWithMap<_N_>::TearDownTestCase();
+    KernelTest::TearDownTestCase();
   }
 
 protected:
@@ -229,14 +232,14 @@ TEST_F(CLASSNAME,A_works)
   {
     for (int i=0; i<_NV_; i++)
     {
-      vec3_vp_[VIDX(0,i,lda_)] -= vec2_vp_[VIDX(0,i,lda_)] - (_ST_)0.5*vec2_vp_[VIDX(1,i,lda_)];
+      vec3_vp_[VIDX(0,i,lda_)] -= vec2_vp_[VIDX(0,i,lda_)] - ST(0.5)*vec2_vp_[VIDX(1,i,lda_)];
     }
   }
   if (mpi_rank_==mpi_size_-1)
   {
     for (int i=0; i<_NV_; i++)
     {
-      vec3_vp_[VIDX(nloc_-1,i,lda_)] -= vec2_vp_[VIDX(nloc_-1,i,lda_)] - (_ST_)0.5*vec2_vp_[VIDX(nloc_-2,i,lda_)];
+      vec3_vp_[VIDX(nloc_-1,i,lda_)] -= vec2_vp_[VIDX(nloc_-1,i,lda_)] - ST(0.5)*vec2_vp_[VIDX(nloc_-2,i,lda_)];
     }
   }
   ASSERT_REAL_EQ(mt::one(),ArrayEqual(vec3_vp_,nloc_,_NV_,lda_,stride_,st::zero(),vflag_));

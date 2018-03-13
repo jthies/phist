@@ -74,9 +74,9 @@ extern "C" void SUBR(sdMat_backwardSubst_sdMat)(const TYPE(sdMat_ptr) R, int* pe
   }
 }
 
-//! forward substitution. \ingroup prec
+// forward substitution. \ingroup prec
 
-//! forward substitution for pivoted conj. transposed upper triangular cholesky factor
+// forward substitution for pivoted conj. transposed upper triangular cholesky factor
 extern "C" void SUBR(sdMat_forwardSubst_sdMat)(const TYPE(sdMat_ptr) R, int* perm, int rank, TYPE(sdMat_ptr) X, int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
@@ -109,7 +109,7 @@ extern "C" void SUBR(sdMat_forwardSubst_sdMat)(const TYPE(sdMat_ptr) R, int* per
   }
 }
 
-//! given B=V'V, compute (in place) B^ s.t. V*B^ is orthonormal. The rank of V is returned in *rank.
+// given B=V'V, compute (in place) B^ s.t. V*B^ is orthonormal. The rank of V is returned in *rank.
 extern "C" void SUBR(sdMat_qb)(TYPE(sdMat_ptr) B, 
                     TYPE(sdMat_ptr) B_1, 
                     int* rank, _MT_ rankTol, int* iflag)
@@ -156,9 +156,9 @@ extern "C" void SUBR(sdMat_qb)(TYPE(sdMat_ptr) B,
   }
 }
 
-//! computes in-place the inverse of a Hermitian and positive semi-definite matrix using Cholesky factorization.
-//! If A is singular (actually semi-definite, that is), the pseudo-inverse is computed using rank-revealing Cholesky.
-//! The rank of A on input is returned as *rank.
+// computes in-place the inverse of a Hermitian and positive semi-definite matrix using Cholesky factorization.
+// If A is singular (actually semi-definite, that is), the pseudo-inverse is computed using rank-revealing Cholesky.
+// The rank of A on input is returned as *rank.
 void SUBR(sdMat_inverse)(TYPE(sdMat_ptr) A_hpd, int* rank, _MT_ rankTol, int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
@@ -187,9 +187,9 @@ void SUBR(sdMat_inverse)(TYPE(sdMat_ptr) A_hpd, int* rank, _MT_ rankTol, int* if
   PHIST_CHK_IERR(SUBR(sdMat_delete)(RR,iflag),*iflag);
 }
 
-//! computes in-place the (transpose of the Moore-Penrose)
-//! pseudo-inverse of an arbitrary m x n matrix. The rank
-//! of A on input is returned as *rank.
+// computes in-place the (transpose of the Moore-Penrose)
+// pseudo-inverse of an arbitrary m x n matrix. The rank
+// of A on input is returned as *rank.
 void SUBR(sdMat_pseudo_inverse)(TYPE(sdMat_ptr) A_gen, int* rank, _MT_ rankTol, int* iflag)
 {
 #include "phist_std_typedefs.hpp"
@@ -282,17 +282,17 @@ void SUBR(sdMat_pseudo_inverse)(TYPE(sdMat_ptr) A_gen, int* rank, _MT_ rankTol, 
   return;  
 }
 
-//! singular value decomposition, A = U*Sigma*Vt  
+// singular value decomposition, A = U*Sigma*Vt  
 
-//! A, Sigma are  m x n, U m x m, V n x n.          
-//! The function just calls the lapack routine XGESVD with JOBU=JOBV='A',
-//! so all the left and right singular vectors are computed and A is filled   
-//! with garbage on output. The transpose of V is returned, Vt = transpose(V),
-//! and the singular values are sorted on the diagonal of Sigma by decreading
-//! magnitude.
-//!
-//! We also allow Sigma to have dimension (min(m,n),1), in that case we return the
-//! diagonal entries of Sigma only (the actual singular values).
+// A, Sigma are  m x n, U m x m, V n x n.          
+// The function just calls the lapack routine XGESVD with JOBU=JOBV='A',
+// so all the left and right singular vectors are computed and A is filled   
+// with garbage on output. The transpose of V is returned, Vt = transpose(V),
+// and the singular values are sorted on the diagonal of Sigma by decreading
+// magnitude.
+//
+// We also allow Sigma to have dimension (min(m,n),1), in that case we return the
+// diagonal entries of Sigma only (the actual singular values).
 void SUBR(sdMat_svd)(TYPE(sdMat_ptr) A, TYPE(sdMat_ptr) U, TYPE(sdMat_ptr) Sigma, TYPE(sdMat_ptr) Vt, int* iflag)
 {
 #include "phist_std_typedefs.hpp"
@@ -386,4 +386,56 @@ void SUBR(sdMat_svd)(TYPE(sdMat_ptr) A, TYPE(sdMat_ptr) U, TYPE(sdMat_ptr) Sigma
       S_val[i*ldS+i]=(_ST_)(RS_val[i]);
     }
   }
+}
+
+// given a m x m matrix A, compute the explicit QR factorization A=Q*R.
+
+// A should be provided via the R argument.
+// If A is singular, some columns of Q may be 0. The function calls the lapack
+// subroutines XGEQRT and XGEMQRT to explicitly construct the Q factor. On output,
+// A is overwritten by R.
+void SUBR(sdMat_qr)(TYPE(sdMat_ptr) Q, TYPE(sdMat_ptr) R, int* iflag)
+{
+#include "phist_std_typedefs.hpp"
+  PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
+  PHIST_PERFCHECK_VERIFY_SMALL;
+  phist_lidx mQ,nQ,mR,nR;
+  phist_lidx ldR, ldQ;
+  _ST_ *R_raw, *Q_raw;
+  PHIST_CHK_IERR(SUBR(sdMat_get_nrows)(R,&mR,iflag),*iflag);
+  PHIST_CHK_IERR(SUBR(sdMat_get_ncols)(R,&nR,iflag),*iflag);
+  PHIST_CHK_IERR(SUBR(sdMat_get_nrows)(Q,&mQ,iflag),*iflag);
+  PHIST_CHK_IERR(SUBR(sdMat_get_ncols)(Q,&nQ,iflag),*iflag);
+  
+  // note: lapack accepts rectangular matrices, but I don't want to deal with the complexities
+  // of that right now and I don't need them here.
+  PHIST_CHK_IERR(*iflag = (nR==mR&&nR==nQ&&nR==mQ)? 0:PHIST_NOT_IMPLEMENTED,*iflag);
+  
+  int k=nQ;
+
+  PHIST_CHK_IERR(SUBR(sdMat_extract_view)(R,&R_raw,&ldR,iflag),*iflag);
+  PHIST_CHK_IERR(SUBR(sdMat_extract_view)(Q,&Q_raw,&ldQ,iflag),*iflag);
+  
+  int nb=1;
+  int ldT=nb;
+  _ST_ tau[ldT*k];
+  _ST_ work[nb*k];
+
+  PHIST_CHK_IERR(PHIST_TG_PREFIX(GEQRT)(&k,&k,&nb,(st::blas_scalar_t*)R_raw,&ldR,(st::blas_scalar_t*)tau,&ldT,(st::blas_scalar_t*)work,iflag),*iflag);
+
+  PHIST_CHK_IERR(SUBR(sdMat_identity)(Q,iflag),*iflag);
+  phist_blas_char side='L', trans='N';
+  PHIST_CHK_IERR(PHIST_TG_PREFIX(GEMQRT)( &side, &trans, &k, &k, &k, &nb,
+                           (st::blas_scalar_t*)R_raw, &ldR, (st::blas_scalar_t*)tau, &ldT, (st::blas_scalar_t*)Q_raw, &ldQ, 
+                           (st::blas_scalar_t*)work, iflag),*iflag);
+
+  // zero-out the lower triangular part of R, which currently still contains data from the QR decomp
+  for (int j=0; j<k; j++)
+  {
+    for (int i=j+1; i<k; i++)
+    {
+      R_raw[j*ldR+i]=st::zero();
+    }
+  }
+  *iflag=0;  
 }

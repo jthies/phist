@@ -16,9 +16,16 @@
 #include "Kokkos_Core.hpp"
 #include "Tpetra_Core.hpp"
 
+#ifdef HAVE_TPETRA_CUDA
+#include "Kokkos_Cuda.hpp"
+#endif
+
+#include "Kokkos_hwloc.hpp"
+
 #include "Teuchos_StandardCatchMacros.hpp"
 #include "Teuchos_DefaultComm.hpp"
 #ifdef PHIST_HAVE_MPI
+#include <mpi.h>
 #include "Teuchos_DefaultMpiComm.hpp"
 #include "Teuchos_OpaqueWrapper.hpp"
 #include "Tpetra_MpiPlatform.hpp"
@@ -45,6 +52,24 @@ static int myMpiSession = 0;
 
 extern "C" void phist_kernels_init(int* argc, char*** argv, int* iflag)
 {
+
+#ifdef PHIST_HAVE_MPI
+  // initialize MPI if it has not been done before, remember to finalize it
+  // if we did the Init.
+  int mpi_init_called;
+  PHIST_CHK_IERR( *iflag = MPI_Initialized(&mpi_init_called), *iflag);
+  if (!mpi_init_called)
+  {
+    MPI_Init(argc, argv);
+    myMpiSession=true;
+  }
+# if MPI_VERSION<3
+# warning "phist/tpetra relies on MPI 3 features for pinning threads, update your MPI or use external pinning instead."\
+          "I will disable PHIST_TRY_TO_PIN_THREADS internally for now."
+# undef PHIST_TRY_TO_PIN_THREADS`       
+# endif
+#endif
+
   // Check if PHIST_NUM_THREADS is set and use it
   // Else do the same for OMP_NUM_THREADS
   // if both are not available, default to 1
@@ -54,15 +79,103 @@ extern "C" void phist_kernels_init(int* argc, char*** argv, int* iflag)
                         std::getenv("OMP_NUM_THREADS") != nullptr ?
                             std::strtol(std::getenv("OMP_NUM_THREADS"), nullptr, 10) 
                           : 
-                            1;  
+                            -1;  
+
+int numNuma = -1;
+int numCoresPerNuma=-1;
+
+#ifdef PHIST_TRY_TO_PIN_THREADS
+
+  int myGlobalRank=0,myRankOnNode=0, numProcsOnNode=1;
+
+# ifdef PHIST_HAVE_MPI
+  MPI_Comm global_comm;
+  phist_comm_ptr phist_comm;
+  // create a wrapper to get a hold on the default comm used in phist
+  PHIST_CHK_IERR(phist_comm_create(&phist_comm,iflag),*iflag);
+  PHIST_CHK_IERR(phist_comm_get_mpi_comm(phist_comm,&global_comm,iflag),*iflag);
+  // delete wrapper
+  PHIST_CHK_IERR(phist_comm_delete(phist_comm,iflag),*iflag);
+
+  MPI_Comm node_comm;
+  MPI_Comm_split_type(global_comm, MPI_COMM_TYPE_SHARED, 0,
+  MPI_INFO_NULL, &node_comm);
+  
+  MPI_Comm_rank(global_comm,&myGlobalRank);
+  MPI_Comm_rank(node_comm, &myRankOnNode);
+  MPI_Comm_size(node_comm, &numProcsOnNode);
+# endif
+
+if (Kokkos::hwloc::available())
+{
+  // note: by default, Kokkos will use Hyperthreads as well, we don't do that if
+  // the installation gives us the freedom to pin threads.
+  numNuma = Kokkos::hwloc::get_available_numa_count();
+  numCoresPerNuma=Kokkos::hwloc::get_available_cores_per_numa();
+  if (numThreads==-1) numThreads=(int)((numCoresPerNuma*numNuma)/numProcsOnNode);
+}
+#endif
 
 #if TRILINOS_MAJOR_MINOR_VERSION>=121300
-  Kokkos::InitArguments args{numThreads};
+  Kokkos::InitArguments args{numThreads, numNuma};
 #else
-  Kokkos::InitArguments args; args.num_threads=numThreads;
+  Kokkos::InitArguments args; args.num_threads=numThreads; args.num_numa=numNuma;
 #endif
   PHIST_TRY_CATCH(Kokkos::initialize(args), *iflag);
-  MPI_Init(argc, argv);
+  
+#ifdef PHIST_TRY_TO_PIN_THREADS
+if (Kokkos::hwloc::available() && Kokkos::hwloc::can_bind_threads())
+{
+  PHIST_OUT(PHIST_VERBOSE,"===== Hardware/locality info =====\n");
+  PHIST_OUT(PHIST_VERBOSE,"NUMA domains:\t%d\n"\
+                          "Physical cores per NUMA domain: %d\n"\
+                          "MPI Procs on node: %d\n"\
+                          "My rank on node: %d\n"\
+                          "My number of Threads: %d\n",numNuma,numCoresPerNuma,numProcsOnNode,myRankOnNode,numThreads);
+        if (numThreads*numProcsOnNode!=numNuma*numCoresPerNuma)
+        {
+          PHIST_SOUT(PHIST_PERFWARNING,"The total number of threads running on this node does not match the total number of cores (%d)\n",
+                numThreads*numProcsOnNode,numCoresPerNuma*numNuma);
+        }
+        if (numProcsOnNode!=numNuma)
+        {
+          PHIST_SOUT(PHIST_PERFWARNING,"You are running %d MPI processes on a node with %d NUMA domains, it may be\n"
+                                       "advisable to run exactly one MPI process per NUMA domain.\n",
+                                       numProcsOnNode,numNuma);
+        }
+
+// pin the 'master thread'
+unsigned master_thread_id = numThreads*myRankOnNode;
+unsigned target_numa = (int)(master_thread_id/numCoresPerNuma);
+unsigned target_core = master_thread_id % numCoresPerNuma;
+Kokkos::hwloc::bind_this_thread( std::pair<unsigned,unsigned>{target_numa, target_core} );
+
+std::pair<unsigned,unsigned> thread_coord = Kokkos::hwloc::get_this_thread_coordinate();
+PHIST_OUT(PHIST_DEBUG,"coord of master thread: (%d,%d)\n",thread_coord.first,thread_coord.second);
+        
+omp_set_num_threads(numThreads);
+
+#pragma omp parallel
+  {
+    unsigned thread_id   = omp_get_thread_num();
+    unsigned node_thread_id = numThreads*myRankOnNode + thread_id;
+    unsigned target_numa = (int)(node_thread_id/numCoresPerNuma);
+    unsigned target_core = node_thread_id % numCoresPerNuma;
+    Kokkos::hwloc::bind_this_thread( std::pair<unsigned,unsigned>{target_numa, target_core} );
+    std::pair<unsigned,unsigned> thread_coord = Kokkos::hwloc::get_this_thread_coordinate();
+    PHIST_OUT(PHIST_DEBUG,"coord of thread %d: (%d,%d)\n",thread_id,thread_coord.first,thread_coord.second);
+  }
+}
+else
+{
+  PHIST_SOUT(PHIST_PERFWARNING,"Unable to pin threads, check your Trilinos build and environment or disable \n" \
+                               "PHIST_TRY_TO_PIN_THREADS in CMake if you don't want phist to take care of thread binding.");
+}
+#endif
+
+  std::ostringstream oss;
+  Kokkos::print_configuration( oss );
+  PHIST_SOUT(PHIST_VERBOSE,"%s\n",oss.str().c_str());
 
   PHIST_CHK_IERR(phist_kernels_common_init(argc, argv, iflag), *iflag);
 
@@ -71,21 +184,37 @@ extern "C" void phist_kernels_init(int* argc, char*** argv, int* iflag)
             
 extern "C" void phist_kernels_finalize(int* iflag)
 {
+  // this function prints unified timing info etc.
   PHIST_CHK_IERR(phist_kernels_common_finalize(iflag),*iflag);
-  // Does not throw
-  Tpetra::finalize();
+  
+#ifdef PHIST_HAVE_MPI
+  if (myMpiSession)
+  {
+    MPI_Finalize();
+  }
+#endif
+  Kokkos::finalize();
 }
 
 //!
 extern "C" void phist_comm_create(phist_comm_ptr* vcomm, int* iflag)
 {
+#ifdef PHIST_HAVE_MPI
+  Teuchos::MpiComm<int> *comm=new Teuchos::MpiComm<int>(phist_get_default_comm());
+  *vcomm = (phist_comm_ptr)comm;
+#else
   *vcomm = (phist_comm_ptr)Tpetra::getDefaultComm().get();  
+#endif
   *iflag = PHIST_SUCCESS;
 }
 
 //!
 extern "C" void phist_comm_delete(phist_comm_ptr vcomm, int* iflag)
 {
+#ifdef PHIST_HAVE_MPI
+  PHIST_CAST_PTR_FROM_VOID(Teuchos::MpiComm<int>,comm,vcomm,*iflag);
+  delete comm;
+#endif
   *iflag = PHIST_SUCCESS;
 }
 

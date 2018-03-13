@@ -116,7 +116,7 @@ int main(int argc, char** argv)
     prec_type=argv[6];
   }
 
-  if (argc<7)
+  if (argc<8)
   {
     prec_opts="";
   }

@@ -29,16 +29,16 @@ public:
   /*! Set up routine.
    */
   virtual void SetUp()
-    {
+  {
     KernelTest::SetUp();
-    }
+  }
 
   /*! Clean up.
    */
   virtual void TearDown() 
-    {
+  {
     KernelTest::TearDown();
-    }
+  }
 
 };
 
@@ -57,3 +57,46 @@ public:
         ASSERT_EQ(0,iflag_);
         ASSERT_EQ(mpi_size_, size);
 }
+
+#ifdef PHIST_HAVE_MPI
+  /*! Test the comm_get_rank function - is the comm in the kernel lib really MPI_COMM_WORLD?. */
+  TEST_F(XCommTest, change_default_comm_to_SELF)
+  {
+    phist_comm_ptr comm=nullptr;
+    phist_comm_create(&comm,&iflag_);
+    ASSERT_EQ(0,iflag_);
+    
+    int rank, size;
+    phist_comm_get_rank(comm,&rank,&iflag_);
+    ASSERT_EQ(0,iflag_);
+    phist_comm_get_size(comm,&size,&iflag_);
+    ASSERT_EQ(0,iflag_);
+    
+    // the default comm should be MPI_COMM_WORLD
+    ASSERT_EQ(mpi_rank_,rank);
+    ASSERT_EQ(mpi_size_,size);
+
+    phist_comm_delete(comm,&iflag_);
+
+    // now change it to MPI_COMM_SELF
+    phist_set_default_comm(MPI_COMM_SELF);
+
+    comm=nullptr;
+    phist_comm_create(&comm,&iflag_);
+    ASSERT_EQ(0,iflag_);
+    
+    phist_comm_get_rank(comm,&rank,&iflag_);
+    ASSERT_EQ(0,iflag_);
+    phist_comm_get_size(comm,&size,&iflag_);
+    ASSERT_EQ(0,iflag_);
+    
+    // this comm has size 1, so everyone is rank 0
+    ASSERT_EQ(0,rank);
+    ASSERT_EQ(1,size);
+
+    phist_comm_delete(comm,&iflag_);    
+
+    // reset the comm - otherwise subsequent tests fail...
+    phist_set_default_comm(MPI_COMM_WORLD);
+  }
+#endif /* PHIST_HAVE_MPI */

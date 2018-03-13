@@ -19,8 +19,8 @@
 #ifdef F_INIT
 #undef F_INIT
 #endif
-//#define F_INIT(a,b)  (ONE/((_ST_)(a)+(_ST_)(b)+ONE) + _CMPLX_I_*((_ST_)(a)-(_ST_)(b)))
-#define F_INIT(a,b)  (st::one()/((ST)(a)+(ST)(b)+st::one()) +st::cmplx_I()*((ST)(a)-(ST)(b)))
+//#define F_INIT(a,b)  (ONE/(ST(a)+ST(b)+ONE) + _CMPLX_I_*(ST(a)-ST(b)))
+#define F_INIT(a,b)  (st::one()/(ST(a)+ST(b)+st::one()) +st::cmplx_I()*(ST(a)-ST(b)))
 
 
 // some function to test mvec_put_func
@@ -118,10 +118,10 @@ public:
 #ifdef IS_COMPLEX
     if (!problemTooSmall_ && typeImplemented_)
     {
-      if (re_!=NULL) RSUBR(mvec_delete)(re_,&iflag_);
-      if (im_!=NULL) RSUBR(mvec_delete)(im_,&iflag_);
-      if (re_expect_!=NULL) RSUBR(mvec_delete)(re_expect_,&iflag_);
-      if (im_expect_!=NULL) RSUBR(mvec_delete)(im_expect_,&iflag_);
+      if (re_!=nullptr) RSUBR(mvec_delete)(re_,&iflag_);
+      if (im_!=nullptr) RSUBR(mvec_delete)(im_,&iflag_);
+      if (re_expect_!=nullptr) RSUBR(mvec_delete)(re_expect_,&iflag_);
+      if (im_expect_!=nullptr) RSUBR(mvec_delete)(im_expect_,&iflag_);
     }
 #endif
     VTest::TearDown();
@@ -166,12 +166,12 @@ public:
   {
     if (!typeImplemented_ || problemTooSmall_) return;
 
-    TYPE(mvec_ptr) vec1_clone=NULL;
+    TYPE(mvec_ptr) vec1_clone=nullptr;
     // clone the shape of vec1_
     SUBR(mvec_clone_shape)(&vec1_clone,vec1_,&iflag_);
     ASSERT_EQ(0,iflag_);
     
-    phist_const_map_ptr map1=NULL,map2=NULL;
+    phist_const_map_ptr map1=nullptr,map2=nullptr;
     int nvec1,nvec2;
     SUBR(mvec_get_map)(vec1_,&map1,&iflag_);
     ASSERT_EQ(0,iflag_);
@@ -194,7 +194,7 @@ public:
   {
     if (typeImplemented_ && !problemTooSmall_)
     {
-      ST val = (_ST_)42.0 + (ST)3.0*st::cmplx_I();
+      ST val = _ST_(42.0) + _ST_(3.0)*st::cmplx_I();
       SUBR(mvec_put_value)(vec1_,val,&iflag_);
       ASSERT_EQ(0,iflag_);
       ASSERT_REAL_EQ(mt::one(),MvecEqual(vec1_,val));
@@ -226,7 +226,7 @@ public:
       _ST_ dots[_NV_];
       SUBR(mvec_dot_mvec)(vec1_,vec2_,dots_ref,&iflag_);
       ASSERT_EQ(0,iflag_);
-      _ST_ val = st::one() * (ST)nglob_;
+      _ST_ val = st::one() * _ST_(nglob_);
       ASSERT_REAL_EQ(mt::one(),ArrayEqual(dots_ref,nvec_,1,nvec_,1,val));
 
       // test two random vectors
@@ -283,7 +283,7 @@ public:
       iflag_ = PHIST_ROBUST_REDUCTIONS;
       SUBR(mvec_dot_mvec)(vec1_,vec2_,dots_ref,&iflag_);
       ASSERT_EQ(0,iflag_);
-      _ST_ val = st::one() * (ST)nglob_;
+      _ST_ val = st::one() * ST(nglob_);
       ASSERT_REAL_EQ(mt::one(),ArrayEqual(dots_ref,nvec_,1,nvec_,1,val));
 
       // test two random vectors
@@ -323,10 +323,10 @@ public:
         MPI_Allreduce(MPI_IN_PLACE, &dotsAbs[j], 1, MPI_LONG_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
 #endif
         // cond. number of the summation
-        _MT_ cond = (_MT_)(dotsAbs[j] / std::abs(dots[j]));
-        PHIST_SOUT(PHIST_INFO, "error: %e (cond. number: %e, eps: %e)\n", st::abs((_ST_)dots[j]-dots_ref[j]),cond,mt::eps());
-        EXPECT_NEAR(mt::zero(), st::real((_ST_)dots[j]-dots_ref[j]), 4*cond*mt::eps());
-        EXPECT_NEAR(mt::zero(), st::imag((_ST_)dots[j]-dots_ref[j]), 4*cond*mt::eps());
+        _MT_ cond = MT(dotsAbs[j] / std::abs(dots[j]));
+        PHIST_SOUT(PHIST_INFO, "error: %e (cond. number: %e, eps: %e)\n", st::abs(ST(dots[j])-dots_ref[j]),cond,mt::eps());
+        EXPECT_NEAR(mt::zero(), st::real(_ST_(dots[j])-dots_ref[j]), 4*cond*mt::eps());
+        EXPECT_NEAR(mt::zero(), st::imag(ST(dots[j])-dots_ref[j]), 4*cond*mt::eps());
       }
     }
 #undef _ST_PREC_
@@ -366,7 +366,7 @@ public:
       iflag_ = PHIST_ROBUST_REDUCTIONS;
       SUBR(mvec_dot_mvec)(vec1_,vec2_,dots,&iflag_);
       ASSERT_EQ(0,iflag_);
-      _ST_ val = (_ST_)(st::one()*(_MT_)(1.0l-1.0l/(_N_+1)));
+      _ST_ val = ST(st::one()*(_MT_)(1.0l-1.0l/(_N_+1)));
       PHIST_SOUT(PHIST_INFO, "error: %e\n", st::abs(dots[0]-val));
       // melven: this is a *hard* precision test
       // DO NOT CHANGE THIS TO ASSERT_NEAR!
@@ -587,7 +587,7 @@ public:
       
       int jmin=std::min(1,nvec_-1);
       int jmax=std::min(3,nvec_-1);
-      TYPE(mvec_ptr) view=NULL;
+      TYPE(mvec_ptr) view=nullptr;
       SUBR(mvec_view_block)(vec1_,&view,jmin,jmax,&iflag_);
       ASSERT_EQ(0,iflag_);
       MT nrm2_view[jmax-jmin+1];
@@ -708,10 +708,10 @@ public:
       {
       int jmin=std::min(2,nvec_-1);
       int jmax=std::min(5,nvec_-1);
-      TYPE(mvec_ptr) v1_view=NULL;
+      TYPE(mvec_ptr) v1_view=nullptr;
       SUBR(mvec_view_block)(vec1_,&v1_view,jmin,jmax,&iflag_);
       // create a view of the view
-      TYPE(mvec_ptr) v1_vv=NULL;
+      TYPE(mvec_ptr) v1_vv=nullptr;
       SUBR(mvec_view_block)(v1_view,&v1_vv,0,jmax-jmin,&iflag_);
       ASSERT_EQ(0,iflag_);
 
@@ -784,7 +784,7 @@ public:
       // now create a view
       int jmin=std::min(2,nvec_-1);
       int jmax=std::min(5,nvec_-1);
-      TYPE(mvec_ptr) view = NULL;
+      TYPE(mvec_ptr) view = nullptr;
       SUBR(mvec_view_block)(vec1_,&view,jmin,jmax,&iflag_);
       ASSERT_EQ(0,iflag_);
 
@@ -799,7 +799,7 @@ public:
       ASSERT_EQ(0,iflag_);
       int jmin2=std::min(1,nvec_view-1);
       int jmax2=std::min(3,nvec_view-1);
-      TYPE(mvec_ptr) view2 = NULL;
+      TYPE(mvec_ptr) view2 = nullptr;
       SUBR(mvec_view_block)(view, &view2, jmin2, jmax2, &iflag_);
       ASSERT_EQ(0,iflag_);
 
@@ -852,7 +852,7 @@ public:
     {
       int jmin=std::min(2,nvec_-1);
       int jmax=std::min(5,nvec_-1);
-      TYPE(mvec_ptr) v1_copy=NULL;
+      TYPE(mvec_ptr) v1_copy=nullptr;
       PHISTTEST_MVEC_CREATE(&v1_copy,map_,jmax-jmin+1,&iflag_);
       ASSERT_EQ(0,iflag_);
       
@@ -988,7 +988,7 @@ TEST_F(CLASSNAME,put_func)
 {
   if (!typeImplemented_ || problemTooSmall_)
     return;
-  SUBR(mvec_put_func)(vec1_,&PHIST_TG_PREFIX(mvecInitializer),NULL,&iflag_);
+  SUBR(mvec_put_func)(vec1_,&PHIST_TG_PREFIX(mvecInitializer),nullptr,&iflag_);
   ASSERT_EQ(0,iflag_);
   
   phist_gidx ilower, iupper;
@@ -1046,11 +1046,11 @@ int PHIST_TG_PREFIX(elemFunc_imag)(ghost_gidx i, ghost_lidx j, void* vval,void* 
 TEST_F(CLASSNAME,split_and_combine)
 {
   if (!typeImplemented_ || problemTooSmall_) return;
-  SUBR(mvec_put_func)(vec1_,&PHIST_TG_PREFIX(elemFunc_complex),NULL,&iflag_);
+  SUBR(mvec_put_func)(vec1_,&PHIST_TG_PREFIX(elemFunc_complex),nullptr,&iflag_);
   ASSERT_EQ(0,iflag_);
-  RSUBR(mvec_put_func)(re_expect_,&PHIST_TG_PREFIX(elemFunc_real),NULL,&iflag_);
+  RSUBR(mvec_put_func)(re_expect_,&PHIST_TG_PREFIX(elemFunc_real),nullptr,&iflag_);
   ASSERT_EQ(0,iflag_);
-  RSUBR(mvec_put_func)(im_expect_,&PHIST_TG_PREFIX(elemFunc_imag),NULL,&iflag_);
+  RSUBR(mvec_put_func)(im_expect_,&PHIST_TG_PREFIX(elemFunc_imag),nullptr,&iflag_);
   ASSERT_EQ(0,iflag_);
   SUBR(mvec_split)(vec1_,re_,im_,&iflag_);
   ASSERT_EQ(0,iflag_);
@@ -1063,9 +1063,9 @@ TEST_F(CLASSNAME,split_and_combine)
 }
 #endif
 
-// only test the Belos interface for ghost, we didn't write
-// the interfaces for Epetra or Tpetra so it is not our problem.
-#ifdef DO_BELOS_TESTS
+#include "phist_trilinos_type_config.h"
+
+#if defined(DO_BELOS_TESTS) && defined(PHIST_TRILINOS_TYPE_AVAIL)
   // runs all tests from the Belos MvTraits tester
   TEST_F(CLASSNAME, belos_iface)
   {
@@ -1075,11 +1075,10 @@ TEST_F(CLASSNAME,split_and_combine)
         = Teuchos::rcp( new Belos::OutputManager<ST>() );
       MyOM->setVerbosity( Belos::Warnings|Belos::Debug);
 
-      ghost_densemat* v = (ghost_densemat*)vec1_;
-      Teuchos::RCP<phist::GhostMV> ivec = phist::rcp(v,false);
+      Teuchos::RCP< phist::BelosMV< _ST_ > > ivec = phist::mvec_rcp< _ST_ >(vec1_,false);
 
       // test the multivector and its adapter
-      bool berr=Belos::TestMultiVecTraits<ST,phist::GhostMV>(MyOM,ivec,nglob_);
+      bool berr=Belos::TestMultiVecTraits<ST,phist::BelosMV< _ST_ > >(MyOM,ivec,nglob_);
       ASSERT_EQ(true,berr);
     }
   }

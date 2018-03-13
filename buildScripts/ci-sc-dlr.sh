@@ -16,7 +16,8 @@ FLAGS="default" # optional-libs
 ADD_CMAKE_FLAGS="-DPHIST_BENCH_LARGE_N=-1" #optional CMake flags # -1 disables benchmarks to speed up build jobs!
 WORKSPACE="$PWD/.."
 VECT_EXT="native"
-TRILINOS_VERSION="11.12.1"
+TRILINOS_VERSION="git"
+CUDA_VERSION=8.0.6
 # list of modules to load
 MODULES_BASIC="cmake cppcheck gcovr doxygen"
 # GCC_SANITIZE flag for debug mode, disabled for CUDA
@@ -46,6 +47,7 @@ while getopts "k:e:f:c:v:w:t:h" o; do
             FLAGS=${OPTARG}
             ;;
         c)
+            
             ADD_CMAKE_FLAGS+=" ${OPTARG}"
             ;;
         v)
@@ -66,8 +68,6 @@ while getopts "k:e:f:c:v:w:t:h" o; do
     esac
 done
 shift $((OPTIND-1))
-
-echo "Options: KERNEL_LIB=${KERNELS}, PRGENV=${PRGENV}, FLAGS=${FLAGS}, ADD_CMAKE_FLAGS='${ADD_CMAKE_FLAGS}', VECT_EXT=${VECT_EXT}"
 
 declare -A MODULES_KERNELS
 MODULES_KERNELS=( 
@@ -110,7 +110,7 @@ else
   ADD_CMAKE_FLAGS+=" -DPHIST_USE_SOLVER_TPLS:BOOL=OFF"
 fi
 if [ "${VECT_EXT}" = "CUDA" ]; then
-  module load cuda
+  module load cuda/cuda-${CUDA_VERSION}
   SANITIZER=""
   nvidia-smi
   export CUDA_VISIBLE_DEVICES=0
@@ -126,15 +126,19 @@ if [[ $PRGENV =~ gcc* ]]; then
       export CC=mpicc
       # note: the trilinos module should set OMPI_CXX=nvcc_wrapper for us, phist/cmake will check that
       export OMPI_MPICXX_CXXFLAGS="-expt-extended-lambda"
+      # we need a little more verbose output in the release build because
+      # otherwise the word "Tesla" will not appear in the output and a check after running the tests will fail.
+      ADD_CMAKE_FLAGS+=" -DPHIST_OUTLEV=3"
   else
     export FC=gfortran CC=gcc CXX=g++
   fi
   module load lapack
-  if [[ ${VECT_EXT} != "CUDA" ]] && [[ ${PRGENV} != "gcc-7.2.0-openmpi" ]]; then
+  if [[ "${VECT_EXT}" != "CUDA" ]] && [[ "${PRGENV}" != "gcc-7.2.0-openmpi" ]]; then
     module load ccache
-    ADD_CMAKE_FLAGS+="-DPHIST_USE_CCACHE=ON"
+    ADD_CMAKE_FLAGS+=" -DPHIST_USE_CCACHE=ON"
+    export CCACHE_DIR=/home_local/f_buildn/ESSEX_workspace/.ccache/
   else
-    ADD_CMAKE_FLAGS+="-DPHIST_USE_CCACHE=OFF"
+    ADD_CMAKE_FLAGS+=" -DPHIST_USE_CCACHE=OFF"
   fi
   if [[ "$PRGENV" =~ gcc-7* ]]; then
     # there's a problem in jada-tests, test STestSchurDecomp* with gcc 7.2.0 and -fsanitize=address, see #218
@@ -145,14 +149,16 @@ elif [[ "$PRGENV" =~ intel* ]]; then
   
   module load mkl
   # make CMake find and use MKL:
-  ADD_CMAKE_FLAGS+="-DBLA_VENDOR=Intel10_64lp"
 fi
 
-# Make Intel OpenMP and MKL deterministic (e.g. calculate identical results on different MPI procs)
-export KMP_DETERMINISTIC_REDUCTION=1 MKL_CBWR="COMPATIBLE"
+# make sure that the correct BLAS/LAPACK are used. If the Intel compiler is used, this
+# flag is ignored and MKL is used instead.
+ADD_CMAKE_FLAGS+=" -DBLA_VENDOR='Generic'"
 
 # "gcc -fsanitize=address" requires this
 ulimit -v unlimited
+
+echo "Options: KERNEL_LIB=${KERNELS}, PRGENV=${PRGENV}, FLAGS=${FLAGS}, ADD_CMAKE_FLAGS='${ADD_CMAKE_FLAGS}', VECT_EXT=${VECT_EXT}"
 
 ## actually build and run tests
 error=0
@@ -179,15 +185,11 @@ cmake -DCMAKE_BUILD_TYPE=Release  \
       -DCMAKE_INSTALL_PREFIX=$INSTALL_PREFIX \
       ${ADD_CMAKE_FLAGS} \
       ..                                || update_error ${LINENO}
+echo "make doc"
 make doc &> doxygen.log                 || update_error ${LINENO}
+
+echo "Make libs"
 make -j 24 libs || make -j 1 libs       || update_error ${LINENO}
-if [[ ${KERNELS} =~ "tpetra" ]] && [[ ${VECT_EXT} =~ "CUDA" ]]; then
-# use nvcc_wrapper only to build the libs, we do not want any other code to depend on 
-# this kind of tweaks!
-  unset OMPI_CXX
-  unset OMPI_CC
-  unset OMPI_MPICXX_CXXFLAGS
-fi
 
 echo "Make drivers and test executables"
 make -j 24 || make -j 1 || update_error ${LINENO}
@@ -196,21 +198,13 @@ echo "Running tests. Output is compressed and written to test.log.gz"
 make check &> test.log                  || update_error ${LINENO}
 if [ "${VECT_EXT}" = "CUDA" ]; then
   echo "Check if it actually ran on our Tesla card"
-  fgrep "1x Tesla" test.log             || update_error ${LINENO}
+  fgrep "Tesla" test.log             || update_error ${LINENO}
 fi
 gzip test.log                           || update_error ${LINENO}
 echo "Install..."
 make install &> install.log             || update_error ${LINENO}
-echo "Check installation with pkg-config project"
-mkdir jdqr_pkg_config; cd $_
-PKG_CONFIG_PATH=../$INSTALL_PREFIX/lib/pkgconfig:$PKG_CONFIG_PATH cmake ../../exampleProjects/jdqr_pkg_config || update_error ${LINENO}
-make || update_error ${LINENO}
-cd ..
-echo "Check installation with CMake project"
-mkdir jdqr_cmake; cd $_
-CMAKE_PREFIX_PATH=../$INSTALL_PREFIX:$CMAKE_PREFIX_PATH cmake ../../exampleProjects/jdqr_cmake || update_error ${LINENO}
-make || update_error ${LINENO}
-cd ..
+echo "Check installation"
+make test_install || update_error ${LINENO}
 
 cd ..
 
@@ -234,7 +228,7 @@ echo "Running tests. Output is compressed and written to test.log.gz"
 make check &> test.log                  || update_error ${LINENO}
 if [ "${VECT_EXT}" = "CUDA" ]; then
   echo "Check if it actually ran on our Tesla card"
-  fgrep "1x Tesla" test.log             || update_error ${LINENO}
+  fgrep "Tesla" test.log             || update_error ${LINENO}
 fi
 gzip test.log                           || update_error ${LINENO}
 make audit                              || update_error ${LINENO}

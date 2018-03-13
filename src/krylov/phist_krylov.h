@@ -9,6 +9,9 @@
 #include "phist_blockedminres.h"
 #include "phist_blockedqmr.h"
 
+/* Krylov methods for linear systems - high level single-vector interface */
+#include "phist_linear_solvers.h"
+
 #include "phist_carp_cg.h"
 
 #ifdef PHIST_HAVE_ANASAZI
