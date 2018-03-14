@@ -101,7 +101,7 @@ namespace {
       return -1; // index out of bounds;
     }
 
-    phist_lidx idx = wrap->input-row_major? ii*lda+j: j*lda+ii;
+    phist_lidx idx = wrap->input_row_major? ii*lda+j: j*lda+ii;
     val[0]=wrap->data[idx];
     return 0;
   }
@@ -133,6 +133,7 @@ void SUBR(mvec_set_data)(TYPE(mvec_ptr) V, const _ST_* data_in, phist_lidx lda_i
   wrap.ncols=nvec;
   wrap.ilower=ilower;
   wrap.data=data_in;
+  wrap.input_row_major=input_row_major;
     
   if (is_linear_map)
   {
