@@ -201,6 +201,21 @@ void SUBR(sdMat_get_nrows)(TYPE(const_sdMat_ptr) M, int* nrows, int* iflag);
 //! get number of cols in local dense matrix. \ingroup sdmat
 void SUBR(sdMat_get_ncols)(TYPE(const_sdMat_ptr) M, int* ncols, int* iflag);
 
+//
+
+//! "fill" an mvec from a user-provided array.
+
+//! If the mvec V has n local rows and k columns (as returned by mvec_my_length and mvec_num_vectors, resp.),
+//! then ...
+//! If input_row_major==1, then data[i*lda+j], i=0..n-1, j=0..k-1
+//! will contain the element in row i and column j of V.
+//! If input_row_major==0, then data[j*lda+i], i=0..n-1, j=0..k-1
+//! will contain the element in row i and column j of V.
+//!
+//! There is a corresponding function mvec_set_data for the reverse operation.
+//!
+void SUBR(mvec_get_data)(TYPE(const_mvec_ptr) V, _ST_* data, phist_lidx lda, int output_row_major, int* iflag);
+
 //! extract view from small dense matrix. \ingroup sdmat
 
 //! See comment for mvec_extract_view for details,

@@ -51,6 +51,19 @@ void SUBR(mvec_get_comm)(TYPE(const_mvec_ptr) V, phist_const_comm_ptr* comm, int
 //! to manually add flags here like MVEC_REPLICATE_DEVICE_MEM
 void SUBR(mvec_clone_shape)(TYPE(mvec_ptr)* V, TYPE(const_mvec_ptr) V_in, int* iflag);
 
+//! "fill" an mvec from a user-provided array.
+
+//! If the mvec V has n local rows and k columns (as returned by mvec_my_length and mvec_num_vectors, resp.),
+//! then ...
+//! If input_row_major==1, then data[i*lda+j], i=0..n-1, j=0..k-1
+//! should contain the element to be placed in row i and column j of V.
+//! If input_row_major==0, then data[j*lda+i], i=0..n-1, j=0..k-1
+//! should contain the element to be placed in row i and column j of V.
+//!
+//! There is a corresponding function mvec_set_data for the reverse operation.
+//!
+void SUBR(mvec_set_data)(TYPE(mvec_ptr) V, const _ST_* data, phist_lidx lda, int input_row_major, int* iflag);
+
 #ifdef __cplusplus
 } // extern "C"
 #endif
