@@ -1014,6 +1014,7 @@ TEST_F(CLASSNAME,put_func)
 
 TEST_F(CLASSNAME, get_set_data)
 {
+  if (!typeImplemented_ || problemTooSmall_) return;
   phist_lidx lda_RM=std::max(nvec_,42);
   phist_lidx lda_CM=std::max(nloc_,421);
   _ST_ data_RM_in[nloc_*lda_RM], data_RM_out[nloc_*lda_RM];
