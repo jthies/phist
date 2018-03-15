@@ -1012,6 +1012,51 @@ TEST_F(CLASSNAME,put_func)
   ASSERT_REAL_EQ(mt::one(),MvecsEqual(vec1_,vec2_));
 }
 
+TEST_F(CLASSNAME, get_set_data)
+{
+  phist_lidx lda_RM=std::max(nvec_,42);
+  phist_lidx lda_CM=std::max(nloc_,421);
+  _ST_ data_RM_in[nloc_*lda_RM], data_RM_out[nloc_*lda_RM];
+  _ST_ data_CM_in[nvec_*lda_CM], data_CM_out[nvec_*lda_CM];
+  
+  for (phist_lidx i=0; i<nloc_; i++)
+  {
+    for (int j=0; j<nvec_; j++)
+    {
+      _ST_ val=st::rand();
+      data_RM_in[i*lda_RM+j]=val;
+      data_CM_in[j*lda_CM+i]=val;
+    }
+  }
+  _ST_ constval1 =_ST_(23.0)
+  _ST_ constval2 =_ST_(42.0)+0.9*st::complex_I();
+  SUBR(mvec_put_value)(vec1_,constval1,&iflag_);
+  ASSERT_EQ(0,iflag_);
+  SUBR(mvec_put_value)(vec2_,constval2,&iflag_);
+  ASSERT_EQ(0,iflag_);
+  SUBR(mvec_get_data)(vec1_, data_RM_out, lda_RM, 1, &iflag_);
+  ASSERT_EQ(0,iflag_);
+  SUBR(mvec_get_data)(vec2_, data_CM_out, lda_CM, 0, &iflag_);
+  ASSERT_EQ(0,iflag_);
+  
+      ASSERT_REAL_EQ(mt::one(),ArrayEqual(data_RM_out, nloc_, nvec_, lda_RM, constval, true));
+      ASSERT_REAL_EQ(mt::one(),ArrayEqual(data_CM_out, nloc_, nvec_, lda_CM, constval, false));
+
+  SUBR(mvec_set_data)(vec1_, data_RM_in, lda_RM, 1, &iflag_);
+  ASSERT_EQ(0,iflag_);
+  SUBR(mvec_set_data)(vec2_, data_CM_in, lda_CM, 0, &iflag_);
+  ASSERT_EQ(0,iflag_);
+
+  SUBR(mvec_get_data)(vec1_, data_RM_out, lda_RM, 1, &iflag_);
+  ASSERT_EQ(0,iflag_);
+  SUBR(mvec_get_data)(vec2_, data_CM_out, lda_CM, 0, &iflag_);
+  ASSERT_EQ(0,iflag_);
+
+      ASSERT_REAL_EQ(mt::one(),ArraysEqual(data_RM_out, data_RM_in, nloc_, nvec_, lda_RM, true));
+      ASSERT_REAL_EQ(mt::one(),ArraysEqual(data_CM_out, data_CM_in, nloc_, nvec_, lda_CM, false));
+
+}
+
 #ifdef IS_COMPLEX
 
 int PHIST_TG_PREFIX(elemFunc_complex)(ghost_gidx i, ghost_lidx j, void* vval,void* last_arg);
