@@ -63,6 +63,7 @@ using namespace phist::tpetra;
 #if defined(HAVE_TEUCHOS_COMPLEX)&&defined(HAVE_TPETRA_INST_COMPLEX_DOUBLE)
 # include "kernels_def.hpp"
 # include "carp_def.hpp" 
+# include "../common/default_mvec_get_data_def.hpp"
 # else
 # warning "Your phist_config.h defines PHIST_HAVE_COMPLEX, but your Trilinos installation does not \
 support the double complex data type, so all 'Z' kernels will return with *iflag=-99 (PHIST_NOT_IMPLEMENTED). In order \

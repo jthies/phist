@@ -6,6 +6,7 @@
 /* Contact: Jonas Thies (Jonas.Thies@DLR.de)                                               */
 /*                                                                                         */
 /*******************************************************************************************/
+
 // some kernel functions are straightforwardly implemented based on others,
 // so we provide a central implementation for these non-performance critical
 // things.
@@ -72,31 +73,33 @@ extern "C" void SUBR(mvec_clone_shape)(TYPE(mvec_ptr)* V, TYPE(const_mvec_ptr) V
   int iflag_in=*iflag;
   *iflag=0;
   phist_const_map_ptr map=NULL;
-PHIST_CHK_IERR(SUBR(mvec_get_map)(V_in,&map,iflag),*iflag);
-int nvecs;
-PHIST_CHK_IERR(SUBR(mvec_num_vectors)(V_in,&nvecs,iflag),*iflag);
-*iflag=iflag_in;
-PHIST_CHK_IERR(SUBR(mvec_create)(V,map,nvecs,iflag),*iflag);
+  PHIST_CHK_IERR(SUBR(mvec_get_map)(V_in,&map,iflag),*iflag);
+  int nvecs;
+  PHIST_CHK_IERR(SUBR(mvec_num_vectors)(V_in,&nvecs,iflag),*iflag);
+  *iflag=iflag_in;
+  PHIST_CHK_IERR(SUBR(mvec_create)(V,map,nvecs,iflag),*iflag);
 }
 
 namespace {
 
-  struct TYPE(arrayWrapper)
+  typedef struct TYPE(arrayWrap)
   {
     phist_lidx lnrows, lda;
     int ncols;
+    phist_gidx ilower, iupper;
     int  input_row_major;
     const _ST_* input_values;
-  };
+    _ST_ const* data;
+  } TYPE(arrayWrap);
 
   int PHIST_TG_PREFIX(copyDataFunc)(ghost_gidx i, ghost_lidx j, void* vval, void* vdata)
   {
-    TYPE(arrayWwrap)* wrap=(TYPE(arrayWrap)*)vdata;
+    TYPE(arrayWrap)* wrap=(TYPE(arrayWrap)*)vdata;
     int lda = wrap->lda;
     int ii = i - wrap->ilower;
     _ST_* val = (_ST_*)vval;
 
-    if (ii>=wrap->lnrows || j>=wrap->lncols)
+    if (ii>=wrap->lnrows || j>=wrap->ncols)
     {
       return -1; // index out of bounds;
     }
@@ -108,7 +111,7 @@ namespace {
 } // anonymous namespace
 
 // "fill" an mvec from a user-provided array.
-void SUBR(mvec_set_data)(TYPE(mvec_ptr) V, const _ST_* data_in, phist_lidx lda_in, int input_row_major, int* iflag);
+void SUBR(mvec_set_data)(TYPE(mvec_ptr) V, const _ST_* data_in, phist_lidx lda_in, int input_row_major, int* iflag)
 {
   phist_const_map_ptr map;
   phist_lidx lnrows;
@@ -143,7 +146,7 @@ void SUBR(mvec_set_data)(TYPE(mvec_ptr) V, const _ST_* data_in, phist_lidx lda_i
   {
     // permuting the values is currently not supported, the user would have
     // create an mvec with a linear map first and then use mvec_to_mvec to permute it.
-    PHIST_SOUT(PHIST_ERROR,"%s requires a linear map, you could fill a standard vector first and then use mvec_to_mvec to permute it.\n", __FUNCTON__);
+    PHIST_SOUT(PHIST_ERROR,"mvec_set_data requires a linear map, you could fill a standard vector first and then use mvec_to_mvec to permute it.\n");
     PHIST_CHK_IERR(*iflag=PHIST_INVALID_INPUT, *iflag);
   }
 }

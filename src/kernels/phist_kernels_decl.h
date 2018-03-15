@@ -203,7 +203,7 @@ void SUBR(sdMat_get_ncols)(TYPE(const_sdMat_ptr) M, int* ncols, int* iflag);
 
 //
 
-//! "fill" an mvec from a user-provided array.
+//! copy the entries of an mvec into a user-provided array.
 
 //! If the mvec V has n local rows and k columns (as returned by mvec_my_length and mvec_num_vectors, resp.),
 //! then ...
@@ -213,6 +213,10 @@ void SUBR(sdMat_get_ncols)(TYPE(const_sdMat_ptr) M, int* ncols, int* iflag);
 //! will contain the element in row i and column j of V.
 //!
 //! There is a corresponding function mvec_set_data for the reverse operation.
+//! Kernel libraries that support GPUs must make sure that the device memory is
+//! copied into the buffer, even if the host side is allocated
+//! (cf. PHIST_MVEC_REPLICATE_DEVICE_MEM flag). Hence, the mvec itself may not
+//! strictly speaking be const because a device sync (download) is needed.
 //!
 void SUBR(mvec_get_data)(TYPE(const_mvec_ptr) V, _ST_* data, phist_lidx lda, int output_row_major, int* iflag);
 
