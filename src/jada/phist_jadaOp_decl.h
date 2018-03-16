@@ -92,7 +92,7 @@ void SUBR(skew_projection_Op_create)(TYPE(const_linearOp_ptr) P_op,
 //! onlyPrec will change the methods "SKEW" and "ALL":
 //! onlyPrec == 0: we use skew-projection and preconditioner
 //! onlyPrec == 1: we only use the preconditioner
-void SUBR(JadaOp_create_variable)(TYPE(const_linearOp_ptr)    AB_op,
+void SUBR(jadaOp_create_variable)(TYPE(const_linearOp_ptr)    AB_op,
                          TYPE(const_linearOp_ptr)     Proj_op,
                          TYPE(const_linearOp_ptr)     Skew_op,
                          TYPE(const_linearOp_ptr)     Prec_op,

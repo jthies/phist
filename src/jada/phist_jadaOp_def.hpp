@@ -409,7 +409,7 @@ extern "C" void SUBR(jadaOp_variable_delete)(TYPE(linearOp_ptr) jdOp, int *iflag
 }
 
 // allocate and initialize the jadaOp struct for a variable combination of projections
-extern "C" void SUBR(JadaOp_create_variable)(TYPE(const_linearOp_ptr)    AB_op,
+extern "C" void SUBR(jadaOp_create_variable)(TYPE(const_linearOp_ptr)    AB_op,
                          TYPE(const_linearOp_ptr)     Proj_op,
                          TYPE(const_linearOp_ptr)     Skew_op,
                          TYPE(const_linearOp_ptr)     Prec_op,
@@ -633,7 +633,7 @@ extern "C" void SUBR(jadaOp_create)(TYPE(const_linearOp_ptr)    AB_op,
   }
 
   myOp->k_op = new TYPE(linearOp);
-  PHIST_CHK_IERR(SUBR(JadaOp_create_variable)(myOp->AB_op,myOp->Proj_op,NULL,NULL,&(myOp->sigma),myOp->num_shifts,myOp->k_op,method,0,1,iflag),*iflag);
+  PHIST_CHK_IERR(SUBR(jadaOp_create_variable)(myOp->AB_op,myOp->Proj_op,NULL,NULL,&(myOp->sigma),myOp->num_shifts,myOp->k_op,method,0,1,iflag),*iflag);
 
   // setup op_ptr function pointers. For standard EVP, just post-project. For generalized EVP,
   // pre- and postproject. X_proj is only needed if B!=NULL, otherwise we don't do any pre-
@@ -716,7 +716,7 @@ extern "C" void SUBR(jadaPrec_create)(TYPE(const_linearOp_ptr) P_op,
     jdPr->k_op = new TYPE(linearOp);
     const char* method = "NONE";
 
-    PHIST_CHK_IERR(SUBR(JadaOp_create_variable)(jdPr->Prec_op,NULL,NULL,NULL,&(jdPr->sigma),jdPr->num_shifts,jdPr->k_op,method,0,1,iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(jadaOp_create_variable)(jdPr->Prec_op,NULL,NULL,NULL,&(jdPr->sigma),jdPr->num_shifts,jdPr->k_op,method,0,1,iflag),*iflag);
     jdPrec->apply = SUBR(jadaOp_apply);
     jdPrec->destroy = SUBR(jadaPrec_delete);
   }
@@ -787,7 +787,7 @@ extern "C" void SUBR(jadaOp_set_leftPrecond)(TYPE(linearOp_ptr) jdOp, TYPE(const
     jdDat->_sigma[0]=jdDat->sigma_prec;
     jdDat->_sigma[1]=jdDat->sigma;
 
-PHIST_CHK_IERR(SUBR(JadaOp_create_variable)(jdDat->AB_op,jdDat->Proj_op,jdDat->Skew_op,jdDat->Prec_op,jdDat->_sigma,jdDat->num_shifts,jdDat->k_op,method,1-(jdDat->projType),2,iflag),*iflag);
+PHIST_CHK_IERR(SUBR(jadaOp_create_variable)(jdDat->AB_op,jdDat->Proj_op,jdDat->Skew_op,jdDat->Prec_op,jdDat->_sigma,jdDat->num_shifts,jdDat->k_op,method,1-(jdDat->projType),2,iflag),*iflag);
     jdOp->apply = SUBR(jadaOp_apply);
   }
 }
