@@ -111,7 +111,9 @@ namespace {
 } // anonymous namespace
 
 // "fill" an mvec from a user-provided array.
-void SUBR(mvec_set_data)(TYPE(mvec_ptr) V, const _ST_* data_in, phist_lidx lda_in, int input_row_major, int* iflag)
+extern "C" void SUBR(mvec_set_data)(TYPE(mvec_ptr) V, 
+                const _ST_* data_in, phist_lidx lda_in, int input_row_major, 
+                int* iflag)
 {
   phist_const_map_ptr map;
   phist_lidx lnrows;

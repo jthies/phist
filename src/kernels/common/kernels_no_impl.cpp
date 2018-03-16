@@ -139,17 +139,10 @@ extern "C" void SUBR(mvec_extract_view)(TYPE(mvec_ptr) V, _ST_** val, phist_lidx
   *iflag=PHIST_NOT_IMPLEMENTED;
 }
 
-void SUBR(mvec_get_data)(TYPE(const_mvec_ptr) V, _ST_* data, phist_lidx lda, int output_row_major, int* iflag)
+extern "C" void SUBR(mvec_get_data)(TYPE(const_mvec_ptr) V, _ST_* data, phist_lidx lda, int output_row_major, int* iflag)
 {
   *iflag=PHIST_NOT_IMPLEMENTED;
 }
-
-void SUBR(mvec_set_data)(TYPE(mvec_ptr) V, const _ST_* data, phist_lidx lda, int output_row_major, int* iflag)
-{
-  *iflag=PHIST_NOT_IMPLEMENTED;
-}
-
-
 
 extern "C" void SUBR(sdMat_extract_view)(TYPE(sdMat_ptr) V, _ST_** val, phist_lidx* lda, int* iflag)
 {
