@@ -180,7 +180,7 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,_N_,MATNAME>,
       SUBR(projection_Op_create)(q_, q_, &proj_Op, &iflag_);
       ASSERT_EQ(0,iflag_);
 
-      const char* method= "NONE";
+      phist_Eprojection method= phist_PROJ_NONE;
 
       TYPE(linearOp) jadaOp;
       SUBR(jadaOp_create_variable)(opA_,&proj_Op,NULL,NULL,(const _ST_**)&sigma_,_NV_,&jadaOp,method,0,1,&iflag_);
@@ -891,7 +891,7 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,_N_,MATNAME>,
       SUBR(projection_Op_create)(qb_, Bq_, &proj_Op, &iflag_);
       ASSERT_EQ(0,iflag_);
 
-      const char* method= "NONE";
+      phist_Eprojection method= phist_PROJ_NONE;
 
       TYPE(linearOp) jadaOp;
       SUBR(jadaOp_create_variable)(opAB_,&proj_Op,NULL,NULL,(const _ST_**)&sigma_,_NV_,&jadaOp,method,0,1,&iflag_);
@@ -935,7 +935,7 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,_N_,MATNAME>,
       SUBR(projection_Op_create)(qb_, Bq_, &proj_Op, &iflag_);
       ASSERT_EQ(0,iflag_);
 
-      const char* method= "PRE";
+      phist_Eprojection method= phist_PROJ_PRE;
 
       TYPE(linearOp) jadaOp;
       SUBR(jadaOp_create_variable)(opAB_,&proj_Op,NULL,NULL,(const _ST_**)&sigma_,_NV_,&jadaOp,method,0,1,&iflag_);
@@ -985,7 +985,7 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,_N_,MATNAME>,
       SUBR(projection_Op_create)(qb_, Bq_, &proj_Op, &iflag_);
       ASSERT_EQ(0,iflag_);
 
-      const char* method= "POST";
+      phist_Eprojection method= phist_PROJ_POST;
 
       TYPE(linearOp) jadaOp;
       SUBR(jadaOp_create_variable)(opAB_,&proj_Op,NULL,NULL,(const _ST_**)&sigma_,_NV_,&jadaOp,method,0,1,&iflag_);
@@ -1033,7 +1033,7 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,_N_,MATNAME>,
       SUBR(projection_Op_create)(qb_, Bq_, &proj_Op, &iflag_);
       ASSERT_EQ(0,iflag_);
 
-      const char* method= "PRE_POST";
+      phist_Eprojection method= phist_PROJ_PRE_POST;
 
       TYPE(linearOp) jadaOp;
       SUBR(jadaOp_create_variable)(opAB_,&proj_Op,NULL,NULL,(const _ST_**)&sigma_,_NV_,&jadaOp,method,0,1,&iflag_);

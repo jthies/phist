@@ -97,7 +97,7 @@ void SUBR(jadaOp_create_variable)(TYPE(const_linearOp_ptr)    AB_op,
                          TYPE(const_linearOp_ptr)     Skew_op,
                          TYPE(const_linearOp_ptr)     Prec_op,
                          const _ST_**            sigma, int                   nvec,
-                         TYPE(linearOp_ptr)          jdOp, const char* method,
+                         TYPE(linearOp_ptr)          jdOp, phist_Eprojection method,
                          int onlyPrec, int num_sigma,
                          int*                  iflag);
 

@@ -414,7 +414,7 @@ extern "C" void SUBR(jadaOp_create_variable)(TYPE(const_linearOp_ptr)    AB_op,
                          TYPE(const_linearOp_ptr)     Skew_op,
                          TYPE(const_linearOp_ptr)     Prec_op,
                          const _ST_**            sigma, int                   nvec,
-                         TYPE(linearOp_ptr)          jdOp, const char* method,
+                         TYPE(linearOp_ptr)          jdOp, phist_Eprojection method,
                          int onlyPrec, int num_sigma,
                          int*                  iflag)
 {
@@ -422,22 +422,13 @@ extern "C" void SUBR(jadaOp_create_variable)(TYPE(const_linearOp_ptr)    AB_op,
   PHIST_ENTER_FCN(__FUNCTION__);
   *iflag = 0;
 
- if(method==NULL)
-  {
-    PHIST_SOUT(PHIST_ERROR,"no method given to %s\n"
-                           "(file %s, line %d)\n",__FUNCTION__,__FILE__,__LINE__);
-  *iflag=-1;
-  return;
-  }
-
   int k;
-  phist_Eprojection which_proj = str2projection(method);
 
   //allocate jadaOp_variable struct
   TYPE(jadaOp_variable_data) *myOp = new TYPE(jadaOp_variable_data);
 
   // case NONE
-  if(which_proj==phist_PROJ_NONE)
+  if(method==phist_PROJ_NONE)
   {
     k = 1;
     myOp->which_apply = (int*)malloc(k*sizeof(int));
@@ -448,7 +439,7 @@ extern "C" void SUBR(jadaOp_create_variable)(TYPE(const_linearOp_ptr)    AB_op,
   }
 
   // case PRE
-  else if(which_proj==phist_PROJ_PRE)
+  else if(method==phist_PROJ_PRE)
   {
     k = 2;
     myOp->which_apply = (int*)malloc(k*sizeof(int));
@@ -461,7 +452,7 @@ extern "C" void SUBR(jadaOp_create_variable)(TYPE(const_linearOp_ptr)    AB_op,
   }
 
   // case POST
-  else if(which_proj==phist_PROJ_POST)
+  else if(method==phist_PROJ_POST)
   {
     k = 2;
     myOp->which_apply = (int*)malloc(k*sizeof(int));
@@ -474,7 +465,7 @@ extern "C" void SUBR(jadaOp_create_variable)(TYPE(const_linearOp_ptr)    AB_op,
   }
 
   // case PRE_POST
-  else if(which_proj==phist_PROJ_PRE_POST)
+  else if(method==phist_PROJ_PRE_POST)
   {
     k = 3;
     myOp->which_apply = (int*)malloc(k*sizeof(int));
@@ -489,7 +480,7 @@ extern "C" void SUBR(jadaOp_create_variable)(TYPE(const_linearOp_ptr)    AB_op,
   }
 
   // case SKEW
-  else if(which_proj==phist_PROJ_SKEW)
+  else if(method==phist_PROJ_SKEW)
   {
     if(onlyPrec == 1)
     {
@@ -518,7 +509,7 @@ extern "C" void SUBR(jadaOp_create_variable)(TYPE(const_linearOp_ptr)    AB_op,
   }
 
   // case ALL
-  else if(which_proj==phist_PROJ_ALL)
+  else if(method==phist_PROJ_ALL)
   {
     if(onlyPrec == 1)
     {
@@ -557,7 +548,7 @@ extern "C" void SUBR(jadaOp_create_variable)(TYPE(const_linearOp_ptr)    AB_op,
   else
   {
     PHIST_SOUT(PHIST_ERROR,"there is no such method in %s implemented\n"
-                           "choose between NONE, PRE, POST, PRE_POST, SKEW and ALL\n"
+                           "choose between NONE 0, PRE 1, POST 2, PRE_POST 3, SKEW 4 and ALL 7\n"
                            "(file %s, line %d)\n",__FUNCTION__,__FILE__,__LINE__);
   *iflag=-1;
   return;
@@ -623,13 +614,13 @@ extern "C" void SUBR(jadaOp_create)(TYPE(const_linearOp_ptr)    AB_op,
   myOp->Proj_op = new TYPE(linearOp);
   PHIST_CHK_IERR(SUBR(projection_Op_create)(myOp->V,myOp->BV,myOp->Proj_op,iflag),*iflag);
 
-  const char* method;
+  phist_Eprojection method;
   if (B_op!=NULL)
   {
-    method= "PRE_POST";
+    method= phist_PROJ_PRE_POST;
   }
   else{
-    method= "POST";
+    method= phist_PROJ_POST;
   }
 
   myOp->k_op = new TYPE(linearOp);
@@ -714,7 +705,7 @@ extern "C" void SUBR(jadaPrec_create)(TYPE(const_linearOp_ptr) P_op,
     PHIST_CHK_IERR(jdPr->k_op->destroy(jdPr->k_op,iflag),*iflag);
     delete jdPr->k_op;
     jdPr->k_op = new TYPE(linearOp);
-    const char* method = "NONE";
+    phist_Eprojection method = phist_PROJ_NONE;
 
     PHIST_CHK_IERR(SUBR(jadaOp_create_variable)(jdPr->Prec_op,NULL,NULL,NULL,&(jdPr->sigma),jdPr->num_shifts,jdPr->k_op,method,0,1,iflag),*iflag);
     jdPrec->apply = SUBR(jadaOp_apply);
@@ -782,7 +773,7 @@ extern "C" void SUBR(jadaOp_set_leftPrecond)(TYPE(linearOp_ptr) jdOp, TYPE(const
     jdDat->projType = jdPrec->projType;
     jdDat->sigma_prec = jdPrec->sigma;
     jdDat->k_op->destroy(jdDat->k_op,iflag);
-    const char* method= "ALL";
+    phist_Eprojection method= phist_PROJ_ALL;
     jdDat->_sigma = (const _ST_**)malloc(2*sizeof(const _ST_*));
     jdDat->_sigma[0]=jdDat->sigma_prec;
     jdDat->_sigma[1]=jdDat->sigma;
