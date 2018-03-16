@@ -213,7 +213,7 @@ try {
   if (*nEig>0)
   {
     AnasaziMV* evecs = soln.Evecs.getRawPtr();
-    MV* _evecs=(MV*)evecs;
+    MV* _evecs=(MV*)evecs->get();
 #if defined(PHIST_KERNEL_LIB_GHOST)||defined(PHIST_KERNEL_LIB_BUILTIN)
     _evecs=evecs->get();
 #endif
