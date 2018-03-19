@@ -44,6 +44,7 @@
 #include "phist_gen_z.h"
 #if defined(PETSC_USE_REAL_DOUBLE) && defined(PETSC_USE_COMPLEX)
 #include "kernels_def.hpp"
+#include "../common/default_mvec_get_data_def.hpp"
 #include "../common/default_context_def.hpp"
 #include "../common/kernels_no_gpu.cpp"
 #include "../common/kernels_no_carp.cpp"

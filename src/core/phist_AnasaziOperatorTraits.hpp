@@ -11,18 +11,14 @@
 
 #include "phist_config.h"
 
-/* needs to be included before system headers for some intel compilers+mpi */
-#ifndef DOXYGEN
-
-#ifdef PHIST_HAVE_MPI
-#include <mpi.h>
-#endif
-#endif
-
 #if defined(PHIST_HAVE_ANASAZI) && defined(PHIST_HAVE_BELOS)
+
+#ifndef DOXYGEN
 
 #include "AnasaziOperatorTraits.hpp"
 #include "phist_BelosOperatorTraits.hpp"
+
+#endif /* DOXYGEN */
 
 namespace Anasazi 
 {

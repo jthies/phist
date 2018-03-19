@@ -43,6 +43,7 @@
 #include "phist_gen_s.h"
 #if defined(PETSC_USE_REAL_SINGLE) && !defined(PETSC_USE_COMPLEX)
 #include "kernels_def.hpp"
+#include "../common/default_mvec_get_data_def.hpp"
 #include "../common/default_context_def.hpp"
 #include "../common/kernels_no_gpu.cpp"
 #include "../common/kernels_no_carp.cpp"
