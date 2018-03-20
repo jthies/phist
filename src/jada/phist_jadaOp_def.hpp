@@ -85,19 +85,8 @@ class TYPE(jadaOp_data)
   const _ST_*           sigma;  // array of NEGATIVE shifts, assumed to have correct size; TODO: what about 'complex' shifts for real JDQR?
   const _ST_*           sigma_prec; //array of shifts for the preconditioner Prec_op
   const _ST_**          _sigma;
-  TYPE(mvec_ptr)        X_proj; // temporary storage for (I-VV'B)X, only used for B!= NULL
-  MvecOwner<_ST_> _X_proj, _V_prec; // these objects make sure that some temporary storage is freed when the object is deleted
-};
-
-class TYPE(jadaOp_variable_data)
-{
-  public:
-
-  TYPE(jadaOp_variable_data)(){}
-
-  TYPE(linearOp_ptr)    k_op;
-  TYPE(const_linearOp_ptr)*    k_ops;
-  int*    which_apply;
+  TYPE(const_linearOp_ptr)*    k_ops;   // select operators for k_op
+  int*    which_apply;  // select which apply_functions of the operators should be used for k_op
 };
 
 // private struct to keep all the pointers we need in order to apply the operator.
@@ -355,31 +344,6 @@ extern "C" void SUBR(skew_projection_Op_create)(TYPE(const_linearOp_ptr) P_op,
     pjDat->_W.set(PV);
 }
 
-// apply for jadaOp_variable
-void SUBR(jadaOp_variable_apply)(_ST_ alpha, const void* op, TYPE(const_mvec_ptr) X,
-    _ST_ beta, TYPE(mvec_ptr) Y, int* iflag)
-{
-#include "phist_std_typedefs.hpp"
-  PHIST_ENTER_FCN(__FUNCTION__);
-  PHIST_CAST_PTR_FROM_VOID(const TYPE(jadaOp_variable_data), jadaOp, op, *iflag);
-
-  TYPE(const_linearOp_ptr) k_Op = jadaOp->k_op;
-
-  if(k_Op == NULL)
-  {
-    PHIST_CHK_IERR(*iflag=PHIST_INVALID_INPUT,*iflag);
-    return;
-  }
-  if( alpha == st::zero() )
-  {
-    PHIST_CHK_IERR( SUBR( mvec_scale ) (Y, beta, iflag), *iflag);
-  }
-  else
-  {
-    k_Op->apply(alpha,k_Op->A,X,beta,Y,iflag);
-  }
-}
-
 // deallocate jadaOp_variable struct
 extern "C" void SUBR(jadaOp_variable_delete)(TYPE(linearOp_ptr) jdOp, int *iflag)
 {
@@ -392,7 +356,7 @@ extern "C" void SUBR(jadaOp_variable_delete)(TYPE(linearOp_ptr) jdOp, int *iflag
   if (jdOp->A == NULL) return;
 
   // get jadaOp_data
-  TYPE(jadaOp_variable_data) *jadaOp = (TYPE(jadaOp_variable_data)*) jdOp->A;
+  TYPE(jadaOp_data) *jadaOp = (TYPE(jadaOp_data)*) jdOp->A;
 
   // delete inner operator
   if( jadaOp->k_op != NULL)
@@ -424,8 +388,9 @@ extern "C" void SUBR(jadaOp_create_variable)(TYPE(const_linearOp_ptr)    AB_op,
 
   int k;
 
-  //allocate jadaOp_variable struct
-  TYPE(jadaOp_variable_data) *myOp = new TYPE(jadaOp_variable_data);
+  //allocate jadaOp struct
+  TYPE(jadaOp_data) *myOp = new TYPE(jadaOp_data);
+  myOp->Proj_op = NULL;
 
   // case NONE
   if(method==phist_PROJ_NONE)
@@ -558,7 +523,7 @@ extern "C" void SUBR(jadaOp_create_variable)(TYPE(const_linearOp_ptr)    AB_op,
   PHIST_CHK_IERR(SUBR(linearOp_wrap_linearOp_product_k)(myOp->k_op, k, myOp->k_ops,myOp->which_apply, sigma,num_sigma, nvec, iflag),*iflag);
 
   jdOp->A = (const void*)myOp;
-  jdOp->apply = SUBR(jadaOp_variable_apply);
+  jdOp->apply = SUBR(jadaOp_apply);
   jdOp->applyT = NULL;
   jdOp->apply_shifted = NULL;
   jdOp->destroy = SUBR(jadaOp_variable_delete);
@@ -606,10 +571,6 @@ extern "C" void SUBR(jadaOp_create)(TYPE(const_linearOp_ptr)    AB_op,
   {
     PHIST_CHK_IERR(SUBR(mvec_num_vectors)(V, &nvecp, iflag), *iflag);
   }
-  // this vector is created for a fixed number of vectors nvec to which the operator
-  // is applied. if another blocksize occurs, temporary storage is used in the apply
-  // function, which may mean some overhead!
-  myOp->X_proj = NULL;
 
   myOp->Proj_op = new TYPE(linearOp);
   PHIST_CHK_IERR(SUBR(projection_Op_create)(myOp->V,myOp->BV,myOp->Proj_op,iflag),*iflag);
@@ -627,8 +588,7 @@ extern "C" void SUBR(jadaOp_create)(TYPE(const_linearOp_ptr)    AB_op,
   PHIST_CHK_IERR(SUBR(jadaOp_create_variable)(myOp->AB_op,myOp->Proj_op,NULL,NULL,&(myOp->sigma),myOp->num_shifts,myOp->k_op,method,0,1,iflag),*iflag);
 
   // setup op_ptr function pointers. For standard EVP, just post-project. For generalized EVP,
-  // pre- and postproject. X_proj is only needed if B!=NULL, otherwise we don't do any pre-
-  // projection.
+  // pre- and postproject.
   jdOp->A     = (const void*)myOp;
 
   jdOp->apply = SUBR(jadaOp_apply);
@@ -733,7 +693,7 @@ extern "C" void SUBR(jadaPrec_create)(TYPE(const_linearOp_ptr) P_op,
     // skew_op * p_op^shifted
     int k = 2;
 
-    TYPE(jadaOp_variable_data)* jdPr_var = (TYPE(jadaOp_variable_data)*)jdPr->k_op->A;
+    TYPE(jadaOp_data)* jdPr_var = (TYPE(jadaOp_data)*)jdPr->k_op->A;
     PHIST_CHK_IERR(jdPr_var->k_op->destroy(jdPr_var->k_op,iflag),*iflag);
     delete jdPr_var->k_op;
 
@@ -778,7 +738,7 @@ extern "C" void SUBR(jadaOp_set_leftPrecond)(TYPE(linearOp_ptr) jdOp, TYPE(const
     jdDat->_sigma[0]=jdDat->sigma_prec;
     jdDat->_sigma[1]=jdDat->sigma;
 
-PHIST_CHK_IERR(SUBR(jadaOp_create_variable)(jdDat->AB_op,jdDat->Proj_op,jdDat->Skew_op,jdDat->Prec_op,jdDat->_sigma,jdDat->num_shifts,jdDat->k_op,method,1-(jdDat->projType),2,iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(jadaOp_create_variable)(jdDat->AB_op,jdDat->Proj_op,jdDat->Skew_op,jdDat->Prec_op,jdDat->_sigma,jdDat->num_shifts,jdDat->k_op,method,1-(jdDat->projType),2,iflag),*iflag);
     jdOp->apply = SUBR(jadaOp_apply);
   }
 }
