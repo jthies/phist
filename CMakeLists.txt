@@ -19,8 +19,8 @@ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${C_warnings}")
 
 
 # include and library directory
-set(SCAMAC_INCDIR ${CMAKE_BINARY_DIR}/include)
-set(SCAMAC_LIBDIR ${CMAKE_BINARY_DIR}/lib)
+set(SCAMAC_INCDIR include)
+set(SCAMAC_LIBDIR lib)
 
 # specify options
 OPTION(SCAMAC_USE_64 "Compile library with 64 bit indices" ON)
@@ -223,8 +223,8 @@ INSTALL(TARGETS scamac scamactools
         PUBLIC_HEADER DESTINATION ${SCAMAC_INCDIR}
 )
 
-INSTALL(TARGETS scamact DESTINATION ${CMAKE_BINARY_DIR}/toolbox)
-INSTALL(TARGETS ${SCAMAC_MWE} DESTINATION ${CMAKE_BINARY_DIR}/mwe)
+INSTALL(TARGETS scamact DESTINATION bin)
+#INSTALL(TARGETS ${SCAMAC_MWE} DESTINATION scamac_mwe)
 
 ### tests
 
