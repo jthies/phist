@@ -8,12 +8,15 @@ set (SCAMAC_VERSION_MINOR 8)
 include_directories( ${CMAKE_CURRENT_BINARY_DIR} )
 include_directories( ${CMAKE_CURRENT_SOURCE_DIR} )
 
+option(BUILD_SHARED_LIBS "build shared libraries (ON/OFF)" ON)
+
 #Add flags for warning (Clang / GNU)
 if ("${CMAKE_C_COMPILER_ID}" STREQUAL "GNU" OR
     "${CMAKE_C_COMPILER_ID}" STREQUAL "Clang" OR
     "${CMAKE_C_COMPILER_ID}" STREQUAL "AppleClang")
     #set(C_warnings "-Wall -Wextra -Werror")
     set(C_warnings "-Wall")
+    set(CMAKE_C_LINK_FLAGS "-lm")
 endif()
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${C_warnings}")
 
@@ -163,9 +166,13 @@ if (SCAMAC_USE_PNG)
 endif()
 
 # add libraries
-ADD_LIBRARY(scamac STATIC ${SCAMAC_LIB_FILES})
-ADD_LIBRARY(scamactools STATIC ${SCAMAC_TOOLKIT_FILES})
-
+if (BUILD_SHARED_LIBS)
+  ADD_LIBRARY(scamac SHARED ${SCAMAC_LIB_FILES})
+  ADD_LIBRARY(scamactools SHARED ${SCAMAC_TOOLKIT_FILES})
+else()
+  ADD_LIBRARY(scamac STATIC ${SCAMAC_LIB_FILES})
+  ADD_LIBRARY(scamactools STATIC ${SCAMAC_TOOLKIT_FILES})
+endif()
 if (SCAMAC_BUILD_APP)
   set(SCAMAC_APP_FILES scamac_toolbox_app.c)
   add_executable(scamact ${SCAMAC_APP_FILES})
@@ -218,8 +225,10 @@ endif()
 
 set_target_properties(scamac PROPERTIES PUBLIC_HEADER "scamac.h;${CMAKE_BINARY_DIR}/scamac_config.h;scamac_include.h;scamac_generator.h;scamac_collection.h")
 set_target_properties(scamactools PROPERTIES PUBLIC_HEADER "${CMAKE_BINARY_DIR}/scamac_tools.h;scamac_statistics.h;scamac_sparsemat.h;scamac_sparsemat_io.h;scamac_plot.h;scamac_lanczos.h;scamac_spectrum.h;scamac_omp.h")
-INSTALL(TARGETS scamac scamactools 
+
+INSTALL(TARGETS scamac scamactools
         ARCHIVE DESTINATION ${SCAMAC_LIBDIR}
+        LIBRARY DESTINATION ${SCAMAC_LIBDIR}
         PUBLIC_HEADER DESTINATION ${SCAMAC_INCDIR}
 )
 
