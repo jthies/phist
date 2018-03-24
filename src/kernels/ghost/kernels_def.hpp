@@ -480,8 +480,8 @@ void SUBR(mvec_get_data)(TYPE(const_mvec_ptr) vV, _ST_* data, phist_lidx lda, in
   {
     // check if we can download directly into the user-provided buffer.     
     // this is the case if both V and the user data are row- or col-major.
-    if ( V->traits.storage==GHOST_DENSEMAT_ROWMAJOR && !output_row_major ||
-       V->traits.storage==GHOST_DENSEMAT_COLMAJOR &&  output_row_major )
+    if ( (V->traits.storage==GHOST_DENSEMAT_ROWMAJOR && !output_row_major) ||
+         (V->traits.storage==GHOST_DENSEMAT_COLMAJOR &&  output_row_major) )
     {
       buffer=new _ST_[V->stride*V->nblock];
       ldbuf=V->stride;
