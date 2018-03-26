@@ -100,7 +100,7 @@ namespace Anasazi {
       _MT_ orthoEps=mt::eps();
       int numSweeps=3;
       try {
-      iflag=PHIST_ORTHOG_TRIANGULAR_R1;
+      iflag|=PHIST_ORTHOG_TRIANGULAR_R1;
       phist::core< _ST_ >::orthog_impl
           (vQi,X.get(),_Op.get(),X_or_MX->get(),
           XtMX,Bphist,Cphist,
