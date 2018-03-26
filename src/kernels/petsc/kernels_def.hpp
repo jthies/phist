@@ -1090,3 +1090,26 @@ extern "C" void SUBR(sparseMat_create_fromRowFunc)(TYPE(sparseMat_ptr) *A, phist
   *iflag = PHIST_SUCCESS;
 }
 
+// mixed real/complex operations are not implemented for PETSc because this library
+// can only be compiled with one data type at a time.
+#ifdef IS_COMPLEX
+# ifdef IS_DOUBLE
+extern "C" void SUBR(mvec_split)(TYPE(const_mvec_ptr) V, phist_Dmvec* reV, phist_Dmvec* imV, int *iflag)
+{
+  *iflag=PHIST_NOT_IMPLEMENTED;
+}
+extern "C" void SUBR(mvec_combine)(TYPE(mvec_ptr) V, phist_Dconst_mvec_ptr reV, phist_Dconst_mvec_ptr imV, int *iflag)
+{
+  *iflag=PHIST_NOT_IMPLEMENTED;
+}
+# else
+extern "C" void SUBR(mvec_split)(TYPE(const_mvec_ptr) V, phist_Smvec* reV, phist_Smvec* imV, int *iflag)
+{
+  *iflag=PHIST_NOT_IMPLEMENTED;
+}
+extern "C" void SUBR(mvec_combine)(TYPE(mvec_ptr) V, phist_Sconst_mvec_ptr reV, phist_Sconst_mvec_ptr imV, int *iflag)
+{
+  *iflag=PHIST_NOT_IMPLEMENTED;
+}
+# endif
+#endif
