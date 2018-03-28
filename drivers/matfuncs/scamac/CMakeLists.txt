@@ -1,4 +1,4 @@
-cmake_minimum_required (VERSION 3.0)
+cmake_minimum_required (VERSION 3.5)
 project (SCAMAC C)
 set (SCAMAC_VERSION_MAJOR 0)
 set (SCAMAC_VERSION_MINOR 8)
@@ -173,9 +173,6 @@ else()
   ADD_LIBRARY(scamac STATIC ${SCAMAC_LIB_FILES})
   ADD_LIBRARY(scamactools STATIC ${SCAMAC_TOOLKIT_FILES})
 endif()
-
-target_link_libraries(scamac m)
-
 if (SCAMAC_BUILD_APP)
   set(SCAMAC_APP_FILES scamac_toolbox_app.c)
   add_executable(scamact ${SCAMAC_APP_FILES})
