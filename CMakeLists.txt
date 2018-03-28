@@ -1,4 +1,4 @@
-cmake_minimum_required (VERSION 3.0)
+cmake_minimum_required (VERSION 3.5)
 project (SCAMAC C)
 set (SCAMAC_VERSION_MAJOR 0)
 set (SCAMAC_VERSION_MINOR 8)
