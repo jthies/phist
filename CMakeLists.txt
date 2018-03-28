@@ -958,9 +958,6 @@ target_link_libraries(phist_solvers               phist_precon phist_core phist_
 if (MPACK_FOUND)
       target_link_libraries(phist_core ${MPACK_LIBRARIES})
 endif()
-if (ESSEX-PHYSICS_FOUND)
-  target_link_libraries(phist_kernels_${PHIST_KERNEL_LIB} ${ESSEX-PHYSICS_LIBRARIES})
-endif()
 
 if(PHIST_KERNEL_LIB STREQUAL "ghost")
   find_package(GHOST 1.1.1 REQUIRED CONFIG)
