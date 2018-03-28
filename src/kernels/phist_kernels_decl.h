@@ -587,6 +587,27 @@ void SUBR(sparseMat_create_fromRowFunc)(TYPE(sparseMat_ptr) *A, phist_const_comm
 void SUBR(sparseMat_create_fromRowFuncAndContext)(TYPE(sparseMat_ptr) *vA, phist_const_context_ptr ctx,
         phist_lidx maxnne,phist_sparseMat_rowFunc rowFunPtr,void* last_arg,
         int *iflag);
+
+/*! very similar to sparseMat_create_fromRowFunc but with an additional argument as required by the 
+     ESSEX scalable matrix collection (scamac) included in PHIST. The constructor function will be
+     called by each application thread before and after filling the matrix to create and delete a
+     workspace for the row function.
+*/
+void SUBR(sparseMat_create_fromRowFuncWithConstructor)(TYPE(sparseMat_ptr) *A, phist_const_comm_ptr comm,
+        phist_gidx nrows, phist_gidx ncols, phist_lidx maxnne,
+        phist_sparseMat_rowFunc rowFunPtr,
+        phist_rowFuncConstructor rowFunConstructorPtr,
+        void* last_arg, int *iflag);
+
+/*! very similar to sparseMat_create_fromRowFuncAndContext but with an additional argument as required by the 
+     ESSEX scalable matrix collection (scamac) included in PHIST. The constructor function will be
+     called by each application thread before and after filling the matrix to create and delete a
+     workspace for the row function.
+*/
+void SUBR(sparseMat_create_fromRowFuncWithConstructorAndContext)(TYPE(sparseMat_ptr) *vA, phist_const_context_ptr ctx,
+        phist_lidx maxnne,phist_sparseMat_rowFunc rowFunPtr,
+        phist_rowFuncConstructor rowFunConstructorPtr,
+        void* last_arg, int *iflag);
                 
 
 // These are not used or tested, perhaps useful in the future?
