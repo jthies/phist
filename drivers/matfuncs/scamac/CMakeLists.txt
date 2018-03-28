@@ -117,11 +117,11 @@ if (SCAMAC_USE_SLEPC)
   set(PETSC_DIR $ENV{PETSC_DIR} CACHE PATH "PETSc directory")
   set(PETSC_ARCH $ENV{PETSC_ARCH} CACHE PATH "PETSc archive")
   set(SLEPC_DIR $ENV{SLEPC_DIR} CACHE PATH "SLEPc directory")
-  set(SCAMAC_INCDIR ${CMAKE_BINARY_DIR}/include)
-  set(SCAMAC_LIBDIR ${CMAKE_BINARY_DIR}/lib)
+  set(SCAMAC_INCDIR ${CMAKE_CURRENT_BINARY_DIR}/include)
+  set(SCAMAC_LIBDIR ${CMAKE_CURRENT_BINARY_DIR}/lib)
   configure_file(makefile_slepc.in makefile_slepc @ONLY)
-  file(COPY ${CMAKE_SOURCE_DIR}/mwe_slepc.c DESTINATION ${CMAKE_BINARY_DIR})
-  add_custom_target(mwe_slepc COMMAND make -f ${CMAKE_BINARY_DIR}/makefile_slepc mwe_slepc)
+  file(COPY ${CMAKE_SOURCE_DIR}/mwe_slepc.c DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+  add_custom_target(mwe_slepc COMMAND make -f ${CMAKE_CURRENT_BINARY_DIR}/makefile_slepc mwe_slepc)
 endif()
 ]]
 
@@ -210,21 +210,21 @@ if (SCAMAC_BUILD_MWE)
     endif()
   endforeach()
   # configure makefiles for external mwe
-  configure_file(makefile_mwe_external ${CMAKE_BINARY_DIR}/mwe_external/Makefile       @ONLY)
-  configure_file(makefile_slepc.in     ${CMAKE_BINARY_DIR}/mwe_external/makefile_slepc @ONLY)
-  configure_file(makefile_mpi.in       ${CMAKE_BINARY_DIR}/mwe_external/makefile_mpi   @ONLY)
+  configure_file(makefile_mwe_external ${CMAKE_CURRENT_BINARY_DIR}/mwe_external/Makefile       @ONLY)
+  configure_file(makefile_slepc.in     ${CMAKE_CURRENT_BINARY_DIR}/mwe_external/makefile_slepc @ONLY)
+  configure_file(makefile_mpi.in       ${CMAKE_CURRENT_BINARY_DIR}/mwe_external/makefile_mpi   @ONLY)
   foreach(file ${SCAMAC_MWE_MPI} ${SCAMAC_MWE_SLEPC})
-    file(COPY ${file} DESTINATION ${CMAKE_BINARY_DIR}/mwe_external)
+    file(COPY ${file} DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/mwe_external)
   endforeach()
-  # add_custom_target(mwe_slepc COMMAND make -f ${CMAKE_BINARY_DIR}/makefile_slepc mwe_slepc)
+  # add_custom_target(mwe_slepc COMMAND make -f ${CMAKE_CURRENT_BINARY_DIR}/makefile_slepc mwe_slepc)
 endif()
 
 
 ### install (we install in the build directory)
 
 
-set_target_properties(scamac PROPERTIES PUBLIC_HEADER "scamac.h;${CMAKE_BINARY_DIR}/scamac_config.h;scamac_include.h;scamac_generator.h;scamac_collection.h")
-set_target_properties(scamactools PROPERTIES PUBLIC_HEADER "${CMAKE_BINARY_DIR}/scamac_tools.h;scamac_statistics.h;scamac_sparsemat.h;scamac_sparsemat_io.h;scamac_plot.h;scamac_lanczos.h;scamac_spectrum.h;scamac_omp.h")
+set_target_properties(scamac PROPERTIES PUBLIC_HEADER "scamac.h;${CMAKE_CURRENT_BINARY_DIR}/scamac_config.h;scamac_include.h;scamac_generator.h;scamac_collection.h")
+set_target_properties(scamactools PROPERTIES PUBLIC_HEADER "${CMAKE_CURRENT_BINARY_DIR}/scamac_tools.h;scamac_statistics.h;scamac_sparsemat.h;scamac_sparsemat_io.h;scamac_plot.h;scamac_lanczos.h;scamac_spectrum.h;scamac_omp.h")
 
 INSTALL(TARGETS scamac scamactools
         ARCHIVE DESTINATION ${SCAMAC_LIBDIR}
