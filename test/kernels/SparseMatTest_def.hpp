@@ -579,13 +579,13 @@ protected:
 
     TYPE(sparseMat_ptr) A=NULL;
     PHIST_TG_PREFIX(idfunc_with_workspace_arg) arg;
-    void* work=nullptr;
-    iflag_=PHIST_TG_PREFIX(idfunc_init_workspace)(&arg,&work);
-    ASSERT_EQ(0,iflag_);
-    ASSERT_TRUE(work!=NULL);
-    ASSERT_TRUE(arg.workspace==work);
     arg.gnrows=_N_;
     arg.gncols=_N_;
+    arg.workspace=0x42; // to detect wether this pointer was touched,
+                        // if all is well the init function will set
+                        // this pointer to point to some thread-private 
+                        // memory location before filling the matrix and
+                        // reset it to NULL afterwards.
     arg.scale=ST(3.0)+ST(5)*st::cmplx_I();
     iflag_=PHIST_SPARSEMAT_QUIET;
     SUBR(sparseMat_create_fromRowFuncWithConstructorAndContext)(&A,context_,1,
@@ -593,9 +593,7 @@ protected:
         &PHIST_TG_PREFIX(idfunc_init_workspace), &arg, &iflag_);
     ASSERT_EQ(0,iflag_);
 
-    iflag_=PHIST_TG_PREFIX(idfunc_init_workspace)(&arg,&work);
-    ASSERT_EQ(0,iflag_);
-    ASSERT_TRUE(work==NULL);
+    // make sure the workspace was deleted and nullified
     ASSERT_TRUE(arg.workspace==NULL);
 
     // check that AX=scale*X
