@@ -91,6 +91,51 @@ int PHIST_TG_PREFIX(idfunc)(ghost_gidx row, ghost_lidx *len, ghost_gidx* cols, v
   cols[0]=row;
   return 0;
 }
+
+  // some row function that uses a workspace. Will only create the identity matrix if
+  // initialized using idfunc_init_workspace is called. Requires arg to be a struct with
+  // a pointer to idfunc_with_workspace_arg.
+  int PHIST_TG_PREFIX(idfunc_with_workspace)(ghost_gidx row, ghost_lidx *len, ghost_gidx* cols, void* vval, void *v_arg)
+  {
+    PHIST_TG_PREFIX(idfunc_with_workspace_arg)* arg = 
+        (PHIST_TG_PREFIX(idfunc_with_workspace_arg)*)v_arg;
+    _ST_* val = (_ST_*)vval;
+    if (row<0 || row>=arg->gnrows || row>=arg->gncols)
+    {
+      return -1; // array out of bounds
+    }
+    else if (arg->workspace == NULL)
+    {
+      return -2; // not initialized
+    }
+    *len=1;
+    cols[0] = row;
+    val[0] = ((_ST_*)(arg->workspace))[0]*(arg->scale);
+  }
+
+  // 'constructor'
+  int PHIST_TG_PREFIX(idfunc_init_workspace)(void *v_arg, void** work)
+  {
+    PHIST_TG_PREFIX(idfunc_with_workspace_arg)* arg =
+        (PHIST_TG_PREFIX(idfunc_with_workspace_arg)*)v_arg;
+    if (!arg) return -1;
+    if (*work)
+    {
+      _ST_* st_work=(_ST_*)(*work);
+      delete [] st_work;
+      *work=NULL;
+    }
+    else
+    {
+      _ST_* st_work=new _ST_[1];
+      st_work[0]=_ST_(1.0);
+      *work=(void*)st_work;
+    }
+    arg->workspace=*work;
+  }
+
+
+
 /*
 int PHIST_TG_PREFIX(some_rowFunc)(ghost_gidx row, ghost_lidx *len, ghost_gidx* cols, void* vval, void *arg)
 {
