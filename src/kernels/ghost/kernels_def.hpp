@@ -2055,11 +2055,37 @@ PHIST_TASK_BEGIN(ComputeTask)
 }
 #endif
 
+void SUBR(sparseMat_create_fromRowFunc)(TYPE(sparseMat_ptr) *A, phist_const_comm_ptr comm,
+        phist_gidx nrows, phist_gidx ncols, phist_lidx maxnne,
+        phist_sparseMat_rowFunc rowFunPtr,
+        void* last_arg, int *iflag)
+{
+  void *work;
+  PHIST_CHK_IERR(*iflag=rowFuncConstructorPtr(last_arg, &work),*iflag);
+  SUBR(sparseMat_create_fromRowFuncWithConstructor)(A, comm, nrows, ncols, maxnne, rowFunPtr, nullptr, last_arg, iflag);
+  rowFuncConstructor(last_arg,&work);
+}
+/*! very similar to sparseMat_create_fromRowFuncAndContext but with an additional argument as required by the 
+     ESSEX scalable matrix collection (scamac) included in PHIST. The constructor function will be
+     called by each application thread before and after filling the matrix to create and delete a
+     workspace for the row function.
+*/
+void SUBR(sparseMat_create_fromRowFuncAndContext)(TYPE(sparseMat_ptr) *A, phist_const_context_ptr ctx,
+        phist_lidx maxnne,phist_sparseMat_rowFunc rowFunPtr,
+        void* last_arg, int *iflag)
+{
+  SUBR(sparseMat_create_fromRowFuncWithConstructorAndContext)(A, ctx, maxnne, rowFunPtr, nullptr, last_arg, iflag);
+}
+
+#endif
+
+
 //! create a sparse matrix from a row func and use a distribution prescribed by a given map
-extern "C" void SUBR(sparseMat_create_fromRowFuncAndContext)(TYPE(sparseMat_ptr) *vA,
-        phist_const_context_ptr vctx,
-        phist_lidx maxnne,phist_sparseMat_rowFunc rowFunPtr,void* last_arg,
-        int *iflag)
+extern "C" void SUBR(sparseMat_create_fromRowFuncWithConstructorAndContext)(TYPE(sparseMat_ptr) *vA,
+        phist_const_context_ptr vctx, phist_lidx maxnne,
+        phist_sparseMat_rowFunc rowFunPtr, 
+        phist_sparseMat_rowFuncConstructor rowFunConstructorPtr, 
+        void* last_arg, int *iflag)
 {
 #include "phist_std_typedefs.hpp"
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
@@ -2090,6 +2116,7 @@ extern "C" void SUBR(sparseMat_create_fromRowFuncAndContext)(TYPE(sparseMat_ptr)
 
   ghost_sparsemat_src_rowfunc src = GHOST_SPARSEMAT_SRC_ROWFUNC_INITIALIZER;
   src.func = rowFunPtr;
+  src.initfunc = rowFunConstructorPtr;
   src.maxrowlen = maxnne;
   src.arg=last_arg;
   // TODO: the shape is actually determined by the range and domain maps, but

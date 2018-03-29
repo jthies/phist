@@ -335,3 +335,43 @@ extern "C" void SUBR(sdMat_random)(TYPE(sdMat_ptr) M, int* iflag)
   free(randbuf);
 }
 #endif
+
+// additional interface for creating matrices with a thread-local workspace. Since only
+// ghost actually does this in parallel (and phist inside an omp parallel region but ordered),
+// we provide a common implementation here for all other kernel libraries.
+#if !(defined(PHIST_KERNEL_LIB_GHOST)||defined(PHIST_KERNEL_LIB_BUILTIN))
+
+/*! very similar to sparseMat_create_fromRowFunc but with an additional argument as required by the 
+     ESSEX scalable matrix collection (scamac) included in PHIST. The constructor function will be
+     called by each application thread before and after filling the matrix to create and delete a
+     workspace for the row function.
+*/
+void SUBR(sparseMat_create_fromRowFuncWithConstructor)(TYPE(sparseMat_ptr) *A, phist_const_comm_ptr comm,
+        phist_gidx nrows, phist_gidx ncols, phist_lidx maxnne,
+        phist_sparseMat_rowFunc rowFunPtr,
+        phist_sparseMat_rowFuncConstructor rowFunConstructorPtr,
+        void* last_arg, int *iflag)
+{
+  void *work;
+  PHIST_CHK_IERR(*iflag=rowFuncConstructorPtr(last_arg, &work),*iflag);
+  SUBR(sparseMat_create_fromRowFunc)(A,comm,nrows,ncols,maxnne,rowFunPtr,last_arg,iflag);
+  rowFuncConstructor(last_arg,&work);
+}
+/*! very similar to sparseMat_create_fromRowFuncAndContext but with an additional argument as required by the 
+     ESSEX scalable matrix collection (scamac) included in PHIST. The constructor function will be
+     called by each application thread before and after filling the matrix to create and delete a
+     workspace for the row function.
+*/
+void SUBR(sparseMat_create_fromRowFuncWithConstructorAndContext)(TYPE(sparseMat_ptr) *A, phist_const_context_ptr ctx,
+        phist_lidx maxnne,phist_sparseMat_rowFunc rowFunPtr,
+        phist_sparseMat_rowFuncConstructor rowFunConstructorPtr,
+        void* last_arg, int *iflag)
+{
+  void *work;
+  PHIST_CHK_IERR(*iflag=rowFuncConstructorPtr(last_arg, &work),*iflag);
+  SUBR(sparseMat_create_fromRowFuncAndContext)(A,ctx,maxnne,rowFunPtr,last_arg,iflag);
+  rowFuncConstructor(last_arg,&work);
+}
+
+#endif
+

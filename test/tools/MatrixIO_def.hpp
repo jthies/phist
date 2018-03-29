@@ -111,6 +111,7 @@ int PHIST_TG_PREFIX(idfunc)(ghost_gidx row, ghost_lidx *len, ghost_gidx* cols, v
     *len=1;
     cols[0] = row;
     val[0] = ((_ST_*)(arg->workspace))[0]*(arg->scale);
+    return 0;
   }
 
   // 'constructor'
@@ -132,6 +133,7 @@ int PHIST_TG_PREFIX(idfunc)(ghost_gidx row, ghost_lidx *len, ghost_gidx* cols, v
       *work=(void*)st_work;
     }
     arg->workspace=*work;
+    return 0;
   }
 
 

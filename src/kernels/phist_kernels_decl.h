@@ -596,7 +596,7 @@ void SUBR(sparseMat_create_fromRowFuncAndContext)(TYPE(sparseMat_ptr) *vA, phist
 void SUBR(sparseMat_create_fromRowFuncWithConstructor)(TYPE(sparseMat_ptr) *A, phist_const_comm_ptr comm,
         phist_gidx nrows, phist_gidx ncols, phist_lidx maxnne,
         phist_sparseMat_rowFunc rowFunPtr,
-        phist_rowFuncConstructor rowFunConstructorPtr,
+        phist_sparseMat_rowFuncConstructor rowFunConstructorPtr,
         void* last_arg, int *iflag);
 
 /*! very similar to sparseMat_create_fromRowFuncAndContext but with an additional argument as required by the 
@@ -606,7 +606,7 @@ void SUBR(sparseMat_create_fromRowFuncWithConstructor)(TYPE(sparseMat_ptr) *A, p
 */
 void SUBR(sparseMat_create_fromRowFuncWithConstructorAndContext)(TYPE(sparseMat_ptr) *vA, phist_const_context_ptr ctx,
         phist_lidx maxnne,phist_sparseMat_rowFunc rowFunPtr,
-        phist_rowFuncConstructor rowFunConstructorPtr,
+        phist_sparseMat_rowFuncConstructor rowFunConstructorPtr,
         void* last_arg, int *iflag);
                 
 
