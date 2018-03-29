@@ -352,10 +352,10 @@ void SUBR(sparseMat_create_fromRowFuncWithConstructor)(TYPE(sparseMat_ptr) *A, p
         phist_sparseMat_rowFuncConstructor rowFunConstructorPtr,
         void* last_arg, int *iflag)
 {
-  void *work;
-  PHIST_CHK_IERR(*iflag=rowFuncConstructorPtr(last_arg, &work),*iflag);
+  void *work=nullptr;
+  PHIST_CHK_IERR(*iflag=rowFunConstructorPtr(last_arg, &work),*iflag);
   SUBR(sparseMat_create_fromRowFunc)(A,comm,nrows,ncols,maxnne,rowFunPtr,last_arg,iflag);
-  rowFuncConstructor(last_arg,&work);
+  rowFunConstructorPtr(last_arg,&work);
 }
 /*! very similar to sparseMat_create_fromRowFuncAndContext but with an additional argument as required by the 
      ESSEX scalable matrix collection (scamac) included in PHIST. The constructor function will be
@@ -367,10 +367,10 @@ void SUBR(sparseMat_create_fromRowFuncWithConstructorAndContext)(TYPE(sparseMat_
         phist_sparseMat_rowFuncConstructor rowFunConstructorPtr,
         void* last_arg, int *iflag)
 {
-  void *work;
-  PHIST_CHK_IERR(*iflag=rowFuncConstructorPtr(last_arg, &work),*iflag);
+  void *work=nullptr;
+  PHIST_CHK_IERR(*iflag=rowFunConstructorPtr(last_arg, &work),*iflag);
   SUBR(sparseMat_create_fromRowFuncAndContext)(A,ctx,maxnne,rowFunPtr,last_arg,iflag);
-  rowFuncConstructor(last_arg,&work);
+  rowFunConstructorPtr(last_arg,&work);
 }
 
 #endif
