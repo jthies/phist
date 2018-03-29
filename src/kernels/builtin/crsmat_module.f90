@@ -2160,7 +2160,7 @@ wtime = mpi_wtime()
     !         array on-the-fly. It also saves us the trouble of making
     !         most things in the loop thread-private.
     A%row_offset(1) = 1_8
-!$omp parallel
+!$omp parallel private(c_work)
     if (associated(initFunc)) then
       c_work=C_NULL_PTR
       ierr=initFunc(data_arg,c_work)
