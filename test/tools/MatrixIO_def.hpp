@@ -120,17 +120,21 @@ int PHIST_TG_PREFIX(idfunc)(ghost_gidx row, ghost_lidx *len, ghost_gidx* cols, v
     PHIST_TG_PREFIX(idfunc_with_workspace_arg)* arg =
         (PHIST_TG_PREFIX(idfunc_with_workspace_arg)*)v_arg;
     if (!arg) return -1;
-    if (*work)
+    if (*work == arg->workspace && *work!=nullptr)
     {
       _ST_* st_work=(_ST_*)(*work);
       delete [] st_work;
       *work=NULL;
     }
-    else
+    else if (*work==nullptr)
     {
       _ST_* st_work=new _ST_[1];
       st_work[0]=_ST_(1.0);
       *work=(void*)st_work;
+    }
+    else
+    {
+      return PHIST_INVALID_INPUT;
     }
     arg->workspace=*work;
     return 0;

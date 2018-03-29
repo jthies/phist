@@ -581,11 +581,11 @@ protected:
     PHIST_TG_PREFIX(idfunc_with_workspace_arg) arg;
     arg.gnrows=_N_;
     arg.gncols=_N_;
-    arg.workspace=0x42; // to detect wether this pointer was touched,
-                        // if all is well the init function will set
-                        // this pointer to point to some thread-private 
-                        // memory location before filling the matrix and
-                        // reset it to NULL afterwards.
+    arg.workspace=(void*)0x42; // to detect wether this pointer was touched,
+                               // if all is well the init function will set
+                               // this pointer to point to some thread-private 
+                               // memory location before filling the matrix and
+                               // reset it to NULL afterwards.
     arg.scale=ST(3.0)+ST(5)*st::cmplx_I();
     iflag_=PHIST_SPARSEMAT_QUIET;
     SUBR(sparseMat_create_fromRowFuncWithConstructorAndContext)(&A,context_,1,
@@ -603,7 +603,7 @@ protected:
     EXPECT_EQ(0,iflag_);
     SUBR(sparseMat_times_mvec)(st::one(),A,vec1_,st::zero(),vec2_,&iflag_);
     EXPECT_EQ(0,iflag_);
-    SUBR(mvec_scale)(vec2_,arg.scale,&iflag_);
+    SUBR(mvec_scale)(vec1_,arg.scale,&iflag_);
     EXPECT_EQ(0,iflag_);
     EXPECT_NEAR(1.0,MvecsEqual(vec1_,vec2_),100*mt::eps());
     SUBR(sparseMat_delete)(A,&iflag_);
