@@ -685,6 +685,8 @@ option(PHIST_TIMINGS_FULL_TRACE "Try to print full call trace in the TimeMonitor
 # included in phist. In particular we now have the 'Scalable Matrix Collection' (scamac)
 # as a subtree. The stand-alone repo is at https://bitbucket.org/essex/MatrixCollection.
 include_directories(${PROJECT_SOURCE_DIR}/drivers/matfuncs)
+include_directories(${PROJECT_SOURCE_DIR}/drivers/matfuncs/scamac)
+include_directories(${CMAKE_BINARY_DIR}/drivers/matfuncs/scamac)
 add_subdirectory(drivers/matfuncs/scamac)
 
 if (NOT DEFINED PHIST_FORCE_INT_GIDX_DEFAULT)
