@@ -2169,7 +2169,7 @@ wtime = mpi_wtime()
     do i = 1, A%nRows, 1
 !$omp ordered
       i_ = A%row_map%distrib(A%row_map%me)+i-2
-      ierr=rowFunc(i_, nne, idx(:,1), val,data_arg)
+      ierr=rowFunc(i_, nne, idx(:,1), val,c_work)
       j = A%row_offset(i)
       j_ = j + int(nne-1,kind=8)
       A%global_col_idx(j:j_) = idx(1:nne,1)+1

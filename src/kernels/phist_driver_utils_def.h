@@ -94,8 +94,9 @@ PHIST_SOUT(PHIST_INFO,"\n\nInstead of a matrix file you can also specify a strin
                       "                    and the 'A' problems are convection diffusion problems taken from Gordon&Gordon, ParCo'10.\n"
                       "                    The '0' cases are symmetric matrices, A0=Laplace, B0=variable coefficient diffusion.\n"
                       "SCAMAC-<string> adds a variety of benchmarks from the ESSEX SCAlable MAtrix Collection, for example\n"
-                      "                    'SCAMAC-hubbard,l=10,U=1' etc.\n"
-                      "                see also https://bitbucket.org/essex/MatrixCollection\n"
+                      "                    'SCAMAC-hubbard,n_sites=10' etc.\n"
+                      "                Use the driver 'scamact' to find out more about the options.\n"
+                      "                The stand-alone repo of the scamac can be found at https://bitbucket.org/essex/MatrixCollection\n"
                       );
 #endif
 
@@ -438,6 +439,8 @@ void SUBR(create_matrix)(TYPE(sparseMat_ptr)* mat, phist_const_comm_ptr comm,
       PHIST_SOUT(PHIST_ERROR,"%s\n",errdesc);
       PHIST_CHK_IERR(*iflag=(int)scamac_err, *iflag);
     }
+
+    PHIST_CHK_IERR(*iflag=scamac_err=scamac_generator_finalize(gen),*iflag);
     
     // query matrix size and max num nonzereos per row
     ghost_gidx gnrows = scamac_generator_query_nrow(gen);
