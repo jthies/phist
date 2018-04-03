@@ -166,13 +166,9 @@ if (SCAMAC_USE_PNG)
 endif()
 
 # add libraries
-if (BUILD_SHARED_LIBS)
-  ADD_LIBRARY(scamac SHARED ${SCAMAC_LIB_FILES})
-  ADD_LIBRARY(scamactools SHARED ${SCAMAC_TOOLKIT_FILES})
-else()
-  ADD_LIBRARY(scamac STATIC ${SCAMAC_LIB_FILES})
-  ADD_LIBRARY(scamactools STATIC ${SCAMAC_TOOLKIT_FILES})
-endif()
+ADD_LIBRARY(scamac ${SCAMAC_LIB_FILES})
+ADD_LIBRARY(scamactools ${SCAMAC_TOOLKIT_FILES})
+
 if (SCAMAC_BUILD_APP)
   set(SCAMAC_APP_FILES scamac_toolbox_app.c)
   add_executable(scamact ${SCAMAC_APP_FILES})
@@ -227,8 +223,9 @@ set_target_properties(scamac PROPERTIES PUBLIC_HEADER "scamac.h;${CMAKE_CURRENT_
 set_target_properties(scamactools PROPERTIES PUBLIC_HEADER "${CMAKE_CURRENT_BINARY_DIR}/scamac_tools.h;scamac_statistics.h;scamac_sparsemat.h;scamac_sparsemat_io.h;scamac_plot.h;scamac_lanczos.h;scamac_spectrum.h;scamac_omp.h")
 
 INSTALL(TARGETS scamac scamactools
-        ARCHIVE DESTINATION ${SCAMAC_LIBDIR}
+        EXPORT scamacLibraries
         LIBRARY DESTINATION ${SCAMAC_LIBDIR}
+        ARCHIVE DESTINATION ${SCAMAC_LIBDIR}
         PUBLIC_HEADER DESTINATION ${SCAMAC_INCDIR}
 )
 
