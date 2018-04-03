@@ -19,6 +19,10 @@
 #include "phist_trilinos_type_config.h"
 #endif
 
+#ifdef PHIST_HAVE_ANASAZI
+#include "phist_trilinos_type_config.h"
+#endif
+
 /*! Test fixure. */
 class CLASSNAME: public virtual TestWithType< _ST_ >
 #ifdef ORTHOG_WITH_HPD_B
@@ -1001,4 +1005,173 @@ return;
     }
   }
 
+#endif
+
+// todo!
+#if defined(PHIST_HAVE_ANASAZI)&&defined(PHIST_TRILINOS_TYPE_AVAIL)
+#ifndef ORTHOG_WITH_HPD_B
+  // compare our overloaded SVQB (based on orthog) with another Anasazi OrthoManager class.
+  TEST_F(CLASSNAME,anasazi_ortho_manager)
+  {
+    typedef phist::BelosMV< _ST_ > MV;
+    typedef Teuchos::SerialDenseMatrix<int, _ST_ > SDM;
+    typedef phist::ScalarTraits< _ST_ >::linearOp_t OP;
+    typedef Belos::MultiVecTraits<_ST_, MV> MVT;
+    typedef Belos::OperatorTraits<_ST_, MV, OP> OPT;
+  
+    if (typeImplemented_ && !problemTooSmall_)
+    {
+      // create a random orthogonal space V with m columns
+      SUBR(mvec_random)(V_,&iflag_);
+      iflag_=PHIST_ORTHOG_RANDOMIZE_NULLSPACE;
+      int rankV0;
+      SUBR(orthog)(nullptr,V_,B_op,R0_,nullptr,1,&rankV0,&iflag_);
+      ASSERT_EQ(0,iflag_);
+ 
+      // random vector block W with k columns, backup to W2.
+      SUBR(mvec_random)(W_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(mvec_add_mvec)(st::one(),W_,st::zero(),W2_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      
+      // copy Q_=W_ and use it as a backup. Note the different notations:
+      // We use V as the orthogonal basis, in Belos it's called Q, and our W is called V in Belos.
+      // What we call R1 and R2 are called B and C, respectively.
+      // So after projectAndNormalize, W_orig-V*C=W*B
+      SUBR(mvec_add_mvec)(st::one(),W_,st::zero(),Q_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(mvec_add_mvec)(st::one(),BW_,st::zero(),BW2_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+
+#ifdef ORTHOG_WITH_HPD_B
+      // compute BV after orthogonalizing V
+      B_op->apply(st::one(),B_op->A,W_,st::zero(),BW_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+#endif
+      // create the Belos objects
+      Teuchos::RCP<const MV> V =phist::mvec_rcp< _ST_ >((TYPE(const_mvec_ptr))V_, false);
+      Teuchos::RCP<MV> W=phist::mvec_rcp< _ST_ >( W_,false),
+                       W0=phist::mvec_rcp< _ST_ >(Q_,false),
+                       W2=phist::mvec_rcp< _ST_ >(W2_,false), 
+                       BW=phist::mvec_rcp< _ST_ >(BW_,false),
+                       BW2=phist::mvec_rcp< _ST_ >(BW2_,false);
+      Teuchos::RCP<OP> Op=Teuchos::rcp(B_op,false);
+     
+      Teuchos::RCP<SDM> B = Teuchos::rcp(new SDM(k_,k_)), B2=Teuchos::rcp(new SDM(k_,k_));
+      Teuchos::RCP<SDM> C = Teuchos::rcp(new SDM(m_,k_)), C2=Teuchos::rcp(new SDM(m_,k_));
+      
+      Teuchos::Array<Teuchos::RCP<SDM> > C_array(1,C),C2_array(1,C2);
+      Teuchos::Array<Teuchos::RCP<const MV> > V_array(1,V);
+      
+      int max_blk_ortho=2;
+      _MT_ blk_tol=std::sqrt(mt::eps());
+      _MT_ dep_tol=mt::eps();
+      _MT_ sing_tol=mt::eps();
+
+      //todo: we don't use different orthogs
+      Anasazi::SVQBOrthoManager<_ST_,MV,OP> myOrtho(Op,false);
+/* note: it seems that this ortho-manager doesn't treat the operator Op correctly
+      Belos::DGKSOrthoManager<_ST_,MV,OP> theirOrtho("Belos/DGKS",Op,
+                                                  max_blk_ortho, blk_tol, dep_tol, sing_tol);
+*/
+      ::Anasazi::SVQBOrthoManager<_ST_,MV,OP> theirOrtho(Op,false);
+
+      int my_ret=myOrtho.projectAndNormalize(*W,V_array,C_array,B);
+      int their_ret=theirOrtho.projectAndNormalize(*W2,V_array,C2_array,B2);
+      
+      // should return the same code
+      ASSERT_EQ(my_ret,their_ret);
+
+      std::cout << "my B = "<<*B << std::endl;
+      std::cout << "their B = "<<*B2 << std::endl;
+      std::cout << "my C = "<<*C << std::endl;
+      std::cout << "their C = "<<*C2 << std::endl;
+
+      // there may be sign switches in B, depending on the algorithm used, so 'normalize' the signs first.
+      std::vector<_ST_> col_signs(k_),col_signs2(k_);
+      for (int i=0; i<k_; i++)
+      {
+        col_signs[i] = (_ST_)((mt::zero() < st::real((*B)(i,i))) - (st::real((*B)(i,i)) < mt::zero()));
+        col_signs2[i] = (_ST_)((mt::zero() < st::real((*B2)(i,i))) - (st::real((*B2)(i,i)) < mt::zero()));
+        for (int j=0; j<B->numCols(); j++)
+        {
+          (*B)(i,j)*=col_signs[i];
+          (*B2)(i,j)*=col_signs2[i];
+        }
+      }
+      MVT::MvScale(*W,col_signs);
+      MVT::MvScale(*W2,col_signs2);
+#ifdef ORTHOG_WITH_HPD_B
+      MVT::MvScale(*BW,col_signs);
+      MVT::MvScale(*BW2,col_signs2);
+#endif
+      /* compute the orthog relation QB - (W-VC), should be almost zero for both methods */
+      Teuchos::RCP<MV> orthogCond = MVT::CloneCopy(*W0);
+      Teuchos::RCP<MV> orthogCond2 = MVT::CloneCopy(*W0);
+      
+      MVT::MvTimesMatAddMv(st::one(), *W, *B,  -st::one(), *orthogCond);
+      MVT::MvTimesMatAddMv(st::one(), *W2,*B2, -st::one(), *orthogCond2);
+
+      MVT::MvTimesMatAddMv(st::one(),*V,*C,  st::one(), *orthogCond);
+      MVT::MvTimesMatAddMv(st::one(),*V,*C2, st::one(), *orthogCond2);
+      
+      std::vector< _MT_ > normsOrthogCond(k_),normsOrthogCond2(k_);
+      MVT::MvNorm(*orthogCond,normsOrthogCond);
+      MVT::MvNorm(*orthogCond2,normsOrthogCond2);
+      
+      auto maxOrthogCondError=std::max_element(normsOrthogCond.begin(),  normsOrthogCond.end());
+      auto maxOrthogCondError2=std::max_element(normsOrthogCond2.begin(),  normsOrthogCond2.end());
+
+      ASSERT_NEAR(mt::one(),mt::one()+*maxOrthogCondError, std::sqrt(mt::eps()));
+      ASSERT_NEAR(mt::one(),mt::one()+*maxOrthogCondError2, std::sqrt(mt::eps()));
+
+#ifdef ORTHOG_WITH_HPD_B
+      // check that BW after the orthogonalization is correctly updated
+      Teuchos::RCP<MV> BW_expl = MVT::Clone(*W,k_);
+      Teuchos::RCP<MV> BW_expl2 = MVT::Clone(*W,k_);
+      Teuchos::RCP<MV> BW_updated = MVT::Clone(*W,k_);
+      Teuchos::RCP<MV> BW_updated2 = MVT::Clone(*W,k_);
+      
+      OPT::Apply(*Op,*W,*BW_expl,Belos::NOTRANS);
+      OPT::Apply(*Op,*W2,*BW_expl2,Belos::NOTRANS);
+      
+      MVT::MvAddMv(-st::one(),*BW, st::one(),*BW_expl, *BW_updated);
+      MVT::MvAddMv(-st::one(),*BW2,st::one(),*BW_expl2, *BW_updated2);
+
+      std::vector< _MT_ > normsBWupdated(k_),normsBWupdated2(k_);
+      MVT::MvNorm(*BW_updated,  normsBWupdated);
+      MVT::MvNorm(*BW_updated2, normsBWupdated2);
+      
+      auto maxBWupdatedError=std::max_element(normsBWupdated.begin(),  normsBWupdated.end());
+      auto maxBWupdatedError2=std::max_element(normsBWupdated2.begin(),  normsBWupdated2.end());
+
+      ASSERT_NEAR(mt::one(),mt::one()+*maxBWupdatedError, std::sqrt(mt::eps()));
+      ASSERT_NEAR(mt::one(),mt::one()+*maxBWupdatedError2, std::sqrt(mt::eps()));
+      
+#endif      
+      // check that W is correctly orthonormalized 
+#ifdef ORTHOG_WITH_HPD_B
+      ASSERT_NEAR(mt::one(),WTest::ColsAreBOrthogonal(W_vp_,BW_vp_,nloc_,ldaW_,ldaBW_,stride_,mpi_comm_),std::sqrt(mt::eps()));
+      ASSERT_NEAR(mt::one(),WTest::ColsAreBNormalized(W_vp_,BW_vp_,nloc_,ldaW_,ldaBW_,stride_,mpi_comm_),std::sqrt(mt::eps()));
+      ASSERT_NEAR(mt::one(),WTest::ColsAreBOrthogonal(W2_vp_,BW2_vp_,nloc_,ldaW2_,ldaBW2_,stride_,mpi_comm_),std::sqrt(mt::eps()));
+      ASSERT_NEAR(mt::one(),WTest::ColsAreBNormalized(W2_vp_,BW2_vp_,nloc_,ldaW2_,ldaBW2_,stride_,mpi_comm_),std::sqrt(mt::eps()));
+#else
+      ASSERT_NEAR(mt::one(),WTest::ColsAreOrthogonal(W_vp_,nloc_,ldaW_,stride_,mpi_comm_),std::sqrt(mt::eps()));
+      ASSERT_NEAR(mt::one(),WTest::ColsAreNormalized(W_vp_,nloc_,ldaW_,stride_,mpi_comm_),std::sqrt(mt::eps()));
+      ASSERT_NEAR(mt::one(),WTest::ColsAreOrthogonal(W2_vp_,nloc_,ldaW2_,stride_,mpi_comm_),std::sqrt(mt::eps()));
+      ASSERT_NEAR(mt::one(),WTest::ColsAreNormalized(W2_vp_,nloc_,ldaW2_,stride_,mpi_comm_),std::sqrt(mt::eps()));
+#endif
+      
+      SDM Bdiff=*B; Bdiff-=*B2;
+      SDM Cdiff=*C; Cdiff-=*C2;
+
+      //std::cout << "Bdiff = "<<Bdiff << std::endl;
+      //std::cout << "Cdiff = "<<Cdiff << std::endl;
+       
+      ASSERT_NEAR(mt::one(), mt::one()+Bdiff.normFrobenius(),std::sqrt(mt::eps()));
+      ASSERT_NEAR(mt::one(), mt::one()+Cdiff.normFrobenius(),std::sqrt(mt::eps()));
+    }
+  }
+
+#endif
 #endif

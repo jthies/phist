@@ -34,8 +34,21 @@
 //#define PHIST_CLASSFILE_DEF "phist_BelosICGSOrthoManager.hpp"
 //#include "phist_gen_all.h"
 #endif
+/*
+#ifdef PHIST_HAVE_ANASAZI
+#include "phist_types.hpp"
+#include "phist_core.hpp"
+#include "phist_BelosMV.hpp"
+#include "Belos_PhistAdapter.hpp"
+#include "Anasazi_PhistAdapter.hpp"
+#include "phist_AnasaziOperatorTraits.hpp"
 
+#include "AnasaziSVQBOrthoManager.hpp"
 
+//#define PHIST_CLASSFILE_DEF "phist_AnasaziSVQBOrthoManager.hpp"
+//#include "phist_gen_all.h"
+#endif
+*/
 using namespace testing;
 
 #define CLASSFILE_DEF "OrthogTest_def.hpp"
