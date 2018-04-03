@@ -26,6 +26,18 @@ typedef struct TYPE(private_linearOp_pair)
   mutable TYPE(mvec_ptr) Xtmp;
 } TYPE(private_linearOp_pair);
 
+/// TODO: use std::vector<TYPE(linearOp)> member
+///       and push_back() function to add a new member,
+///       and iterator to implement apply function (respecting
+///       the use_transpose and shifts members of each member).
+///       apply_shifted and applyT should be NULL.
+
+// Beispiel std::vector<TYPE(const_linearOp_ptr)> members_;
+// for (auto it=members_.begin(); it!=members_.end(); it++)
+// {
+//   TYPE(const_linearOp_ptr) op_i = it.second;
+// }
+
 // same with k of linearOps
 typedef struct TYPE(private_linearOp_k)
 {
