@@ -640,4 +640,47 @@ public:
 
   }
 
+  TEST_F(CLASSNAME,linearOp_product)
+  { 
+    if(!typeImplemented_ || problemTooSmall_)
+      return;
 
+    TYPE(linearOp) Prod_op;
+    SUBR(linearOp_product_create)(&Prod_op,&iflag_);
+    ASSERT_EQ(0,iflag_);
+    
+    SUBR(linearOp_product_extend)(&Prod_op,&A_op,&iflag_);
+    ASSERT_EQ(0,iflag_);
+    
+    // test if Prod_op = A_op
+    // we have v1, v2 random and v3=v2 from SetUp()
+    _ST_ alpha=st::prand();
+    _ST_ beta=st::prand();
+    SUBR(linearOp_apply)(alpha,&A_op,vec1_,beta,vec3_,&iflag_);
+    ASSERT_EQ(0,iflag_);
+    
+    SUBR(linearOp_apply)(alpha,&Prod_op,vec1_,beta,vec2_,&iflag_);
+    ASSERT_EQ(0,iflag_);
+    
+    ASSERT_NEAR(mt::one(),MvecsEqual(vec2_,vec3_),100*VTest::releps());
+    
+    // now want Prod_op = A_op*A_op
+    SUBR(mvec_add_mvec)(st::one(),vec3_,st::zero(),vec2_,&iflag_);
+    ASSERT_EQ(0,iflag_);
+    
+    SUBR(linearOp_product_extend)(&Prod_op,&A_op,&iflag_);
+    ASSERT_EQ(0,iflag_);
+    
+    SUBR(linearOp_apply)(alpha,&Prod_op,vec1_,beta,vec2_,&iflag_);
+    ASSERT_EQ(0,iflag_);
+    
+    SUBR(linearOp_apply)(alpha,&A_op,vec1_,st::zero(),vec4_,&iflag_);
+    ASSERT_EQ(0,iflag_);
+    SUBR(linearOp_apply)(st::one(),&A_op,vec4_,beta,vec3_,&iflag_);
+    ASSERT_EQ(0,iflag_);
+    
+    ASSERT_NEAR(mt::one(),MvecsEqual(vec2_,vec3_),1000*VTest::releps());    
+
+    SUBR(linearOp_destroy)(&Prod_op,&iflag_);
+    ASSERT_EQ(0,iflag_);
+  }
