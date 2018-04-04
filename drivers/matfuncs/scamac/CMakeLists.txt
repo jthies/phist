@@ -223,7 +223,7 @@ set_target_properties(scamac PROPERTIES PUBLIC_HEADER "scamac.h;${CMAKE_CURRENT_
 set_target_properties(scamactools PROPERTIES PUBLIC_HEADER "${CMAKE_CURRENT_BINARY_DIR}/scamac_tools.h;scamac_statistics.h;scamac_sparsemat.h;scamac_sparsemat_io.h;scamac_plot.h;scamac_lanczos.h;scamac_spectrum.h;scamac_omp.h")
 
 INSTALL(TARGETS scamac scamactools
-        EXPORT scamacLibraries
+        EXPORT phistLibraries
         LIBRARY DESTINATION ${SCAMAC_LIBDIR}
         ARCHIVE DESTINATION ${SCAMAC_LIBDIR}
         PUBLIC_HEADER DESTINATION ${SCAMAC_INCDIR}
