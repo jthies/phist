@@ -26,18 +26,6 @@ typedef struct TYPE(private_linearOp_pair)
   mutable TYPE(mvec_ptr) Xtmp;
 } TYPE(private_linearOp_pair);
 
-/// TODO: use std::vector<TYPE(linearOp)> member
-///       and push_back() function to add a new member,
-///       and iterator to implement apply function (respecting
-///       the use_transpose and shifts members of each member).
-///       apply_shifted and applyT should be NULL.
-
-// Beispiel std::vector<TYPE(const_linearOp_ptr)> members_;
-// for (auto it=members_.begin(); it!=members_.end(); it++)
-// {
-//   TYPE(const_linearOp_ptr) op_i = it.second;
-// }
-
 // same with k of linearOps
 typedef struct TYPE(private_linearOp_k)
 {
@@ -50,6 +38,13 @@ typedef struct TYPE(private_linearOp_k)
   mutable TYPE(mvec_ptr) Xtmp;
   mutable TYPE(mvec_ptr) Xtmp2;
 } TYPE(private_linearOp_k);
+
+typedef struct TYPE(private_linearOp_product)
+{
+  std::vector<TYPE(const_linearOp_ptr)> members_;
+  mutable TYPE(mvec_ptr) Xtmp;
+  mutable TYPE(mvec_ptr) Xtmp2;
+} TYPE(private_linearOp_product);
 
 //! just to have some function to point to
 void SUBR(private_linearOp_destroy_nothing)(TYPE(linearOp_ptr) op, int* iflag)
@@ -203,6 +198,124 @@ TYPE(const_linearOp_ptr) A, TYPE(const_linearOp_ptr) B, int* iflag)
   op->apply_shifted=NULL;
   op->update=NULL;
   op->destroy=&SUBR(private_linearOp_destroy_linearOp_pair_wrapper);
+}
+
+void SUBR(private_linearOp_product_apply)(_ST_ alpha, const void* k_op, TYPE(const_mvec_ptr) X,
+ _ST_ beta, TYPE(mvec_ptr) Y, int* iflag)
+{
+#include "phist_std_typedefs.hpp"
+  TYPE(private_linearOp_product) *Op_k = (TYPE(private_linearOp_product)*)k_op;
+  
+  //at beginning: Xtmp=X
+  if (Op_k->Xtmp!=NULL)
+  {
+    PHIST_CHK_IERR(SUBR(mvec_delete)(Op_k->Xtmp,iflag),*iflag);
+    Op_k->Xtmp=NULL;
+  }
+  Op_k->Xtmp=(TYPE(mvec_ptr))X;
+
+  int nvX, nvXtmp2=-1;
+  PHIST_CHK_IERR(SUBR(mvec_num_vectors)(X,&nvX,iflag),*iflag);
+
+  // check if Xtmp2 needs reallocation
+  if (Op_k->Xtmp2!=NULL)
+  {
+    PHIST_CHK_IERR(SUBR(mvec_num_vectors)(Op_k->Xtmp2,&nvXtmp2,iflag),*iflag);
+    if (nvX!=nvXtmp2)
+    {
+      PHIST_CHK_IERR(SUBR(mvec_delete)(Op_k->Xtmp2,iflag),*iflag);
+      Op_k->Xtmp2=NULL;
+    }
+  } 
+  
+  int cnt = 0;
+  //iteration over operator-members
+  for (auto it=(Op_k->members_).begin(); it!=(Op_k->members_).end(); it++)
+  {
+    TYPE(const_linearOp_ptr) op_i = *it;  //means the value of it(here the i-th operator)
+    
+    if(nvX!=nvXtmp2)
+    {
+      PHIST_CHK_IERR(SUBR(mvec_create)(&(Op_k->Xtmp2),op_i->range_map,nvX,iflag),*iflag);
+    }
+
+    PHIST_CHK_IERR(SUBR(linearOp_apply)(st::one(),op_i,Op_k->Xtmp,st::zero(),Op_k->Xtmp2,iflag),*iflag);
+    
+    if(cnt!=0)
+    {
+      PHIST_CHK_IERR(SUBR(mvec_delete)(Op_k->Xtmp,iflag),*iflag);
+      Op_k->Xtmp=NULL;
+    }
+    Op_k->Xtmp = Op_k->Xtmp2;
+    Op_k->Xtmp2=NULL;
+    nvXtmp2=-1;
+    cnt++;
+  }
+
+  // Y <- alpha*Xtmp + beta*Y
+  PHIST_CHK_IERR(SUBR(mvec_add_mvec)(alpha,Op_k->Xtmp,beta,Y,iflag),*iflag);
+}
+
+void SUBR(linearOp_product_extend)(TYPE(linearOp_ptr) k_op, TYPE(const_linearOp_ptr) new_member, int* iflag)
+{
+    PHIST_SOUT(PHIST_INFO, "in extend\n");
+    
+#include "phist_std_typedefs.hpp"
+
+  TYPE(private_linearOp_product) *Op_k = (TYPE(private_linearOp_product)*)k_op->A;
+
+  // correct range map and domain map
+  if(k_op->domain_map == NULL)
+  {
+    if(new_member->use_transpose)
+    {
+      k_op->domain_map = new_member->range_map;
+      k_op->range_map = new_member->domain_map;
+    }
+    else
+    {
+      k_op->domain_map = new_member->domain_map;
+      k_op->range_map = new_member->range_map;  
+    }
+  }
+  else
+  {
+    if(new_member->use_transpose)
+    {
+      k_op->range_map = new_member->domain_map;
+    }
+    else
+    {
+      k_op->range_map = new_member->range_map;
+    }
+  }
+  
+  (Op_k->members_).push_back(new_member);
+}
+
+void SUBR(private_linearOp_product_delete)(TYPE(linearOp_ptr) k_op, int* iflag)
+{
+  TYPE(private_linearOp_product)* Op_k = (TYPE(private_linearOp_product)*)(k_op->A);
+  if (Op_k->Xtmp!=NULL) PHIST_CHK_IERR(SUBR(mvec_delete)(Op_k->Xtmp,iflag),*iflag);
+  if (Op_k->Xtmp2!=NULL) PHIST_CHK_IERR(SUBR(mvec_delete)(Op_k->Xtmp2,iflag),*iflag);
+  delete Op_k; // delete the struct, not the wrapped operators
+  *iflag=0; 
+}
+
+void SUBR(linearOp_product_create)(TYPE(linearOp_ptr) k_op, int* iflag)
+{
+  TYPE(private_linearOp_product) *k_Op = new TYPE(private_linearOp_product);
+  k_Op->Xtmp = NULL;
+  k_Op->Xtmp2 = NULL;
+  k_op->A = (void*)k_Op;
+  k_op->use_transpose = NULL;
+  k_op->shifts = NULL;
+  k_op->apply = &SUBR(private_linearOp_product_apply);
+  k_op->applyT = NULL;
+  k_op->apply_shifted = NULL;
+  k_op->destroy = &SUBR(private_linearOp_product_delete);
+  k_op->domain_map = NULL;
+  k_op->range_map = NULL;
 }
 
 // helper function to compute Y = alpha*A1_apply1*...*Ak_applyk*X + beta*Y (apply function for linearOp_product_k)
@@ -370,13 +483,6 @@ void SUBR(linearOp_identity)(TYPE(linearOp_ptr) op,
   op->domain_map=domain_map;
 }
 
- //! pointer to function for computing Y=alpha*A*X+beta*Y
- void SUBR(linearOp_apply)(_ST_ alpha, TYPE(const_linearOp_ptr) A_op,
-        TYPE(const_mvec_ptr) X, _ST_ beta,  TYPE(mvec_ptr) Y, int* iflag)
-  {
-    PHIST_CHK_IERR(*iflag=(A_op->apply==NULL)? PHIST_BAD_CAST:0,*iflag);
-    PHIST_CHK_IERR(A_op->apply(alpha,A_op->A,X,beta,Y,iflag),*iflag);
-  }
 //! apply transpose
  void SUBR(linearOp_applyT)(_ST_ alpha, TYPE(const_linearOp_ptr) A_op,
         TYPE(const_mvec_ptr) X, _ST_ beta,  TYPE(mvec_ptr) Y, int* iflag)
@@ -387,9 +493,39 @@ void SUBR(linearOp_identity)(TYPE(linearOp_ptr) op,
  //! pointer to function for computing Y=(A-sigma[j]B)*X[j]+beta*Y[j]
  void SUBR(linearOp_apply_shifted)(_ST_ alpha, TYPE(const_linearOp_ptr) A_op, _ST_ const * sigma,
         TYPE(const_mvec_ptr) X, _ST_ beta,  TYPE(mvec_ptr) Y, int* iflag)
-    {
+  {
     PHIST_CHK_IERR(*iflag=(A_op->apply_shifted==NULL)? PHIST_BAD_CAST:0,*iflag);
     PHIST_CHK_IERR(A_op->apply_shifted(alpha,A_op->A,sigma,X,beta,Y,iflag),*iflag);
+  }
+ //! pointer to function for computing Y=alpha*A*X+beta*Y
+ void SUBR(linearOp_apply)(_ST_ alpha, TYPE(const_linearOp_ptr) A_op,
+        TYPE(const_mvec_ptr) X, _ST_ beta,  TYPE(mvec_ptr) Y, int* iflag)
+  {
+    if(A_op->shifts!=NULL)
+    {
+      if(A_op->use_transpose)
+      {
+        PHIST_SOUT(PHIST_ERROR, "not clear whether applyT or apply_shifted should be used \n",
+                              "(file %s, line %d)\n",__FUNCTION__,__FILE__,__LINE__);
+        *iflag=-1;
+        return;
+      }
+      else
+      {
+        PHIST_CHK_IERR(SUBR(linearOp_apply_shifted)(alpha,A_op,A_op->shifts,X,beta,Y,iflag),*iflag);
+      }
+    }  
+    
+    else if(A_op->use_transpose)
+    {
+        PHIST_CHK_IERR(SUBR(linearOp_applyT)(alpha,A_op,X,beta,Y,iflag),*iflag);
+    }
+    
+    else
+    {
+        PHIST_CHK_IERR(*iflag=(A_op->apply==NULL)? PHIST_BAD_CAST:0,*iflag);
+        PHIST_CHK_IERR(A_op->apply(alpha,A_op->A,X,beta,Y,iflag),*iflag);
+    }
   }
 //! apply operator and compute inner products with in- and output vector
   void SUBR(linearOp_fused_apply_mvTmv)(_ST_ alpha, TYPE(const_linearOp_ptr) A_op, TYPE(const_mvec_ptr)  V,

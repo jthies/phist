@@ -26,19 +26,19 @@ typedef struct TYPE(linearOp) {
  phist_const_map_ptr domain_map; //! map for vectors X in Y=A*X
  
  // switch on using the transposed operator (applyT instead of apply). This affects the function
- // SUBR(linearOp_apply).
+ // subr(linearOp_apply) below.
  int use_transpose;
  
- //! if not NULL, apply_shifted will be used instead of apply in SUBR(linearOp_apply.
- //! If allocated it should have at least as many elements as there are vectors in   
- //! in the aply function because apply_shifted can use a different shift for each   
- //! culumn.
+ //! if not NULL, apply_shifted will be used instead of apply in subr(linearOp_apply) below.
+ //! If allocated it should have at least as many elements as there are vectors   
+ //! in the apply function because apply_shifted can use a different shift for each   
+ //! culoumn.
  _ST_* shifts;
  
  //! pointer to function for computing Y=alpha*A*X+beta*Y
  void (*apply)(_ST_ alpha, const void* A,
         TYPE(const_mvec_ptr) X, _ST_ beta,  TYPE(mvec_ptr) Y, int* iflag);
-//! apply transpose
+ //! apply transpose
  void (*applyT)(_ST_ alpha, const void* A,
         TYPE(const_mvec_ptr) X, _ST_ beta,  TYPE(mvec_ptr) Y, int* iflag);
  //! pointer to function for computing Y=(A-sigma[j]B)*X[j]+beta*Y[j]
@@ -91,8 +91,6 @@ void SUBR(linearOp_wrap_sparseMat_pair)(TYPE(linearOp_ptr) op,
 void SUBR(linearOp_wrap_linearOp_product)(TYPE(linearOp_ptr) op,
         TYPE(const_linearOp_ptr) A, TYPE(const_linearOp_ptr) B, int* iflag);
 
-/// TODO einfach linearOp_create_product (ohne Argumente, erzeugt leeren Operator)
-
 //! create a 'product k operator' which acts as Y = alpha*A1_apply1*...*Ak_applyk*X + beta*Y (apply).
 //! k_ops gives us the k operators A1,...,Ak, (k_ops[i]=Ai the i-th operator) and
 //! which_apply tells us, how we want to apply the operators (which_apply[i]=0 if apply i-th operator,
@@ -109,7 +107,13 @@ void SUBR(linearOp_wrap_linearOp_product)(TYPE(linearOp_ptr) op,
 void SUBR(linearOp_wrap_linearOp_product_k)(TYPE(linearOp_ptr) op,
 int k, TYPE(const_linearOp_ptr)* k_ops, int* which_apply, const _ST_** sigma, int num_sigma, int num_shifts, int* iflag);
 
-/// TODO neue Funktion: linearOp_product_extend(TYPE(linearOp_ptr) k_op, TYPE(const_linearOp_ptr) new_member)
+//! creates an empty product operator
+void SUBR(linearOp_product_create)(TYPE(linearOp_ptr) k_op, int* iflag);
+
+//! add the operator new_member to the end of the members_ vector of the product operator
+//! the apply function of the product operator operates in the same order in which you extended the vector, it means:
+//! If you want to compute Y = alpha*A*B*X + beta*Y you need to add the operator B fist, than the operator A
+void SUBR(linearOp_product_extend)(TYPE(linearOp_ptr) k_op, TYPE(const_linearOp_ptr) new_member, int* iflag);
 
 #if defined(__cplusplus)&&defined(PHIST_KERNEL_LIB_EPETRA)&&defined(IS_DOUBLE)&&!defined(IS_COMPLEX)
 // forward declaration
@@ -132,12 +136,11 @@ void SUBR(linearOp_identity)(TYPE(linearOp_ptr) op,
 //! the c_funptr members of the linearOp types (cf. https://bitbucket.org/essex/phist_fort)
 //@{
 
-/// TODO: this function should respect the use_transpose and shifts members of struct linearOp.
-
  //! pointer to function for computing Y=alpha*A*X+beta*Y
+ //! it respects the use_transpose and shifts members of struct linearOp
  void SUBR(linearOp_apply)(_ST_ alpha, TYPE(const_linearOp_ptr) A_op,
         TYPE(const_mvec_ptr) X, _ST_ beta,  TYPE(mvec_ptr) Y, int* iflag);
-//! apply transpose
+ //! apply transpose
  void SUBR(linearOp_applyT)(_ST_ alpha, TYPE(const_linearOp_ptr) A_op,
         TYPE(const_mvec_ptr) X, _ST_ beta,  TYPE(mvec_ptr) Y, int* iflag);
  //! pointer to function for computing Y=(A-sigma[j]B)*X[j]+beta*Y[j]
