@@ -39,8 +39,13 @@ void SUBR(read_mat)(const char* filebase,phist_const_comm_ptr comm,int nglob, in
     phist_gidx gnrows;
     phist_gidx gncols;
     _ST_ scale;
-    void* workspace;
   } PHIST_TG_PREFIX(idfunc_with_workspace_arg);
+
+  typedef struct
+  {
+    _ST_* data;
+    PHIST_TG_PREFIX(idfunc_with_workspace_arg)* arg;
+  } PHIST_TG_PREFIX(idfunc_workspace);
 
   //! creates a simple tridiagonal Hermitian and positive definite matrix. Before passing this function to
   //! sparseMat_create_fromRowFunc, it must be initialized by calling it with row=-1 and cols[0] containing

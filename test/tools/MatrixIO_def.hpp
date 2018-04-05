@@ -97,20 +97,21 @@ int PHIST_TG_PREFIX(idfunc)(ghost_gidx row, ghost_lidx *len, ghost_gidx* cols, v
   // a pointer to idfunc_with_workspace_arg.
   int PHIST_TG_PREFIX(idfunc_with_workspace)(ghost_gidx row, ghost_lidx *len, ghost_gidx* cols, void* vval, void *v_arg)
   {
-    PHIST_TG_PREFIX(idfunc_with_workspace_arg)* arg = 
-        (PHIST_TG_PREFIX(idfunc_with_workspace_arg)*)v_arg;
+    PHIST_TG_PREFIX(idfunc_workspace)* wsp = 
+        (PHIST_TG_PREFIX(idfunc_workspace)*)v_arg;
+    PHIST_TG_PREFIX(idfunc_with_workspace_arg)* arg = wsp->arg;
     _ST_* val = (_ST_*)vval;
     if (row<0 || row>=arg->gnrows || row>=arg->gncols)
     {
       return -1; // array out of bounds
     }
-    else if (arg->workspace == NULL)
+    else if (wsp->data == NULL)
     {
       return -2; // not initialized
     }
     *len=1;
     cols[0] = row;
-    val[0] = ((_ST_*)(arg->workspace))[0]*(arg->scale);
+    val[0] = wsp->data[0] * arg->scale;
     return 0;
   }
 
@@ -120,23 +121,31 @@ int PHIST_TG_PREFIX(idfunc)(ghost_gidx row, ghost_lidx *len, ghost_gidx* cols, v
     PHIST_TG_PREFIX(idfunc_with_workspace_arg)* arg =
         (PHIST_TG_PREFIX(idfunc_with_workspace_arg)*)v_arg;
     if (!arg) return -1;
-    if (*work == arg->workspace && *work!=nullptr)
+    if (*work!=nullptr)
     {
-      _ST_* st_work=(_ST_*)(*work);
-      delete [] st_work;
-      *work=NULL;
-    }
-    else if (*work==nullptr)
-    {
-      _ST_* st_work=new _ST_[1];
-      st_work[0]=_ST_(1.0);
-      *work=(void*)st_work;
+      PHIST_TG_PREFIX(idfunc_workspace)* wsp =(PHIST_TG_PREFIX(idfunc_workspace)*)(*work);
+      if (wsp->arg == arg)
+      {
+        // second call (destroy)
+        delete [] wsp->data;
+        delete wsp;
+        *work=NULL;
+      }
+      else
+      {
+        //probably first call, but *work not set to NULL
+        return PHIST_INVALID_INPUT;
+      }
     }
     else
     {
-      return PHIST_INVALID_INPUT;
+      // first call (create)
+      PHIST_TG_PREFIX(idfunc_workspace)* my_work=new PHIST_TG_PREFIX(idfunc_workspace);
+      my_work->data=new _ST_[1];
+      my_work->data[0]=_ST_(1.0);
+      my_work->arg=arg;
+      *work=(void*)my_work;
     }
-    arg->workspace=*work;
     return 0;
   }
 
