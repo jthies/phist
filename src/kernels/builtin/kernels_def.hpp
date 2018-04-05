@@ -20,7 +20,7 @@
 // Declaration of Fortran implemented functions
 extern "C" {
   void SUBR(crsMat_create_fromRowFunc_f)(TYPE(sparseMat_ptr)*,phist_const_comm_ptr,phist_gidx,phist_gidx, 
-      phist_lidx, phist_sparseMat_rowFunc,void*, int*);
+      phist_lidx, phist_sparseMat_rowFunc, phist_sparseMat_rowFuncConstructor, void*, int*);
 // note: this function doesn't exist yet!
 //  void SUBR(crsMat_create_fromRowFuncAndContext_f)(TYPE(sparseMat_ptr)*,phist_const_comm_ptr,phist_const_context_ptr, 
 //      phist_lidx, phist_sparseMat_rowFunc,void*, int*);
@@ -957,7 +957,18 @@ extern "C" void SUBR(mvec_times_sdMat_inplace)(TYPE(mvec_ptr) V, TYPE(const_sdMa
 }
 
 extern "C" void SUBR(sparseMat_create_fromRowFuncAndContext)(TYPE(sparseMat_ptr) *vA, phist_const_context_ptr vctx,
-        phist_lidx maxnne,phist_sparseMat_rowFunc rowFunPtr,void* last_arg,
+        phist_lidx maxnne,phist_sparseMat_rowFunc rowFunPtr,
+        void* last_arg,
+        int *iflag)
+{
+  PHIST_CHK_IERR(SUBR(sparseMat_create_fromRowFuncWithConstructorAndContext)
+        (vA, vctx, maxnne, rowFunPtr, nullptr, last_arg, iflag), *iflag);
+}
+
+extern "C" void SUBR(sparseMat_create_fromRowFuncWithConstructorAndContext)(TYPE(sparseMat_ptr) *vA, phist_const_context_ptr vctx,
+        phist_lidx maxnne,phist_sparseMat_rowFunc rowFunPtr,
+        phist_sparseMat_rowFuncConstructor rowFunConstructorPtr,
+        void* last_arg,
         int *iflag)
 {
   //TODO - we don't actually support this up to now. So as a fallback, check if the given map
@@ -971,7 +982,7 @@ extern "C" void SUBR(sparseMat_create_fromRowFuncAndContext)(TYPE(sparseMat_ptr)
   phist_const_comm_ptr vcomm=NULL;
   PHIST_CHK_IERR(phist_map_get_comm(ctx->range_map,&vcomm,iflag),*iflag);
   PHIST_CHK_IERR(SUBR(crsMat_create_fromRowFunc_f)(vA, vcomm, N, N, maxnne,
-        rowFunPtr, last_arg, iflag), *iflag);
+        rowFunPtr, rowFunConstructorPtr, last_arg, iflag), *iflag);
   phist_const_map_ptr new_map=NULL;
   PHIST_CHK_IERR(SUBR(sparseMat_get_range_map)(*vA,&new_map,iflag),*iflag);
   phist_maps_compatible(ctx->range_map,new_map,iflag);
@@ -984,10 +995,20 @@ extern "C" void SUBR(sparseMat_create_fromRowFuncAndContext)(TYPE(sparseMat_ptr)
 }
 
 // NOTE: see the description of sparseMat_read_mm on how we treat input flags for this function
-extern "C" void SUBR(sparseMat_create_fromRowFunc)(TYPE(sparseMat_ptr) *A, phist_const_comm_ptr vcomm,
+extern "C" void SUBR(sparseMat_create_fromRowFunc)(TYPE(sparseMat_ptr) *vA, phist_const_comm_ptr vcomm,
         phist_gidx nrows, phist_gidx ncols, phist_lidx maxnne,
                 phist_sparseMat_rowFunc rowFunPtr, void* last_arg,
                 int *iflag)
+{
+  PHIST_CHK_IERR(SUBR(sparseMat_create_fromRowFuncWithConstructor)
+        (vA, vcomm, nrows, ncols, maxnne, rowFunPtr, nullptr, last_arg, iflag), *iflag);
+}
+
+extern "C" void SUBR(sparseMat_create_fromRowFuncWithConstructor)(TYPE(sparseMat_ptr) *A, phist_const_comm_ptr vcomm,
+        phist_gidx nrows, phist_gidx ncols, phist_lidx maxnne,
+                phist_sparseMat_rowFunc rowFunPtr, 
+                phist_sparseMat_rowFuncConstructor rowFunConstructorPtr, 
+                void* last_arg, int *iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
 /*
@@ -1028,7 +1049,7 @@ std::cout << "iflag&DIST2_COLOR="<<(*iflag&PHIST_SPARSEMAT_DIST2_COLOR)<<std::en
   }
 
   PHIST_CHK_IERR(SUBR(crsMat_create_fromRowFunc_f)(A, vcomm, nrows, ncols, maxnne,
-        rowFunPtr, last_arg, iflag), *iflag);
+        rowFunPtr, rowFunConstructorPtr, last_arg, iflag), *iflag);
 }
 
 

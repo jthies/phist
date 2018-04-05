@@ -871,6 +871,7 @@ extern "C" void SUBR(mvec_times_sdMat)(_ST_ alpha, TYPE(const_mvec_ptr) vV,
     TYPE(const_sdMat_ptr) vM, 
     _ST_ beta, TYPE(mvec_ptr) vW, int* iflag)
 {
+#include "phist_std_typedefs.hpp"
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   PHIST_CAST_PTR_FROM_VOID(const Traits<_ST_>::mvec_t,V,vV,*iflag);
   PHIST_CAST_PTR_FROM_VOID(const Traits<_ST_>::sdMat_t,M,vM,*iflag);
@@ -881,7 +882,7 @@ extern "C" void SUBR(mvec_times_sdMat)(_ST_ alpha, TYPE(const_mvec_ptr) vV,
   PHIST_CHK_IERR(phist_map_get_local_length(V->map,&nlocal,iflag),*iflag);
   PHIST_CHK_IERR(SUBR(mvec_num_vectors)(vV, &nvecv, iflag), *iflag);
   PHIST_CHK_IERR(SUBR(mvec_num_vectors)(vW, &nvecw, iflag), *iflag);
-  PHIST_TG_PREFIX(GEMM)("N", "N", &nlocal, &nvecw, &nvecv, &alpha, V->rawData, &nlocal, M->rawData, &M->lda, &beta, W->rawData, &nlocal);
+  PHIST_TG_PREFIX(GEMM)("N", "N", &nlocal, &nvecw, &nvecv, (st::blas_scalar_t*)&alpha, (st::blas_scalar_t*)V->rawData, &nlocal, (st::blas_scalar_t*)M->rawData, &M->lda, (st::blas_scalar_t*)&beta, (st::blas_scalar_t*)W->rawData, &nlocal);
   *iflag = PHIST_SUCCESS;
 }
 
@@ -889,6 +890,7 @@ extern "C" void SUBR(sdMat_times_sdMat)(_ST_ alpha, TYPE(const_sdMat_ptr) vA,
     TYPE(const_sdMat_ptr) vB, 
     _ST_ beta, TYPE(sdMat_ptr) vC, int* iflag)
 {
+#include "phist_std_typedefs.hpp"
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   PHIST_CAST_PTR_FROM_VOID(const Traits<_ST_>::sdMat_t,A,vA,*iflag);
   PHIST_CAST_PTR_FROM_VOID(const Traits<_ST_>::sdMat_t,B,vB,*iflag);
@@ -899,7 +901,7 @@ extern "C" void SUBR(sdMat_times_sdMat)(_ST_ alpha, TYPE(const_sdMat_ptr) vA,
   PHIST_CHK_IERR(SUBR(sdMat_get_nrows)(vC, &m, iflag), *iflag);
   PHIST_CHK_IERR(SUBR(sdMat_get_ncols)(vC, &n, iflag), *iflag);
   PHIST_CHK_IERR(SUBR(sdMat_get_ncols)(vA, &k, iflag), *iflag);
-  PHIST_TG_PREFIX(GEMM)("N", "N", &m, &n, &k, &alpha, A->rawData, &A->lda, B->rawData, &B->lda, &beta, C->rawData, &C->lda);
+  PHIST_TG_PREFIX(GEMM)("N", "N", &m, &n, &k, (st::blas_scalar_t*)&alpha, (st::blas_scalar_t*)A->rawData, &A->lda, (st::blas_scalar_t*)B->rawData, &B->lda, (st::blas_scalar_t*)&beta, (st::blas_scalar_t*)C->rawData, &C->lda);
   *iflag = PHIST_SUCCESS;
 }
 
@@ -907,6 +909,7 @@ extern "C" void SUBR(sdMatT_times_sdMat)(_ST_ alpha, TYPE(const_sdMat_ptr) vA,
     TYPE(const_sdMat_ptr) vB, 
     _ST_ beta, TYPE(sdMat_ptr) vC, int* iflag)
 {
+#include "phist_std_typedefs.hpp"
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   PHIST_CAST_PTR_FROM_VOID(const Traits<_ST_>::sdMat_t,A,vA,*iflag);
   PHIST_CAST_PTR_FROM_VOID(const Traits<_ST_>::sdMat_t,B,vB,*iflag);
@@ -918,7 +921,7 @@ extern "C" void SUBR(sdMatT_times_sdMat)(_ST_ alpha, TYPE(const_sdMat_ptr) vA,
   PHIST_CHK_IERR(SUBR(sdMat_get_ncols)(vC, &n, iflag), *iflag);
   PHIST_CHK_IERR(SUBR(sdMat_get_nrows)(vA, &k, iflag), *iflag);
 #ifdef IS_COMPLEX
-  PHIST_TG_PREFIX(GEMM)("H", "N", &m, &n, &k, &alpha, A->rawData, &A->lda, B->rawData, &B->lda, &beta, C->rawData, &C->lda);
+  PHIST_TG_PREFIX(GEMM)("H", "N", &m, &n, &k, (st::blas_scalar_t*)&alpha, (st::blas_scalar_t*)A->rawData, &A->lda, (st::blas_scalar_t*)B->rawData, &B->lda, (st::blas_scalar_t*)&beta, (st::blas_scalar_t*)C->rawData, &C->lda);
 #else
   PHIST_TG_PREFIX(GEMM)("T", "N", &m, &n, &k, &alpha, A->rawData, &A->lda, B->rawData, &B->lda, &beta, C->rawData, &C->lda);
 #endif
@@ -929,6 +932,7 @@ extern "C" void SUBR(sdMat_times_sdMatT)(_ST_ alpha, TYPE(const_sdMat_ptr) vA,
     TYPE(const_sdMat_ptr) vB,
     _ST_ beta, TYPE(sdMat_ptr) vC, int* iflag)
 {
+#include "phist_std_typedefs.hpp"
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   PHIST_CAST_PTR_FROM_VOID(const Traits<_ST_>::sdMat_t,A,vA,*iflag);
   PHIST_CAST_PTR_FROM_VOID(const Traits<_ST_>::sdMat_t,B,vB,*iflag);
@@ -940,7 +944,7 @@ extern "C" void SUBR(sdMat_times_sdMatT)(_ST_ alpha, TYPE(const_sdMat_ptr) vA,
   PHIST_CHK_IERR(SUBR(sdMat_get_ncols)(vC, &n, iflag), *iflag);
   PHIST_CHK_IERR(SUBR(sdMat_get_ncols)(vA, &k, iflag), *iflag);
 #ifdef IS_COMPLEX
-  PHIST_TG_PREFIX(GEMM)("N", "H", &m, &n, &k, &alpha, A->rawData, &A->lda, B->rawData, &B->lda, &beta, C->rawData, &C->lda);
+  PHIST_TG_PREFIX(GEMM)("N", "H", &m, &n, &k, (st::blas_cmplx_t*)&alpha, (st::blas_scalar_t*)A->rawData, &A->lda, (st::blas_scalar_t*)B->rawData, &B->lda, (st::blas_scalar_t*)&beta, (st::blas_scalar_t*)C->rawData, &C->lda);
 #else
   PHIST_TG_PREFIX(GEMM)("N", "T", &m, &n, &k, &alpha, A->rawData, &A->lda, B->rawData, &B->lda, &beta, C->rawData, &C->lda);
 #endif
@@ -957,7 +961,7 @@ extern "C" void SUBR(mvecT_times_mvec)(_ST_ alpha, TYPE(const_mvec_ptr) vV,
   PHIST_CAST_PTR_FROM_VOID(Traits<_ST_>::sdMat_t,M,vM,*iflag);
 
 #ifdef IS_COMPLEX
-    PHIST_CHK_IERR( *iflag = MatConjugate(V->v, &colVT), *iflag);
+    PHIST_CHK_IERR( *iflag = MatConjugate(V->v), *iflag);
 #endif
     Mat tmpM;
     PHIST_CHK_IERR( *iflag = MatTransposeMatMult(V->v, W->v, MAT_INITIAL_MATRIX, PETSC_DEFAULT, &tmpM), *iflag);
@@ -977,7 +981,7 @@ extern "C" void SUBR(mvecT_times_mvec)(_ST_ alpha, TYPE(const_mvec_ptr) vV,
     PHIST_CHK_IERR( *iflag = ISDestroy(&allCols), *iflag);
     PHIST_CHK_IERR( *iflag = MatDestroy(&tmpM), *iflag);
 #ifdef IS_COMPLEX
-    PHIST_CHK_IERR( *iflag = MatConjugate(V->v, &colVT), *iflag);
+    PHIST_CHK_IERR( *iflag = MatConjugate(V->v), *iflag);
 #endif
 
   *iflag = PHIST_SUCCESS;
@@ -1086,3 +1090,26 @@ extern "C" void SUBR(sparseMat_create_fromRowFunc)(TYPE(sparseMat_ptr) *A, phist
   *iflag = PHIST_SUCCESS;
 }
 
+// mixed real/complex operations are not implemented for PETSc because this library
+// can only be compiled with one data type at a time.
+#ifdef IS_COMPLEX
+# ifdef IS_DOUBLE
+extern "C" void SUBR(mvec_split)(TYPE(const_mvec_ptr) V, phist_Dmvec* reV, phist_Dmvec* imV, int *iflag)
+{
+  *iflag=PHIST_NOT_IMPLEMENTED;
+}
+extern "C" void SUBR(mvec_combine)(TYPE(mvec_ptr) V, phist_Dconst_mvec_ptr reV, phist_Dconst_mvec_ptr imV, int *iflag)
+{
+  *iflag=PHIST_NOT_IMPLEMENTED;
+}
+# else
+extern "C" void SUBR(mvec_split)(TYPE(const_mvec_ptr) V, phist_Smvec* reV, phist_Smvec* imV, int *iflag)
+{
+  *iflag=PHIST_NOT_IMPLEMENTED;
+}
+extern "C" void SUBR(mvec_combine)(TYPE(mvec_ptr) V, phist_Sconst_mvec_ptr reV, phist_Sconst_mvec_ptr imV, int *iflag)
+{
+  *iflag=PHIST_NOT_IMPLEMENTED;
+}
+# endif
+#endif
