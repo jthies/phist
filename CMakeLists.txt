@@ -687,6 +687,12 @@ option(PHIST_TIMINGS_FULL_TRACE "Try to print full call trace in the TimeMonitor
 include_directories(${PROJECT_SOURCE_DIR}/drivers/matfuncs)
 include_directories(${PROJECT_SOURCE_DIR}/drivers/matfuncs/scamac)
 include_directories(${CMAKE_BINARY_DIR}/drivers/matfuncs/scamac)
+set(SCAMAC_BUILD_MWE OFF CACHE BOOL "")
+# to avoid conflicts with e.g. ghost (which also uses cblas), disable blas and lapack in the scamac within phist.
+# they are used for allowing to compute some eigenvalues etc., but we are only interested in the matrix generator
+# itself.
+set(SCAMAC_USE_BLAS OFF CACHE BOOL "")
+set(SCAMAC_USE_LAPACK OFF CACHE BOOL "")
 add_subdirectory(drivers/matfuncs/scamac)
 
 if (NOT DEFINED PHIST_FORCE_INT_GIDX_DEFAULT)
