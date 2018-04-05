@@ -2164,6 +2164,8 @@ wtime = mpi_wtime()
     if (associated(initFunc)) then
       c_work=C_NULL_PTR
       ierr=initFunc(data_arg,c_work)
+    else
+      c_work=data_arg
     end if
 !$omp do schedule(static) ordered
     do i = 1, A%nRows, 1
