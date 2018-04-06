@@ -570,6 +570,38 @@ protected:
     EXPECT_EQ(0,iflag_);
   }
 
+  TEST_F(CLASSNAME,fromRowFuncWithConstructor)
+  {
+    if( !typeImplemented_ || problemTooSmall_ )
+      return;
+
+    ASSERT_TRUE(context_!=NULL);
+
+    TYPE(sparseMat_ptr) A=NULL;
+    PHIST_TG_PREFIX(idfunc_with_workspace_arg) arg;
+    arg.gnrows=_N_;
+    arg.gncols=_N_;
+    arg.scale=ST(3.0)+ST(5)*st::cmplx_I();
+    iflag_=PHIST_SPARSEMAT_QUIET;
+    SUBR(sparseMat_create_fromRowFuncWithConstructorAndContext)(&A,context_,1,
+        &PHIST_TG_PREFIX(idfunc_with_workspace),
+        &PHIST_TG_PREFIX(idfunc_init_workspace), &arg, &iflag_);
+    ASSERT_EQ(0,iflag_);
+
+    // check that AX=scale*X
+    SUBR(mvec_random)(vec1_,&iflag_);
+    EXPECT_EQ(0,iflag_);
+    SUBR(mvec_put_value)(vec2_,ST(99.9),&iflag_);
+    EXPECT_EQ(0,iflag_);
+    SUBR(sparseMat_times_mvec)(st::one(),A,vec1_,st::zero(),vec2_,&iflag_);
+    EXPECT_EQ(0,iflag_);
+    SUBR(mvec_scale)(vec1_,arg.scale,&iflag_);
+    EXPECT_EQ(0,iflag_);
+    EXPECT_NEAR(1.0,MvecsEqual(vec1_,vec2_),100*mt::eps());
+    SUBR(sparseMat_delete)(A,&iflag_);
+    EXPECT_EQ(0,iflag_);
+  }
+
 #endif // MATNAME_speye
 
 #if MATNAME == MATNAME_sprandn

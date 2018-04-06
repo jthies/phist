@@ -29,8 +29,8 @@ SET(CMAKE_SKIP_INSTALL_ALL_DEPENDENCY TRUE)
 # still under development, whereas the next development version may or may not do what
 # the function claims to do, depending on the status of the repository.
 set(PHIST_VERSION_MAJOR 1)
-set(PHIST_VERSION_MINOR 4)
-set(PHIST_VERSION_PATCH 1)
+set(PHIST_VERSION_MINOR 5)
+set(PHIST_VERSION_PATCH 2)
 set(PHIST_VERSION ${PHIST_VERSION_MAJOR}.${PHIST_VERSION_MINOR}.${PHIST_VERSION_PATCH})
 math(EXPR PHIST_VERSION_INT "( ( ${PHIST_VERSION_MAJOR} * 100 ) + ${PHIST_VERSION_MINOR} ) * 100 + ${PHIST_VERSION_PATCH}")
 
@@ -681,18 +681,19 @@ set(PHIST_BENCH_LARGE_N 134217728 CACHE STRING "Dimension for benchmarking tests
 
 option(PHIST_TIMINGS_FULL_TRACE "Try to print full call trace in the TimeMonitor/performance measurements (Warning: may generate *a lot* of output)." Off)
 
-# even without the essex-physics libs we include certain matfuncs for the
-# test cases SpinSZ and Graphene for testing purposes.
-find_package(ESSEX-PHYSICS CONFIG QUIET)
-if (ESSEX-PHYSICS_FOUND)
-  message(STATUS "Found ESSEX-Physics ${ESSEX-PHYSICS_VERSION}. We currently do NOT use matfuncs from this"
-                 "library because it will be superseded by the ESSEX Matrix Collection eventually.")
-  set(PHIST_HAVE_ESSEX_PHYSICS 0)
-#  include_directories(${ESSEX-PHYSICS_INCLUDE_DIRS})
-else()
-#  message(STATUS "ESSEX-Physics not found, will use supplementary implementation")
-  include_directories(${PROJECT_SOURCE_DIR}/drivers/matfuncs)
-endif()
+# some matfuncs (for row-wise scalable generation of test matrices) are
+# included in phist. In particular we now have the 'Scalable Matrix Collection' (scamac)
+# as a subtree. The stand-alone repo is at https://bitbucket.org/essex/MatrixCollection.
+include_directories(${PROJECT_SOURCE_DIR}/drivers/matfuncs)
+include_directories(${PROJECT_SOURCE_DIR}/drivers/matfuncs/scamac)
+include_directories(${CMAKE_BINARY_DIR}/drivers/matfuncs/scamac)
+set(SCAMAC_BUILD_MWE OFF CACHE BOOL "")
+# to avoid conflicts with e.g. ghost (which also uses cblas), disable blas and lapack in the scamac within phist.
+# they are used for allowing to compute some eigenvalues etc., but we are only interested in the matrix generator
+# itself.
+set(SCAMAC_USE_BLAS OFF CACHE BOOL "")
+set(SCAMAC_USE_LAPACK OFF CACHE BOOL "")
+add_subdirectory(drivers/matfuncs/scamac)
 
 if (NOT DEFINED PHIST_FORCE_INT_GIDX_DEFAULT)
 
@@ -811,11 +812,12 @@ else()
                            ${PROJECT_SOURCE_DIR}/drivers/matfuncs/brussolator.f90
                            ${PROJECT_SOURCE_DIR}/src/kernels/phist_mpi_kernels.cpp)
 endif()
-if (NOT ESSEX-PHYSICS_FOUND)
-  LIST(APPEND PHIST_KERNEL_SOURCE ${PROJECT_SOURCE_DIR}/drivers/matfuncs/graphene.c
+
+# these matfuncs have always been in phist and remain there for backwards compatibility,
+# even though the scamac can also generate them.
+LIST(APPEND PHIST_KERNEL_SOURCE ${PROJECT_SOURCE_DIR}/drivers/matfuncs/graphene.c
                                   ${PROJECT_SOURCE_DIR}/drivers/matfuncs/SpinChainSZ.c
                                   ${PROJECT_SOURCE_DIR}/drivers/matfuncs/part_tools.c)
-endif()
 
 # repartitioning with Isorropia/Zoltan
 if (PHIST_KERNEL_LIB STREQUAL "epetra")
@@ -953,18 +955,16 @@ LIST(APPEND library_list phist_solvers)
 LIST(APPEND library_list phist_precon)
 LIST(APPEND library_list phist_core)
 LIST(APPEND library_list phist_kernels_${PHIST_KERNEL_LIB})
+LIST(APPEND library_list scamac)
 LIST(APPEND library_list phist_tools)
 
-target_link_libraries(phist_kernels_${PHIST_KERNEL_LIB}                                                     phist_tools)
+target_link_libraries(phist_kernels_${PHIST_KERNEL_LIB}                                                     phist_tools scamac)
 target_link_libraries(phist_core                                          phist_kernels_${PHIST_KERNEL_LIB} phist_tools)
 target_link_libraries(phist_precon                             phist_core phist_kernels_${PHIST_KERNEL_LIB} phist_tools)
 target_link_libraries(phist_solvers               phist_precon phist_core phist_kernels_${PHIST_KERNEL_LIB} phist_tools)
 
 if (MPACK_FOUND)
       target_link_libraries(phist_core ${MPACK_LIBRARIES})
-endif()
-if (ESSEX-PHYSICS_FOUND)
-  target_link_libraries(phist_kernels_${PHIST_KERNEL_LIB} ${ESSEX-PHYSICS_LIBRARIES})
 endif()
 
 if(PHIST_KERNEL_LIB STREQUAL "ghost")
@@ -1244,7 +1244,6 @@ foreach (infile ${TG_C_Drivers})
     set_property(SOURCE ${tc}${filebase}.c APPEND PROPERTY OBJECT_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/src/tools/phist_gen_${tcl}.h)
     target_link_libraries(phist_${tc}${filebase} ${library_list})
     install(TARGETS phist_${tc}${filebase} RUNTIME DESTINATION bin OPTIONAL)
-    # added
     LIST(APPEND driver_list phist_${tc}${filebase})
   endforeach()
 endforeach()

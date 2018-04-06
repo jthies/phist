@@ -202,7 +202,7 @@ const char* filename,int* iflag)
 extern "C" void SUBR(sparseMat_read_mm_with_context)(TYPE(sparseMat_ptr)* A, phist_const_context_ptr ctx,
         const char* filename,int* iflag)
 {
-  PHIST_ENTER_FCN(__FUNCTION__);
+  PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
 
   if (filename==NULL)
   {
@@ -455,6 +455,74 @@ extern "C" void SUBR(sdMat_get_ncols)(TYPE(const_sdMat_ptr) vM, int* ncols, int*
   *ncols = (int)(M->traits.ncols);
 }
 
+// the default implementation for this function calls mvec_from_device, but in general with GHOST we do 
+// not replicate the device memory on the host, so that may fail. This implementation downloads the     
+// device memory directly into the user array if possible and uses temporary storage otherwise.
+void SUBR(mvec_get_data)(TYPE(const_mvec_ptr) vV, _ST_* data, phist_lidx lda, int output_row_major, int* iflag)
+{
+  PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
+  PHIST_CAST_PTR_FROM_VOID(ghost_densemat,V, vV, *iflag);
+
+  ghost_type ghost_type;
+  PHIST_CHK_GERR(ghost_type_get(&ghost_type),*iflag);
+    
+    // in the end we copy from buffer to data if they do not coincide,
+    // including a possible switch from row- to colmajor or vice versa.
+    // buffer will either point to the vector data (if this is not a GPU process),
+    // to data itself (if we can download directly into buffer because both are row- or
+    // colmajor), or to temporary storage. In the latter case we have to allocate and
+    // delete it.
+    _ST_* buffer=data;
+    size_t ldbuf=lda;
+    bool my_buffer=false;
+    
+  if (ghost_type == GHOST_TYPE_CUDA)
+  {
+    // check if we can download directly into the user-provided buffer.     
+    // this is the case if both V and the user data are row- or col-major.
+    if ( (V->traits.storage==GHOST_DENSEMAT_ROWMAJOR && !output_row_major) ||
+         (V->traits.storage==GHOST_DENSEMAT_COLMAJOR &&  output_row_major) )
+    {
+      buffer=new _ST_[V->stride*V->nblock];
+      ldbuf=V->stride;
+      my_buffer=true;
+    }
+    
+    // download the full densemat memory (there's no ghost function for strided downloads, so if this is a view
+    // in row-major order, this may mean some memory overhead)
+    PHIST_CHK_GERR(ghost_cu_download2d( (void*)buffer, ldbuf*V->elSize,
+                                        V->cu_val,   V->stride*V->elSize, 
+                                        V->blocklen*V->elSize,V->nblock),*iflag);  
+  }
+  else // CPU process
+  {
+    buffer=(_ST_*)(V->val);
+    ldbuf=V->stride;
+  }
+  // copy/transpose data if necessary
+  if (buffer!=data)
+  {
+    // trust branch prediction
+    for (phist_lidx i=0; i<V->map->dim; i++)
+    {
+      for (int j=0; j<V->traits.ncols; j++)
+      {
+        if (output_row_major)
+        {
+            if ( V->traits.storage==GHOST_DENSEMAT_ROWMAJOR) data[i*lda+j]=buffer[i*ldbuf+j];
+            else                                             data[i*lda+j]=buffer[j*ldbuf+i];
+        }
+        else
+        {
+            if ( V->traits.storage==GHOST_DENSEMAT_ROWMAJOR) data[j*lda+i]=buffer[i*ldbuf+j];
+            else                                             data[j*lda+i]=buffer[j*ldbuf+i];
+        }
+      }
+    }
+  }
+  if (my_buffer) delete [] buffer;
+  *iflag=0;
+}
 
 extern "C" void SUBR(mvec_extract_view)(TYPE(mvec_ptr) vV, _ST_** val, phist_lidx* lda, int* iflag)
 {
@@ -1987,11 +2055,31 @@ PHIST_TASK_BEGIN(ComputeTask)
 }
 #endif
 
+void SUBR(sparseMat_create_fromRowFunc)(TYPE(sparseMat_ptr) *A, phist_const_comm_ptr comm,
+        phist_gidx nrows, phist_gidx ncols, phist_lidx maxnne,
+        phist_sparseMat_rowFunc rowFunPtr,
+        void* last_arg, int *iflag)
+{
+  SUBR(sparseMat_create_fromRowFuncWithConstructor)(A, comm, nrows, ncols, maxnne, rowFunPtr, nullptr, last_arg, iflag);
+}
+/*! very similar to sparseMat_create_fromRowFuncAndContext but with an additional argument as required by the 
+     ESSEX scalable matrix collection (scamac) included in PHIST. The constructor function will be
+     called by each application thread before and after filling the matrix to create and delete a
+     workspace for the row function.
+*/
+void SUBR(sparseMat_create_fromRowFuncAndContext)(TYPE(sparseMat_ptr) *A, phist_const_context_ptr ctx,
+        phist_lidx maxnne,phist_sparseMat_rowFunc rowFunPtr,
+        void* last_arg, int *iflag)
+{
+  SUBR(sparseMat_create_fromRowFuncWithConstructorAndContext)(A, ctx, maxnne, rowFunPtr, nullptr, last_arg, iflag);
+}
+
 //! create a sparse matrix from a row func and use a distribution prescribed by a given map
-extern "C" void SUBR(sparseMat_create_fromRowFuncAndContext)(TYPE(sparseMat_ptr) *vA,
-        phist_const_context_ptr vctx,
-        phist_lidx maxnne,phist_sparseMat_rowFunc rowFunPtr,void* last_arg,
-        int *iflag)
+extern "C" void SUBR(sparseMat_create_fromRowFuncWithConstructorAndContext)(TYPE(sparseMat_ptr) *vA,
+        phist_const_context_ptr vctx, phist_lidx maxnne,
+        phist_sparseMat_rowFunc rowFunPtr, 
+        phist_sparseMat_rowFuncConstructor rowFunConstructorPtr, 
+        void* last_arg, int *iflag)
 {
 #include "phist_std_typedefs.hpp"
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
@@ -2022,6 +2110,7 @@ extern "C" void SUBR(sparseMat_create_fromRowFuncAndContext)(TYPE(sparseMat_ptr)
 
   ghost_sparsemat_src_rowfunc src = GHOST_SPARSEMAT_SRC_ROWFUNC_INITIALIZER;
   src.func = rowFunPtr;
+  src.funcinit = rowFunConstructorPtr;
   src.maxrowlen = maxnne;
   src.arg=last_arg;
   // TODO: the shape is actually determined by the range and domain maps, but
@@ -2103,9 +2192,11 @@ PHIST_TASK_END(iflag);
   return;
 }
 
-extern "C" void SUBR(sparseMat_create_fromRowFunc)(TYPE(sparseMat_ptr) *vA, phist_const_comm_ptr vcomm,
+extern "C" void SUBR(sparseMat_create_fromRowFuncWithConstructor)(TYPE(sparseMat_ptr) *vA, phist_const_comm_ptr vcomm,
                 phist_gidx nrows, phist_gidx ncols, phist_lidx maxnne,
-                phist_sparseMat_rowFunc rowFunPtr, void* last_arg, int *iflag)
+                phist_sparseMat_rowFunc rowFunPtr, 
+                phist_sparseMat_rowFuncConstructor rowFunConstructorPtr, 
+                void* last_arg, int *iflag)
 {
 #include "phist_std_typedefs.hpp"
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
@@ -2123,6 +2214,7 @@ extern "C" void SUBR(sparseMat_create_fromRowFunc)(TYPE(sparseMat_ptr) *vA, phis
   
   ghost_sparsemat_src_rowfunc src = GHOST_SPARSEMAT_SRC_ROWFUNC_INITIALIZER;
   src.func = rowFunPtr;
+  src.funcinit = rowFunConstructorPtr;
   src.maxrowlen = maxnne;
   src.arg=last_arg;
   src.gnrows = nrows;

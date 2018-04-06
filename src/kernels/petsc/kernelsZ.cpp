@@ -44,6 +44,7 @@
 #include "phist_gen_z.h"
 #if defined(PETSC_USE_REAL_DOUBLE) && defined(PETSC_USE_COMPLEX)
 #include "kernels_def.hpp"
+#include "../common/default_mvec_get_data_def.hpp"
 #include "../common/default_context_def.hpp"
 #include "../common/kernels_no_gpu.cpp"
 #include "../common/kernels_no_carp.cpp"
@@ -53,5 +54,17 @@
 #else
 #include "../common/kernels_no_impl.cpp"
 #endif
+
+// We can't provide this function because PETSc forces you to choose a single data type at compile time.
+void phist_Zmvec_split(phist_Zconst_mvec_ptr V, phist_Dmvec* reV, phist_Dmvec* imV, int *iflag)
+{
+  *iflag=PHIST_NOT_IMPLEMENTED;
+}
+
+// We can't provide this function because PETSc forces you to choose a single data type at compile time.
+void phist_Zmvec_combine(phist_Zmvec_ptr V, phist_Dconst_mvec_ptr reV, phist_Dconst_mvec_ptr imV, int *iflag)
+{
+  *iflag=PHIST_NOT_IMPLEMENTED;
+}
 
 #endif

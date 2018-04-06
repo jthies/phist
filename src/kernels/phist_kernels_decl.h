@@ -176,6 +176,27 @@ void SUBR(mvec_get_map)(TYPE(const_mvec_ptr) V, phist_const_map_ptr* map, int* i
 //! retrieve number of vectors/columns in V \ingroup mvec
 void SUBR(mvec_num_vectors)(TYPE(const_mvec_ptr) V, int* nvec, int* iflag);
 
+//! copy the entries of an mvec into a user-provided array.
+
+//! If the mvec V has n local rows and k columns (as returned by mvec_my_length and mvec_num_vectors, resp.),
+//! then ...
+//! If input_row_major==1, then data[i*lda+j], i=0..n-1, j=0..k-1
+//! will contain the element in row i and column j of V.
+//! If input_row_major==0, then data[j*lda+i], i=0..n-1, j=0..k-1
+//! will contain the element in row i and column j of V.
+//!
+//! in any case, only the elements mentioned above are modified in the data array,
+//! regardless of the lda argument.
+//!
+//! Kernel libraries that support GPUs must make sure that the device memory is
+//! copied into the buffer, even if the host side is allocated
+//! (cf. PHIST_MVEC_REPLICATE_DEVICE_MEM flag). Hence, the mvec itself may not
+//! strictly speaking be const because a device sync (download) is needed.
+//!
+//! There is a corresponding function mvec_set_data for the reverse operation.
+//!
+void SUBR(mvec_get_data)(TYPE(const_mvec_ptr) V, _ST_* data, phist_lidx lda, int output_row_major, int* iflag);
+
 //! extract view from multi-vector. \ingroup mvec
 
 //! Sets the user-provided val pointer to point to the
@@ -566,6 +587,27 @@ void SUBR(sparseMat_create_fromRowFunc)(TYPE(sparseMat_ptr) *A, phist_const_comm
 void SUBR(sparseMat_create_fromRowFuncAndContext)(TYPE(sparseMat_ptr) *vA, phist_const_context_ptr ctx,
         phist_lidx maxnne,phist_sparseMat_rowFunc rowFunPtr,void* last_arg,
         int *iflag);
+
+/*! very similar to sparseMat_create_fromRowFunc but with an additional argument as required by the 
+     ESSEX scalable matrix collection (scamac) included in PHIST. The constructor function will be
+     called by each application thread before and after filling the matrix to create and delete a
+     workspace for the row function.
+*/
+void SUBR(sparseMat_create_fromRowFuncWithConstructor)(TYPE(sparseMat_ptr) *A, phist_const_comm_ptr comm,
+        phist_gidx nrows, phist_gidx ncols, phist_lidx maxnne,
+        phist_sparseMat_rowFunc rowFunPtr,
+        phist_sparseMat_rowFuncConstructor rowFunConstructorPtr,
+        void* last_arg, int *iflag);
+
+/*! very similar to sparseMat_create_fromRowFuncAndContext but with an additional argument as required by the 
+     ESSEX scalable matrix collection (scamac) included in PHIST. The constructor function will be
+     called by each application thread before and after filling the matrix to create and delete a
+     workspace for the row function.
+*/
+void SUBR(sparseMat_create_fromRowFuncWithConstructorAndContext)(TYPE(sparseMat_ptr) *vA, phist_const_context_ptr ctx,
+        phist_lidx maxnne,phist_sparseMat_rowFunc rowFunPtr,
+        phist_sparseMat_rowFuncConstructor rowFunConstructorPtr,
+        void* last_arg, int *iflag);
                 
 
 // These are not used or tested, perhaps useful in the future?

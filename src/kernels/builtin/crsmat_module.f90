@@ -113,6 +113,14 @@ module crsmat_module
       TYPE(c_ptr), value :: data_arg
       integer(C_INT) :: ierr
     end function matRowFunc
+      
+    function matRowFuncConstructor(data_arg, workspace_ptr) bind(C) result(ierr)
+      use, intrinsic :: iso_c_binding
+      TYPE(c_ptr), value :: data_arg
+      TYPE(c_ptr)         :: workspace_ptr
+      integer(C_INT) :: ierr
+    end function matRowFuncConstructor
+
   end interface
 
 contains
@@ -2045,7 +2053,8 @@ end subroutine permute_local_matrix
 
   !==================================================================================
   !> read MatrixMarket file
-  subroutine phist_DcrsMat_create_fromRowFunc(A_ptr, comm_ptr,nrows, ncols, maxnne_per_row, rowFunc_ptr, data_arg, ierr) &
+  subroutine phist_DcrsMat_create_fromRowFunc(A_ptr, comm_ptr,nrows, ncols, maxnne_per_row, &
+    & rowFunc_ptr, initFunc_ptr, data_arg, ierr) &
     & bind(C,name='phist_DcrsMat_create_fromRowFunc_f') ! circumvent bug in opari (openmp instrumentalization)
     use, intrinsic :: iso_c_binding
     use env_module, only: newunit
@@ -2057,11 +2066,14 @@ end subroutine permute_local_matrix
     integer(C_INT32_T), value           :: maxnne_per_row
     type(C_PTR),        value :: data_arg
     type(C_FUNPTR),     value       :: rowFunc_ptr
+    type(C_FUNPTR),     value       :: initFunc_ptr
     integer(C_INT),     intent(out) :: ierr
     !--------------------------------------------------------------------------------
     logical :: repart, d2clr, d2clr_and_permute
     type(CrsMat_t), pointer :: A
     procedure(matRowFunc), pointer :: rowFunc => null()
+    procedure(matRowFuncConstructor), pointer :: initFunc => null()
+    TYPE(c_ptr) :: c_work
     !--------------------------------------------------------------------------------
     integer(kind=G_GIDX_T), allocatable :: idx(:,:)
     real(kind=8), allocatable :: val(:)
@@ -2094,6 +2106,9 @@ end subroutine permute_local_matrix
     ierr=0
     ! get procedure pointer
     call c_f_procpointer(rowFunc_ptr, rowFunc)
+    if (c_associated(initFunc_ptr)) then
+      call c_f_procpointer(initFunc_ptr, initFunc)
+    end if
     call c_f_pointer(comm_ptr, comm)
 
     allocate(A)
@@ -2145,11 +2160,18 @@ wtime = mpi_wtime()
     !         array on-the-fly. It also saves us the trouble of making
     !         most things in the loop thread-private.
     A%row_offset(1) = 1_8
-!$omp parallel do schedule(static) ordered
+!$omp parallel private(c_work)
+    if (associated(initFunc)) then
+      c_work=C_NULL_PTR
+      ierr=initFunc(data_arg,c_work)
+    else
+      c_work=data_arg
+    end if
+!$omp do schedule(static) ordered
     do i = 1, A%nRows, 1
 !$omp ordered
       i_ = A%row_map%distrib(A%row_map%me)+i-2
-      ierr=rowFunc(i_, nne, idx(:,1), val,data_arg)
+      ierr=rowFunc(i_, nne, idx(:,1), val,c_work)
       j = A%row_offset(i)
       j_ = j + int(nne-1,kind=8)
       A%global_col_idx(j:j_) = idx(1:nne,1)+1
@@ -2157,6 +2179,10 @@ wtime = mpi_wtime()
       A%row_offset(i+1) = A%row_offset(i)+int(nne,kind=8)
 !$omp end ordered
     end do
+    if (associated(initFunc)) then
+      ierr=initFunc(data_arg, c_work)
+    end if
+!$omp end parallel
     A%nEntries = A%row_offset(A%nRows+1)-1
 
 call mpi_barrier(A%row_map%comm, ierr)

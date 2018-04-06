@@ -25,6 +25,28 @@ void SUBR(read_mat)(const char* filebase,phist_const_comm_ptr comm,int nglob, in
   //! If arg!=NULL, the entries are scaled by *((_ST_*)arg)
   int PHIST_TG_PREFIX(idfunc)(ghost_gidx row, ghost_lidx *len, ghost_gidx* cols, void* vval, void *arg);
 
+  //! some row function that uses a workspace. Will only create the identity matrix if
+  //! initialized using idfunc_init_workspace is called. Requires arg to be a struct with
+  //! a pointer to idfunc_with_workspace_arg.
+  int PHIST_TG_PREFIX(idfunc_with_workspace)(ghost_gidx row, ghost_lidx *len, ghost_gidx* cols, void* vval, void *arg);
+
+  //! 'constructor'
+  int PHIST_TG_PREFIX(idfunc_init_workspace)(void *arg, void** work);
+  
+  //! argument for idfunc_with_workspace
+  typedef struct
+  {
+    phist_gidx gnrows;
+    phist_gidx gncols;
+    _ST_ scale;
+  } PHIST_TG_PREFIX(idfunc_with_workspace_arg);
+
+  typedef struct
+  {
+    _ST_* data;
+    PHIST_TG_PREFIX(idfunc_with_workspace_arg)* arg;
+  } PHIST_TG_PREFIX(idfunc_workspace);
+
   //! creates a simple tridiagonal Hermitian and positive definite matrix. Before passing this function to
   //! sparseMat_create_fromRowFunc, it must be initialized by calling it with row=-1 and cols[0] containing
   //! the global number of rows (gnrows). The maximum row length is 3.
