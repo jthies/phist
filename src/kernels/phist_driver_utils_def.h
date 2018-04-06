@@ -170,7 +170,8 @@ static int phist_scamac_func(ghost_gidx row, ghost_lidx *rowlen, ghost_gidx *col
     return 0;
 }
 
-static int phist_scamac_funcinit(void *arg, void **work) {
+static int phist_scamac_funcinit(void *arg, void **work) 
+{
   ScamacGenerator * gen = (ScamacGenerator *) arg;
   if (*work) {// free
     struct phist_scamac_work_st * my_work = *work;
@@ -183,6 +184,7 @@ static int phist_scamac_funcinit(void *arg, void **work) {
     scamac_workspace_alloc(my_work->gen, &(my_work->ws));
     *work = my_work;
   } 
+  return 0;
 }
 
 
