@@ -15,11 +15,7 @@
 #define PHIST_HIGH_PRECISION_KERNELS
 #endif
 
-#ifdef PHIST_HAVE_BELOS
-#include "phist_trilinos_type_config.h"
-#endif
-
-#ifdef PHIST_HAVE_ANASAZI
+#if defined(PHIST_HAVE_BELOS)||defined(PHIST_HAVE_ANASAZI)
 #include "phist_trilinos_type_config.h"
 #endif
 
@@ -1009,7 +1005,7 @@ return;
 
 // todo!
 #if defined(PHIST_HAVE_ANASAZI)&&defined(PHIST_TRILINOS_TYPE_AVAIL)
-#ifndef ORTHOG_WITH_HPD_B
+
   // compare our overloaded SVQB (based on orthog) with another Anasazi OrthoManager class.
   TEST_F(CLASSNAME,anasazi_ortho_manager)
   {
@@ -1068,13 +1064,8 @@ return;
       _MT_ dep_tol=mt::eps();
       _MT_ sing_tol=mt::eps();
 
-      //todo: we don't use different orthogs
       Anasazi::SVQBOrthoManager<_ST_,MV,OP> myOrtho(Op,false);
-/* note: it seems that this ortho-manager doesn't treat the operator Op correctly
-      Belos::DGKSOrthoManager<_ST_,MV,OP> theirOrtho("Belos/DGKS",Op,
-                                                  max_blk_ortho, blk_tol, dep_tol, sing_tol);
-*/
-      ::Anasazi::SVQBOrthoManager<_ST_,MV,OP> theirOrtho(Op,false);
+      ::Anasazi::ICGSOrthoManager<_ST_,MV,OP> theirOrtho(Op,false);
 
       int my_ret=myOrtho.projectAndNormalize(*W,V_array,C_array,B);
       int their_ret=theirOrtho.projectAndNormalize(*W2,V_array,C2_array,B2);
@@ -1173,5 +1164,4 @@ return;
     }
   }
 
-#endif
 #endif

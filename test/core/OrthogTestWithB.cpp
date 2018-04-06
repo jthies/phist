@@ -28,13 +28,15 @@
 #include "Belos_PhistAdapter.hpp"
 #include "phist_BelosOperatorTraits.hpp"
 #include "BelosICGSOrthoManager.hpp"
+// reference ortho managers
 #include "BelosIMGSOrthoManager.hpp"
 #include "BelosDGKSOrthoManager.hpp"
 
-//#define PHIST_CLASSFILE_DEF "phist_BelosICGSOrthoManager.hpp"
-//#include "phist_gen_all.h"
+// our own orthog-based adaptation is included in the cpp file without 'WithB',
+// so we don't include it here to avoid multiple definition of symbols.
+#include "BelosICGSOrthoManager.hpp"
 #endif
-/*
+
 #ifdef PHIST_HAVE_ANASAZI
 #include "phist_types.hpp"
 #include "phist_core.hpp"
@@ -43,13 +45,16 @@
 #include "Anasazi_PhistAdapter.hpp"
 #include "phist_AnasaziOperatorTraits.hpp"
 
-#include "AnasaziSVQBOrthoManager.hpp"
+// we use this as reference ortho manager:
+#include "AnasaziICGSOrthoManager.hpp"
 
-//#define PHIST_CLASSFILE_DEF "phist_AnasaziSVQBOrthoManager.hpp"
-//#include "phist_gen_all.h"
+// and this is our orthog-based adaptation of the SVQB ortho manager,
+// the symbols are included in the test without 'WithB'.
+#include "AnasaziSVQBOrthoManager.hpp"
 #endif
-*/
-using namespace testing;
+
+
+using namespace ::testing;
 
 #define CLASSFILE_DEF "OrthogTest_def.hpp"
 #define _BASENAME_ OrthogTestWithB
