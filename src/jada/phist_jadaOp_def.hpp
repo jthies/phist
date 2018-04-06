@@ -74,7 +74,8 @@ class TYPE(jadaOp_data)
   TYPE(const_linearOp_ptr)    AB_op;   // operator of the general matrix A
   TYPE(const_linearOp_ptr)    B_op;   // operator of the hpd. matrix B, assumed I when NULL
   TYPE(const_linearOp_ptr)    leftPrecon_op;   // left preconditioning operator
-  TYPE(linearOp_ptr)    Proj_op;   // projection operator
+  TYPE(linearOp_ptr)    preProj_op;   // pre-projection operator
+  TYPE(linearOp_ptr)    postProj_op;    // post-projection operator
   TYPE(const_linearOp_ptr)    Prec_op;   // projection operator
   TYPE(linearOp_ptr)    Skew_op;   // projection operator
   TYPE(linearOp_ptr)    k_op; //jadaOp with k_wrapper
@@ -147,11 +148,11 @@ extern "C" void SUBR(jadaOp_delete)(TYPE(linearOp_ptr) jdOp, int *iflag)
   }
   delete jadaOp->k_op;
 
-  if (jadaOp->Proj_op!=NULL)
+  if (jadaOp->preProj_op!=NULL)
   {
-    PHIST_CHK_IERR(jadaOp->Proj_op->destroy(jadaOp->Proj_op, iflag), *iflag);
+    PHIST_CHK_IERR(jadaOp->preProj_op->destroy(jadaOp->preProj_op, iflag), *iflag);
   }
-  delete jadaOp->Proj_op;
+  delete jadaOp->preProj_op;
 
   // delete jadaOp
   delete jadaOp;
@@ -288,6 +289,8 @@ extern "C" void SUBR(projection_Op_create)(TYPE(const_mvec_ptr) V, TYPE(const_mv
     PHIST_CHK_IERR(SUBR(mvec_get_map)(W,&mapW,iflag),*iflag)
     proj_Op->range_map = mapW;
     proj_Op->domain_map = mapV;
+    proj_Op->use_transpose = 0;
+    proj_Op->shifts = NULL;
 
 }
 
@@ -372,9 +375,231 @@ extern "C" void SUBR(jadaOp_variable_delete)(TYPE(linearOp_ptr) jdOp, int *iflag
   delete jadaOp;
 }
 
+// deallocate jadaOp_variable struct
+extern "C" void SUBR(jadaOp_variable_delete_new)(TYPE(linearOp_ptr) jdOp, int *iflag)
+{
+  PHIST_ENTER_FCN(__FUNCTION__);
+  *iflag = 0;
+
+  if( jdOp == NULL )
+    return;
+
+  if (jdOp->A == NULL) return;
+
+  // get jadaOp_data
+  TYPE(jadaOp_data) *jadaOp = (TYPE(jadaOp_data)*) jdOp->A;
+
+  // delete inner operator
+  if( jadaOp->k_op != NULL)
+  {
+    PHIST_CHK_IERR(jadaOp->k_op->destroy(jadaOp->k_op,iflag),*iflag);
+  }
+  delete jadaOp->k_op;
+
+  // delete jadaOp
+  delete jadaOp;
+}
+
+extern "C" void SUBR(jadaOp_variable_create)(TYPE(const_linearOp_ptr)    AB_op,
+                         TYPE(const_linearOp_ptr)     B_op, TYPE(const_linearOp_ptr)    Prec_op,
+                         TYPE(const_mvec_ptr)  V,       TYPE(const_mvec_ptr)  BV,
+                         const _ST_            sigma[], const _ST_ sigma_prec[], int    nvec,
+                         TYPE(linearOp_ptr)          jdOp, phist_Eprojection method,
+                         int onlyPrec, int*                  iflag)
+{
+#include "phist_std_typedefs.hpp"
+  PHIST_ENTER_FCN(__FUNCTION__);
+  *iflag = 0;
+
+  // allocate jadaOp struct
+  TYPE(jadaOp_data) *myOp = new TYPE(jadaOp_data); 
+
+  if (AB_op->apply_shifted==NULL)
+  {
+    PHIST_SOUT(PHIST_ERROR, "operator passed to %s does not support apply_shifted\n"
+                            "(file %s, line %d)\n",__FUNCTION__,__FILE__,__LINE__);
+  *iflag=-1;
+  return;
+  }
+
+  TYPE(linearOp) *AB_copy = new TYPE(linearOp);
+  *AB_copy = *AB_op;
+  AB_copy->shifts = (_ST_*)sigma;
+  AB_copy->use_transpose=0;
+  myOp->AB_op = AB_copy;
+  
+  if(Prec_op != NULL)
+  {
+    TYPE(linearOp) *Prec_copy = new TYPE(linearOp);
+    *Prec_copy = *Prec_op;
+    Prec_copy->shifts = (_ST_*)sigma_prec;
+    Prec_copy->use_transpose=0;
+    myOp->Prec_op = Prec_copy;
+  }
+  
+  // setup jadaOp members
+  myOp->B_op   = B_op;
+  myOp->leftPrecon_op = NULL;
+  myOp->V      = V;
+  myOp->BV     = (BV != NULL ? BV     : V);
+  myOp->num_shifts = nvec;
+  myOp->sigma  = sigma;
+  myOp->projType = onlyPrec;
+  myOp->k_op = new TYPE(linearOp);
+  PHIST_CHK_IERR(SUBR(linearOp_product_create)(myOp->k_op,iflag),*iflag);
+  
+  int nvecp=0;
+  if (V!=NULL)
+  {
+    PHIST_CHK_IERR(SUBR(mvec_num_vectors)(V, &nvecp, iflag), *iflag);
+  }  
+  
+  // case NONE
+  if(method==phist_PROJ_NONE)
+  {
+    PHIST_CHK_IERR(SUBR(linearOp_product_extend)(myOp->k_op,myOp->AB_op,iflag),*iflag);
+  }
+  
+  // case PRE
+  else if(method==phist_PROJ_PRE)
+  {
+    myOp->preProj_op = new TYPE(linearOp);
+    PHIST_CHK_IERR(SUBR(projection_Op_create)(myOp->V,myOp->BV,myOp->preProj_op,iflag),*iflag);
+    
+    PHIST_CHK_IERR(SUBR(linearOp_product_extend)(myOp->k_op,myOp->preProj_op,iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(linearOp_product_extend)(myOp->k_op,myOp->AB_op,iflag),*iflag);
+  }
+  
+  // case POST
+  else if(method==phist_PROJ_POST)
+  {
+    myOp->postProj_op = new TYPE(linearOp);
+    PHIST_CHK_IERR(SUBR(projection_Op_create)(myOp->V,myOp->BV,myOp->postProj_op,iflag),*iflag);
+    myOp->postProj_op->use_transpose = 1;
+  
+    PHIST_CHK_IERR(SUBR(linearOp_product_extend)(myOp->k_op,myOp->AB_op,iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(linearOp_product_extend)(myOp->k_op,myOp->postProj_op,iflag),*iflag);
+  }
+
+  // case PRE_POST
+  else if(method==phist_PROJ_PRE_POST)
+  {
+    myOp->preProj_op = new TYPE(linearOp);
+    PHIST_CHK_IERR(SUBR(projection_Op_create)(myOp->V,myOp->BV,myOp->preProj_op,iflag),*iflag);
+    myOp->postProj_op = new TYPE(linearOp);
+    PHIST_CHK_IERR(SUBR(projection_Op_create)(myOp->V,myOp->BV,myOp->postProj_op,iflag),*iflag);
+    myOp->postProj_op->use_transpose = 1;  
+      
+    PHIST_CHK_IERR(SUBR(linearOp_product_extend)(myOp->k_op,myOp->preProj_op,iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(linearOp_product_extend)(myOp->k_op,myOp->AB_op,iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(linearOp_product_extend)(myOp->k_op,myOp->postProj_op,iflag),*iflag);
+  }
+
+  // case SKEW
+  else if(method==phist_PROJ_SKEW)
+  {
+    if(onlyPrec == 1)
+    {
+      PHIST_CHK_IERR(SUBR(linearOp_product_extend)(myOp->k_op,myOp->AB_op,iflag),*iflag);
+      PHIST_CHK_IERR(SUBR(linearOp_product_extend)(myOp->k_op,myOp->Prec_op,iflag),*iflag);
+    }
+    else
+    {
+      myOp->Skew_op = new TYPE(linearOp);
+      PHIST_CHK_IERR(SUBR(skew_projection_Op_create)(myOp->Prec_op,myOp->V,myOp->BV,myOp->Skew_op,iflag),*iflag);
+    
+      PHIST_CHK_IERR(SUBR(linearOp_product_extend)(myOp->k_op,myOp->AB_op,iflag),*iflag);
+      PHIST_CHK_IERR(SUBR(linearOp_product_extend)(myOp->k_op,myOp->Prec_op,iflag),*iflag);
+      PHIST_CHK_IERR(SUBR(linearOp_product_extend)(myOp->k_op,myOp->Skew_op,iflag),*iflag);
+    }
+  }
+
+  // case ALL
+  else if(method==phist_PROJ_ALL)
+  {
+    if(onlyPrec == 1)
+    {
+      myOp->preProj_op = new TYPE(linearOp);
+      PHIST_CHK_IERR(SUBR(projection_Op_create)(myOp->V,myOp->BV,myOp->preProj_op,iflag),*iflag);
+      myOp->postProj_op = new TYPE(linearOp);
+      PHIST_CHK_IERR(SUBR(projection_Op_create)(myOp->V,myOp->BV,myOp->postProj_op,iflag),*iflag);
+      myOp->postProj_op->use_transpose = 1; 
+    
+      PHIST_CHK_IERR(SUBR(linearOp_product_extend)(myOp->k_op,myOp->preProj_op,iflag),*iflag);
+      PHIST_CHK_IERR(SUBR(linearOp_product_extend)(myOp->k_op,myOp->AB_op,iflag),*iflag);
+      PHIST_CHK_IERR(SUBR(linearOp_product_extend)(myOp->k_op,myOp->postProj_op,iflag),*iflag);
+      PHIST_CHK_IERR(SUBR(linearOp_product_extend)(myOp->k_op,myOp->Prec_op,iflag),*iflag);
+    }
+    else
+    {
+      myOp->preProj_op = new TYPE(linearOp);
+      PHIST_CHK_IERR(SUBR(projection_Op_create)(myOp->V,myOp->BV,myOp->preProj_op,iflag),*iflag);
+      myOp->postProj_op = new TYPE(linearOp);
+      PHIST_CHK_IERR(SUBR(projection_Op_create)(myOp->V,myOp->BV,myOp->postProj_op,iflag),*iflag);
+      myOp->postProj_op->use_transpose = 1;
+      myOp->Skew_op = new TYPE(linearOp);
+      PHIST_CHK_IERR(SUBR(skew_projection_Op_create)(myOp->Prec_op,myOp->V,myOp->BV,myOp->Skew_op,iflag),*iflag);
+        
+      PHIST_CHK_IERR(SUBR(linearOp_product_extend)(myOp->k_op,myOp->preProj_op,iflag),*iflag);
+      PHIST_CHK_IERR(SUBR(linearOp_product_extend)(myOp->k_op,myOp->AB_op,iflag),*iflag);
+      PHIST_CHK_IERR(SUBR(linearOp_product_extend)(myOp->k_op,myOp->postProj_op,iflag),*iflag);
+      PHIST_CHK_IERR(SUBR(linearOp_product_extend)(myOp->k_op,myOp->Prec_op,iflag),*iflag);
+      PHIST_CHK_IERR(SUBR(linearOp_product_extend)(myOp->k_op,myOp->Skew_op,iflag),*iflag);
+    }
+  }
+  
+  else
+  {
+    PHIST_SOUT(PHIST_ERROR,"there is no such method in %s implemented\n"
+                           "choose between NONE 0, PRE 1, POST 2, PRE_POST 3, SKEW 4 and ALL 7\n"
+                           "(file %s, line %d)\n",__FUNCTION__,__FILE__,__LINE__);
+  *iflag=-1;
+  return;
+  } 
+
+  jdOp->A = (const void*)myOp;
+  jdOp->apply = SUBR(jadaOp_apply);
+  jdOp->applyT = NULL;
+  jdOp->apply_shifted = NULL;
+  jdOp->destroy = SUBR(jadaOp_variable_delete_new);
+
+  jdOp->range_map = myOp->k_op->range_map;
+  jdOp->domain_map = myOp->k_op->range_map;
+
+  // print some useful data
+  PHIST_SOUT(PHIST_DEBUG, "Created jadaOp with %d projection vectors and %d shifts\n%s\n",   nvecp,nvec,
+              B_op==NULL? "                    B=I and postprojection\n":
+                          "                    B-inner product and pre-/postprojection\n");  
+}
+
+// allocate and initialize the jadaOp struct
+extern "C" void SUBR(jadaOp_create_new)(TYPE(const_linearOp_ptr)    AB_op,
+                         TYPE(const_linearOp_ptr)     B_op,
+                         TYPE(const_mvec_ptr)  V,       TYPE(const_mvec_ptr)  BV,
+                         const _ST_            sigma[], int                   nvec,
+                         TYPE(linearOp_ptr)          jdOp,    int*                  iflag)
+{
+#include "phist_std_typedefs.hpp"
+  PHIST_ENTER_FCN(__FUNCTION__);
+  *iflag = 0;
+
+  phist_Eprojection method;
+  if (B_op!=NULL)
+  {
+    method = phist_PROJ_PRE_POST;
+  }
+  else
+  {
+    method = phist_PROJ_POST;
+  }
+
+  PHIST_CHK_IERR(SUBR(jadaOp_variable_create)(AB_op,B_op,NULL,V,BV,sigma,NULL,nvec,jdOp,method,0,iflag),*iflag);
+
+}
+
 // allocate and initialize the jadaOp struct for a variable combination of projections
 extern "C" void SUBR(jadaOp_create_variable)(TYPE(const_linearOp_ptr)    AB_op,
-                         TYPE(const_linearOp_ptr)     Proj_op,
+                         TYPE(const_linearOp_ptr)     preProj_op,
                          TYPE(const_linearOp_ptr)     Skew_op,
                          TYPE(const_linearOp_ptr)     Prec_op,
                          const _ST_**            sigma, int                   nvec,
@@ -390,7 +615,7 @@ extern "C" void SUBR(jadaOp_create_variable)(TYPE(const_linearOp_ptr)    AB_op,
 
   //allocate jadaOp struct
   TYPE(jadaOp_data) *myOp = new TYPE(jadaOp_data);
-  myOp->Proj_op = NULL;
+  myOp->preProj_op = NULL;
 
   // case NONE
   if(method==phist_PROJ_NONE)
@@ -413,7 +638,7 @@ extern "C" void SUBR(jadaOp_create_variable)(TYPE(const_linearOp_ptr)    AB_op,
 
     myOp->k_ops = (TYPE(const_linearOp_ptr)*)malloc(k*sizeof(TYPE(const_linearOp_ptr)));
     myOp->k_ops[0] = AB_op;
-    myOp->k_ops[1] = Proj_op;
+    myOp->k_ops[1] = preProj_op;
   }
 
   // case POST
@@ -425,7 +650,7 @@ extern "C" void SUBR(jadaOp_create_variable)(TYPE(const_linearOp_ptr)    AB_op,
     myOp->which_apply[1] = 2;
 
     myOp->k_ops = (TYPE(const_linearOp_ptr)*)malloc(k*sizeof(TYPE(const_linearOp_ptr)));
-    myOp->k_ops[0] = Proj_op;
+    myOp->k_ops[0] = preProj_op;
     myOp->k_ops[1] = AB_op;
   }
 
@@ -439,9 +664,9 @@ extern "C" void SUBR(jadaOp_create_variable)(TYPE(const_linearOp_ptr)    AB_op,
     myOp->which_apply[2] = 0;
 
     myOp->k_ops = (TYPE(const_linearOp_ptr)*)malloc(k*sizeof(TYPE(const_linearOp_ptr)));
-    myOp->k_ops[0] = Proj_op;
+    myOp->k_ops[0] = preProj_op;
     myOp->k_ops[1] = AB_op;
-    myOp->k_ops[2] = Proj_op;
+    myOp->k_ops[2] = preProj_op;
   }
 
   // case SKEW
@@ -487,9 +712,9 @@ extern "C" void SUBR(jadaOp_create_variable)(TYPE(const_linearOp_ptr)    AB_op,
 
       myOp->k_ops = (TYPE(const_linearOp_ptr)*)malloc(k*sizeof(TYPE(const_linearOp_ptr)));
       myOp->k_ops[0] = Prec_op;
-      myOp->k_ops[1] = Proj_op;
+      myOp->k_ops[1] = preProj_op;
       myOp->k_ops[2] = AB_op;
-      myOp->k_ops[3] = Proj_op;
+      myOp->k_ops[3] = preProj_op;
     }
     else
     {
@@ -504,9 +729,9 @@ extern "C" void SUBR(jadaOp_create_variable)(TYPE(const_linearOp_ptr)    AB_op,
       myOp->k_ops = (TYPE(const_linearOp_ptr)*)malloc(k*sizeof(TYPE(const_linearOp_ptr)));
       myOp->k_ops[0] = Skew_op;
       myOp->k_ops[1] = Prec_op;
-      myOp->k_ops[2] = Proj_op;
+      myOp->k_ops[2] = preProj_op;
       myOp->k_ops[3] = AB_op;
-      myOp->k_ops[4] = Proj_op;
+      myOp->k_ops[4] = preProj_op;
     }
   }
 
@@ -572,8 +797,8 @@ extern "C" void SUBR(jadaOp_create)(TYPE(const_linearOp_ptr)    AB_op,
     PHIST_CHK_IERR(SUBR(mvec_num_vectors)(V, &nvecp, iflag), *iflag);
   }
 
-  myOp->Proj_op = new TYPE(linearOp);
-  PHIST_CHK_IERR(SUBR(projection_Op_create)(myOp->V,myOp->BV,myOp->Proj_op,iflag),*iflag);
+  myOp->preProj_op = new TYPE(linearOp);
+  PHIST_CHK_IERR(SUBR(projection_Op_create)(myOp->V,myOp->BV,myOp->preProj_op,iflag),*iflag);
 
   phist_Eprojection method;
   if (B_op!=NULL)
@@ -585,7 +810,7 @@ extern "C" void SUBR(jadaOp_create)(TYPE(const_linearOp_ptr)    AB_op,
   }
 
   myOp->k_op = new TYPE(linearOp);
-  PHIST_CHK_IERR(SUBR(jadaOp_create_variable)(myOp->AB_op,myOp->Proj_op,NULL,NULL,&(myOp->sigma),myOp->num_shifts,myOp->k_op,method,0,1,iflag),*iflag);
+  PHIST_CHK_IERR(SUBR(jadaOp_create_variable)(myOp->AB_op,myOp->preProj_op,NULL,NULL,&(myOp->sigma),myOp->num_shifts,myOp->k_op,method,0,1,iflag),*iflag);
 
   // setup op_ptr function pointers. For standard EVP, just post-project. For generalized EVP,
   // pre- and postproject.
@@ -738,7 +963,7 @@ extern "C" void SUBR(jadaOp_set_leftPrecond)(TYPE(linearOp_ptr) jdOp, TYPE(const
     jdDat->_sigma[0]=jdDat->sigma_prec;
     jdDat->_sigma[1]=jdDat->sigma;
 
-    PHIST_CHK_IERR(SUBR(jadaOp_create_variable)(jdDat->AB_op,jdDat->Proj_op,jdDat->Skew_op,jdDat->Prec_op,jdDat->_sigma,jdDat->num_shifts,jdDat->k_op,method,1-(jdDat->projType),2,iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(jadaOp_create_variable)(jdDat->AB_op,jdDat->preProj_op,jdDat->Skew_op,jdDat->Prec_op,jdDat->_sigma,jdDat->num_shifts,jdDat->k_op,method,1-(jdDat->projType),2,iflag),*iflag);
     jdOp->apply = SUBR(jadaOp_apply);
   }
 }

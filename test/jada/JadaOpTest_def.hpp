@@ -537,6 +537,56 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,_N_,MATNAME>,
       ASSERT_EQ(0,iflag_);
     }
   }
+  
+  TEST_F(CLASSNAME, apply_test_beta_new)
+  {
+    if( typeImplemented_ && !problemTooSmall_ )
+    {
+      TYPE(linearOp) jdOp;
+      SUBR(jadaOp_create_new)(opA_,NULL,q_,NULL,sigma_,_NV_,&jdOp,&iflag_);
+      ASSERT_EQ(0,iflag_);
+
+      TYPE(mvec_ptr) vec4;
+      PHISTTEST_MVEC_CREATE(&vec4,map_,_NV_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(mvec_random)(vec4,&iflag_);
+      ASSERT_EQ(0,iflag_);
+
+      // apply
+      jdOp.apply(st::one(),jdOp.A,vec4,st::zero(),vec3_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+
+      TYPE(mvec_ptr) vec5;
+      PHISTTEST_MVEC_CREATE(&vec5,map_,_NV_,&iflag_);
+      SUBR(mvec_put_value)(vec5,st::one(),&iflag_);
+      ASSERT_EQ(0,iflag_);
+      // we assume vec5 in q^orth, so make it so:
+      SUBR(mvecT_times_mvec)(st::one(),q_,vec5,st::zero(),mat1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(mvec_times_sdMat)(-st::one(),q_,mat1_,st::one(),vec5,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      // add beta (I-qq')*ONE to vec3_
+      _ST_ beta = st::prand();
+      SUBR(mvec_add_mvec)(beta,vec5,st::one(),vec3_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      jdOp.apply(st::one(),jdOp.A,vec4,beta,vec5,&iflag_);
+      ASSERT_EQ(0,iflag_);
+
+      // vec5 == vec3_?
+      SUBR(mvec_add_mvec)(st::one(),vec5,-st::one(),vec3_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+
+      ASSERT_NEAR(mt::one(),MvecEqual(vec3_,st::zero()),10*VTest::releps());
+
+      SUBR(mvec_delete)(vec5,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(mvec_delete)(vec4,&iflag_);
+      ASSERT_EQ(0,iflag_);
+
+      jdOp.destroy(&jdOp,&iflag_);
+      ASSERT_EQ(0,iflag_);
+    }
+  }
 
   TEST_F(CLASSNAME, proj_Op_apply )
   {
@@ -883,7 +933,7 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,_N_,MATNAME>,
     }
   }
 
-  TEST_F(CLASSNAME, apply_jadaOp_new_check_with_method_none)
+  TEST_F(CLASSNAME, apply_jadaOp_check_with_method_none)
   {
     if( typeImplemented_ && !problemTooSmall_ )
     {
@@ -927,7 +977,7 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,_N_,MATNAME>,
     }
   }
 
-  TEST_F(CLASSNAME, apply_jadaOp_new_check_with_method_pre)
+  TEST_F(CLASSNAME, apply_jadaOp_check_with_method_pre)
   {
     if( typeImplemented_ && !problemTooSmall_ )
     {
@@ -977,7 +1027,7 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,_N_,MATNAME>,
     }
   }
 
-  TEST_F(CLASSNAME, apply_jadaOp_new_check_with_method_post)
+  TEST_F(CLASSNAME, apply_jadaOp_check_with_method_post)
   {
     if( typeImplemented_ && !problemTooSmall_ )
     {
@@ -1025,7 +1075,7 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,_N_,MATNAME>,
     }
   }
 
-      TEST_F(CLASSNAME, apply_jadaOp_new_check_with_method_pre_post)
+      TEST_F(CLASSNAME, apply_jadaOp_check_with_method_pre_post)
   {
     if( typeImplemented_ && !problemTooSmall_ )
     {
@@ -1079,3 +1129,50 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,_N_,MATNAME>,
     }
   }
 
+  TEST_F(CLASSNAME, apply_jadaOp_variable_new_check_with_method_pre_post)
+  {
+    if( typeImplemented_ && !problemTooSmall_ )
+    {
+      phist_Eprojection method= phist_PROJ_PRE_POST;
+
+      TYPE(linearOp) jadaOp;
+      SUBR(jadaOp_variable_create)(opAB_,opB_,NULL,qb_,Bq_,sigma_,NULL,_NV_,&jadaOp,method,0,&iflag_);
+      ASSERT_EQ(0,iflag_);
+
+      _ST_ alpha=st::prand();
+      _ST_ beta=st::prand();
+
+      jadaOp.apply(alpha,jadaOp.A,vec1_,beta,vec2_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+
+      // vec3_ = alpha*(I-Bq*q')(A+sigmaB)(I-q*Bq')*vec1_ + beta*vec3_
+
+      // vec1_ = (I-q*Bq')*vec1_
+      SUBR(mvecT_times_mvec)(st::one(),Bq_,vec1_,st::zero(),mat1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(mvec_times_sdMat)(-st::one(),qb_,mat1_,st::one(),vec1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+
+      // vec4_ = (A+sigma_i*B)vec1_
+      SUBR(sparseMat_times_mvec)(st::one(),B_,vec1_,st::zero(),vec4_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(mvec_vscale)(vec4_,sigma_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(sparseMat_times_mvec)(st::one(), A_, vec1_, +st::one(), vec4_, &iflag_);
+      ASSERT_EQ(0,iflag_);
+
+      // vec3_ = alpha*(I-Bq*q')*vec_4 + beta*vec3_
+      SUBR(mvecT_times_mvec)(st::one(),qb_,vec4_,st::zero(),mat2_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(mvec_times_sdMat)(-st::one(),Bq_,mat2_,st::one(),vec4_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(mvec_add_mvec)(alpha,vec4_,beta,vec3_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+
+      ASSERT_NEAR(mt::one(),MvecsEqual(vec2_,vec3_),10*VTest::releps());
+
+      jadaOp.destroy(&jadaOp,&iflag_);
+      ASSERT_EQ(0,iflag_);
+    }
+  }
+  
