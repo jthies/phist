@@ -656,10 +656,10 @@ public:
     // we have v1, v2 random and v3=v2 from SetUp()
     _ST_ alpha=st::prand();
     _ST_ beta=st::prand();
-    SUBR(linearOp_apply)(alpha,&A_op,vec1_,beta,vec3_,&iflag_);
+    A_op.apply(alpha,A_op.A,vec1_,beta,vec3_,&iflag_);
     ASSERT_EQ(0,iflag_);
     
-    SUBR(linearOp_apply)(alpha,&Prod_op,vec1_,beta,vec2_,&iflag_);
+    Prod_op.apply(alpha,Prod_op.A,vec1_,beta,vec2_,&iflag_);
     ASSERT_EQ(0,iflag_);
     
     ASSERT_NEAR(mt::one(),MvecsEqual(vec2_,vec3_),100*VTest::releps());
@@ -671,12 +671,12 @@ public:
     SUBR(linearOp_product_extend)(&Prod_op,&A_op,&iflag_);
     ASSERT_EQ(0,iflag_);
     
-    SUBR(linearOp_apply)(alpha,&Prod_op,vec1_,beta,vec2_,&iflag_);
+    Prod_op.apply(alpha,Prod_op.A,vec1_,beta,vec2_,&iflag_);
     ASSERT_EQ(0,iflag_);
     
-    SUBR(linearOp_apply)(alpha,&A_op,vec1_,st::zero(),vec4_,&iflag_);
+    A_op.apply(alpha,A_op.A,vec1_,st::zero(),vec4_,&iflag_);
     ASSERT_EQ(0,iflag_);
-    SUBR(linearOp_apply)(st::one(),&A_op,vec4_,beta,vec3_,&iflag_);
+    A_op.apply(st::one(),A_op.A,vec4_,beta,vec3_,&iflag_);
     ASSERT_EQ(0,iflag_);
     
     ASSERT_NEAR(mt::one(),MvecsEqual(vec2_,vec3_),1000*VTest::releps());    

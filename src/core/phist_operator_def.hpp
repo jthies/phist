@@ -232,7 +232,7 @@ void SUBR(private_linearOp_product_apply)(_ST_ alpha, const void* k_op, TYPE(con
   //iteration over operator-members
   for (auto it=(Op_k->members_).begin(); it!=(Op_k->members_).end(); it++)
   {
-    TYPE(const_linearOp_ptr) op_i = *it;  //means the value of it(here the i-th operator)
+    TYPE(const_linearOp_ptr) op_i = *it;
     
     if(nvX!=nvXtmp2)
     {
@@ -257,9 +257,7 @@ void SUBR(private_linearOp_product_apply)(_ST_ alpha, const void* k_op, TYPE(con
 }
 
 void SUBR(linearOp_product_extend)(TYPE(linearOp_ptr) k_op, TYPE(const_linearOp_ptr) new_member, int* iflag)
-{
-    PHIST_SOUT(PHIST_INFO, "in extend\n");
-    
+{   
 #include "phist_std_typedefs.hpp"
 
   TYPE(private_linearOp_product) *Op_k = (TYPE(private_linearOp_product)*)k_op->A;
@@ -520,19 +518,24 @@ void SUBR(linearOp_apply)(_ST_ alpha, TYPE(const_linearOp_ptr) A_op,
       }
       else
       {
+        PHIST_SOUT(PHIST_VERBOSE, "linearOp_apply_respective uses linearOp_apply_shifted \n",
+                              "(file %s, line %d)\n",__FUNCTION__,__FILE__,__LINE__);
         PHIST_CHK_IERR(SUBR(linearOp_apply_shifted)(alpha,A_op,A_op->shifts,X,beta,Y,iflag),*iflag);
       }
     }  
     
     else if(A_op->use_transpose)
     {
+        PHIST_SOUT(PHIST_VERBOSE, "linearOp_apply_respective uses linearOp_applyT \n",
+                              "(file %s, line %d)\n",__FUNCTION__,__FILE__,__LINE__);
         PHIST_CHK_IERR(SUBR(linearOp_applyT)(alpha,A_op,X,beta,Y,iflag),*iflag);
     }
     
     else
     {
-        PHIST_CHK_IERR(*iflag=(A_op->apply==NULL)? PHIST_BAD_CAST:0,*iflag);
-        PHIST_CHK_IERR(A_op->apply(alpha,A_op->A,X,beta,Y,iflag),*iflag);
+        PHIST_SOUT(PHIST_VERBOSE, "linearOp_apply_respective uses linearOp_apply \n",
+                              "(file %s, line %d)\n",__FUNCTION__,__FILE__,__LINE__);
+        PHIST_CHK_IERR(SUBR(linearOp_apply)(alpha,A_op,X,beta,Y,iflag),*iflag);
     }
   }
 //! apply operator and compute inner products with in- and output vector
