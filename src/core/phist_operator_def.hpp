@@ -239,7 +239,7 @@ void SUBR(private_linearOp_product_apply)(_ST_ alpha, const void* k_op, TYPE(con
       PHIST_CHK_IERR(SUBR(mvec_create)(&(Op_k->Xtmp2),op_i->range_map,nvX,iflag),*iflag);
     }
 
-    PHIST_CHK_IERR(SUBR(linearOp_apply)(st::one(),op_i,Op_k->Xtmp,st::zero(),Op_k->Xtmp2,iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(linearOp_apply_respective)(st::one(),op_i,Op_k->Xtmp,st::zero(),Op_k->Xtmp2,iflag),*iflag);
     
     if(cnt!=0)
     {
@@ -483,6 +483,14 @@ void SUBR(linearOp_identity)(TYPE(linearOp_ptr) op,
   op->domain_map=domain_map;
 }
 
+//! pointer to function for computing Y=alpha*A*X+beta*Y
+void SUBR(linearOp_apply)(_ST_ alpha, TYPE(const_linearOp_ptr) A_op,
+        TYPE(const_mvec_ptr) X, _ST_ beta,  TYPE(mvec_ptr) Y, int* iflag)
+  {
+    PHIST_CHK_IERR(*iflag=(A_op->apply==NULL)? PHIST_BAD_CAST:0,*iflag);
+    PHIST_CHK_IERR(A_op->apply(alpha,A_op->A,X,beta,Y,iflag),*iflag);
+  }
+
 //! apply transpose
  void SUBR(linearOp_applyT)(_ST_ alpha, TYPE(const_linearOp_ptr) A_op,
         TYPE(const_mvec_ptr) X, _ST_ beta,  TYPE(mvec_ptr) Y, int* iflag)
@@ -498,11 +506,11 @@ void SUBR(linearOp_identity)(TYPE(linearOp_ptr) op,
     PHIST_CHK_IERR(A_op->apply_shifted(alpha,A_op->A,sigma,X,beta,Y,iflag),*iflag);
   }
  //! pointer to function for computing Y=alpha*A*X+beta*Y
- void SUBR(linearOp_apply)(_ST_ alpha, TYPE(const_linearOp_ptr) A_op,
+ void SUBR(linearOp_apply_respective)(_ST_ alpha, TYPE(const_linearOp_ptr) A_op,
         TYPE(const_mvec_ptr) X, _ST_ beta,  TYPE(mvec_ptr) Y, int* iflag)
   {
-    if(A_op->shifts!=NULL)
-    {
+    if(A_op->shifts != NULL)
+    {  
       if(A_op->use_transpose)
       {
         PHIST_SOUT(PHIST_ERROR, "not clear whether applyT or apply_shifted should be used \n",
