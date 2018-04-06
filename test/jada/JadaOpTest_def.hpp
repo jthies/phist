@@ -176,22 +176,17 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,_N_,MATNAME>,
       SUBR(jadaOp_create)(opA_,NULL,q_,NULL,sigma_,_NV_,&jdOp,&iflag_);
       ASSERT_EQ(0,iflag_);
 
-      TYPE(linearOp) proj_Op;
-      SUBR(projection_Op_create)(q_, q_, &proj_Op, &iflag_);
-      ASSERT_EQ(0,iflag_);
-
       phist_Eprojection method= phist_PROJ_NONE;
 
       TYPE(linearOp) jadaOp;
-      SUBR(jadaOp_create_variable)(opA_,&proj_Op,NULL,NULL,(const _ST_**)&sigma_,_NV_,&jadaOp,method,0,1,&iflag_);
+      SUBR(jadaOp_variable_create)(opA_,NULL,NULL,q_,NULL,sigma_,NULL,_NV_,&jadaOp,method,0,&iflag_);
       ASSERT_EQ(0,iflag_);
 
       jadaOp.destroy(&jadaOp,&iflag_);
       ASSERT_EQ(0,iflag_);
-
-      SUBR(projection_Op_delete)(&proj_Op, &iflag_);
+      
+      jdOp.destroy(&jdOp,&iflag_);
       ASSERT_EQ(0,iflag_);
-
     }
   }
 
@@ -543,7 +538,7 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,_N_,MATNAME>,
     if( typeImplemented_ && !problemTooSmall_ )
     {
       TYPE(linearOp) jdOp;
-      SUBR(jadaOp_create_new)(opA_,NULL,q_,NULL,sigma_,_NV_,&jdOp,&iflag_);
+      SUBR(jadaOp_create)(opA_,NULL,q_,NULL,sigma_,_NV_,&jdOp,&iflag_);
       ASSERT_EQ(0,iflag_);
 
       TYPE(mvec_ptr) vec4;
@@ -933,18 +928,14 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,_N_,MATNAME>,
     }
   }
 
-  TEST_F(CLASSNAME, apply_jadaOp_check_with_method_none)
+  TEST_F(CLASSNAME, apply_jadaOp_variable_check_with_method_none)
   {
     if( typeImplemented_ && !problemTooSmall_ )
     {
-      TYPE(linearOp) proj_Op;
-      SUBR(projection_Op_create)(qb_, Bq_, &proj_Op, &iflag_);
-      ASSERT_EQ(0,iflag_);
-
       phist_Eprojection method= phist_PROJ_NONE;
 
       TYPE(linearOp) jadaOp;
-      SUBR(jadaOp_create_variable)(opAB_,&proj_Op,NULL,NULL,(const _ST_**)&sigma_,_NV_,&jadaOp,method,0,1,&iflag_);
+      SUBR(jadaOp_variable_create)(opAB_,opB_,NULL,qb_,Bq_,sigma_,NULL,_NV_,&jadaOp,method,0,&iflag_);
       ASSERT_EQ(0,iflag_);
 
       _ST_ alpha=st::prand();
@@ -971,24 +962,17 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,_N_,MATNAME>,
 
       jadaOp.destroy(&jadaOp,&iflag_);
       ASSERT_EQ(0,iflag_);
-
-      SUBR(projection_Op_delete)(&proj_Op, &iflag_);
-      ASSERT_EQ(0,iflag_);
     }
   }
 
-  TEST_F(CLASSNAME, apply_jadaOp_check_with_method_pre)
+  TEST_F(CLASSNAME, apply_jadaOp_variable_check_with_method_pre)
   {
     if( typeImplemented_ && !problemTooSmall_ )
     {
-      TYPE(linearOp) proj_Op;
-      SUBR(projection_Op_create)(qb_, Bq_, &proj_Op, &iflag_);
-      ASSERT_EQ(0,iflag_);
-
       phist_Eprojection method= phist_PROJ_PRE;
 
       TYPE(linearOp) jadaOp;
-      SUBR(jadaOp_create_variable)(opAB_,&proj_Op,NULL,NULL,(const _ST_**)&sigma_,_NV_,&jadaOp,method,0,1,&iflag_);
+      SUBR(jadaOp_variable_create)(opAB_,opB_,NULL,qb_,Bq_,sigma_,NULL,_NV_,&jadaOp,method,0,&iflag_);
       ASSERT_EQ(0,iflag_);
 
       _ST_ alpha=st::prand();
@@ -1021,24 +1005,17 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,_N_,MATNAME>,
 
       jadaOp.destroy(&jadaOp,&iflag_);
       ASSERT_EQ(0,iflag_);
-
-      SUBR(projection_Op_delete)(&proj_Op, &iflag_);
-      ASSERT_EQ(0,iflag_);
     }
   }
 
-  TEST_F(CLASSNAME, apply_jadaOp_check_with_method_post)
+  TEST_F(CLASSNAME, apply_jadaOp_variable_check_with_method_post)
   {
     if( typeImplemented_ && !problemTooSmall_ )
     {
-      TYPE(linearOp) proj_Op;
-      SUBR(projection_Op_create)(qb_, Bq_, &proj_Op, &iflag_);
-      ASSERT_EQ(0,iflag_);
-
       phist_Eprojection method= phist_PROJ_POST;
 
       TYPE(linearOp) jadaOp;
-      SUBR(jadaOp_create_variable)(opAB_,&proj_Op,NULL,NULL,(const _ST_**)&sigma_,_NV_,&jadaOp,method,0,1,&iflag_);
+      SUBR(jadaOp_variable_create)(opAB_,opB_,NULL,qb_,Bq_,sigma_,NULL,_NV_,&jadaOp,method,0,&iflag_);
       ASSERT_EQ(0,iflag_);
 
       _ST_ alpha=st::prand();
@@ -1069,67 +1046,10 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,_N_,MATNAME>,
 
       jadaOp.destroy(&jadaOp,&iflag_);
       ASSERT_EQ(0,iflag_);
-
-      SUBR(projection_Op_delete)(&proj_Op, &iflag_);
-      ASSERT_EQ(0,iflag_);
     }
   }
 
-      TEST_F(CLASSNAME, apply_jadaOp_check_with_method_pre_post)
-  {
-    if( typeImplemented_ && !problemTooSmall_ )
-    {
-      TYPE(linearOp) proj_Op;
-      SUBR(projection_Op_create)(qb_, Bq_, &proj_Op, &iflag_);
-      ASSERT_EQ(0,iflag_);
-
-      phist_Eprojection method= phist_PROJ_PRE_POST;
-
-      TYPE(linearOp) jadaOp;
-      SUBR(jadaOp_create_variable)(opAB_,&proj_Op,NULL,NULL,(const _ST_**)&sigma_,_NV_,&jadaOp,method,0,1,&iflag_);
-      ASSERT_EQ(0,iflag_);
-
-      _ST_ alpha=st::prand();
-      _ST_ beta=st::prand();
-
-      jadaOp.apply(alpha,jadaOp.A,vec1_,beta,vec2_,&iflag_);
-      ASSERT_EQ(0,iflag_);
-
-      // vec3_ = alpha*(I-Bq*q')(A+sigmaB)(I-q*Bq')*vec1_ + beta*vec3_
-
-      // vec1_ = (I-q*Bq')*vec1_
-      SUBR(mvecT_times_mvec)(st::one(),Bq_,vec1_,st::zero(),mat1_,&iflag_);
-      ASSERT_EQ(0,iflag_);
-      SUBR(mvec_times_sdMat)(-st::one(),qb_,mat1_,st::one(),vec1_,&iflag_);
-      ASSERT_EQ(0,iflag_);
-
-      // vec4_ = (A+sigma_i*B)vec1_
-      SUBR(sparseMat_times_mvec)(st::one(),B_,vec1_,st::zero(),vec4_,&iflag_);
-      ASSERT_EQ(0,iflag_);
-      SUBR(mvec_vscale)(vec4_,sigma_,&iflag_);
-      ASSERT_EQ(0,iflag_);
-      SUBR(sparseMat_times_mvec)(st::one(), A_, vec1_, +st::one(), vec4_, &iflag_);
-      ASSERT_EQ(0,iflag_);
-
-      // vec3_ = alpha*(I-Bq*q')*vec_4 + beta*vec3_
-      SUBR(mvecT_times_mvec)(st::one(),qb_,vec4_,st::zero(),mat2_,&iflag_);
-      ASSERT_EQ(0,iflag_);
-      SUBR(mvec_times_sdMat)(-st::one(),Bq_,mat2_,st::one(),vec4_,&iflag_);
-      ASSERT_EQ(0,iflag_);
-      SUBR(mvec_add_mvec)(alpha,vec4_,beta,vec3_,&iflag_);
-      ASSERT_EQ(0,iflag_);
-
-      ASSERT_NEAR(mt::one(),MvecsEqual(vec2_,vec3_),10*VTest::releps());
-
-      jadaOp.destroy(&jadaOp,&iflag_);
-      ASSERT_EQ(0,iflag_);
-
-      SUBR(projection_Op_delete)(&proj_Op, &iflag_);
-      ASSERT_EQ(0,iflag_);
-    }
-  }
-
-  TEST_F(CLASSNAME, apply_jadaOp_variable_new_check_with_method_pre_post)
+  TEST_F(CLASSNAME, apply_jadaOp_variable_check_with_method_pre_post)
   {
     if( typeImplemented_ && !problemTooSmall_ )
     {

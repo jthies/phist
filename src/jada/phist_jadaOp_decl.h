@@ -76,7 +76,7 @@ void SUBR(skew_projection_Op_create)(TYPE(const_linearOp_ptr) P_op,
         TYPE(const_mvec_ptr) V, TYPE(const_mvec_ptr) BV,
         TYPE(linearOp_ptr) skew_Op, int* iflag);
 
-//! Create projected and shifted operator for Jacobi-Davidson using the linearOp_product_k wrapper
+//! Create projected and shifted operator for Jacobi-Davidson using the linearOp_product operator
 //! and a variable combination of projections.
 
 //! With method we can choose, which Projections to use:
@@ -92,28 +92,11 @@ void SUBR(skew_projection_Op_create)(TYPE(const_linearOp_ptr) P_op,
 //! onlyPrec will change the methods "SKEW" and "ALL":
 //! onlyPrec == 0: we use skew-projection and preconditioner
 //! onlyPrec == 1: we only use the preconditioner
-void SUBR(jadaOp_create_variable)(TYPE(const_linearOp_ptr)    AB_op,
-                         TYPE(const_linearOp_ptr)     preProj_op,
-                         TYPE(const_linearOp_ptr)     Skew_op,
-                         TYPE(const_linearOp_ptr)     Prec_op,
-                         const _ST_**            sigma, int                   nvec,
-                         TYPE(linearOp_ptr)          jdOp, phist_Eprojection method,
-                         int onlyPrec, int num_sigma,
-                         int*                  iflag);
-
-//!
-void SUBR(jadaOp_variable_delete)(TYPE(linearOp_ptr)  jdOp, int *iflag);
-
-// todo: try to use product operator instead of product_k operator
 void SUBR(jadaOp_variable_create)(TYPE(const_linearOp_ptr)    AB_op,
                          TYPE(const_linearOp_ptr)     B_op, TYPE(const_linearOp_ptr)    Prec_op,
                          TYPE(const_mvec_ptr)  V,       TYPE(const_mvec_ptr)  BV,
                          const _ST_            sigma[], const _ST_ sigma_prec[],int     nvec,
                          TYPE(linearOp_ptr)          jdOp, phist_Eprojection method,
                          int onlyPrec, int*                  iflag);
-                         
-void SUBR(jadaOp_create_new)(TYPE(const_linearOp_ptr)    AB_op,
-                         TYPE(const_linearOp_ptr)     B_op,
-                         TYPE(const_mvec_ptr)  V,       TYPE(const_mvec_ptr)  BV,
-                         const _ST_            sigma[], int                   nvec,
-                         TYPE(linearOp_ptr)          jdOp,    int*                  iflag);
+//!
+void SUBR(jadaOp_variable_delete)(TYPE(linearOp_ptr)  jdOp, int *iflag);
