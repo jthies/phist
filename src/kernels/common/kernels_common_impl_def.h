@@ -369,7 +369,7 @@ void SUBR(sparseMat_create_fromRowFuncWithConstructorAndContext)(TYPE(sparseMat_
 {
   void *work=nullptr;
   PHIST_CHK_IERR(*iflag=rowFunConstructorPtr(last_arg, &work),*iflag);
-  SUBR(sparseMat_create_fromRowFuncAndContext)(A,ctx,maxnne,rowFunPtr,last_arg,iflag);
+  SUBR(sparseMat_create_fromRowFuncAndContext)(A,ctx,maxnne,rowFunPtr,work,iflag);
   rowFunConstructorPtr(last_arg,&work);
 }
 
