@@ -1065,7 +1065,7 @@ return;
       _MT_ sing_tol=mt::eps();
 
       Anasazi::SVQBOrthoManager<_ST_,MV,OP> myOrtho(Op,false);
-      ::Anasazi::ICGSOrthoManager<_ST_,MV,OP> theirOrtho(Op,false);
+      ::Anasazi::ICGSOrthoManager<_ST_,MV,OP> theirOrtho(Op,max_blk_ortho, sing_tol, blk_tol);
 
       int my_ret=myOrtho.projectAndNormalize(*W,V_array,C_array,B);
       int their_ret=theirOrtho.projectAndNormalize(*W2,V_array,C2_array,B2);
