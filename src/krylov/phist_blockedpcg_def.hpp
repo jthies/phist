@@ -8,7 +8,7 @@
 /*******************************************************************************************/
 
 // implementation of CG on several systems simultaneously
-void SUBR(blockedPCG_iterate)(TYPE(const_linearOp_ptr) Aop, TYPE(const_linearOp_ptr) Pop,
+extern "C" void SUBR(blockedPCG_iterate)(TYPE(const_linearOp_ptr) Aop, TYPE(const_linearOp_ptr) Pop,
         TYPE(const_mvec_ptr) rhs, TYPE(mvec_ptr) sol_in, int numSys, int* nIter,
         _MT_ const tol[], int* iflag)
 {
@@ -116,7 +116,7 @@ void SUBR(blockedPCG_iterate)(TYPE(const_linearOp_ptr) Aop, TYPE(const_linearOp_
   }
 }
 
-void SUBR( PCG_iterate ) (TYPE(const_linearOp_ptr) Aop, TYPE(const_linearOp_ptr) Pop,
+extern "C" void SUBR( PCG_iterate ) (TYPE(const_linearOp_ptr) Aop, TYPE(const_linearOp_ptr) Pop,
 		TYPE(const_mvec_ptr) rhs, TYPE(mvec_ptr) sol_in, int* nIter, _MT_ const tol, int* iflag)
 {
 #include "phist_std_typedefs.hpp"
