@@ -165,13 +165,19 @@ struct phist_scamac_work_st {
 static int phist_scamac_func(ghost_gidx row, ghost_lidx *rowlen, ghost_gidx *col, void *val, void *arg)
 {
     struct phist_scamac_work_st * my_work = arg;
-    ScamacErrorCode err=scamac_generate_row(my_work->gen, my_work->ws, (ScamacIdx) row, SCAMAC_DEFAULT, (ScamacIdx*) rowlen, (ScamacIdx *) col, (double *) val); 
+    ScamacIdx nzr;
+    ScamacErrorCode err=scamac_generate_row(my_work->gen, my_work->ws, (ScamacIdx) row, SCAMAC_DEFAULT, &nzr, (ScamacIdx *) col, (double *) val); 
+    *rowlen=(ghost_lidx)nzr;
     if (err) { return 1; }
     return 0;
 }
 
 static int phist_scamac_funcinit(void *arg, void **work) 
 {
+    if (sizeof(ScamacIdx)!=sizeof(ghost_gidx))
+    {
+      return -1;
+    }
   ScamacGenerator * gen = (ScamacGenerator *) arg;
   if (*work) {// free
     struct phist_scamac_work_st * my_work = *work;
