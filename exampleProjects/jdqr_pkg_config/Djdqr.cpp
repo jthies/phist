@@ -40,6 +40,7 @@ int main(int argc, char** argv)
   const char* matrix="SCAMAC-Harmonic";
   
   int num_eigs,nV,num_iters;
+  double max_err=0.;
   
   PHIST_ICHK_IERR(phist_comm_create(&comm,&iflag),iflag);
 
@@ -79,10 +80,12 @@ int main(int argc, char** argv)
           Q, R, evals, resid, &num_eigs, &num_iters, &iflag), iflag);
 
   PHIST_SOUT(PHIST_INFO,"Matrix: '%s'\nComputed %d out of %d desired eigenvalues\nafter %d iterations.\n", matrix, num_eigs, opts.numEigs, num_iters);
-  if (num_eigs>0) PHIST_SOUT(PHIST_INFO, "Eigenvalue\tResidual\n");
+  if (num_eigs>0) PHIST_SOUT(PHIST_INFO, "Eigenvalue\tResidual\tError\n");
   for (int i=0; i<num_eigs; i++)
   {
-    PHIST_SOUT(PHIST_INFO,"%8.4e\t%8.4e\n",std::real(evals[i]),resid[i]);
+    double err=double(i)-std::real(evals[i]);
+    max_err = std::max(max_err, err);
+    PHIST_SOUT(PHIST_INFO,"%8.4e\t%8.4e\t%8.4e\n",std::real(evals[i]),resid[i],err);
   }
   
   PHIST_ICHK_IERR(SUBR(mvec_delete)(Q,&iflag),iflag);
@@ -90,8 +93,13 @@ int main(int argc, char** argv)
   PHIST_ICHK_IERR(SUBR(sparseMat_delete)(A,&iflag),iflag);
   delete A_op;
 
+  PHIST_ICHK_IERR(phist_kernels_finalize(&iflag),iflag);
+  if (num_eigs<opts.numEigs || max_err>10.*opts.convTol)
+  {
+    PHIST_SOUT(PHIST_WARNING,"WARNING: Unexpectedly large error in eigenvalue(s).\n");
+    iflag=+1;
+  }
   PHIST_MAIN_TASK_END
 
-  PHIST_ICHK_IERR(phist_kernels_finalize(&iflag),iflag);
   return iflag;
 }
