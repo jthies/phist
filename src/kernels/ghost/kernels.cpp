@@ -191,7 +191,7 @@ int get_perm_flag(int iflag, int outlev)
        (PHIST_DEFAULT_SPMV_MODE==0) )
   {
     // save memory by not duplicating the matrix (otherwise it is stored as a whole and as local/non-local part)
-    oflag|=GHOST_SPARSEMAT_NOT_STORE_SPLIT);
+    oflag|=GHOST_SPARSEMAT_NOT_STORE_SPLIT;
   }
 
   return oflag;
