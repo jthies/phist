@@ -105,7 +105,10 @@ PHIST_TASK_BEGIN(ComputeTask)
         {
             flags=(ghost_sparsemat_flags)(flags|GHOST_SPARSEMAT_PERMUTE);
         }
-        flags = (ghost_sparsemat_flags)(flags|get_perm_flag(iflag_in,outlev));
+
+        flags = static_cast<ghost_sparsemat_flags>(flags                           | 
+                                                   GHOST_SPARSEMAT_NOT_STORE_SPLIT | 
+                                                   get_perm_flag(iflag_in, outlev));
 
         mtraits.datatype = st::ghost_dt;
         mtraits.flags = flags;
