@@ -105,6 +105,15 @@
  */
 #define PHIST_SPARSEMAT_OWN_MAPS 128
 
+/*! \def PHIST_SPARSEMAT_OVERLAP_COMMUNICATION
+
+ suggest to the kernel library to do local computations while waiting for the communication in the sparse
+ matrix-vector product (sparseMat_times_mvec family of functions). This is currently only implemented for
+ GHOST.
+
+*/
+#define PHIST_SPARSEMAT_OVERLAP_COMMUNICATION 256
+
 /*! \def PHIST_SPARSEMAT_FLAGS_DESCRIPTION
 
     This macro provides a string descrbing possible flags
@@ -119,7 +128,8 @@
 "     PHIST_SPARSEMAT_OPT_BLOCKSPMVM  16 \n" \
 "     PHIST_SPARSEMAT_OPT_CARP 32 \n" \
 "     PHIST_SPARSEMAT_QUIET 64 \n" \
-"     PHIST_SPARSEMAT_OWN_MAPS 128 \n"
+"     PHIST_SPARSEMAT_OWN_MAPS 128 \n" \
+"     PHIST_SPARSEMAT_OVERLAP_COMMUNICATION 256\n"
 
 /*! \def PHIST_MVEC_REPLICATE_DEVICE_MEM
 
