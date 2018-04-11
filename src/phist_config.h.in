@@ -63,7 +63,7 @@ version of the code in addition to the standard
    Zoltan/Isorropia. This parameter has no effect on the builtin and ghost
    kernel interface.
  */
-#cmakedefine PHIST_FORCE_INT_GIDX
+#cmakedefine PHIST_FORCE_32BIT_GIDX
 
 /* do you want to compile the complex valued
 version of the code (only available for some

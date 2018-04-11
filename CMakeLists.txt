@@ -168,9 +168,9 @@ if (USE_XSDK_DEFAULTS)
 endif()
 
 if (XSDK_INDEX_SIZE EQUAL 32)
-  set(PHIST_FORCE_INT_GIDX_DEFAULT ON)
+  set(PHIST_FORCE_32BIT_GIDX_DEFAULT ON)
 elseif (XSDK_INDEX_SIZE EQUAL 64)
-  set(PHIST_FORCE_INT_GIDX_DEFAULT OFF)
+  set(PHIST_FORCE_32BIT_GIDX_DEFAULT OFF)
 endif()
 
 ########################################################################
@@ -681,21 +681,7 @@ set(PHIST_BENCH_LARGE_N 134217728 CACHE STRING "Dimension for benchmarking tests
 
 option(PHIST_TIMINGS_FULL_TRACE "Try to print full call trace in the TimeMonitor/performance measurements (Warning: may generate *a lot* of output)." Off)
 
-# some matfuncs (for row-wise scalable generation of test matrices) are
-# included in phist. In particular we now have the 'Scalable Matrix Collection' (scamac)
-# as a subtree. The stand-alone repo is at https://bitbucket.org/essex/MatrixCollection.
-include_directories(${PROJECT_SOURCE_DIR}/drivers/matfuncs)
-include_directories(${PROJECT_SOURCE_DIR}/drivers/matfuncs/scamac)
-include_directories(${CMAKE_BINARY_DIR}/drivers/matfuncs/scamac)
-set(SCAMAC_BUILD_MWE OFF CACHE BOOL "")
-# to avoid conflicts with e.g. ghost (which also uses cblas), disable blas and lapack in the scamac within phist.
-# they are used for allowing to compute some eigenvalues etc., but we are only interested in the matrix generator
-# itself.
-set(SCAMAC_USE_BLAS OFF CACHE BOOL "")
-set(SCAMAC_USE_LAPACK OFF CACHE BOOL "")
-add_subdirectory(drivers/matfuncs/scamac)
-
-if (NOT DEFINED PHIST_FORCE_INT_GIDX_DEFAULT)
+if (NOT DEFINED PHIST_FORCE_32BIT_GIDX_DEFAULT)
 
 #############################################################################
 # use 32-bit integers as global indices with Epetra by default. This is     #
@@ -703,14 +689,14 @@ if (NOT DEFINED PHIST_FORCE_INT_GIDX_DEFAULT)
 # runs with Epetra it has to be switched off before compiling PHIST.        #
 #############################################################################
   if( "${PHIST_KERNEL_LIB}" MATCHES "epetra|petsc|Eigen" )
-    set(PHIST_FORCE_INT_GIDX_DEFAULT ON)
+    set(PHIST_FORCE_32BIT_GIDX_DEFAULT ON)
   else()
-    set(PHIST_FORCE_INT_GIDX_DEFAULT OFF)
+    set(PHIST_FORCE_32BIT_GIDX_DEFAULT OFF)
   endif()
 endif()
 
-option(PHIST_FORCE_INT_GIDX "Use 32-bit global indices for compatiblity with other libs" 
-${PHIST_FORCE_INT_GIDX_DEFAULT})
+option(PHIST_FORCE_32BIT_GIDX "Use 32-bit global indices for compatiblity with other libs" 
+${PHIST_FORCE_32BIT_GIDX_DEFAULT})
 
 ##############################################################################
 # enable single precision and complex valued calculation if supported
@@ -739,6 +725,34 @@ if (PHIST_ENABLE_COMPLEX)
   endif()
   set(PHIST_HAVE_CMPLX 1)
 endif()
+
+########################################################
+# configure scamac subtree (scalable matrix generator) #
+########################################################
+
+# some matfuncs (for row-wise scalable generation of test matrices) are
+# included in phist. In particular we now have the 'Scalable Matrix Collection' (scamac)
+# as a subtree. The stand-alone repo is at https://bitbucket.org/essex/MatrixCollection.
+include_directories(${PROJECT_SOURCE_DIR}/drivers/matfuncs)
+include_directories(${PROJECT_SOURCE_DIR}/drivers/matfuncs/scamac)
+include_directories(${CMAKE_BINARY_DIR}/drivers/matfuncs/scamac)
+set(SCAMAC_BUILD_MWE OFF CACHE BOOL "")
+# to avoid conflicts with e.g. ghost (which also uses cblas), disable blas and lapack in the scamac within phist.
+# they are used for allowing to compute some eigenvalues etc., but we are only interested in the matrix generator
+# itself.
+set(SCAMAC_USE_BLAS OFF CACHE BOOL "")
+set(SCAMAC_USE_LAPACK OFF CACHE BOOL "")
+if (PHIST_FORCE_32BIT_GIDX)
+  set(SCAMAC_USE_64 OFF CACHE BOOL "")
+else()
+  set(SCAMAC_USE_64 ON CACHE BOOL "")
+endif()
+add_subdirectory(drivers/matfuncs/scamac)
+
+
+########################################################
+# define source files and libraries                    #
+########################################################
 
 # these specific versions of type-generic drivers have to be created
 if (PHIST_ENABLE_SP)

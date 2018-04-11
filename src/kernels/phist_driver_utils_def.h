@@ -174,10 +174,8 @@ static int phist_scamac_func(ghost_gidx row, ghost_lidx *rowlen, ghost_gidx *col
 
 static int phist_scamac_funcinit(void *arg, void **work) 
 {
-    if (sizeof(ScamacIdx)!=sizeof(ghost_gidx))
-    {
-      return -1;
-    }
+    int iflag=0;
+    PHIST_ICHK_IERR(iflag=(sizeof(ScamacIdx)==sizeof(ghost_gidx))?0:-1,iflag);
   ScamacGenerator * gen = (ScamacGenerator *) arg;
   if (*work) {// free
     struct phist_scamac_work_st * my_work = *work;
@@ -190,7 +188,7 @@ static int phist_scamac_funcinit(void *arg, void **work)
     scamac_workspace_alloc(my_work->gen, &(my_work->ws));
     *work = my_work;
   } 
-  return 0;
+  return iflag;
 }
 
 

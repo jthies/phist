@@ -24,8 +24,8 @@
 #ifdef PHIST_HAVE_GHOST
 #include <ghost/types.h>
 #include <ghost/sparsemat.h>
-# if defined(PHIST_FORCE_INT_GIDX)&&defined(GHOST_IDX64_GLOBAL)
-# error "ghost installation uses 64 bit global indices, but Epetra installation requires 32! You shoudl disable GHOST or recompile either library."
+# if defined(PHIST_FORCE_32BIT_GIDX)&&defined(GHOST_IDX64_GLOBAL)
+# error "ghost installation uses 64 bit global indices, but you set the option PHIST_FORCE_32BIT_GIDX. You should disable/rebuild GHOST or reconfigure without that option."
 # endif
 #else
 typedef phist_lidx ghost_lidx;

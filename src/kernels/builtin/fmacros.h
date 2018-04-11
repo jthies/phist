@@ -8,7 +8,7 @@
 
 #ifndef PHIST_HAVE_GHOST
 #define G_LIDX_T C_INT32_T
-# ifdef PHIST_FORCE_INT_GIDX
+# ifdef PHIST_FORCE_32BIT_GIDX
 # define G_GIDX_T C_INT32_T
 # else
 # define G_GIDX_T C_INT64_T
