@@ -39,6 +39,9 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,_N_,MATNAME>,
   static void SetUpTestCase()
   {
     int sparseMatCreateFlag=getSparseMatCreateFlag(_N_,_NV_);
+#ifdef TEST_SPMV_MODES
+    sparseMatCreateFlag|=PHIST_SPARSEMAT_OVERLAP_COMMUNICATION;
+#endif
     SparseMatTest::SetUpTestCase(sparseMatCreateFlag);
     VTest::SetUpTestCase();
     MTest::SetUpTestCase();
@@ -1544,7 +1547,7 @@ TEST_F(CLASSNAME,fromRowFuncAndContext)
   }
 #endif
 
-#ifdef PHIST_KERNEL_LIB_GHOST
+#ifdef TEST_SPMV_MODES
 
 TEST_F(CLASSNAME, ghost_spmv_mode_overlap )
 {
