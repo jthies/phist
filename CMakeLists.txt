@@ -894,10 +894,6 @@ set (PHIST_JADA_SOURCE   ${PROJECT_SOURCE_DIR}/src/jada/phist_jadaOp.cpp
                          ${PROJECT_SOURCE_DIR}/src/jada/phist_subspacejadaC.cpp
                          ${PROJECT_SOURCE_DIR}/src/jada/phist_subspacejadaD.cpp
                          ${PROJECT_SOURCE_DIR}/src/jada/phist_subspacejadaZ.cpp
-                         ${PROJECT_SOURCE_DIR}/src/jada/phist_harmonicjadaS.cpp
-                         ${PROJECT_SOURCE_DIR}/src/jada/phist_harmonicjadaC.cpp
-                         ${PROJECT_SOURCE_DIR}/src/jada/phist_harmonicjadaD.cpp
-                         ${PROJECT_SOURCE_DIR}/src/jada/phist_harmonicjadaZ.cpp
                          ${PROJECT_SOURCE_DIR}/src/jada/phist_transform_searchspace.cpp
                          ${PROJECT_SOURCE_DIR}/src/jada/phist_jadaCorrectionSolver.cpp
                          )
