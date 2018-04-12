@@ -98,5 +98,4 @@ void SUBR(jadaOp_variable_create)(TYPE(const_linearOp_ptr)    AB_op,
                          const _ST_            sigma[], const _ST_ sigma_prec[],int     nvec,
                          TYPE(linearOp_ptr)          jdOp, phist_Eprojection method,
                          int onlyPrec, int*                  iflag);
-//!
-void SUBR(jadaOp_variable_delete)(TYPE(linearOp_ptr)  jdOp, int *iflag);
+
