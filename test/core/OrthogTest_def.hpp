@@ -1067,9 +1067,9 @@ return;
       Anasazi::SVQBOrthoManager<_ST_,MV,OP> myOrtho(Op,false);
       ::Anasazi::ICGSOrthoManager<_ST_,MV,OP> theirOrtho(Op,max_blk_ortho, sing_tol, blk_tol);
 
-      int my_ret=myOrtho.projectAndNormalize(*W,V_array,C_array,B);
-      int their_ret=theirOrtho.projectAndNormalize(*W2,V_array,C2_array,B2);
-      
+      int my_ret=myOrtho.projectAndNormalizeMat(*W,V_array,C_array,B,BW);
+      int their_ret=theirOrtho.projectAndNormalizeMat(*W2,V_array,C2_array,B2,BW2);
+
       // should return the same code
       ASSERT_EQ(my_ret,their_ret);
 
