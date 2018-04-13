@@ -56,14 +56,26 @@ namespace Anasazi {
     Teuchos::RCP< phist::BelosMV< _ST_ > > X_or_MX=MX;
     Teuchos::RCP< const phist::BelosMV< _ST_ > > Qi=Teuchos::null;
     pt::const_mvec_ptr vQi=nullptr;
+    int ncolsX = MVT::GetNumberVecs(X);
     
-    if (MX==Teuchos::null) X_or_MX=Teuchos::rcp(&X,false);
+    if (MX==Teuchos::null) 
+    {
+      if(_Op.get()!=NULL)
+      {
+        X_or_MX = MVT::Clone(X,ncolsX);
+        OPT::Apply(*(_Op.get()),X,*X_or_MX);
+      }
+      else
+      {
+        X_or_MX=Teuchos::rcp(&X,false);
+      }
+    }
     if (Q.size()>0) {Qi=Q[0]; vQi=Qi->get();}
 
     phist_const_comm_ptr comm;
     pk::mvec_get_comm(X.get(),&comm,&iflag);
     pt::sdMat_ptr Bphist=NULL, Cphist=NULL, XtMX=NULL;
-    int ncolsX = MVT::GetNumberVecs(X);
+    
     int ncolsQ = -1;
 
     pk::sdMat_create(&Bphist,ncolsX,ncolsX,comm,&iflag);
