@@ -6,7 +6,6 @@
 /* Contact: Jonas Thies (Jonas.Thies@DLR.de)                                               */
 /*                                                                                         */
 /*******************************************************************************************/
-
  //                                                                                             
  // this function does an in-place Schur decomposition of T(1:m,1:m) into T and S.              
  // The Ritz values appear on the diagonal of T (for the real case there may be 2x2 blocks      
@@ -14,7 +13,7 @@
  // should appear:                                                                              
  // nselect=nsort=0: unsorted                                                                   
  // nselect>0: the first <nselect> Ritz values (if the last one is a complex conjugate pair     
- //            <nselect+1>) appear in any order in the upper left corner of T                   
+ //            <nselect+1>) appear in any order in the upper left corner of T                    
  // 0<nsort<nselect: in addition to moving a cluster of <nselect> eigenvalues, sort the         
  //             first <nsort> of them in the upper left corner.                                 
  //                                                                                             
@@ -46,16 +45,24 @@ void SUBR(SchurDecomp)(_ST_* T, int ldT, _ST_* S, int ldS,
   *iflag = 0;
 PHIST_TASK_DECLARE(ComputeTask)
 PHIST_TASK_BEGIN_SMALLDETERMINISTIC(ComputeTask)
+  // this is for XGEES (computing the Schur form)
+  int lwork = std::max(20*m,2*nselect*(m-nselect));
+                          // min required workspace is 3*m 
+                          // for GEES and 2*m*(m-nsort) for 
+                          // TRSEN with condition estimate,
+                          // so this should be enough for  
+                          // good performance of GEES as.  
+  ST work[lwork];
 
+  MT ev_r[m];   // in the complex case this is used as RWORK
 #ifndef IS_COMPLEX
   // real and imag part of ritz values
-  MT ev_r[m];
   MT ev_i[m];
 #endif
-  phist_blas_char jobvs='V'; // compute the ritz vectors in S
-  phist_blas_char sort='N';  // do not sort Ritz values (we do that later
-                             // because gees only accepts the simple select
-                             // function which does not compare the Ritz values)
+  const char *jobvs="V"; // compute the ritz vectors in S
+  const char *sort="N";  // do not sort Ritz values (we do that later
+                          // because gees only accepts the simple select
+                          // function which does not compare the Ritz values)
   int sdim;
   CT* ev = (CT*)v_ev;
 
@@ -73,12 +80,12 @@ PHIST_TASK_BEGIN_SMALLDETERMINISTIC(ComputeTask)
     {
 #ifdef IS_COMPLEX
       PHIST_DEB("call complex %cGEES\n",st::type_char());
-      *iflag=PHIST_LAPACKE(gees)(SDMAT_FLAG,jobvs,sort,NULL,m,(blas_cmplx*)T,ldT,
-             &sdim,(blas_cmplx*)ev,(blas_cmplx*)S,ldS);
+      PHIST_TG_PREFIX(GEES)((phist_blas_char*)jobvs,(phist_blas_char*)sort,NULL,&m,(blas_cmplx*)T,&ldT,
+             &sdim,(blas_cmplx*)ev,(blas_cmplx*)S,&ldS,(blas_cmplx*)work,&lwork,ev_r,NULL,iflag);
 #else
       PHIST_DEB("call real %cGEES\n",st::type_char());
-      *iflag=PHIST_LAPACKE(gees)(SDMAT_FLAG,jobvs,sort,NULL,m,T,ldT,
-            &sdim,ev_r,ev_i,S,ldS);
+      PHIST_TG_PREFIX(GEES)((phist_blas_char*)jobvs,(phist_blas_char*)sort,NULL,&m,T,&ldT,
+            &sdim,ev_r,ev_i,S,&ldS,work,&lwork,NULL,iflag);
       for (int i=0;i<m;i++)
       {
         ev[i]=std::complex<MT>(ev_r[i],ev_i[i]);
