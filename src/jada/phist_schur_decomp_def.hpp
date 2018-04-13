@@ -121,19 +121,15 @@ PHIST_TASK_BEGIN_SMALLDETERMINISTIC(ComputeTask)
   for (int i=0;i<m;i++) select[i]=0;
 
   // call lapack routine to reorder Schur form
-  const char *job="N"; // indicates wether we want condition estimates
+  char job='N'; // indicates wether we want condition estimates
                        // for [E]igenvalues, the invariant [S]ubspace or [B]oth
                        // (or [N]one, just sort)
-  const char *compq = "V"; // indicates wether we want to update the schur vectors
+  char compq = 'V'; // indicates wether we want to update the schur vectors
                            // [V]: update schur vectors in Q
                            // [N]: don't update schur vectors in Q
   MT S_cond;
   MT sep;
 
-#ifndef IS_COMPLEX
-  int liwork=m*m;
-  int iwork[liwork];
-#endif  
   if (nselect<m)
   {
     PHIST_DEB("initial sort step, nselect=%d\n",nselect);
@@ -147,11 +143,11 @@ PHIST_TASK_BEGIN_SMALLDETERMINISTIC(ComputeTask)
 #pragma omp master
       {
 #ifdef IS_COMPLEX
-        PHIST_TG_PREFIX(TRSEN)((phist_blas_char*)job,(phist_blas_char*)compq,select,&m,(blas_cmplx*)T,&ldT,(blas_cmplx*)S,&ldS,(blas_cmplx*)ev,&nsorted,
-              &S_cond, &sep, (blas_cmplx*)work, &lwork, iflag);
+        *iflag=PHIST_LAPACKE(trsen)(SDMAT_FLAG,job,compq,select,m,(blas_cmplx*)T,ldT,(blas_cmplx*)S,ldS,(blas_cmplx*)ev,&nsorted,
+              &S_cond, &sep);
 #else
-        PHIST_TG_PREFIX(TRSEN)((phist_blas_char*)job,(phist_blas_char*)compq,select,&m,T,&ldT,S,&ldS,ev_r,ev_i,&nsorted,
-              &S_cond, &sep, work, &lwork, iwork, &liwork, iflag);
+        *iflag=PHIST_LAPACKE(trsen)(SDMAT_FLAG,job,compq,select,m,T,ldT,S,ldS,ev_r,ev_i,&nsorted,
+              &S_cond, &sep);
         for (int i=0;i<m;i++)
         {
           ev[i]=std::complex<MT>(ev_r[i],ev_i[i]);
@@ -197,11 +193,11 @@ PHIST_TASK_BEGIN_SMALLDETERMINISTIC(ComputeTask)
         // we pass in ev+i
         int nsorted_before=nsorted;
 #ifdef IS_COMPLEX
-        PHIST_TG_PREFIX(TRSEN)((phist_blas_char*)job,(phist_blas_char*)compq,select,&m,(blas_cmplx*)T,&ldT,(blas_cmplx*)S,&ldS,
-              (blas_cmplx*)ev,&nsorted,&S_cond, &sep, (blas_cmplx*)work, &lwork, iflag);
+        *iflag=PHIST_LAPACKE(TRSEN)(SDMAT_FLAG,job,compq,select,m,(blas_cmplx*)T,ldT,(blas_cmplx*)S,ldS,
+              (blas_cmplx*)ev,&nsorted,&S_cond, &sep);
 #else
-        PHIST_TG_PREFIX(TRSEN)((phist_blas_char*)job,(phist_blas_char*)compq,select,&m,T,&ldT,S,&ldS,ev_r,ev_i,&nsorted,
-              &S_cond, &sep, work, &lwork, iwork, &liwork, iflag);
+        *iflag=PHIST_LAPACKE(trsen)(SDMAT_FLAG,job,compq,select,m,T,ldT,S,ldS,ev_r,ev_i,&nsorted,
+              &S_cond, &sep);
         for (int j=0;j<m;j++)
         {
           ev[j]=std::complex<MT>(ev_r[j],ev_i[j]);
