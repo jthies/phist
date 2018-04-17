@@ -64,7 +64,7 @@ else()
 endif()
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-if (PHIST_KERNEL_LIB STREQUAL "Eigen")
+if (PHIST_KERNEL_LIB STREQUAL "eigen")
   option(PHIST_ENABLE_MPI "Enable MPI within PHIST" OFF)
 else()
   option(PHIST_ENABLE_MPI "Enable MPI within PHIST" ON)
@@ -585,7 +585,7 @@ endif()
 # setup which kernel library is being used.
 ##############################################################################
 
-set(PHIST_KERNEL_LIB "builtin" CACHE STRING "Select underlying kernel libraries for phist (builtin|ghost|epetra|tpetra|magma|petsc|Eigen|tpetra12)")
+set(PHIST_KERNEL_LIB "builtin" CACHE STRING "Select underlying kernel libraries for phist (builtin|ghost|epetra|tpetra|magma|petsc|eigen|tpetra12)")
 message(STATUS "kernel lib " ${PHIST_KERNEL_LIB} " ...")
 
 set(REQUIRE_TRILI_PKG,"")
@@ -668,11 +668,11 @@ elseif (PHIST_KERNEL_LIB STREQUAL "magma")
 elseif (PHIST_KERNEL_LIB STREQUAL "petsc")
   set(PHIST_KERNEL_LIB_PETSC 1)
   set(PHIST_MVECS_ROW_MAJOR 0)
-elseif (PHIST_KERNEL_LIB STREQUAL "Eigen")
+elseif (PHIST_KERNEL_LIB STREQUAL "eigen")
   set(PHIST_KERNEL_LIB_EIGEN 1)
   set(PHIST_MVECS_ROW_MAJOR 0 CACHE STRING "wether multi-vectors should be stored in row-major ordering")
   if( PHIST_HAVE_MPI )
-    message(FATAL_ERROR "Eigen kernel lib has no MPI support!")
+    message(FATAL_ERROR "The eigen kernel lib has no MPI support!")
   endif()
 else ()
   message( FATAL_ERROR "PHIST_KERNEL_LIB not set or not recognized" )
@@ -688,7 +688,7 @@ if (NOT DEFINED PHIST_FORCE_32BIT_GIDX_DEFAULT)
 # because e.g. Isorropia/Zoltan and our own HYMLS require it. For larger    #
 # runs with Epetra it has to be switched off before compiling PHIST.        #
 #############################################################################
-  if( "${PHIST_KERNEL_LIB}" MATCHES "epetra|petsc|Eigen" )
+  if( "${PHIST_KERNEL_LIB}" MATCHES "epetra|petsc|eigen" )
     set(PHIST_FORCE_32BIT_GIDX_DEFAULT ON)
   else()
     set(PHIST_FORCE_32BIT_GIDX_DEFAULT OFF)
@@ -701,7 +701,7 @@ ${PHIST_FORCE_32BIT_GIDX_DEFAULT})
 ##############################################################################
 # enable single precision and complex valued calculation if supported
 ##############################################################################
-if( "${PHIST_KERNEL_LIB}" MATCHES "tpetra|ghost|magma|petsc|Eigen|tpetra12" )
+if( "${PHIST_KERNEL_LIB}" MATCHES "tpetra|ghost|magma|petsc|eigen|tpetra12" )
   set(PHIST_SUPPORT_SP ON)
   set(PHIST_SUPPORT_COMPLEX ON)
 else()
@@ -932,7 +932,7 @@ if(PHIST_KERNEL_LIB STREQUAL "petsc")
   list(APPEND PHIST_PKG_CONFIG_REQUIRE PETSc)
 endif()
 
-if(PHIST_KERNEL_LIB STREQUAL "Eigen")
+if(PHIST_KERNEL_LIB STREQUAL "eigen")
   find_package (Eigen3 3.3 REQUIRED NO_MODULE)
   include_directories(${EIGEN3_INCLUDE_DIRS})
   add_definitions(-DEIGEN_NO_AUTOMATIC_RESIZING)

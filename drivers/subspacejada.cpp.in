@@ -311,7 +311,7 @@ else
 
   if (nEig>0)
 {
-  PHIST_SOUT(PHIST_INFO, "\n eigenvalues:              ");
+  PHIST_SOUT(PHIST_INFO, "\n eigenvalues:\n");
 
   if( opts.symmetry==phist_HERMITIAN )
   {
