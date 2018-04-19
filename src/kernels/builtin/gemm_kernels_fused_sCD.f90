@@ -6,12 +6,13 @@
 /* Contact: Jonas Thies (Jonas.Thies@DLR.de)                                               */
 /*                                                                                         */
 /*******************************************************************************************/
+
 !> \file gemm_fused_kernels_sCD.f90
 !! Fast parallel fused BLAS-gemm subroutines for different blocksizes for mvecT_times_mvec_times_sdMat_inplace in mvec_module
 !! \author "Melven Roehrig-Zoellner <Melven.Roehrig-Zoellner@DLR.de>
 !!
 
-#include "phist_config.h"
+#include "phist_config_fortran.h"
 
 subroutine dgemm_fused_sCD_1_self(nrows,w,N,M)
   implicit none

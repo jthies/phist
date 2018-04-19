@@ -16,7 +16,6 @@
 
 #include "phist_jadaOpts.h"
 #include "phist_subspacejada.h"
-#include "phist_harmonicjada.h"
 #include "phist_precon.h"
 // needed for ComputeEigenvectors
 #include "phist_schur_decomp.h"
@@ -43,23 +42,22 @@ void SUBR(print_usage)(const char* progname)
     "Where <matrix A> is a string defining the matrix A (see explanation below)                                 \n"
     "      <matrix B> defines the Hermitian and positive definite B matrix, which may be \"I\" or \"none\"      \n"
     "                 to solve a standard eigenvalue problem.                                                   \n"
-    "      <hermitian> is 0 (general A) or 1 (symmetric/Hermitian A)                                    \n"
-    "      <invariant subspace dim> is the number of eigenpairs sought                                  \n"
-    "      <which> may be SM, LM, SR, LR (S/L for smallest/largest, M/R for magnitude/real part)        \n"
-    "              or of the form \"TARGET\" <value>. SM is equivalent to TARGET 0, in this the driver  \n"
-    "              assumes the target lies in the interior of the spectrum and calls the variant with   \n"
-    "              harmonic Ritz extraction                                                             \n"
-    "      <tol>   convergence tolerance, tol>eps_mach=%e                                               \n"
-    "      <max iters>                                                                                  \n"
-    "      <JD block size> block size, recommended values are 1 (few eigenvalues), 2 or 4               \n"
-    "      <min basis>     JD will restart from this number of vectors, <min basis >= nEig+block_size   \n"
-    "      <max basis>     maximum number of basis vectors allowed (including locked eigenvecotors)     \n"
-    "      <inner block size> block size for inner linear solver, typically=JD block size               \n"
-    "      <inner iters>   max number of linear iterations per outer step, default: 25                  \n"
-    "      <initial shift> fix shift for                                                                \n"
-    "      <initial shift iters> iterations rather than running an Arnoldi process.                     \n"
-    "      <inner solver robust> 0 or 1, 1 is recommended for 'hard' problems, e.g. nonsymmetric ones   \n"
-    "      <inner solver abort when first converged> 0/1, 1 is typically a good choice                  \n",
+    "      <hermitian> is 0 (general A) or 1 (symmetric/Hermitian A)                                            \n"
+    "      <invariant subspace dim> is the number of eigenpairs sought                                          \n"
+    "      <which> may be SM, LM, SR, LR (S/L for smallest/largest, M/R for magnitude/real part).               \n"
+    "              Note that we currently do not support harmonic Ritz extraction, which may be necessary for   \n"
+    "              the smallest (SM) eigenvalues if the operator is very indefinite.                            \n"
+    "      <tol>   convergence tolerance, tol>eps_mach=%e                                                       \n"
+    "      <max iters>                                                                                          \n"
+    "      <JD block size> block size, recommended values are 1 (few eigenvalues), 2 or 4                       \n"
+    "      <min basis>     JD will restart from this number of vectors, <min basis >= nEig+block_size           \n"
+    "      <max basis>     maximum number of basis vectors allowed (including locked eigenvecotors)             \n"
+    "      <inner block size> block size for inner linear solver, typically=JD block size                       \n"
+    "      <inner iters>   max number of linear iterations per outer step, default: 25                          \n"
+    "      <initial shift> fix shift for                                                                        \n"
+    "      <initial shift iters> iterations rather than running an Arnoldi process.                             \n"
+    "      <inner solver robust> 0 or 1, 1 is recommended for 'hard' problems, e.g. nonsymmetric ones           \n"
+    "      <inner solver abort when first converged> 0/1, 1 is typically a good choice                          \n",
     progname, mt::eps() );
     // print usage message for creating/reading a matrix
     SUBR(create_matrix)(NULL, NULL, "usage",&iflag);
@@ -109,22 +107,7 @@ else
   GET_ARG(opts.numEigs,p++,opts.numEigs>0);
 
   // which eigenvalues to compute
-  GET_ARG(opts.which,p++,opts.which!=phist_INVALID_EIGSORT&&opts.which!=phist_NO_EIGSORT);
-
-  _ST_ target=st::zero();
-  if (opts.which==phist_TARGET)
-  {
-    opts.which=phist_SM; // use target=0 and harmonic Ritz extraction
-    GET_ARG(target,p++,true);
-    if (target!=st::zero())
-    {
-      PHIST_SOUT(PHIST_ERROR,"you requested eigenvalues near a target %8.4e%+8.4ei\n"
-                             "while this is easy to implement, we haven't done so yet.\n"
-                             "Only the target 0 is allowed for the moment.\n",
-                             st::real(target), st::imag(target));
-      return PHIST_NOT_IMPLEMENTED;
-    }
-  }
+  GET_ARG(opts.which,p++,(opts.which==phist_LM)||(opts.which==phist_LR)||(opts.which==phist_SM)||(opts.which==phist_SR));
 
   // desired accuracy: residuum tolerance
   GET_ARG(opts.convTol,p++,opts.convTol>mt::eps());
@@ -280,18 +263,9 @@ else
   int nIter=opts.maxIters;
 
   //------------------------------- run block JaDa algorithm ----------------------- 
-  if (opts.how==phist_HARMONIC)
-  {
-    PHIST_SOUT(PHIST_INFO,"Jacobi-Davidson for interior eigenvalues\n");
-    PHIST_ICHK_NEG_IERR(SUBR(harmonicjada)(opA, opB, opts,
+  PHIST_SOUT(PHIST_INFO,"Jacobi-Davidson for exterior eigenvalues\n");
+  PHIST_ICHK_NEG_IERR(SUBR(subspacejada)(opA, opB, opts,
           Q, R, ev, resNorm, &nEig, &nIter, &iflag), iflag);
-  }
-  else
-  {
-    PHIST_SOUT(PHIST_INFO,"Jacobi-Davidson for exterior eigenvalues\n");
-    PHIST_ICHK_NEG_IERR(SUBR(subspacejada)(opA, opB, opts,
-          Q, R, ev, resNorm, &nEig, &nIter, &iflag), iflag);
-  }
 
   int nvQ;
   PHIST_ICHK_IERR(SUBR(mvec_num_vectors)(Q,&nvQ,&iflag),iflag);
@@ -337,7 +311,7 @@ else
 
   if (nEig>0)
 {
-  PHIST_SOUT(PHIST_INFO, "\n eigenvalues:              ");
+  PHIST_SOUT(PHIST_INFO, "\n eigenvalues:\n");
 
   if( opts.symmetry==phist_HERMITIAN )
   {

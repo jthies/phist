@@ -39,6 +39,12 @@ PHIST_TASK_END(iflag)
 #ifdef PHIST_HAVE_MPI
     MPI_Comm mpi_comm = phist_get_default_comm();
 #endif
+
+  // a sanity check to see that the local index type matches that of the lapack library
+  PHIST_CHK_IERR(*iflag = (sizeof(phist_lidx)==sizeof(phist_blas_idx))?0:-1,*iflag);
+  PHIST_CHK_IERR(*iflag = (sizeof(phist_s_complex)==sizeof(phist_Sblas_cmplx))?0:-1,*iflag);
+  PHIST_CHK_IERR(*iflag = (sizeof(phist_d_complex)==sizeof(phist_Dblas_cmplx))?0:-1,*iflag);
+
   // at this point, check for the environment variable PHIST_RUN_DEBUGGER and if it is set,
   // go into an infinite loop that can only be broken after attaching a debugger
   // this code was copied from the OpenMPI  FAQ: http://www.open-mpi.de/faq/?category=debugging

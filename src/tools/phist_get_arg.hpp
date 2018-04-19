@@ -50,7 +50,7 @@ PHIST_SOUT(PHIST_VERBOSE,"%s\n",ss.str().c_str()); \
 if (!(_valid_)) \
 {\
   PHIST_SOUT(PHIST_ERROR,"parameter %d had an illegal value!\n" \
-                         "Typically, phist drivers will print a usage message when run without arguments.",p);\
+                         "Typically, phist drivers will print a usage message when run without arguments.\n",p);\
   return PHIST_INVALID_INPUT;\
 }\
 }

@@ -30,7 +30,7 @@ extern "C" void SUBR(sparseMat_read_mm)(TYPE(sparseMat_ptr)* vA, phist_const_com
   }
   PHIST_CAST_PTR_FROM_VOID(const Epetra_Comm,comm,vcomm,*iflag);
   Epetra_CrsMatrix* A=NULL;
-#if defined(EPETRA_NO_64BIT_GLOBAL_INDICES)||defined(PHIST_FORCE_INT_GIDX)
+#if defined(EPETRA_NO_64BIT_GLOBAL_INDICES)||defined(PHIST_FORCE_32BIT_GIDX)
   *iflag=EpetraExt::MatrixMarketFileToCrsMatrix(filename,*comm,A);
 #else
   *iflag=EpetraExt::MatrixMarketFileToCrsMatrix64(filename,*comm,A);
@@ -72,7 +72,7 @@ extern "C" void SUBR(sparseMat_read_mm_with_context)(TYPE(sparseMat_ptr)* vA, ph
   PHIST_CAST_PTR_FROM_VOID(const phist::internal::default_context,ctx,vctx,*iflag);
   PHIST_CAST_PTR_FROM_VOID(const Epetra_Map,map,ctx->row_map,*iflag);
   Epetra_CrsMatrix* A=NULL;
-#if defined(EPETRA_NO_64BIT_GLOBAL_INDICES)||defined(PHIST_FORCE_INT_GIDX)
+#if defined(EPETRA_NO_64BIT_GLOBAL_INDICES)||defined(PHIST_FORCE_32BIT_GIDX)
   *iflag=EpetraExt::MatrixMarketFileToCrsMatrix(filename,*map,A);
 #else
   *iflag=EpetraExt::MatrixMarketFileToCrsMatrix64(filename,*map,A);
@@ -138,7 +138,7 @@ extern "C" void SUBR(sparseMat_create_fromRowFuncAndContext)(TYPE(sparseMat_ptr)
   PHIST_TRY_CATCH(A   = new Epetra_CrsMatrix(Copy,*map,maxnne),*iflag);
   for (phist_lidx i=0; i<A->NumMyRows(); i++)
   {
-#if defined(EPETRA_NO_64BIT_GLOBAL_INDICES)||defined(PHIST_FORCE_INT_GIDX)
+#if defined(EPETRA_NO_64BIT_GLOBAL_INDICES)||defined(PHIST_FORCE_32BIT_GIDX)
     ghost_gidx row = (ghost_gidx)map->GID(i);
 #else
     ghost_gidx row = (ghost_gidx)map->GID64(i);
@@ -547,7 +547,7 @@ extern "C" void SUBR(mvec_put_func)(TYPE(mvec_ptr) vV,
   {
     for (int j=0; j<V->NumVectors(); j++)
     {
-#if defined(EPETRA_NO_64BIT_GLOBAL_INDICES)||defined(PHIST_FORCE_INT_GIDX)
+#if defined(EPETRA_NO_64BIT_GLOBAL_INDICES)||defined(PHIST_FORCE_32BIT_GIDX)
     phist_gidx row=V->Map().GID(i);
 #else
     phist_gidx row=V->Map().GID64(i);

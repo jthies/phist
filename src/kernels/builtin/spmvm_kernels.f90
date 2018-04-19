@@ -6,6 +6,7 @@
 /* Contact: Jonas Thies (Jonas.Thies@DLR.de)                                               */
 /*                                                                                         */
 /*******************************************************************************************/
+
 !> \file spmvm_kernels.f90
 !! Fast parallel spmvm kernels for different block sizes for crsMat_module
 !! Cases with nontemporal stores (NT) are delegated to spmvm_kernels_nt.c

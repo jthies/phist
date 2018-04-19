@@ -6,6 +6,7 @@
 /* Contact: Jonas Thies (Jonas.Thies@DLR.de)                                               */
 /*                                                                                         */
 /*******************************************************************************************/
+
 !> \file gemm_kernels_sB_augmented.f90
 !! Fast parallel BLAS-gemm like subroutines augmented with the product of the result for different blocksizes for mvec_times_sdmat_augmented in mvec_module
 !! \author "Melven Roehrig-Zoellner <Melven.Roehrig-Zoellner@DLR.de>

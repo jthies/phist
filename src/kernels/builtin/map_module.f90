@@ -6,13 +6,14 @@
 /* Contact: Jonas Thies (Jonas.Thies@DLR.de)                                               */
 /*                                                                                         */
 /*******************************************************************************************/
+
 !> \file map_module.f90
 !! Defines map_module, the phist_map implementation of the builtin kernels
 !! \author "Melven Roehrig-Zoellner <Melven.Roehrig-Zoellner@DLR.de>
 !! \author "Jonas Thies <Jonas.Thies@DLR.de>
 !!
 
-#include "phist_config.h"
+#include "phist_config_fortran.h"
 #include "phist_kernel_flags.h"
 #include "phist_defs.h"
 

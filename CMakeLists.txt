@@ -64,7 +64,7 @@ else()
 endif()
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-if (PHIST_KERNEL_LIB STREQUAL "Eigen")
+if (PHIST_KERNEL_LIB STREQUAL "eigen")
   option(PHIST_ENABLE_MPI "Enable MPI within PHIST" OFF)
 else()
   option(PHIST_ENABLE_MPI "Enable MPI within PHIST" ON)
@@ -168,9 +168,9 @@ if (USE_XSDK_DEFAULTS)
 endif()
 
 if (XSDK_INDEX_SIZE EQUAL 32)
-  set(PHIST_FORCE_INT_GIDX_DEFAULT ON)
+  set(PHIST_FORCE_32BIT_GIDX_DEFAULT ON)
 elseif (XSDK_INDEX_SIZE EQUAL 64)
-  set(PHIST_FORCE_INT_GIDX_DEFAULT OFF)
+  set(PHIST_FORCE_32BIT_GIDX_DEFAULT OFF)
 endif()
 
 ########################################################################
@@ -585,7 +585,7 @@ endif()
 # setup which kernel library is being used.
 ##############################################################################
 
-set(PHIST_KERNEL_LIB "builtin" CACHE STRING "Select underlying kernel libraries for phist (builtin|ghost|epetra|tpetra|magma|petsc|Eigen|tpetra12)")
+set(PHIST_KERNEL_LIB "builtin" CACHE STRING "Select underlying kernel libraries for phist (builtin|ghost|epetra|tpetra|magma|petsc|eigen|tpetra12)")
 message(STATUS "kernel lib " ${PHIST_KERNEL_LIB} " ...")
 
 set(REQUIRE_TRILI_PKG,"")
@@ -668,11 +668,11 @@ elseif (PHIST_KERNEL_LIB STREQUAL "magma")
 elseif (PHIST_KERNEL_LIB STREQUAL "petsc")
   set(PHIST_KERNEL_LIB_PETSC 1)
   set(PHIST_MVECS_ROW_MAJOR 0)
-elseif (PHIST_KERNEL_LIB STREQUAL "Eigen")
+elseif (PHIST_KERNEL_LIB STREQUAL "eigen")
   set(PHIST_KERNEL_LIB_EIGEN 1)
   set(PHIST_MVECS_ROW_MAJOR 0 CACHE STRING "wether multi-vectors should be stored in row-major ordering")
   if( PHIST_HAVE_MPI )
-    message(FATAL_ERROR "Eigen kernel lib has no MPI support!")
+    message(FATAL_ERROR "The eigen kernel lib has no MPI support!")
   endif()
 else ()
   message( FATAL_ERROR "PHIST_KERNEL_LIB not set or not recognized" )
@@ -681,41 +681,27 @@ set(PHIST_BENCH_LARGE_N 134217728 CACHE STRING "Dimension for benchmarking tests
 
 option(PHIST_TIMINGS_FULL_TRACE "Try to print full call trace in the TimeMonitor/performance measurements (Warning: may generate *a lot* of output)." Off)
 
-# some matfuncs (for row-wise scalable generation of test matrices) are
-# included in phist. In particular we now have the 'Scalable Matrix Collection' (scamac)
-# as a subtree. The stand-alone repo is at https://bitbucket.org/essex/MatrixCollection.
-include_directories(${PROJECT_SOURCE_DIR}/drivers/matfuncs)
-include_directories(${PROJECT_SOURCE_DIR}/drivers/matfuncs/scamac)
-include_directories(${CMAKE_BINARY_DIR}/drivers/matfuncs/scamac)
-set(SCAMAC_BUILD_MWE OFF CACHE BOOL "")
-# to avoid conflicts with e.g. ghost (which also uses cblas), disable blas and lapack in the scamac within phist.
-# they are used for allowing to compute some eigenvalues etc., but we are only interested in the matrix generator
-# itself.
-set(SCAMAC_USE_BLAS OFF CACHE BOOL "")
-set(SCAMAC_USE_LAPACK OFF CACHE BOOL "")
-add_subdirectory(drivers/matfuncs/scamac)
-
-if (NOT DEFINED PHIST_FORCE_INT_GIDX_DEFAULT)
+if (NOT DEFINED PHIST_FORCE_32BIT_GIDX_DEFAULT)
 
 #############################################################################
 # use 32-bit integers as global indices with Epetra by default. This is     #
 # because e.g. Isorropia/Zoltan and our own HYMLS require it. For larger    #
 # runs with Epetra it has to be switched off before compiling PHIST.        #
 #############################################################################
-  if( "${PHIST_KERNEL_LIB}" MATCHES "epetra|petsc|Eigen" )
-    set(PHIST_FORCE_INT_GIDX_DEFAULT ON)
+  if( "${PHIST_KERNEL_LIB}" MATCHES "epetra|petsc|eigen" )
+    set(PHIST_FORCE_32BIT_GIDX_DEFAULT ON)
   else()
-    set(PHIST_FORCE_INT_GIDX_DEFAULT OFF)
+    set(PHIST_FORCE_32BIT_GIDX_DEFAULT OFF)
   endif()
 endif()
 
-option(PHIST_FORCE_INT_GIDX "Use 32-bit global indices for compatiblity with other libs" 
-${PHIST_FORCE_INT_GIDX_DEFAULT})
+option(PHIST_FORCE_32BIT_GIDX "Use 32-bit global indices for compatiblity with other libs" 
+${PHIST_FORCE_32BIT_GIDX_DEFAULT})
 
 ##############################################################################
 # enable single precision and complex valued calculation if supported
 ##############################################################################
-if( "${PHIST_KERNEL_LIB}" MATCHES "tpetra|ghost|magma|petsc|Eigen|tpetra12" )
+if( "${PHIST_KERNEL_LIB}" MATCHES "tpetra|ghost|magma|petsc|eigen|tpetra12" )
   set(PHIST_SUPPORT_SP ON)
   set(PHIST_SUPPORT_COMPLEX ON)
 else()
@@ -739,6 +725,34 @@ if (PHIST_ENABLE_COMPLEX)
   endif()
   set(PHIST_HAVE_CMPLX 1)
 endif()
+
+########################################################
+# configure scamac subtree (scalable matrix generator) #
+########################################################
+
+# some matfuncs (for row-wise scalable generation of test matrices) are
+# included in phist. In particular we now have the 'Scalable Matrix Collection' (scamac)
+# as a subtree. The stand-alone repo is at https://bitbucket.org/essex/MatrixCollection.
+include_directories(${PROJECT_SOURCE_DIR}/drivers/matfuncs)
+include_directories(${PROJECT_SOURCE_DIR}/drivers/matfuncs/scamac)
+include_directories(${CMAKE_BINARY_DIR}/drivers/matfuncs/scamac)
+set(SCAMAC_BUILD_MWE OFF CACHE BOOL "")
+# to avoid conflicts with e.g. ghost (which also uses cblas), disable blas and lapack in the scamac within phist.
+# they are used for allowing to compute some eigenvalues etc., but we are only interested in the matrix generator
+# itself.
+set(SCAMAC_USE_BLAS OFF CACHE BOOL "")
+set(SCAMAC_USE_LAPACK OFF CACHE BOOL "")
+if (PHIST_FORCE_32BIT_GIDX)
+  set(SCAMAC_USE_64 OFF CACHE BOOL "")
+else()
+  set(SCAMAC_USE_64 ON CACHE BOOL "")
+endif()
+add_subdirectory(drivers/matfuncs/scamac)
+
+
+########################################################
+# define source files and libraries                    #
+########################################################
 
 # these specific versions of type-generic drivers have to be created
 if (PHIST_ENABLE_SP)
@@ -880,10 +894,6 @@ set (PHIST_JADA_SOURCE   ${PROJECT_SOURCE_DIR}/src/jada/phist_jadaOp.cpp
                          ${PROJECT_SOURCE_DIR}/src/jada/phist_subspacejadaC.cpp
                          ${PROJECT_SOURCE_DIR}/src/jada/phist_subspacejadaD.cpp
                          ${PROJECT_SOURCE_DIR}/src/jada/phist_subspacejadaZ.cpp
-                         ${PROJECT_SOURCE_DIR}/src/jada/phist_harmonicjadaS.cpp
-                         ${PROJECT_SOURCE_DIR}/src/jada/phist_harmonicjadaC.cpp
-                         ${PROJECT_SOURCE_DIR}/src/jada/phist_harmonicjadaD.cpp
-                         ${PROJECT_SOURCE_DIR}/src/jada/phist_harmonicjadaZ.cpp
                          ${PROJECT_SOURCE_DIR}/src/jada/phist_transform_searchspace.cpp
                          ${PROJECT_SOURCE_DIR}/src/jada/phist_jadaCorrectionSolver.cpp
                          )
@@ -922,7 +932,7 @@ if(PHIST_KERNEL_LIB STREQUAL "petsc")
   list(APPEND PHIST_PKG_CONFIG_REQUIRE PETSc)
 endif()
 
-if(PHIST_KERNEL_LIB STREQUAL "Eigen")
+if(PHIST_KERNEL_LIB STREQUAL "eigen")
   find_package (Eigen3 3.3 REQUIRED NO_MODULE)
   include_directories(${EIGEN3_INCLUDE_DIRS})
   add_definitions(-DEIGEN_NO_AUTOMATIC_RESIZING)

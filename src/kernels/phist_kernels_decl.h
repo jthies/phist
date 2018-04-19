@@ -77,6 +77,7 @@ void SUBR(type_avail)(int* iflag);
 //! optional flags:
 //! * PHIST_SPARSEMAT_PERM_GLOBAL
 //! * PHIST_SPARSEMAT_DIST2_COLOR (feature required for CARP-CG)
+//! * PHIST_SPARSEMAT_OVERLAP_COMMUNICATION (only supported with GHOST)
 //!
 //! If a predefined map is used, the permutation and partitioning is defined solely by the map.
 //!
