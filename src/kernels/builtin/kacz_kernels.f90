@@ -6,8 +6,8 @@
 /* Contact: Jonas Thies (Jonas.Thies@DLR.de)                                               */
 /*                                                                                         */
 /*******************************************************************************************/
-#include "phist_config.h"
-#include "fdebug.h"
+
+#include "phist_config_fortran.h"
 
 !! Implementation of the CARP kernel in CRS format.
 !! This file contains the core routines to set up and

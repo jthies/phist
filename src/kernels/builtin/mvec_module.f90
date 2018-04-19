@@ -6,13 +6,13 @@
 /* Contact: Jonas Thies (Jonas.Thies@DLR.de)                                               */
 /*                                                                                         */
 /*******************************************************************************************/
-#include "fmacros.h"
+
 !> \file mvec_module.f90
 !! Defines mvec_module, the phist builtin implementation of phist_Dmvec_*
 !! \author "Melven Roehrig-Zoellner <Melven.Roehrig-Zoellner@DLR.de>
 !!
 
-#include "phist_config.h"
+#include "phist_config_fortran.h"
 #include "phist_kernel_flags.h"
 #include "phist_defs.h"
 !> Implementations of phist_Dmvec_* for phist builtin kernels which uses row-major mvecs

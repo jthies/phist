@@ -6,13 +6,14 @@
 /* Contact: Jonas Thies (Jonas.Thies@DLR.de)                                               */
 /*                                                                                         */
 /*******************************************************************************************/
-#include "fdebug.h"
+
 !> \file sdmat_module.f90
 !! Defines sdmat_module, the phist builtin implementation of phist_DsdMat_*
 !! \author "Melven Roehrig-Zoellner <Melven.Roehrig-Zoellner@DLR.de>
 !!
 
-#include "phist_config.h"
+#include "phist_config_fortran.h"
+
 !> Implementation of phist_DsdMat_* of the phist builtin kernels
 !!
 !! Everything should be straight-forward - not tuned specifically for
