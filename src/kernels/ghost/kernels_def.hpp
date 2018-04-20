@@ -1526,6 +1526,8 @@ _ST_* ydoty, _ST_* xdoty, int* iflag)
   *iflag=0;
 
   PHIST_COUNT_MATVECS(vx);
+  PHIST_PERFCHECK_VERIFY_SPMV(alpha,vA,vx,beta,vy,gamma,delta,iflag);
+
 
   PHIST_CAST_PTR_FROM_VOID(ghost_sparsemat,A,vA,*iflag);
   PHIST_CAST_PTR_FROM_VOID(ghost_densemat,x,vx,*iflag);
