@@ -8,6 +8,12 @@
 /*******************************************************************************************/
 #include "phist_macros.h"
 
+#ifdef __cplusplus
+#include <cinttypes>
+#else
+#include <inttypes.h>
+#endif
+
 //! \addtogroup kernels
 //@{
 

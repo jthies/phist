@@ -241,7 +241,7 @@ extern "C" void SUBR(sparseMat_get_local_nnz)(TYPE(const_sparseMat_ptr) vA, int6
 {
   *iflag=0;
   PHIST_CAST_PTR_FROM_VOID(const Epetra_CrsMatrix,A,vA,*iflag);
-  *local_nnz = static_cast<int64_t>(A->GetNumMyNonzeros());
+  *local_nnz = static_cast<int64_t>(A->NumMyNonzeros());
 }
 
 //! get the row distribution of the matrix
