@@ -25,6 +25,7 @@ extern "C" {
 //  void SUBR(crsMat_create_fromRowFuncAndContext_f)(TYPE(sparseMat_ptr)*,phist_const_comm_ptr,phist_const_context_ptr, 
 //      phist_lidx, phist_sparseMat_rowFunc,void*, int*);
   void SUBR(crsMat_delete_f)(TYPE(sparseMat_ptr) A, int* iflag);
+  void SUBR(crsMat_get_local_nnz_f)(TYPE(const_sparseMat_ptr),int64_t*,int*);
   void SUBR(crsMat_get_map_f)(TYPE(const_sparseMat_ptr),phist_const_map_ptr*,int*);
   void SUBR(crsMat_read_mm_f)(void*A,phist_const_comm_ptr comm, int fname_len, const char* fname, int* iflag);
   void SUBR(crsMat_read_mm_with_map_f)(void*A,phist_const_map_ptr map, int fname_len, const char* fname, int* iflag);
@@ -187,6 +188,12 @@ extern "C" void SUBR(sparseMat_read_hb_with_context)(TYPE(sparseMat_ptr)* A, phi
 {
   *iflag=PHIST_NOT_IMPLEMENTED;
 }
+
+extern "C" void SUBR(sparseMat_get_local_nnz)(TYPE(const_sparseMat_ptr) A, int64_t* local_nnz, int* iflag)
+{
+  PHIST_CHK_IERR( SUBR(crsMat_get_local_nnz_f) (A,local_nnz,iflag), *iflag);
+}
+
 
 extern "C" void SUBR(sparseMat_get_row_map)(TYPE(const_sparseMat_ptr) A, phist_const_map_ptr* map, int* iflag)
 {
@@ -564,6 +571,8 @@ extern "C" void SUBR(sparseMat_times_mvec)(_ST_ alpha, TYPE(const_sparseMat_ptr)
 
   PHIST_COUNT_MATVECS(x)
 
+  PHIST_PERFCHECK_VERIFY_SPMV(alpha,A,x,beta,y,0.0,0.0,iflag);
+
   void SUBR(crsMat_times_mvec_f)(_ST_ alpha, TYPE(const_sparseMat_ptr) A, 
       TYPE(const_mvec_ptr) x, _ST_ beta, TYPE(mvec_ptr) y, int* iflag);
   PHIST_CHK_IERR(SUBR(crsMat_times_mvec_f)(alpha,A,x,beta,y,iflag),*iflag);
@@ -583,6 +592,8 @@ extern "C" void SUBR(sparseMat_times_mvec_vadd_mvec)(_ST_ alpha, TYPE(const_spar
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
 
   PHIST_COUNT_MATVECS(x);
+
+  PHIST_PERFCHECK_VERIFY_SPMV(alpha,A,x,beta,y,0.0,0.0,iflag);
 
   void SUBR(crsMat_times_mvec_vadd_mvec_f)(_ST_ alpha, TYPE(const_sparseMat_ptr) A, 
       const _ST_ shifts[], TYPE(const_mvec_ptr) x, _ST_ beta, TYPE(mvec_ptr) y, int* iflag);
