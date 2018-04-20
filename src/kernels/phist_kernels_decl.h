@@ -109,7 +109,7 @@ const char* filename,int* iflag);
 
 ///@}
 
-//! \name get information about the data distribution in a matrix (maps)
+//! \name get information about the data distribution in a matrix (maps) and matrix properties
 ///@{
 
 //! get the row distribution of the matrix
@@ -131,7 +131,13 @@ void SUBR(sparseMat_get_range_map)(TYPE(const_sparseMat_ptr) A,
 //! get the complete context for creating a similar matrix
 void SUBR(sparseMat_get_context)(TYPE(const_sparseMat_ptr) A,
         phist_const_context_ptr* ctx, int* iflag);
-///@}
+
+//! get number of nonzeros on this MPI rank (should NOT include padding or symmetry-exploiting matrix formats, i.e.
+//! should return the actual number of non-zeros in the matrix also if only about half of them are stored or additional
+//! zeros are stored for better vectorization).
+void SUBR(sparseMat_get_local_nnz)(TYPE(const_sparseMat_ptr) A, int64_t* local_nnz, int* iflag);
+
+//@}
 //@}
 
 //! \name constructors
