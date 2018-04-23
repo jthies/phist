@@ -72,20 +72,20 @@ shift $((OPTIND-1))
 declare -A MODULES_KERNELS
 MODULES_KERNELS=( 
   ["builtin"]=""
-  ["ghost"]="gsl"
-  ["epetra"]="lapack trilinos/trilinos-${TRILINOS_VERSION}"
-  ["tpetra"]="lapack trilinos/trilinos-${TRILINOS_VERSION}" 
+  ["ghost"]=""
+  ["epetra"]="trilinos/trilinos-${TRILINOS_VERSION}"
+  ["tpetra"]="trilinos/trilinos-${TRILINOS_VERSION}" 
   ["petsc"]="petsc" 
   ["eigen"]="Eigen" )
 
 declare -A MODULES_KERNELS_OPTIONAL
 MODULES_KERNELS_OPTIONAL=(
   ["builtin"]="ColPack parmetis trilinos"
-  ["ghost"]="ColPack trilinos/trilinos-11.12.1"
+  ["ghost"]="ColPack trilinos/trilinos"
   ["epetra"]=""
   ["tpetra"]=""
-  ["petsc"]="" 
-  ["eigen"]="" )
+  ["petsc"]="trilinos" 
+  ["eigen"]="trilinos" )
 
 
 ## prepare system for compilation
@@ -132,7 +132,7 @@ if [[ $PRGENV =~ gcc* ]]; then
   else
     export FC=gfortran CC=gcc CXX=g++
   fi
-  module load lapack
+  module load lapack/lapack-3.8.0
   if [[ "${VECT_EXT}" != "CUDA" ]] && [[ "${PRGENV}" != "gcc-7.2.0-openmpi" ]]; then
     module load ccache
     ADD_CMAKE_FLAGS+=" -DPHIST_USE_CCACHE=ON"
