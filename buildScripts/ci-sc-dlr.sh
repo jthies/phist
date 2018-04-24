@@ -81,7 +81,7 @@ MODULES_KERNELS=(
 declare -A MODULES_KERNELS_OPTIONAL
 MODULES_KERNELS_OPTIONAL=(
   ["builtin"]="ColPack parmetis trilinos"
-  ["ghost"]="ColPack trilinos/trilinos"
+  ["ghost"]="ColPack trilinos"
   ["epetra"]=""
   ["tpetra"]=""
   ["petsc"]="trilinos" 
@@ -132,7 +132,7 @@ if [[ $PRGENV =~ gcc* ]]; then
   else
     export FC=gfortran CC=gcc CXX=g++
   fi
-  module load lapack/lapack-3.8.0
+  module load lapack
   if [[ "${VECT_EXT}" != "CUDA" ]] && [[ "${PRGENV}" != "gcc-7.2.0-openmpi" ]]; then
     module load ccache
     ADD_CMAKE_FLAGS+=" -DPHIST_USE_CCACHE=ON"
