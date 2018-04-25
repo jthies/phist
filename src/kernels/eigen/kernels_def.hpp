@@ -183,7 +183,7 @@ extern "C" void SUBR(sparseMat_read_hb_with_context)(TYPE(sparseMat_ptr)* A, phi
   *iflag=PHIST_NOT_IMPLEMENTED;
 }
 
-void SUBR(sparseMat_get_local_nnz)(TYPE(const_sparseMat_ptr) vA, size_t* local_nnz, int* iflag);
+void SUBR(sparseMat_get_local_nnz)(TYPE(const_sparseMat_ptr) vA, size_t* local_nnz, int* iflag)
 {
   PHIST_CAST_PTR_FROM_VOID(const Traits<_ST_>::sparseMat_t,A,vA,*iflag);
   *local_nnz=0;
