@@ -42,6 +42,7 @@
 //!           contained if more vectors were allocated. A space Q of dimension opts.minBas      
 //!           can be used as a starting basis for a subsequent call to subspacejada which       
 //!           then does not require Arnoldi steps for starting up (set opts.v0=Q for this).     
+//!           It is allowed to use the same Q as v0 (input) and output argument.                
 //! R:        small upper triangular matrix of the partial Schur form (Q,R), should have the    
 //!           same number of rows and columns as the number of columns in Q on input.           
 //!           The upper left nConv x nConv block of R contains the Schur-form for the converged 
