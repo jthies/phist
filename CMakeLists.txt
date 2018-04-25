@@ -858,6 +858,7 @@ set (PHIST_CORE_SOURCE ${PROJECT_SOURCE_DIR}/src/core/phist_operator.cpp
                        ${PROJECT_SOURCE_DIR}/src/core/phist_orthogrrfused.cpp
                        ${PROJECT_SOURCE_DIR}/src/core/phist_svrr.cpp
                        ${PROJECT_SOURCE_DIR}/src/core/phist_schur_decomp.cpp
+                       ${PROJECT_SOURCE_DIR}/src/core/phist_transform_searchspace.cpp
                        ${PROJECT_SOURCE_DIR}/src/core/phist_kpm.cpp
                        )
 
@@ -894,7 +895,6 @@ set (PHIST_JADA_SOURCE   ${PROJECT_SOURCE_DIR}/src/jada/phist_jadaOp.cpp
                          ${PROJECT_SOURCE_DIR}/src/jada/phist_subspacejadaC.cpp
                          ${PROJECT_SOURCE_DIR}/src/jada/phist_subspacejadaD.cpp
                          ${PROJECT_SOURCE_DIR}/src/jada/phist_subspacejadaZ.cpp
-                         ${PROJECT_SOURCE_DIR}/src/jada/phist_transform_searchspace.cpp
                          ${PROJECT_SOURCE_DIR}/src/jada/phist_jadaCorrectionSolver.cpp
                          )
 set(PHIST_PRECON_SOURCE ${PROJECT_SOURCE_DIR}/src/precon/phist_preconS.cpp

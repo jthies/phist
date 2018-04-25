@@ -5,6 +5,5 @@
 #include "phist_jadaOp.h"
 #include "phist_jadaOpts.h"
 #include "phist_subspacejada.h"
-#include "phist_transform_searchspace.h"
 
 #endif

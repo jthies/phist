@@ -21,5 +21,6 @@
 #include "phist_orthogrrfused.h"
 #include "phist_kpm.h"
 #include "phist_schur_decomp.h"
+#include "phist_transform_searchspace.h"
 
 #endif
