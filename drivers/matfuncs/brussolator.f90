@@ -6,26 +6,8 @@
 /* Contact: Jonas Thies (Jonas.Thies@DLR.de)                                               */
 /*                                                                                         */
 /*******************************************************************************************/
-#include "phist_config.h"
-#ifdef PHIST_HAVE_GHOST
-#include "ghost/config.h"
-#endif
 
-#ifndef PHIST_HAVE_GHOST
-#define G_LIDX_T C_INT32_T
-#define G_GIDX_T C_INT64_T
-#else
-#ifdef GHOST_IDX64_LOCAL
-#define G_LIDX_T C_INT64_T
-#else
-#define G_LIDX_T C_INT32_T
-#endif
-#ifdef GHOST_IDX64_GLOBAL
-#define G_GIDX_T C_INT64_T
-#else
-#define G_GIDX_T C_INT32_T
-#endif
-#endif
+#include "phist_config_fortran.h"
 
 ! simple symmetric positive definite tridiagonal Toeplitz matrix (e.g. 1D Poisson discretization)
 ! From the NEP collection: MVMBWM, a matrix generator for a brusselator wave model in chemical reaction

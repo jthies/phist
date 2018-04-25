@@ -6,10 +6,8 @@
 /* Contact: Jonas Thies (Jonas.Thies@DLR.de)                                               */
 /*                                                                                         */
 /*******************************************************************************************/
-#include "phist_config.h"
 
-! definition of G_GIDX_T etc. for correct definition of row functions
-#include "../../src/kernels/builtin/fmacros.h"
+#include "phist_config_fortran.h"
 
 ! From the NEP matrix collection in the matrix market MATPDE matrix generator
 module matpde_module

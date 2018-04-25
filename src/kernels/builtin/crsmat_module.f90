@@ -6,15 +6,14 @@
 /* Contact: Jonas Thies (Jonas.Thies@DLR.de)                                               */
 /*                                                                                         */
 /*******************************************************************************************/
-#include "fmacros.h"
+
 !> \file crsmat_module.f90
 !! defines crsmat_module, the sparseMat implementation of phist builtin kernels
 !! \author "Melven Roehrig-Zoellner <Melven.Roehrig-Zoellner@DLR.de>"
 !! \author "Jonas Thies <Jonas.Thies@DLR.de>"
 !!
 
-#include "phist_config.h"
-
+#include "phist_config_fortran.h"
 #include "phist_kernel_flags.h"
 #include "phist_defs.h"
 
