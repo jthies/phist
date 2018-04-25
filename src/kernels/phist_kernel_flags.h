@@ -35,6 +35,14 @@
 /*! def PHIST_IFLAG_DEFAULT */
 #define PHIST_IFLAG_DEFAULT 0
 
+/*! \def PHIST_KERNELS_QUIET
+
+    this flag can be passed to phist_kernels-init and phist_kernels_finaliize to supporess output
+    like pinning information and timing results.
+
+ */
+#define PHIST_KERNELS_QUIET 64
+
 /*! \def PHIST_SPARSEMAT_PERM_LOCAL
 
    sparse matrix preprocessing: allow local matrix reorderings 
