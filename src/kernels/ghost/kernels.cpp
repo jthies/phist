@@ -236,6 +236,8 @@ using namespace phist::ghost_internal;
 // initialize ghost
 extern "C" void phist_kernels_init(int* argc, char*** argv, int* iflag)
 {
+  int iflag_in=*iflag;
+  bool quiet=(*iflag&PHIST_KERNELS_QUIET);
   *iflag=0;
   // disable using Hyperthreads
   ghost_hwconfig hwconfig = GHOST_HWCONFIG_INITIALIZER; 
@@ -271,29 +273,31 @@ extern "C" void phist_kernels_init(int* argc, char*** argv, int* iflag)
   }
 
 
-  char *str = NULL;
-  ghost_string(&str);
-  PHIST_SOUT(PHIST_INFO,"%s\n",str);
-  free(str); str = NULL;
+  if (!quiet)
+  {
+    char *str = NULL;
+    ghost_string(&str);
+    PHIST_SOUT(PHIST_INFO,"%s\n",str);
+    free(str); str = NULL;
+    ghost_machine_string(&str);
+    PHIST_SOUT(PHIST_INFO,"%s\n",str);
+    free(str); str = NULL;
 
-  ghost_machine_string(&str);
-  PHIST_SOUT(PHIST_INFO,"%s\n",str);
-  free(str); str = NULL;
+    int nnuma = 0;
+    int npu = 0;
+    ghost_machine_nnuma(&nnuma);
+    ghost_machine_npu(&npu,GHOST_NUMANODE_ANY);
 
-  int nnuma = 0;
-  int npu = 0;
-  ghost_machine_nnuma(&nnuma);
-  ghost_machine_npu(&npu,GHOST_NUMANODE_ANY);
-
-  ghost_pumap_string(&str);
-  PHIST_ORDERED_OUT(PHIST_INFO,MPI_COMM_WORLD,"%s\n",str);
-  free(str); str = NULL;
+    ghost_pumap_string(&str);
+    PHIST_ORDERED_OUT(PHIST_INFO,MPI_COMM_WORLD,"%s\n",str);
+    free(str); str = NULL;
+  }
 
   // initialize ghost's task-queue (required for tasks!)
   // (ghost does this also automatically when enqueuing the first task, but we might use
   //  som utility functions before!)
   PHIST_CHK_GERR(ghost_taskq_create(), *iflag);
-
+  *iflag=iflag_in;
   PHIST_CHK_IERR(phist_kernels_common_init(argc,argv,iflag),*iflag);
 }
 
@@ -301,10 +305,14 @@ extern "C" void phist_kernels_init(int* argc, char*** argv, int* iflag)
 extern "C" void phist_kernels_finalize(int* iflag)
 {
   PHIST_CHK_IERR(phist_kernels_common_finalize(iflag),*iflag);
-  char* ghostTimings = NULL;
-  PHIST_CHK_GERR(ghost_timing_summarystring(&ghostTimings), *iflag);
-  PHIST_SOUT(PHIST_INFO,"%s\n",ghostTimings);
-  free(ghostTimings);
+  bool quiet=(*iflag&PHIST_KERNELS_QUIET);
+  if (!quiet)
+  {
+    char* ghostTimings = NULL;
+    PHIST_CHK_GERR(ghost_timing_summarystring(&ghostTimings), *iflag);
+    PHIST_SOUT(PHIST_INFO,"%s\n",ghostTimings);
+    free(ghostTimings);
+  }
   ghost_finalize();
   *iflag=0;
 }

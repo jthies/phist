@@ -57,7 +57,7 @@ void omp_set_num_threads(int nt) {return;}
 
 namespace {
 // thread pinning using simple heuristics
-void pinThreads()
+void pinThreads(bool quiet)
 {
   int iflag = 0;
   // gather system information
@@ -94,11 +94,12 @@ void pinThreads()
     delete [] allNodeId;
   }
   int myCPU_SETSIZE = std::max(CPU_SETSIZE, ranksPerNode*nThreads);
-
-  PHIST_SOUT(PHIST_WARNING,"Trying to pin the OpenMP threads to the cores based on simple heuristics (may fail, use GHOST instead!).\n"\
+  if (!quiet)
+  {
+    PHIST_SOUT(PHIST_WARNING,"Pinning the OpenMP threads to the cores based on simple heuristics (may fail).\n"
                            "Using %d ranks per node with %d threads each\n",
                            ranksPerNode, nThreads);
-
+  }
   // pin the main thread
   {
     int targetCoreId = nThreads*myRankInNode;
@@ -134,7 +135,7 @@ void pinThreads()
 #pragma omp critical
     oss << "\t" << coreid << " (" << tid << ")";
   }
-  if( myRank < ranksPerNode )
+  if( myRank < ranksPerNode && !quiet)
   {
     PHIST_OUT(PHIST_INFO, "Result of pinning is coreId(threadId): %s\n", oss.str().c_str());
   }
@@ -188,6 +189,7 @@ void (*__malloc_initialize_hook) (void) = my_init_hook;
 // initialize
 void phist_kernels_init(int* argc, char*** argv, int* iflag)
 {
+  bool quiet=(*iflag&PHIST_KERNELS_QUIET);
   *iflag=0;
 
   PHIST_CHK_IERR( *iflag = MPI_Initialized(&mpiInitializedBefore), *iflag);
@@ -210,7 +212,7 @@ void phist_kernels_init(int* argc, char*** argv, int* iflag)
   
 
 #ifdef PHIST_TRY_TO_PIN_THREADS
-  pinThreads();
+  pinThreads(quiet);
 #endif
 
 #ifdef PHIST_HAVE_LIKWID

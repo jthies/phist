@@ -49,6 +49,8 @@ GTEST_API_ int main(int argc, char **argv) {
     test_result=RUN_ALL_TESTS();
 
     PHIST_MAIN_TASK_END
+    // do not print timing information
+    iflag=PHIST_KERNELS_QUIET;
     phist_kernels_finalize(&iflag);
     //ASSERT_INT_EQ(iflag,0);
     return test_result;

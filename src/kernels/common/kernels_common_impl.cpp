@@ -22,6 +22,7 @@
 //! this function should not be called by the user but by each kernel lib in kernels_init()
 extern "C" void phist_kernels_common_init(int *argc, char*** argv, int* iflag)
 {
+  bool quiet=(*iflag)&PHIST_KERNELS_QUIET;
   *iflag=0;
   phist_random_init();
 #ifdef PHIST_HAVE_LIKWID
@@ -70,23 +71,27 @@ PHIST_TASK_END(iflag)
 #ifdef PHIST_HAVE_MPI
   MPI_Barrier(mpi_comm);
 #endif
-  // print information about the phist version and installation
-  PHIST_SOUT(PHIST_VERBOSE,
-  "\n=====================================================================\n"
-  "This is PHIST %s\n"
-  "        git revision %s\n"
-  "        kernel library: %s\n"
-  "        installation info:\n"
-  "---------------------------------------------------------------------\n"
-  "%s"
-  "=====================================================================\n\n",
-  phist_version(),phist_git_revision(),phist_kernel_lib(),phist_install_info());
+  if (!quiet)
+  {
+    // print information about the phist version and installation
+    PHIST_SOUT(PHIST_VERBOSE,
+    "\n=====================================================================\n"
+    "This is PHIST %s\n"
+    "        git revision %s\n"
+    "        kernel library: %s\n"
+    "        installation info:\n"
+    "---------------------------------------------------------------------\n"
+    "%s"
+    "=====================================================================\n\n",
+    phist_version(),phist_git_revision(),phist_kernel_lib(),phist_install_info());
+  }
 }
  
 
 
 extern "C" void phist_kernels_common_finalize(int *iflag)
 {
+  bool quiet=(*iflag)&PHIST_KERNELS_QUIET;
   *iflag=0;
 #ifdef PHIST_HAVE_LIKWID
 PHIST_TASK_DECLARE(LikwidFinalizeTask)
@@ -98,12 +103,15 @@ PHIST_TASK_BEGIN(LikwidFinalizeTask)
   LIKWID_MARKER_CLOSE;
 PHIST_TASK_END(iflag)
 #endif
+
+if (!quiet)
+{
 #if defined(PHIST_TIMEMONITOR) || defined(PHIST_TIMEMONITOR_PERLINE)
-PHIST_CXX_TIMER_SUMMARIZE;
+  PHIST_CXX_TIMER_SUMMARIZE;
 #endif
 
-PHIST_PERFCHECK_SUMMARIZE(PHIST_INFO);
-
+  PHIST_PERFCHECK_SUMMARIZE(PHIST_INFO);
+}
 #ifdef PHIST_PERFCHECK
   // prevent some strange memory errors during deallocation (due to shared lib context?)
   phist_PerfCheck::benchmarks.clear();
