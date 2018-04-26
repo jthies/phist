@@ -49,12 +49,23 @@ PHIST_PERFCHECK_BENCHMARK(STREAM_TRIAD, phist_bench_stream_triad);
 PHIST_PERFCHECK_BENCHMARK(STREAM_STORE, phist_bench_stream_store);
 //PHIST_PERFCHECK_BENCHMARK(STREAM_FROM_DEVICE, phist_bench_stream_from_device);
 //PHIST_PERFCHECK_BENCHMARK(STREAM_TO_DEVICE, phist_bench_stream_to_device);
+#define NO_PERFMODEL_AVAILABLE_YET 0.0
 
 
 //! checks performance for all functions that should require only neglectable time
 #define PHIST_PERFCHECK_VERIFY_SMALL \
   PHIST_PERFCHECK_VERIFY(__FUNCTION__,0,0,0,0,0,0,0, 1.e-5,0);
 
+
+//! prints a warning that the performance model is not yet implemented
+#define PHIST_PERFCHECK_NOT_IMPLEMENTED \
+  PHIST_PERFCHECK_VERIFY(__FUNCTION__,0,0,0,0,0,0,0,NO_PERFMODEL_AVAILABLE_YET,0);
+
+
+//! performance model for sparse matrix-vector product with fused operations:
+//! Y <- beta*Y + (A + shift*I)X, s<-gamma*X'Y, t<-delta*Y'Y
+#define PHIST_PERFCHECK_VERIFY_SPMV(a,A,X,b,Y,g,d,iflag) \
+PHIST_PERFCHECK_NOT_IMPLEMENTED
 
 //! checks performance of mvec_create
 #define PHIST_PERFCHECK_VERIFY_MVEC_CREATE(map,nvec,iflag) \
@@ -530,6 +541,7 @@ PHIST_PERFCHECK_BENCHMARK(STREAM_STORE, phist_bench_stream_store);
 #define PHIST_PERFCHECK_VERIFY_MVECT_TIMES_MVEC_TIMES_SDMAT(V,W,iflag)
 #define PHIST_PERFCHECK_VERIFY_MVEC_TIMES_SDMAT(a,V,b,W,iflag)
 #define PHIST_PERFCHECK_VERIFY_MVEC_TIMES_SDMAT_INPLACE(V,M,iflag)
+#define PHIST_PERFCHECK_VERIFY_SPMV(a,A,x,b,y,g,d,iflag)
 
 
 #endif

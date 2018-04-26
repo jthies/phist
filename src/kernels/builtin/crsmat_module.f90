@@ -2365,6 +2365,24 @@ end if
     !--------------------------------------------------------------------------------
   end subroutine phist_DcrsMat_get_map
 
+  subroutine phist_DcrsMat_get_local_nnz(A_ptr, local_nnz, ierr) bind(C,name='phist_DcrsMat_get_local_nnz_f')
+    use, intrinsic :: iso_c_binding
+    type(c_ptr), value :: A_ptr
+    integer(kind=c_int64_t), intent(out) :: local_nnz
+    integer(kind=c_int), intent(out) :: ierr
+    !--------------------------------------------------------------------------------
+    type(CrsMat_t), pointer :: A
+
+    if( .not. c_associated(A_ptr) ) then
+      ierr = -88
+      return
+    end if
+
+    call c_f_pointer(A_ptr,A)
+    local_nnz = A%nEntries
+  
+  end subroutine phist_DcrsMat_get_local_nnz
+
 
   !==================================================================================
   subroutine phist_DcrsMat_times_mvec(alpha, A_ptr, x_ptr, beta, y_ptr, ierr) bind(C,name='phist_DcrsMat_times_mvec_f')

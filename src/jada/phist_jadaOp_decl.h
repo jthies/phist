@@ -7,9 +7,11 @@
 /*                                                                                         */
 /*******************************************************************************************/
 
-//! create projected and shifted operator for Jacobi-Davidson,
+//! \brief Create projected and shifted operator for Jacobi-Davidson,
 //! op*X = (I-BV*V')(A*X+B*X*sigma)(I-V*BV')
-//! by setting the appropriate pointers. No data is copied.
+//! by setting the appropriate pointers.
+//!
+//! No data is copied.
 //! For B_op==NULL, the pre-projection (I-V*BV') is
 //! omitted to save reductions (and BV is ignored).
 //! 
@@ -23,10 +25,10 @@ void SUBR(jadaOp_create)(TYPE(const_linearOp_ptr)    AB_op,
                          const _ST_            sigma[], int                   nvec,
                          TYPE(linearOp_ptr)          jdOp,    int*                  iflag);
 
-//!
+//! Deletes the operator jadaOp
 void SUBR(jadaOp_delete)(TYPE(linearOp_ptr)  jdOp, int *iflag);
 
-//! create a preconditioner for the inner solve in Jacobi-Davidson.                                      
+//! \brief Create a preconditioner for the inner solve in Jacobi-Davidson.                                      
 //!                                                                                                      
 //! Given a linear operator that is a preconditioner for A-sigma_j*B, this function will simply          
 //! wrap it up to use apply_shifted when apply() is called. We need this because our implementations     
@@ -54,43 +56,44 @@ void SUBR(jadaPrec_create)(TYPE(const_linearOp_ptr) P_op,
                            int projType,
                            int* iflag);
 
-//!
+//! Deletes the preconditioner
 void SUBR(jadaPrec_delete)(TYPE(linearOp_ptr) jdPrec, int *iflag);
 
-//! add a left preconditioner created by jadaPrec_create to a jadaOp.
+//! \brief Add a left preconditioner created by jadaPrec_create to a jadaOp.
 
 //! The effect of the apply function will afterwards by Y <- alpha*(jadaPrec*jadaOp*X) + beta*Y,
 //! the projections used are determined by the AB_op and jadaPrec operators. If jadaPrec==NULL, 
 //! the operator is reset to it's original effect.
 void SUBR(jadaOp_set_leftPrecond)(TYPE(linearOp_ptr) jadaOp, TYPE(const_linearOp_ptr) jadaPrec, int* iflag); 
 
-//! create projection Operator
+//! Create projection operator
 //! Y <- alpha*(I - W*V')X + beta*Y
 void SUBR(projection_Op_create)(TYPE(const_mvec_ptr) V, TYPE(const_mvec_ptr) W, TYPE(linearOp_ptr) proj_Op, int* iflag);
 
+//! Delete projection operator
 void SUBR(projection_Op_delete)(TYPE(linearOp_ptr) proj_Op, int *iflag);
 
-//! create skew projection Operator for a preconditioner P_op
+//! Create skew projection operator for a preconditioner P_op
 //! Y <- (I - P_op\V (BV'P_op\V)^{-1} (BV)') * X
 void SUBR(skew_projection_Op_create)(TYPE(const_linearOp_ptr) P_op,
         TYPE(const_mvec_ptr) V, TYPE(const_mvec_ptr) BV,
         TYPE(linearOp_ptr) skew_Op, int* iflag);
 
-//! Create projected and shifted operator for Jacobi-Davidson using the linearOp_product operator
+//! \brief Create projected and shifted operator for Jacobi-Davidson using the linearOp_product operator
 //! and a variable combination of projections.
 
-//! With method we can choose, which Projections to use:
-//! "NONE": op*X = (A+B*sigma)*X (only shifted operator)
-//! "PRE": op*X = (A+B*sigma)(I-V*BV')*X (with pre-projection)
-//! "POST": op*X = (I-BV*V')(A+B*sigma)*X (with post-projection)
-//! "PRE_POST": op*X = (I-BV*V')(A+B*sigma)(I-V*BV')*X (with pre- and post-projection)
+//! \param method With method we can choose, which Projections to use:
+//! "NONE": op*X = (A+B*sigma)*X (only shifted operator),
+//! "PRE": op*X = (A+B*sigma)(I-V*BV')*X (with pre-projection),
+//! "POST": op*X = (I-BV*V')(A+B*sigma)*X (with post-projection),
+//! "PRE_POST": op*X = (I-BV*V')(A+B*sigma)(I-V*BV')*X (with pre- and post-projection),
 //! "SKEW": op*X = (I-(K\V)*((BV)'K\V)^{-1}*(BV)')*(K\+sigma*I)*(A+B*sigma)*X (with skew-projection and
-//! preconditioner K)
+//! preconditioner K),
 //! "ALL": op*X = P_{skew}*(K\+sigma*I)*P_{proj}^T*(A+B*sigma)*P_{proj}*X (with pre-, post-,
 //! skew-projection and preconditioner)
 
-//! onlyPrec will change the methods "SKEW" and "ALL":
-//! onlyPrec == 0: we use skew-projection and preconditioner
+//! \param onlyPrec will change the methods "SKEW" and "ALL":
+//! onlyPrec == 0: we use skew-projection and preconditioner,
 //! onlyPrec == 1: we only use the preconditioner
 void SUBR(jadaOp_variable_create)(TYPE(const_linearOp_ptr)    AB_op,
                          TYPE(const_linearOp_ptr)     B_op, TYPE(const_linearOp_ptr)    Prec_op,

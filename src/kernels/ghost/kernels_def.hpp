@@ -1432,6 +1432,14 @@ extern "C" void SUBR(sdMatT_add_sdMat)(_ST_ alpha, TYPE(const_sdMat_ptr) vA,
 
 }
 
+extern "C" void SUBR(sparseMat_get_local_nnz)(TYPE(const_sparseMat_ptr) vA, int64_t* local_nnz, int* iflag)
+{
+  *iflag=0;
+  PHIST_CAST_PTR_FROM_VOID(ghost_sparsemat,A,vA,*iflag);
+  *local_nnz = static_cast<int64_t>(A->context->nnz);
+}
+
+
 //! spMVM communication
 extern "C" void SUBR(sparseMat_times_mvec_communicate)(TYPE(const_sparseMat_ptr) vA, TYPE(const_mvec_ptr) vx, int* iflag)
 {
@@ -1518,6 +1526,8 @@ _ST_* ydoty, _ST_* xdoty, int* iflag)
   *iflag=0;
 
   PHIST_COUNT_MATVECS(vx);
+  PHIST_PERFCHECK_VERIFY_SPMV(alpha,vA,vx,beta,vy,gamma,delta,iflag);
+
 
   PHIST_CAST_PTR_FROM_VOID(ghost_sparsemat,A,vA,*iflag);
   PHIST_CAST_PTR_FROM_VOID(ghost_densemat,x,vx,*iflag);
