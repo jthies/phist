@@ -1152,8 +1152,8 @@ if( PHIST_PERFCHECK )
   option(PHIST_PERFCHECK_REALISTIC "Switch from ideal performance predictions to more realistic ones (e.g. for views)!" OFF)
 endif()
 
-set(PHIST_PEAK_FLOPS_CPU 884e9 CACHE STRING "Peak GFlop/s rate of the CPU component (for PERFCHECK only)")
-set(PHIST_PEAK_FLOPS_GPU 1.43e12 CACHE STRING "Peak GFlop/s rate of the GPU component (for PERFCHECK only)")
+set(PHIST_PEAK_FLOPS_CPU -1 CACHE STRING "Peak GFlop/s rate of the CPU component (for the roofline model in PERFCHECK only. If you don't know this value, just leave it at -1 and it will be ignored)")
+set(PHIST_PEAK_FLOPS_GPU -1 CACHE STRING "Peak GFlop/s rate of the GPU component (for the roofline model in PERFCHECK only. If you don't know this value, just leave it at -1 and it will be ignored)")
 
 set(INCLUDE_FLAGS "")
 get_property(dirs DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY INCLUDE_DIRECTORIES)
