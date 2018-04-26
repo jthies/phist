@@ -6,9 +6,11 @@
 /* Contact: Jonas Thies (Jonas.Thies@DLR.de)                                               */
 /*                                                                                         */
 /*******************************************************************************************/
-//! a simple Arnoldi process to start up the JaDa iteration.
+//! \brief A simple Arnoldi process to start up the JaDa iteration.
+//!
 //! Given a minimum basis size m, compute V(:,1:m+1), 
 //! H(1:m+1,1:m) such that A*V(:,1:m) = V(:,1:m+1)*H(1:m+1,1:m)
+//!
 //! input: v0, V and H allocated with m+1 resp. m columns
 //! and nloc resp. m+1 rows.
 //!

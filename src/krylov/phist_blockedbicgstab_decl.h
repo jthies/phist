@@ -21,20 +21,19 @@
 //! In contrast to our GMRES solver, BiCGStab does not work with a state object but simply runs
 //! until convergence (of one of the systems) or failure.
 //!
-//! \param *nIter On input, *nIter indicates the total max number of iterations allowed, maxIter, for any system.
-//! On output, *nIter indicates the number of blocked iterations performed. 
+//! \param [in] *nIter indicates the total max number of iterations allowed, maxIter, for any system.
+//! \param [out] *nIter indicates the number of blocked iterations performed. 
 //!
-//! \param sol must have numSys columns
-//! \param rhs must have numSys columns
+//! \param sol,rhs must have numSys columns
 //! \param Op must be applicable to numSys columns. It is allowed that
 //! Op acts as a different linear operator on each column of the input vector, e.g. Op*X_j = (A-sigma_jB)X_j
 //!
 //! \param V If V!=NULL is given, it represents the approximate eigenspace Q~ corresponding to the shifts inside Jacobi-Davidson
 //! and can be used for checking convergence based on the eigenvalue residuals rather than the linear system residuals.
 //!
-//! \return On return, iflag will be set to:
-//! <0 if any error occurred,
-//!  0 if anyone converged and there was no error,
+//! \return On return, iflag will be set to: <br>
+//! <0 if any error occurred, <br>
+//!  0 if anyone converged and there was no error, <br>
 //!  1 if the number of iterations was exceeded without any system converging.
 //!
 void SUBR( blockedBiCGStab_iterate ) (TYPE(const_linearOp_ptr) Op, 

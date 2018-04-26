@@ -28,10 +28,10 @@ void SUBR(PCG)(TYPE(const_linearOp_ptr) Op,
 //! high-level user interface that does not require knowledge of the state object. This interface
 //! should be used if you only want run a restarted GMRES solver on one or more systems
 //!
-//! \param *nIter On input, *nIter indicates the total max number of iterations allowed, maxIter, for any system.
-//! On output, *nIter indicates the number of GMRES iterations.
+//! \param [in] *nIter indicates the total max number of iterations allowed, maxIter, for any system.
+//! \param [out] *nIter indicates the number of GMRES iterations.
 //!
-//! \param sol_in On output, sol_in gives the solution of the restarted GMRES
+//! \param [out] sol_in gives the solution of the restarted GMRES
 //!
 void SUBR(restartedBlockedGMRES)(TYPE(const_linearOp_ptr) Aop, TYPE(const_linearOp_ptr) Pop,
         TYPE(mvec_ptr) rhs, TYPE(mvec_ptr) sol_in, int numSys,

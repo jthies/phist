@@ -25,7 +25,7 @@
 //!                       
 //! \param sigma If sigma is 0, B is not touched. If sigma!=0 but B==NULL, B=I (identity matrix)     
 //! is assumed.
-//! \param Vkern&BVkern For some preconditioners it may be useful to provide (an approximation of) the kernel of            
+//! \param Vkern,BVkern For some preconditioners it may be useful to provide (an approximation of) the kernel of            
 //! A-sigma*B, this can be done via Vkern and BVkern. If they are NULL, they are not used anyway.
 //!                                                                                                     
 //! \param method The string method="usage" will lead to a list of available preconditioners being printed.
