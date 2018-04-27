@@ -145,6 +145,16 @@ namespace phist_PerfCheck
 
         return oss.str();
       }
+  
+  protected:
+  
+    //! keep track of global statistics on this MPI process
+    static double total_GByte_transferred_in_kernels;
+    //! keep track of global statistics on this MPI process
+    static double total_Gflops_performed_in_kernels;
+    //! keep track of global statistics on this MPI process
+    static double total_time_spent_in_kernels;
+  
   };
 }
 
