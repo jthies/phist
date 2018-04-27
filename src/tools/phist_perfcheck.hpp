@@ -106,6 +106,15 @@ namespace phist_PerfCheck
 #endif
         double t_peak = flops/peak;
         expectedResults_[name_].update(std::max(expectedTime,t_peak));
+      
+        total_GByte_transferred_in_kernels += 0.0; //TODO
+        total_Gflops_performed_in_kernels +=flops*1.0e-9;
+      }
+      
+      ~PerfCheckTimer()
+      {
+        double elapsed=wtime_available()? get_wtime()-wtime_: 0.0;
+        total_time_spent_in_kernels+=elapsed;
       }
 
       // generate and print statistics

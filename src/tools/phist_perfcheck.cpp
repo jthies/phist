@@ -170,17 +170,17 @@ namespace phist_PerfCheck
 
     double global_GBytes=total_GByte_transferred_in_kernels;
     double global_Gflops=total_Gflops_performed_in_kernels;
-    double global_time=total_time_spent_in_kernels=0.0;
+    double global_time=total_time_spent_in_kernels;
 
 #ifdef PHIST_HAVE_MPI
-    PHIST_CHK_MPIERR(*iflag=MPI_Allreduce(&total_GByte_transferred_in_kernels,
-                                            &global_GBytes, MPI_DOUBLE,MPI_SUM,mpi_comm),*iflag);
+    PHIST_CHK_MPIERR(ierr=MPI_Allreduce(&total_GByte_transferred_in_kernels,
+                                            &global_GBytes, 1, MPI_DOUBLE,MPI_SUM,mpi_comm),ierr);
 
-    PHIST_CHK_MPI_FLAG(*iflag=MPI_Allreduce(&total_Gflops_performed_in_kernels,
-                                            &global_Gflops, MPI_DOUBLE,MPI_SUM,mpi_comm),*iflag);
+    PHIST_CHK_MPIERR(ierr=MPI_Allreduce(&total_Gflops_performed_in_kernels,
+                                            &global_Gflops, 1, MPI_DOUBLE,MPI_SUM,mpi_comm),ierr);
 
-    PHIST_CHK_MPI_FLAG(*iflag=MPI_Allreduce(&total_time_spent_in_kernels,
-                                            &global_time, MPI_DOUBLE,MPI_MAX,mpi_comm),*iflag);
+    PHIST_CHK_MPIERR(ierr=MPI_Allreduce(&total_time_spent_in_kernels,
+                                            &global_time, 1, MPI_DOUBLE,MPI_MAX,mpi_comm),ierr);
 #endif
     
     // print result on proc 0 or on all procs to a file.
@@ -216,17 +216,21 @@ namespace phist_PerfCheck
     fprintf(ofile, "%s  %10.3e  %10.3g\n", strTotal.c_str(), sumMaxTotalExpected, 100*sumMaxTotalExpected/sumMaxTotalTime);
     fprintf(ofile, "==================================================================================================================================\n");
 
-    fprintf(ofile, "PERFORMANCE SUMMARY FOR PERFCHECKED KERNELS:\n");
-    fprintf(ofile, "--------------------------------------------\n");
+    fprintf(ofile, "\nPERFORMANCE SUMMARY FOR PERFCHECKED KERNELS:\n");
+    fprintf(ofile, "----------------------------------------------------------------------------------------------------------------------------------\n");
 #ifdef PHIST_PERFCHECK_SEPARATE_OUTPUT
-    fprintf(ofile, "estimated GB transferred to/from memory  on this process:\t%8.4e", total_GByte_transferred_in_kernels);
-    fprintf(ofile, "estimated bandwidth [GB/s] achieved      on this process:\t%8.4e", total_GByte_transferred_in_kernels / total_time_spent_in_kernels);
-    fprintf(ofile, "estimated performance [Gflop/s] achieved on this process:\t%8.4e", total_Gflops_performed_in_kernels  / total_time_spent_in_kernels);
+// note: we do not sum up all the memory transfers yet
+//    fprintf(ofile, "estimated GB transferred to/from memory  on this process:\t%8.4e\n", 
+//        total_GByte_transferred_in_kernels);
+//    fprintf(ofile, "estimated bandwidth [GB/s] achieved      on this process:\t%8.4e\n", 
+//        total_GByte_transferred_in_kernels / total_time_spent_in_kernels);
+    fprintf(ofile, "estimated performance [Gflop/s] achieved on this process:\t%8.4e\n", total_Gflops_performed_in_kernels  / total_time_spent_in_kernels);
 #endif
 
-    fprintf(ofile, "estimated GB transferred to/from memory  in total:\t%8.4e", global_GBytes);
-    fprintf(ofile, "estimated bandwidth [GB/s] achieved      in total:\t%8.4e", global_GBytes/global_time);
-    fprintf(ofile, "estimated performance [Gflop/s] achieved in total:\t%8.4e", global_Gflops/global_time);
+//    fprintf(ofile, "estimated GB transferred to/from memory  in total:\t%8.4e\n", global_GBytes);
+//    fprintf(ofile, "estimated bandwidth [GB/s] achieved      in total:\t%8.4e\n", global_GBytes/global_time);
+    fprintf(ofile, "estimated performance [Gflop/s] achieved in total:\t%8.4e\n", global_Gflops/global_time);
+    fprintf(ofile, "----------------------------------------------------------------------------------------------------------------------------------\n");
 
     if (ofile!=stdout) fclose(ofile);
   }
