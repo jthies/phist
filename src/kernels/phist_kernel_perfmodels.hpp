@@ -29,15 +29,20 @@
 #ifdef PHIST_PERFCHECK_MVEC_LENGTH
 #undef PHIST_PERFCHECK_MVEC_LENGTH
 #endif
+#ifdef PHIST_PERFCHECK_SPARSEMAT_NNZ
+#undef PHIST_PERFCHECK_SPARSEMAT_NNZ
+#endif
 #ifdef PHIST_PERFCHECK_MVEC_LEN_T
 #undef PHIST_PERFCHECK_MVEC_LEN_T
 #endif
 
 #ifdef PHIST_PERFCHECK_SEPARATE_OUTPUT
+#define PHIST_PERFCHECK_SPARSEMAT_NNZ SUBR(sparseMat_local_nnz)
 #define PHIST_PERFCHECK_MVEC_LENGTH SUBR(mvec_my_length)
 #define PHIST_PERFCHECK_MAP_LENGTH phist_map_get_local_length
 #define PHIST_PERFCHECK_MVEC_LEN_T phist_lidx
 #else
+#define PHIST_PERFCHECK_SPARSEMAT_NNZ SUBR(sparseMat_global_nnz)
 #define PHIST_PERFCHECK_MVEC_LENGTH SUBR(mvec_global_length)
 #define PHIST_PERFCHECK_MAP_LENGTH phist_map_get_global_length
 #define PHIST_PERFCHECK_MVEC_LEN_T phist_gidx
@@ -74,8 +79,8 @@ PHIST_PERFCHECK_BENCHMARK(STREAM_STORE, phist_bench_stream_store);
   int64_t _nnz; \
   phist_lidx _n; \
   PHIST_CHK_IERR(SUBR(mvec_num_vectors)(X,&_nV,iflag),*iflag); \
-  PHIST_CHK_IERR(SUBR(mvec_my_length)(X,&_n,iflag),*iflag); \
-  PHIST_CHK_IERR(SUBR(sparseMat_get_local_nnz)(A,&_nnz,iflag),*iflag); \
+  PHIST_PERFCHECK_MVEC_LENGTH(X,&_n,iflag),*iflag); \
+  PHIST_PERFCHECK_SPARSEMAT_NNZ(A,&_nnz,iflag),*iflag); \
   double flops = (a!=0)*double(2*_nnz*_nV + (shift!=_ST_(0)*_n*_nV)) + (b!=_ST_(0))*double((1+(b!=_ST_(1)))*_n*_nV) + PHIST_PERFCHECK_AXPBY_FLOPS(_n*_nV,g,d) + double(2*num_dots*_nV*_n); \
 PHIST_PERFCHECK_NOT_IMPLEMENTED(flops);
 

@@ -197,7 +197,7 @@ extern "C" void SUBR(sparseMat_create_fromRowFunc)(TYPE(sparseMat_ptr) *A,
                  *iflag);
 }
 
-extern "C" void SUBR(sparseMat_get_local_nnz)(TYPE(const_sparseMat_ptr) A,
+extern "C" void SUBR(sparseMat_local_nnz)(TYPE(const_sparseMat_ptr) A,
                                             int64_t* local_nnz, int* iflag)
 {
   PHIST_CAST_PTR_FROM_VOID(const Traits<_ST_>::sparseMat_t, mat, A, *iflag);
@@ -206,6 +206,16 @@ extern "C" void SUBR(sparseMat_get_local_nnz)(TYPE(const_sparseMat_ptr) A,
   *iflag=0;
   *local_nnz=0;
 }                                            
+
+extern "C" void SUBR(sparseMat_global_nnz)(TYPE(const_sparseMat_ptr) vA, int64_t* global_nnz, int* iflag)
+{
+  PHIST_CAST_PTR_FROM_VOID(const Traits<_ST_>::sparseMat_t,A,vA,*iflag);
+  // note: I don't know how to get this property from Tpetra, but since we want to allow perfcheck
+  // anyway I return iflag=0.
+  *iflag=0;
+  *global_nnz=0;
+}
+
 extern "C" void SUBR(sparseMat_get_row_map)(TYPE(const_sparseMat_ptr) A, 
                                             phist_const_map_ptr* map, 
                                             int* iflag)

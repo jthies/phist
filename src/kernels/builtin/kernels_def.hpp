@@ -25,7 +25,8 @@ extern "C" {
 //  void SUBR(crsMat_create_fromRowFuncAndContext_f)(TYPE(sparseMat_ptr)*,phist_const_comm_ptr,phist_const_context_ptr, 
 //      phist_lidx, phist_sparseMat_rowFunc,void*, int*);
   void SUBR(crsMat_delete_f)(TYPE(sparseMat_ptr) A, int* iflag);
-  void SUBR(crsMat_get_local_nnz_f)(TYPE(const_sparseMat_ptr),int64_t*,int*);
+  void SUBR(crsMat_local_nnz_f)(TYPE(const_sparseMat_ptr),int64_t*,int*);
+  void SUBR(crsMat_global_nnz_f)(TYPE(const_sparseMat_ptr),int64_t*,int*);
   void SUBR(crsMat_get_map_f)(TYPE(const_sparseMat_ptr),phist_const_map_ptr*,int*);
   void SUBR(crsMat_read_mm_f)(void*A,phist_const_comm_ptr comm, int fname_len, const char* fname, int* iflag);
   void SUBR(crsMat_read_mm_with_map_f)(void*A,phist_const_map_ptr map, int fname_len, const char* fname, int* iflag);
@@ -189,9 +190,14 @@ extern "C" void SUBR(sparseMat_read_hb_with_context)(TYPE(sparseMat_ptr)* A, phi
   *iflag=PHIST_NOT_IMPLEMENTED;
 }
 
-extern "C" void SUBR(sparseMat_get_local_nnz)(TYPE(const_sparseMat_ptr) A, int64_t* local_nnz, int* iflag)
+extern "C" void SUBR(sparseMat_local_nnz)(TYPE(const_sparseMat_ptr) A, int64_t* local_nnz, int* iflag)
 {
   PHIST_CHK_IERR( SUBR(crsMat_get_local_nnz_f) (A,local_nnz,iflag), *iflag);
+}
+
+extern "C" void SUBR(sparseMat_global_nnz)(TYPE(const_sparseMat_ptr) A, int64_t* global_nnz, int* iflag)
+{
+  PHIST_CHK_IERR( SUBR(crsMat_get_global_nnz_f) (A,global_nnz,iflag), *iflag);
 }
 
 

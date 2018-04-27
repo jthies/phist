@@ -77,7 +77,8 @@ module crsmat_module
     !--------------------------------------------------------------------------------
     integer                      :: nRows                !< number of rows
     integer                      :: nCols                !< number of columns
-    integer(kind=8)              :: nEntries             !< number of non-zero entries
+    integer(kind=8)              :: nEntries             !< number of non-zero entries on this MPI rank
+    integer(kind=8)              :: nGlobalEntries       !< number of non-zero entries across all MPI ranks
     integer(kind=8), allocatable :: row_offset(:)        !< indices of rows in col_idx and val
     integer(kind=8), allocatable :: nonlocal_offset(:)   !< points to first nonlocal element in each row
     integer,         allocatable :: col_idx(:)           !< column indices
@@ -2365,7 +2366,7 @@ end if
     !--------------------------------------------------------------------------------
   end subroutine phist_DcrsMat_get_map
 
-  subroutine phist_DcrsMat_get_local_nnz(A_ptr, local_nnz, ierr) bind(C,name='phist_DcrsMat_get_local_nnz_f')
+  subroutine phist_DcrsMat_local_nnz(A_ptr, local_nnz, ierr) bind(C,name='phist_DcrsMat_local_nnz_f')
     use, intrinsic :: iso_c_binding
     type(c_ptr), value :: A_ptr
     integer(kind=c_int64_t), intent(out) :: local_nnz
@@ -2381,7 +2382,25 @@ end if
     call c_f_pointer(A_ptr,A)
     local_nnz = A%nEntries
   
-  end subroutine phist_DcrsMat_get_local_nnz
+  end subroutine phist_DcrsMat_local_nnz
+
+  subroutine phist_DcrsMat_global_nnz(A_ptr, global_nnz, ierr) bind(C,name='phist_DcrsMat_global_nnz_f')
+    use, intrinsic :: iso_c_binding
+    type(c_ptr), value :: A_ptr
+    integer(kind=c_int64_t), intent(out) :: global_nnz
+    integer(kind=c_int), intent(out) :: ierr
+    !--------------------------------------------------------------------------------
+    type(CrsMat_t), pointer :: A
+
+    if( .not. c_associated(A_ptr) ) then
+      ierr = -88
+      return
+    end if
+
+    call c_f_pointer(A_ptr,A)
+    local_nnz = A%nGlobalEntries
+  
+  end subroutine phist_DcrsMat_global_nnz
 
 
   !==================================================================================

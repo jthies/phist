@@ -173,12 +173,13 @@ namespace phist_PerfCheck
     double global_time=total_time_spent_in_kernels;
 
 #ifdef PHIST_HAVE_MPI
+# ifdef PHIST_PERFCHECK_SEPARATE_OUTPUT
     PHIST_CHK_MPIERR(ierr=MPI_Allreduce(&total_GByte_transferred_in_kernels,
                                             &global_GBytes, 1, MPI_DOUBLE,MPI_SUM,mpi_comm),ierr);
 
     PHIST_CHK_MPIERR(ierr=MPI_Allreduce(&total_Gflops_performed_in_kernels,
                                             &global_Gflops, 1, MPI_DOUBLE,MPI_SUM,mpi_comm),ierr);
-
+# endif
     PHIST_CHK_MPIERR(ierr=MPI_Allreduce(&total_time_spent_in_kernels,
                                             &global_time, 1, MPI_DOUBLE,MPI_MAX,mpi_comm),ierr);
 #endif
