@@ -121,6 +121,10 @@ PHIST_OUT(PHIST_ERROR,"Error code %d (%s) returned from call %s\n(file %s, line 
 (FLAG),(phist_retcode2str(FLAG)),(#func),(__FILE__),(__LINE__)); return;}}}
 #endif
 
+//! \def PHIST_CHK_MPIERR
+//! check return value of MPI call
+#define PHIST_CHK_MPIERR(func,FLAG) PHIST_CHK_IERR(func,FLAG)
+
 #ifdef PHIST_HAVE_GHOST
 # ifndef DOXYGEN
 # include <ghost/config.h>
