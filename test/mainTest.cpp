@@ -25,6 +25,7 @@
 
 GTEST_API_ int main(int argc, char **argv) {
     int iflag,test_result;
+    iflag=PHIST_IFLAG_DEFAULT;
     phist_kernels_init(&argc,&argv,&iflag);
     PHIST_MAIN_TASK_BEGIN
     testing::InitGoogleTest(&argc, argv);
