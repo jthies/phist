@@ -571,7 +571,7 @@ extern "C" void SUBR(sparseMat_times_mvec)(_ST_ alpha, TYPE(const_sparseMat_ptr)
 
   PHIST_COUNT_MATVECS(x)
 
-  PHIST_PERFCHECK_VERIFY_SPMV(alpha,A,st::zero(),x,beta,y,0.0,0.0,0,iflag);
+  PHIST_PERFCHECK_VERIFY_SPMV(alpha,A,_ST_(0),x,beta,y,_ST_(0),_ST_(0),_ST_(0),iflag);
 
   void SUBR(crsMat_times_mvec_f)(_ST_ alpha, TYPE(const_sparseMat_ptr) A, 
       TYPE(const_mvec_ptr) x, _ST_ beta, TYPE(mvec_ptr) y, int* iflag);
@@ -593,7 +593,7 @@ extern "C" void SUBR(sparseMat_times_mvec_vadd_mvec)(_ST_ alpha, TYPE(const_spar
 
   PHIST_COUNT_MATVECS(x);
 
-  PHIST_PERFCHECK_VERIFY_SPMV(alpha,A,st::one(),x,beta,y,0.0,0.0,0,iflag);
+  PHIST_PERFCHECK_VERIFY_SPMV(alpha,A,_ST_(1),x,beta,y,0.0,0.0,0,iflag);
 
   void SUBR(crsMat_times_mvec_vadd_mvec_f)(_ST_ alpha, TYPE(const_sparseMat_ptr) A, 
       const _ST_ shifts[], TYPE(const_mvec_ptr) x, _ST_ beta, TYPE(mvec_ptr) y, int* iflag);
