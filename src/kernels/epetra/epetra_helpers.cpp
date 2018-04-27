@@ -77,6 +77,10 @@ namespace phist
     
     prec_and_mat::~prec_and_mat()
     {
+      Prec=Teuchos::null;
+      MLPrec=Teuchos::null;
+      IfpackPrec=Teuchos::null;
+      Mat=Teuchos::null;
     }
 
     void prec_and_mat::UpdateMatrix(phist_Dconst_sparseMat_ptr vA, double sigma,

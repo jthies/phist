@@ -36,6 +36,10 @@ namespace phist_PerfCheck
   };
 
 
+    double PerfCheckTimer::total_GByte_transferred_in_kernels=0.0;
+    double PerfCheckTimer::total_Gflops_performed_in_kernels=0.0;
+    double PerfCheckTimer::total_time_spent_in_kernels=0.0;
+
   // calculates the results and prints them
   void PerfCheckTimer::summarize(int verbosity)
   {
@@ -45,9 +49,10 @@ namespace phist_PerfCheck
     int nExpectedTimers = expectedResults_.size();
 
 #ifdef PHIST_HAVE_MPI
+    MPI_Comm mpi_comm=phist_get_default_comm();
     // consider only timers from the first process!
-    PHIST_CHK_IERR(ierr = MPI_Bcast(&nTimers, 1, MPI_INT, 0, MPI_COMM_WORLD), ierr);
-    PHIST_CHK_IERR(ierr = MPI_Bcast(&nExpectedTimers, 1, MPI_INT, 0, MPI_COMM_WORLD), ierr);
+    PHIST_CHK_MPIERR(ierr = MPI_Bcast(&nTimers, 1, MPI_INT, 0, mpi_comm), ierr);
+    PHIST_CHK_MPIERR(ierr = MPI_Bcast(&nExpectedTimers, 1, MPI_INT, 0, mpi_comm), ierr);
 #endif
 
     PHIST_CHK_IERR(ierr = (nTimers != nExpectedTimers) ? -1 : 0, ierr);
@@ -56,8 +61,8 @@ namespace phist_PerfCheck
     
     int rank=0,nproc=1;
 #ifdef PHIST_HAVE_MPI
-    MPI_Comm_rank(MPI_COMM_WORLD,&rank);
-    MPI_Comm_size(MPI_COMM_WORLD,&nproc);
+    MPI_Comm_rank(mpi_comm,&rank);
+    MPI_Comm_size(mpi_comm,&nproc);
 #endif
 
     FILE* ofile= (rank==0)? stdout: NULL;
@@ -77,13 +82,13 @@ namespace phist_PerfCheck
       fcnNameList.append( it->first + '\n' );
     int strLen = fcnNameList.length();
 #ifdef PHIST_HAVE_MPI
-    PHIST_CHK_IERR(ierr = MPI_Bcast(&strLen, 1, MPI_INT, 0, MPI_COMM_WORLD), ierr);
+    PHIST_CHK_MPIERR(ierr = MPI_Bcast(&strLen, 1, MPI_INT, 0, mpi_comm), ierr);
 #endif
     char* strBuf = new char[strLen];
     fcnNameList.copy(strBuf, strLen);
     strBuf[strLen-1] = '\0';
 #ifdef PHIST_HAVE_MPI
-    PHIST_CHK_IERR(ierr = MPI_Bcast(strBuf, strLen, MPI_CHAR, 0, MPI_COMM_WORLD), ierr);
+    PHIST_CHK_MPIERR(ierr = MPI_Bcast(strBuf, strLen, MPI_CHAR, 0, mpi_comm), ierr);
 #endif
     std::istringstream iss(strBuf);
 
@@ -113,21 +118,21 @@ namespace phist_PerfCheck
 #ifdef PHIST_HAVE_MPI
     // reductions over mpi processes
     tmp = minTime;
-    PHIST_CHK_IERR(ierr = MPI_Reduce(&tmp[0],&minTime[0],nTimers,MPI_DOUBLE,MPI_MIN,0,MPI_COMM_WORLD), ierr);
+    PHIST_CHK_MPIERR(ierr = MPI_Reduce(&tmp[0],&minTime[0],nTimers,MPI_DOUBLE,MPI_MIN,0,mpi_comm), ierr);
     tmp = minExpected;
-    PHIST_CHK_IERR(ierr = MPI_Reduce(&tmp[0],&minExpected[0],nTimers,MPI_DOUBLE,MPI_MIN,0,MPI_COMM_WORLD), ierr);
+    PHIST_CHK_MPIERR(ierr = MPI_Reduce(&tmp[0],&minExpected[0],nTimers,MPI_DOUBLE,MPI_MIN,0,mpi_comm), ierr);
 
     tmp = maxTime;
-    PHIST_CHK_IERR(ierr = MPI_Reduce(&tmp[0],&maxTime[0],nTimers,MPI_DOUBLE,MPI_MAX,0,MPI_COMM_WORLD), ierr);
+    PHIST_CHK_MPIERR(ierr = MPI_Reduce(&tmp[0],&maxTime[0],nTimers,MPI_DOUBLE,MPI_MAX,0,mpi_comm), ierr);
     tmp = maxExpected;
-    PHIST_CHK_IERR(ierr = MPI_Reduce(&tmp[0],&maxExpected[0],nTimers,MPI_DOUBLE,MPI_MAX,0,MPI_COMM_WORLD), ierr);
+    PHIST_CHK_MPIERR(ierr = MPI_Reduce(&tmp[0],&maxExpected[0],nTimers,MPI_DOUBLE,MPI_MAX,0,mpi_comm), ierr);
 
     tmp = maxTotalTime;
-    PHIST_CHK_IERR(ierr = MPI_Reduce(&tmp[0],&sumTotalTime[0],nTimers,MPI_DOUBLE,MPI_SUM,0,MPI_COMM_WORLD), ierr);
-    PHIST_CHK_IERR(ierr = MPI_Reduce(&tmp[0],&maxTotalTime[0],nTimers,MPI_DOUBLE,MPI_MAX,0,MPI_COMM_WORLD), ierr);
+    PHIST_CHK_MPIERR(ierr = MPI_Reduce(&tmp[0],&sumTotalTime[0],nTimers,MPI_DOUBLE,MPI_SUM,0,mpi_comm), ierr);
+    PHIST_CHK_MPIERR(ierr = MPI_Reduce(&tmp[0],&maxTotalTime[0],nTimers,MPI_DOUBLE,MPI_MAX,0,mpi_comm), ierr);
     tmp = maxTotalExpected;
-    PHIST_CHK_IERR(ierr = MPI_Reduce(&tmp[0],&sumTotalExpected[0],nTimers,MPI_DOUBLE,MPI_SUM,0,MPI_COMM_WORLD), ierr);
-    PHIST_CHK_IERR(ierr = MPI_Reduce(&tmp[0],&maxTotalExpected[0],nTimers,MPI_DOUBLE,MPI_MAX,0,MPI_COMM_WORLD), ierr);
+    PHIST_CHK_MPIERR(ierr = MPI_Reduce(&tmp[0],&sumTotalExpected[0],nTimers,MPI_DOUBLE,MPI_SUM,0,mpi_comm), ierr);
+    PHIST_CHK_MPIERR(ierr = MPI_Reduce(&tmp[0],&maxTotalExpected[0],nTimers,MPI_DOUBLE,MPI_MAX,0,mpi_comm), ierr);
 #endif
 
     std::vector<double> sortBy(nTimers);
@@ -162,17 +167,34 @@ namespace phist_PerfCheck
     {
       fcnName.at(i).resize(maxNameLen,' ');
     }
+
+    double global_GBytes=total_GByte_transferred_in_kernels;
+    double global_Gflops=total_Gflops_performed_in_kernels;
+    double global_time=total_time_spent_in_kernels;
+
+#ifdef PHIST_HAVE_MPI
+    PHIST_CHK_MPIERR(ierr=MPI_Allreduce(&total_GByte_transferred_in_kernels,
+                                            &global_GBytes, 1, MPI_DOUBLE,MPI_SUM,mpi_comm),ierr);
+
+    PHIST_CHK_MPIERR(ierr=MPI_Allreduce(&total_Gflops_performed_in_kernels,
+                                            &global_Gflops, 1, MPI_DOUBLE,MPI_SUM,mpi_comm),ierr);
+
+    PHIST_CHK_MPIERR(ierr=MPI_Allreduce(&total_time_spent_in_kernels,
+                                            &global_time, 1, MPI_DOUBLE,MPI_MAX,mpi_comm),ierr);
+#endif
+    
     // print result on proc 0 or on all procs to a file.
     // We could also implement e.g. that only the ranks on node 0 print the results
     // in this way
     if (ofile==NULL) return;
+    
     std::string function = "function(dim) / (formula)";
     function.resize(maxNameLen, ' ');
     fprintf(ofile, "================================================== PERFORMANCE CHECK RESULTS =====================================================\n");
     fprintf(ofile, "%s  %10s  %10s  %10s  %10s  %10s\n", function.c_str(), "total time", "%roofline", "count", "max.%roofline", "min.%roofline");
     int nprocs = 1;
 #ifdef PHIST_HAVE_MPI
-    MPI_Comm_size(MPI_COMM_WORLD, &nprocs);
+    MPI_Comm_size(mpi_comm, &nprocs);
 #endif
     double sumMaxTotalExpected = 0., sumMaxTotalTime = 0.;
     for(int i_ = 0; i_ < nTimers; i_++)
@@ -193,6 +215,23 @@ namespace phist_PerfCheck
     strTotal.resize(maxNameLen, ' ');
     fprintf(ofile, "%s  %10.3e  %10.3g\n", strTotal.c_str(), sumMaxTotalExpected, 100*sumMaxTotalExpected/sumMaxTotalTime);
     fprintf(ofile, "==================================================================================================================================\n");
+
+    fprintf(ofile, "\nPERFORMANCE SUMMARY FOR PERFCHECKED KERNELS:\n");
+    fprintf(ofile, "----------------------------------------------------------------------------------------------------------------------------------\n");
+#ifdef PHIST_PERFCHECK_SEPARATE_OUTPUT
+// note: we do not sum up all the memory transfers yet
+//    fprintf(ofile, "estimated GB transferred to/from memory  on this process:\t%8.4e\n", 
+//        total_GByte_transferred_in_kernels);
+//    fprintf(ofile, "estimated bandwidth [GB/s] achieved      on this process:\t%8.4e\n", 
+//        total_GByte_transferred_in_kernels / total_time_spent_in_kernels);
+    fprintf(ofile, "estimated performance [Gflop/s] achieved on this process:\t%8.4e\n", total_Gflops_performed_in_kernels  / total_time_spent_in_kernels);
+#endif
+
+//    fprintf(ofile, "estimated GB transferred to/from memory  in total:\t%8.4e\n", global_GBytes);
+//    fprintf(ofile, "estimated bandwidth [GB/s] achieved      in total:\t%8.4e\n", global_GBytes/global_time);
+    fprintf(ofile, "estimated performance [Gflop/s] achieved in total:\t%8.4e\n", global_Gflops/global_time);
+    fprintf(ofile, "----------------------------------------------------------------------------------------------------------------------------------\n");
+
     if (ofile!=stdout) fclose(ofile);
   }
 }

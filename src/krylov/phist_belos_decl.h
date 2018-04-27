@@ -6,12 +6,12 @@
 /* Contact: Jonas Thies (Jonas.Thies@DLR.de)                                               */
 /*                                                                                         */
 /*******************************************************************************************/
-//! The Belos package from Trilinos provides block Krylov solvers.
+//! \brief The Belos package from Trilinos provides block Krylov solvers.
 //! We currently provide access to four diffrent methods.         
 //!
-//! method=0: block GMRES
-//! method=1: pseudo-block GMRES
-//! method=2: (block-)conjugate gradients (CG) for SPD matrices
+//! method=0: block GMRES <br>
+//! method=1: pseudo-block GMRES <br>
+//! method=2: (block-)conjugate gradients (CG) for SPD matrices <br>
 //! method=3: pseudo-block CG
 //!
 //! AX=B is solved for X with any number of vectors in X and B.
