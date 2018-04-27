@@ -43,6 +43,10 @@
 #define PHIST_PERFCHECK_MVEC_LEN_T phist_gidx
 #endif
 
+// flops for operation Y <- a*X + b*Y, including some special cases like a=1, b=0 etc.
+#ifndef PHIST_PERFCHECK_AXPBY_FLOPS
+#define PHIST_PERFCHECK_AXPBY_FLOPS(N,a,b)  N*((a!=st::zero())*(1+(a!=st::one()))+(b!=st::zero())*(1+(b!=st::one())));
+
 // define benchmarks
 PHIST_PERFCHECK_BENCHMARK(STREAM_LOAD, phist_bench_stream_load);
 PHIST_PERFCHECK_BENCHMARK(STREAM_TRIAD, phist_bench_stream_triad);
@@ -58,14 +62,21 @@ PHIST_PERFCHECK_BENCHMARK(STREAM_STORE, phist_bench_stream_store);
 
 
 //! prints a warning that the performance model is not yet implemented
-#define PHIST_PERFCHECK_NOT_IMPLEMENTED \
-  PHIST_PERFCHECK_VERIFY(__FUNCTION__,0,0,0,0,0,0,0,NO_PERFMODEL_AVAILABLE_YET,0);
+#define PHIST_PERFCHECK_NOT_IMPLEMENTED(flops) \
+  PHIST_PERFCHECK_VERIFY(__FUNCTION__,0,0,0,0,0,0,0,NO_PERFMODEL_AVAILABLE_YET,flops);
 
 
 //! performance model for sparse matrix-vector product with fused operations:
 //! Y <- beta*Y + (A + shift*I)X, s<-gamma*X'Y, t<-delta*Y'Y
-#define PHIST_PERFCHECK_VERIFY_SPMV(a,A,X,b,Y,g,d,iflag) \
-PHIST_PERFCHECK_NOT_IMPLEMENTED
+#define PHIST_PERFCHECK_VERIFY_SPMV(a,A,shift,X,b,Y,g,d,,num_dots,iflag) \
+  int _nV; \
+  size_t _nnz; \
+  phist_lidx _n; \
+  PHIST_CHK_IERR(SUBR(mvec_num_vectors)(X,&_nV,iflag),*iflag); \
+  PHIST_CHK_IERR(SUBR(mvec_my_length)(X,&_n,iflag),*iflag); \
+  PHIST_CHK_IERR(SUBR(sparseMat_get_local_nnz)(A,&nnz,iflag),*iflag); \
+  double flops = (a!=0)*double(2*_nnz*_nV + (shift!=st::zero()*_n*_nV)) + (b!=st::zero())*double((1+(b!=st::one()))*_n*_nV) + PHIST_PERFCHECK_AXPBY_FLOPS(_n*_nV,g,d) + double(2*num_dots*_nV*_n); \
+PHIST_PERFCHECK_NOT_IMPLEMENTED(flops);
 
 //! checks performance of mvec_create
 #define PHIST_PERFCHECK_VERIFY_MVEC_CREATE(map,nvec,iflag) \
@@ -323,7 +334,7 @@ PHIST_PERFCHECK_NOT_IMPLEMENTED
   PHIST_CHK_IERR(PHIST_PERFCHECK_MVEC_LENGTH(X,&n,iflag),*iflag); \
   PHIST_CHK_IERR(SUBR(mvec_num_vectors)(X,&nV,iflag),*iflag); \
   *iflag = tmp_iflag; \
-  PHIST_PERFCHECK_VERIFY(__FUNCTION__,(a!=st::zero()),(b!=st::zero()),nV,0,0,0,0, STREAM_TRIAD(((a!=st::zero())+(b!=st::zero())+1)*nV*n*sizeof(_ST_)),n*(1+(a!=st::zero())+2*(b!=st::zero())));
+  PHIST_PERFCHECK_VERIFY(__FUNCTION__,(a!=st::zero()),(b!=st::zero()),nV,0,0,0,0, STREAM_TRIAD(((a!=st::zero())+(b!=st::zero())+1)*nV*n*sizeof(_ST_)), PHIST_PERFCHECK_AXPBY_FLOPS(n*nV,a,b));
 
 #else
 
@@ -344,7 +355,7 @@ PHIST_PERFCHECK_NOT_IMPLEMENTED
   int nY_ = std::min(ldY,((nV-1)/cl_size+1)*cl_size); \
   if( nY_+cl_size > ldY ) nY_ = ldY; \
   *iflag = tmp_iflag; \
-  PHIST_PERFCHECK_VERIFY(__FUNCTION__,(a!=st::zero()),(b!=st::zero()),nV,nX_,nY_,0,0, STREAM_TRIAD(((a!=st::zero())*nX_+(b!=st::zero())*nY_+nY_)*n*sizeof(_ST_)),n*(1+(a!=st::zero())+2*(b!=st::zero())));
+  PHIST_PERFCHECK_VERIFY(__FUNCTION__,(a!=st::zero()),(b!=st::zero()),nV,nX_,nY_,0,0, STREAM_TRIAD(((a!=st::zero())*nX_+(b!=st::zero())*nY_+nY_)*n*sizeof(_ST_)),PHIST_PERFCHECK_AXPBY_FLOPS(n*nV,a,b));
 
 #endif
 
