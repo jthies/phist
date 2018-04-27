@@ -250,7 +250,7 @@ if (NOT TPL_LAPACKE_LIBRARIES)
   else()
     find_library (LAPACKE_LIBRARY lapacke ${LAPACKE_LIBDIR})
     if (LAPACKE_LIBRARY MATCHES "LAPACKE_LIBRARY-NOTFOUND")
-      message(FATAL_ERROR "Did not find the LAPACKe library based on the LAPACK_LIBRARIES you provided, please set"
+      message(FATAL_ERROR "Did not find the LAPACKe library based on the LAPACK_LIBRARIES you provided, please set "
                           "LAPACKE_LIBRARIES and LAPACKE_INCLUDE_DIRS instead (including lapacke,lapack and blas library "
                           "names/inc dirs) or leave it to CMake to locate BLAS, LAPACK and LAPACKe.")
     else()
@@ -857,6 +857,8 @@ set (PHIST_CORE_SOURCE ${PROJECT_SOURCE_DIR}/src/core/phist_operator.cpp
                        ${PROJECT_SOURCE_DIR}/src/core/phist_orthogrr.cpp
                        ${PROJECT_SOURCE_DIR}/src/core/phist_orthogrrfused.cpp
                        ${PROJECT_SOURCE_DIR}/src/core/phist_svrr.cpp
+                       ${PROJECT_SOURCE_DIR}/src/core/phist_schur_decomp.cpp
+                       ${PROJECT_SOURCE_DIR}/src/core/phist_transform_searchspace.cpp
                        ${PROJECT_SOURCE_DIR}/src/core/phist_kpm.cpp
                        )
 
@@ -889,12 +891,10 @@ if(PHIST_USE_CRAFT)
 endif()
 set (PHIST_JADA_SOURCE   ${PROJECT_SOURCE_DIR}/src/jada/phist_jadaOp.cpp
                          ${PROJECT_SOURCE_DIR}/src/jada/phist_jadaOpts.cpp
-                         ${PROJECT_SOURCE_DIR}/src/jada/phist_schur_decomp.cpp
                          ${PROJECT_SOURCE_DIR}/src/jada/phist_subspacejadaS.cpp
                          ${PROJECT_SOURCE_DIR}/src/jada/phist_subspacejadaC.cpp
                          ${PROJECT_SOURCE_DIR}/src/jada/phist_subspacejadaD.cpp
                          ${PROJECT_SOURCE_DIR}/src/jada/phist_subspacejadaZ.cpp
-                         ${PROJECT_SOURCE_DIR}/src/jada/phist_transform_searchspace.cpp
                          ${PROJECT_SOURCE_DIR}/src/jada/phist_jadaCorrectionSolver.cpp
                          )
 set(PHIST_PRECON_SOURCE ${PROJECT_SOURCE_DIR}/src/precon/phist_preconS.cpp

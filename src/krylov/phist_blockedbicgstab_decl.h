@@ -13,24 +13,26 @@
 //! \defgroup blockedBiCGStab blocked BiCGStab solver for symmetric or general linear systems
 //@{
 
-//!
-//! a simple BiCGStab implementation that works on several vectors simultaneously,
+
+//! \brief A simple BiCGStab implementation that works on several vectors simultaneously,
 //! building a separate Krylov subspace for each of them.
+//!
 //! For more information on blocked solvers see phist_blockedgmres_decl.h
 //! In contrast to our GMRES solver, BiCGStab does not work with a state object but simply runs
 //! until convergence (of one of the systems) or failure.
 //!
-//! On input, *nIter indicates the total max number of iterations allowed, maxIter, for any system.
+//! \param *nIter On input, *nIter indicates the total max number of iterations allowed, maxIter, for any system.
 //! On output, *nIter indicates the number of blocked iterations performed. 
 //!
-//! sol and rhs must both have numSys columns, and Op must be applicable to numSys columns. It is allowed that
-//! op acts as a different linear operator on each column of the input vector, e.g. Op*X_j = (A-sigma_jB)X_j
+//! \param sol must have numSys columns
+//! \param rhs must have numSys columns
+//! \param Op must be applicable to numSys columns. It is allowed that
+//! Op acts as a different linear operator on each column of the input vector, e.g. Op*X_j = (A-sigma_jB)X_j
 //!
-//! If V!=NULL is given, it represents the approximate eigenspace Q~ corresponding to the shifts inside Jacobi-Davidson
+//! \param V If V!=NULL is given, it represents the approximate eigenspace Q~ corresponding to the shifts inside Jacobi-Davidson
 //! and can be used for checking convergence based on the eigenvalue residuals rather than the linear system residuals.
 //!
-//! On return, iflag will be set to:
-//!
+//! \return On return, iflag will be set to:
 //! <0 if any error occurred,
 //!  0 if anyone converged and there was no error,
 //!  1 if the number of iterations was exceeded without any system converging.

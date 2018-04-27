@@ -34,13 +34,15 @@ extern "C" {
 //! data (this will be the A_ field in the linearOp_t, but the
 //! user should only work with linearOp instead of this one directly)
 typedef struct {
-  //! identifies the preconditioner type (e.g. IFPACK), this is used to
-  //! internally call the correct create/delete/apply etc functions
+  //! \brief identifies the preconditioner type (e.g. IFPACK)
+  //!
+  //! This is used to internally call the correct create/delete/apply etc functions
   phist_Eprecon type_;
-  void const* A_; //! pointer to matrix A
-  void const* B_; //! pointer to matrix B
-  void const *Vkern_, *BVkern_; //! pointers to vector spaces approximating the kernel of A-sigma*B 
-  void* P_; //! pointer to preconditioning object
+  void const* A_; //!< pointer to matrix A
+  void const* B_; //!< pointer to matrix B
+  void const *Vkern_; //!< pointer to vector space approximating the kernel of A-sigma*B 
+  void const *BVkern_; //!< pointer to vector space approximating the kernel of A-sigma*B 
+  void* P_; //!< pointer to preconditioning object
 } phist_internal_precon;
 
 #ifdef PHIST_HAVE_SP

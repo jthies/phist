@@ -24,7 +24,7 @@
 "C_FLAGS: ${CMAKE_C_FLAGS}\n" \
 "Fortran_FLAGS: ${CMAKE_Fortran_FLAGS}\n"
 
-/*! general verbosity of PHIST:
+/* general verbosity of PHIST:
         0: only print errors
         1: errors and warnings
         2: some info about the progress of the algorthms etc.

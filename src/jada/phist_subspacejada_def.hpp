@@ -993,7 +993,7 @@ PHIST_TESTING_CHECK_SUBSPACE_INVARIANTS;
     if (nQ_out>minBase)
     {
       // we could also return up to nV (current basis size) vectors, but then we'ld have to communicate how many columns exactly are set.
-      // This way the usere knows: nEig, or minBase if I allowed for more space.
+      // This way the user knows: nEig, or minBase if I allowed for more space.
       PHIST_SOUT(PHIST_WARNING,"only setting the first opts.minBas(=%d) columns of Q (rows and cols of R)\n",minBase);
       nQ_out=minBase;
     }
