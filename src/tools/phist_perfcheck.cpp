@@ -230,7 +230,10 @@ namespace phist_PerfCheck
 
 //    fprintf(ofile, "estimated GB transferred to/from memory  in total:\t%8.4e\n", global_GBytes);
 //    fprintf(ofile, "estimated bandwidth [GB/s] achieved      in total:\t%8.4e\n", global_GBytes/global_time);
-    fprintf(ofile, "estimated performance [Gflop/s] achieved in total:\t%8.4e\n", global_Gflops/global_time);
+    fprintf(ofile, "Estimated performance achieved in measured kernels: %6.2e GFlop/s\n"
+                   "Total time spent               in measured kernels: %6.2e seconds\n"
+                   "(conservative estimate, some flops in fused kernels are not yet counted)\n",
+        global_Gflops/global_time, global_time);
     fprintf(ofile, "----------------------------------------------------------------------------------------------------------------------------------\n");
 
     if (ofile!=stdout) fclose(ofile);
