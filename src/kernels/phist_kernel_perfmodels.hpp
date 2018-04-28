@@ -49,8 +49,23 @@
 #endif
 
 // flops for operation Y <- a*X + b*Y, including some special cases like a=1, b=0 etc.
+//              
+//          a   
+//        0 1 * 
+//      --------
+//    0|  0 0 1 
+// b  1|  0 1 2 
+//    *|  1 2 3 
+//              
+//
+// (b!=0)&&(b!=1) +     [ col 1]
+// (a!=0)         +     [ col 2]
+// (a!=0)&&(a!=1)       [ col 3]
 #ifndef PHIST_PERFCHECK_AXPBY_FLOPS
-#define PHIST_PERFCHECK_AXPBY_FLOPS(N,a,b)  (N*((a!=_ST_(0))*(1+(a!=_ST_(1)))+(b!=_ST_(0))*(1+(b!=_ST_(1)))))
+#define PHIST_PERFCHECK_AXPBY_FLOPS(N,a,b)  \
+(( ((b!=_ST_(0))&&(b!=_ST_(1))) + \
+   (a!=_ST_(0))                 + \
+   ((a!=_ST_(0))&&(a!=_ST_(1))) ) * N)
 #endif
 
 // define benchmarks
@@ -232,7 +247,7 @@ PHIST_PERFCHECK_NOT_IMPLEMENTED(flops);
   PHIST_CHK_IERR(PHIST_PERFCHECK_MVEC_LENGTH(V,&n,iflag),*iflag); \
   PHIST_CHK_IERR(SUBR(mvec_num_vectors)(V,&nV,iflag),*iflag); \
   *iflag = tmp_iflag; \
-  PHIST_PERFCHECK_VERIFY(__FUNCTION__,(V!=W),nV,0,0,0,0,0, STREAM_LOAD((nV+(V!=W)*nV)*n*sizeof(_ST_)),2*n);
+  PHIST_PERFCHECK_VERIFY(__FUNCTION__,(V!=W),nV,0,0,0,0,0, STREAM_LOAD((nV+(V!=W)*nV)*n*sizeof(_ST_)),2*n*nV);
 
 #else
 
