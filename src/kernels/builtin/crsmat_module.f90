@@ -1889,6 +1889,7 @@ end subroutine permute_local_matrix
     ! create the default map
     call c_f_pointer(comm_ptr, comm)
     call map_setup(A%row_map, comm, globalRows, verbose, ierr)
+    A%nGlobalEntries=globalEntries
     if( ierr .ne. 0 ) return
     
     ! read the matrix data
@@ -2192,6 +2193,9 @@ if( verbose .and. A%row_map%me .eq. 0 ) then
   flush(6)
 end if
 
+call mpi_allreduce(A%nEntries, A%nGlobalEntries, 1, MPI_INTEGER8, MPI_SUM, &
+                   A%row_map%comm, ierr)
+
 wtime = mpi_wtime()
 
     call sort_global_cols(A)
@@ -2398,7 +2402,7 @@ end if
     end if
 
     call c_f_pointer(A_ptr,A)
-    local_nnz = A%nGlobalEntries
+    global_nnz = A%nGlobalEntries
   
   end subroutine phist_DcrsMat_global_nnz
 

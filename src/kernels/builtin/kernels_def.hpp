@@ -192,12 +192,12 @@ extern "C" void SUBR(sparseMat_read_hb_with_context)(TYPE(sparseMat_ptr)* A, phi
 
 extern "C" void SUBR(sparseMat_local_nnz)(TYPE(const_sparseMat_ptr) A, int64_t* local_nnz, int* iflag)
 {
-  PHIST_CHK_IERR( SUBR(crsMat_get_local_nnz_f) (A,local_nnz,iflag), *iflag);
+  PHIST_CHK_IERR( SUBR(crsMat_local_nnz_f) (A,local_nnz,iflag), *iflag);
 }
 
 extern "C" void SUBR(sparseMat_global_nnz)(TYPE(const_sparseMat_ptr) A, int64_t* global_nnz, int* iflag)
 {
-  PHIST_CHK_IERR( SUBR(crsMat_get_global_nnz_f) (A,global_nnz,iflag), *iflag);
+  PHIST_CHK_IERR( SUBR(crsMat_global_nnz_f) (A,global_nnz,iflag), *iflag);
 }
 
 
