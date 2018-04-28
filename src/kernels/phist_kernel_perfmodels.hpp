@@ -77,10 +77,10 @@ PHIST_PERFCHECK_BENCHMARK(STREAM_STORE, phist_bench_stream_store);
 #define PHIST_PERFCHECK_VERIFY_SPMV(a,A,shift,X,b,Y,g,d,num_dots,iflag) \
   int _nV; \
   int64_t _nnz; \
-  phist_lidx _n; \
+  PHIST_PERFCHECK_MVEC_LEN_T _n; \
   PHIST_CHK_IERR(SUBR(mvec_num_vectors)(X,&_nV,iflag),*iflag); \
-  PHIST_PERFCHECK_MVEC_LENGTH(X,&_n,iflag),*iflag); \
-  PHIST_PERFCHECK_SPARSEMAT_NNZ(A,&_nnz,iflag),*iflag); \
+  PHIST_CHK_IERR(PHIST_PERFCHECK_MVEC_LENGTH(X,&_n,iflag),*iflag); \
+  PHIST_CHK_IERR(PHIST_PERFCHECK_SPARSEMAT_NNZ(A,&_nnz,iflag),*iflag); \
   double flops = (a!=0)*double(2*_nnz*_nV + (shift!=_ST_(0)*_n*_nV)) + (b!=_ST_(0))*double((1+(b!=_ST_(1)))*_n*_nV) + PHIST_PERFCHECK_AXPBY_FLOPS(_n*_nV,g,d) + double(2*num_dots*_nV*_n); \
 PHIST_PERFCHECK_NOT_IMPLEMENTED(flops);
 
