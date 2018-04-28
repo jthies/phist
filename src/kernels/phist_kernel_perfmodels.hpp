@@ -268,7 +268,7 @@ PHIST_PERFCHECK_NOT_IMPLEMENTED(flops);
   int nW_ = std::min(ldW,((nV-1)/cl_size+1)*cl_size); \
   if( nW_+cl_size > ldW ) nW_ = ldW; \
   *iflag = tmp_iflag; \
-  PHIST_PERFCHECK_VERIFY(__FUNCTION__,(V!=W),nV,ldV,ldW,0,0,0, STREAM_LOAD((nV_+(V!=W)*nW_)*n*sizeof(_ST_)),2*n);
+  PHIST_PERFCHECK_VERIFY(__FUNCTION__,(V!=W),nV,ldV,ldW,0,0,0, STREAM_LOAD((nV_+(V!=W)*nW_)*n*sizeof(_ST_)),2*n*nV);
 
 #endif
 
@@ -285,7 +285,7 @@ PHIST_PERFCHECK_NOT_IMPLEMENTED(flops);
   PHIST_CHK_IERR(PHIST_PERFCHECK_MVEC_LENGTH(V,&n,iflag),*iflag); \
   PHIST_CHK_IERR(SUBR(mvec_num_vectors)(V,&nV,iflag),*iflag); \
   *iflag = tmp_iflag; \
-  PHIST_PERFCHECK_VERIFY(__FUNCTION__,nV,0,0,0,0,0,0, STREAM_LOAD(nV*n*sizeof(_ST_))+STREAM_TRIAD(2*nV*n*sizeof(_ST_)),3*n);
+  PHIST_PERFCHECK_VERIFY(__FUNCTION__,nV,0,0,0,0,0,0, STREAM_LOAD(nV*n*sizeof(_ST_))+STREAM_TRIAD(2*nV*n*sizeof(_ST_)),3*n*nV);
 
 #else
 
@@ -303,7 +303,7 @@ PHIST_PERFCHECK_NOT_IMPLEMENTED(flops);
   int nV_ = std::min(ldV,((nV-1)/cl_size+1)*cl_size); \
   if( nV_+cl_size > ldV ) nV_ = ldV; \
   *iflag = tmp_iflag; \
-  PHIST_PERFCHECK_VERIFY(__FUNCTION__,nV,ldV,0,0,0,0,0, STREAM_LOAD(nV_*n*sizeof(_ST_))+STREAM_TRIAD(2*nV_*n*sizeof(_ST_)),3*n);
+  PHIST_PERFCHECK_VERIFY(__FUNCTION__,nV,ldV,0,0,0,0,0, STREAM_LOAD(nV_*n*sizeof(_ST_))+STREAM_TRIAD(2*nV_*n*sizeof(_ST_)),3*n*nV);
 
 #endif
 
@@ -320,7 +320,7 @@ PHIST_PERFCHECK_NOT_IMPLEMENTED(flops);
   PHIST_CHK_IERR(PHIST_PERFCHECK_MVEC_LENGTH(V,&n,iflag),*iflag); \
   PHIST_CHK_IERR(SUBR(mvec_num_vectors)(V,&nV,iflag),*iflag); \
   *iflag = tmp_iflag; \
-  PHIST_PERFCHECK_VERIFY(__FUNCTION__,nV,0,0,0,0,0,0, STREAM_TRIAD(2*nV*n*sizeof(_ST_)),n);
+  PHIST_PERFCHECK_VERIFY(__FUNCTION__,nV,0,0,0,0,0,0, STREAM_TRIAD(2*nV*n*sizeof(_ST_)),n*nV);
 
 #else
 
@@ -338,7 +338,7 @@ PHIST_PERFCHECK_NOT_IMPLEMENTED(flops);
   int nV_ = std::min(ldV,((nV-1)/cl_size+1)*cl_size); \
   if( nV_+cl_size > ldV ) nV_ = ldV; \
   *iflag = tmp_iflag; \
-  PHIST_PERFCHECK_VERIFY(__FUNCTION__,nV,ldV,0,0,0,0,0, STREAM_TRIAD(2*nV_*n*sizeof(_ST_)),n);
+  PHIST_PERFCHECK_VERIFY(__FUNCTION__,nV,ldV,0,0,0,0,0, STREAM_TRIAD(2*nV_*n*sizeof(_ST_)),n*nV);
 
 #endif
 
@@ -408,7 +408,7 @@ PHIST_PERFCHECK_NOT_IMPLEMENTED(flops);
   PHIST_CHK_IERR(SUBR(mvec_num_vectors)(V,&nV,iflag),*iflag); \
   PHIST_CHK_IERR(SUBR(mvec_num_vectors)(W,&nW,iflag),*iflag); \
   *iflag = tmp_iflag; \
-  PHIST_PERFCHECK_VERIFY(__FUNCTION__,nV,nW,(V!=W),*iflag,0,0,0, STREAM_LOAD((nV+(V!=W)*nW)*n*sizeof(_ST_)),2*n*nV*nV);
+  PHIST_PERFCHECK_VERIFY(__FUNCTION__,nV,nW,(V!=W),*iflag,0,0,0, STREAM_LOAD((nV+(V!=W)*nW)*n*sizeof(_ST_)),2*n*nV*nW);
 
 #else
 
@@ -430,7 +430,7 @@ PHIST_PERFCHECK_NOT_IMPLEMENTED(flops);
   int nW_ = std::min(ldW,((nW-1)/cl_size+1)*cl_size); \
   if( nW_+cl_size > ldW ) nW_ = ldW; \
   *iflag = tmp_iflag; \
-  PHIST_PERFCHECK_VERIFY(__FUNCTION__,nV,nW,(V!=W),ldV,ldW,*iflag,0, STREAM_LOAD((nV_+(V!=W)*nW_)*n*sizeof(_ST_)),2*n*nV*nV);
+  PHIST_PERFCHECK_VERIFY(__FUNCTION__,nV,nW,(V!=W),ldV,ldW,*iflag,0, STREAM_LOAD((nV_+(V!=W)*nW_)*n*sizeof(_ST_)),2*n*nV*nW);
 
 #endif
 
@@ -448,7 +448,7 @@ PHIST_PERFCHECK_NOT_IMPLEMENTED(flops);
   PHIST_CHK_IERR(SUBR(mvec_num_vectors)(V,&nV,iflag),*iflag); \
   PHIST_CHK_IERR(SUBR(mvec_num_vectors)(W,&nW,iflag),*iflag); \
   *iflag = tmp_iflag; \
-  PHIST_PERFCHECK_VERIFY(__FUNCTION__,nV,nW,(V!=W),*iflag,0,0,0, STREAM_TRIAD((nV+(V!=W)*nW+nW)*n*sizeof(_ST_)),4*n*nV*nV);
+  PHIST_PERFCHECK_VERIFY(__FUNCTION__,nV,nW,(V!=W),*iflag,0,0,0, STREAM_TRIAD((nV+(V!=W)*nW+nW)*n*sizeof(_ST_)), n*2*(nW*nW+nV*nW));
 
 #else
 
@@ -470,7 +470,7 @@ PHIST_PERFCHECK_NOT_IMPLEMENTED(flops);
   int nW_ = std::min(ldW,((nW-1)/cl_size+1)*cl_size); \
   if( nW_+cl_size > ldW ) nW_ = ldW; \
   *iflag = tmp_iflag; \
-  PHIST_PERFCHECK_VERIFY(__FUNCTION__,nV,nW,(V!=W),ldV,ldW,*iflag,0, STREAM_TRIAD((nV_+(V!=W)*nW_+nW_)*n*sizeof(_ST_)),4*n*nV*nV);
+  PHIST_PERFCHECK_VERIFY(__FUNCTION__,nV,nW,(V!=W),ldV,ldW,*iflag,0, STREAM_TRIAD((nV_+(V!=W)*nW_+nW_)*n*sizeof(_ST_)), 2*n*(nV*nW+nW*nW));
 
 #endif
 
