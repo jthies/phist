@@ -76,6 +76,16 @@ extern "C" void SUBR(sparseMat_create_fromRowFuncAndContext)(TYPE(sparseMat_ptr)
 }
 
 
+extern "C" void SUBR(sparseMat_local_nnz)(TYPE(const_sparseMat_ptr) A, int64_t* local_nnz, int* iflag)
+{
+  *iflag=PHIST_NOT_IMPLEMENTED;
+}
+
+extern "C" void SUBR(sparseMat_global_nnz)(TYPE(const_sparseMat_ptr) A, int64_t* local_nnz, int* iflag)
+{
+  *iflag=PHIST_NOT_IMPLEMENTED;
+}
+
 extern "C" void SUBR(sparseMat_get_row_map)(TYPE(const_sparseMat_ptr) A, phist_const_map_ptr* map, int* iflag)
 {
   *iflag=PHIST_NOT_IMPLEMENTED;
