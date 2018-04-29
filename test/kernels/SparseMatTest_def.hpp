@@ -335,7 +335,7 @@ protected:
 #endif
     SUBR(sparseMat_local_nnz)(A_,&nnz,&iflag_);
     ASSERT_EQ(0,iflag_);
-    if (expected_nnz>=0) ASSERT_EQ(expected_nnz,nnz);
+    if (expected_nnz>=0) {ASSERT_EQ(expected_nnz,nnz);}
   }
 
   TEST_F(CLASSNAME, global_nnz)
@@ -348,7 +348,7 @@ protected:
 #endif
     SUBR(sparseMat_global_nnz)(A_,&nnz,&iflag_);
     ASSERT_EQ(0,iflag_);
-    if (expected_nnz>0) ASSERT_EQ(expected_nnz,nnz);
+    if (expected_nnz>0) {ASSERT_EQ(expected_nnz,nnz);}
   }
 
 #if MATNAME == MATNAME_spzero
