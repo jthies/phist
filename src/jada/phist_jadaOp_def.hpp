@@ -411,109 +411,37 @@ extern "C" void SUBR(jadaOp_variable_create)(TYPE(const_linearOp_ptr)    AB_op,
   myOp->preProj_op=NULL;
   myOp->postProj_op=NULL;
   myOp->Skew_op=NULL;
-  
-  // case NONE
-  if(method==phist_PROJ_NONE)
-  {
-    PHIST_CHK_IERR(SUBR(linearOp_product_extend)(myOp->k_op,myOp->AB_op,iflag),*iflag);
-  }
-  
-  // case PRE
-  else if(method==phist_PROJ_PRE)
+
+  if (method&phist_PROJ_PRE)
   {
     myOp->preProj_op = new TYPE(linearOp);
     PHIST_CHK_IERR(SUBR(projection_Op_create)(myOp->V,myOp->BV,myOp->preProj_op,iflag),*iflag);
-    
+
     PHIST_CHK_IERR(SUBR(linearOp_product_extend)(myOp->k_op,myOp->preProj_op,iflag),*iflag);
-    PHIST_CHK_IERR(SUBR(linearOp_product_extend)(myOp->k_op,myOp->AB_op,iflag),*iflag);
   }
+
+  PHIST_CHK_IERR(SUBR(linearOp_product_extend)(myOp->k_op,myOp->AB_op,iflag),*iflag);
   
-  // case POST
-  else if(method==phist_PROJ_POST)
+  if (method&phist_PROJ_POST)
   {
     myOp->postProj_op = new TYPE(linearOp);
     PHIST_CHK_IERR(SUBR(projection_Op_create)(myOp->V,myOp->BV,myOp->postProj_op,iflag),*iflag);
     myOp->postProj_op->use_transpose = 1;
   
-    PHIST_CHK_IERR(SUBR(linearOp_product_extend)(myOp->k_op,myOp->AB_op,iflag),*iflag);
     PHIST_CHK_IERR(SUBR(linearOp_product_extend)(myOp->k_op,myOp->postProj_op,iflag),*iflag);
   }
 
-  // case PRE_POST
-  else if(method==phist_PROJ_PRE_POST)
+  if (myOp->Prec_op)
   {
-    myOp->preProj_op = new TYPE(linearOp);
-    PHIST_CHK_IERR(SUBR(projection_Op_create)(myOp->V,myOp->BV,myOp->preProj_op,iflag),*iflag);
-    myOp->postProj_op = new TYPE(linearOp);
-    PHIST_CHK_IERR(SUBR(projection_Op_create)(myOp->V,myOp->BV,myOp->postProj_op,iflag),*iflag);
-    myOp->postProj_op->use_transpose = 1;  
-      
-    PHIST_CHK_IERR(SUBR(linearOp_product_extend)(myOp->k_op,myOp->preProj_op,iflag),*iflag);
-    PHIST_CHK_IERR(SUBR(linearOp_product_extend)(myOp->k_op,myOp->AB_op,iflag),*iflag);
-    PHIST_CHK_IERR(SUBR(linearOp_product_extend)(myOp->k_op,myOp->postProj_op,iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(linearOp_product_extend)(myOp->k_op,myOp->Prec_op,iflag),*iflag);
   }
 
-  // case SKEW
-  else if(method==phist_PROJ_SKEW)
+  if(method&phist_PROJ_SKEW)
   {
-    if(onlyPrec == 1)
-    {
-      PHIST_CHK_IERR(SUBR(linearOp_product_extend)(myOp->k_op,myOp->AB_op,iflag),*iflag);
-      PHIST_CHK_IERR(SUBR(linearOp_product_extend)(myOp->k_op,myOp->Prec_op,iflag),*iflag);
-    }
-    else
-    {
-      myOp->Skew_op = new TYPE(linearOp);
-      PHIST_CHK_IERR(SUBR(skew_projection_Op_create)(myOp->Prec_op,myOp->V,myOp->BV,myOp->Skew_op,iflag),*iflag);
-    
-      PHIST_CHK_IERR(SUBR(linearOp_product_extend)(myOp->k_op,myOp->AB_op,iflag),*iflag);
-      PHIST_CHK_IERR(SUBR(linearOp_product_extend)(myOp->k_op,myOp->Prec_op,iflag),*iflag);
-      PHIST_CHK_IERR(SUBR(linearOp_product_extend)(myOp->k_op,myOp->Skew_op,iflag),*iflag);
-    }
+    myOp->Skew_op = new TYPE(linearOp);
+    PHIST_CHK_IERR(SUBR(skew_projection_Op_create)(myOp->Prec_op,myOp->V,myOp->BV,myOp->Skew_op,iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(linearOp_product_extend)(myOp->k_op,myOp->Skew_op,iflag),*iflag);
   }
-
-  // case ALL
-  else if(method==phist_PROJ_ALL)
-  {
-    if(onlyPrec == 1)
-    {
-      myOp->preProj_op = new TYPE(linearOp);
-      PHIST_CHK_IERR(SUBR(projection_Op_create)(myOp->V,myOp->BV,myOp->preProj_op,iflag),*iflag);
-      myOp->postProj_op = new TYPE(linearOp);
-      PHIST_CHK_IERR(SUBR(projection_Op_create)(myOp->V,myOp->BV,myOp->postProj_op,iflag),*iflag);
-      myOp->postProj_op->use_transpose = 1; 
-    
-      PHIST_CHK_IERR(SUBR(linearOp_product_extend)(myOp->k_op,myOp->preProj_op,iflag),*iflag);
-      PHIST_CHK_IERR(SUBR(linearOp_product_extend)(myOp->k_op,myOp->AB_op,iflag),*iflag);
-      PHIST_CHK_IERR(SUBR(linearOp_product_extend)(myOp->k_op,myOp->postProj_op,iflag),*iflag);
-      PHIST_CHK_IERR(SUBR(linearOp_product_extend)(myOp->k_op,myOp->Prec_op,iflag),*iflag);
-    }
-    else
-    {
-      myOp->preProj_op = new TYPE(linearOp);
-      PHIST_CHK_IERR(SUBR(projection_Op_create)(myOp->V,myOp->BV,myOp->preProj_op,iflag),*iflag);
-      myOp->postProj_op = new TYPE(linearOp);
-      PHIST_CHK_IERR(SUBR(projection_Op_create)(myOp->V,myOp->BV,myOp->postProj_op,iflag),*iflag);
-      myOp->postProj_op->use_transpose = 1;
-      myOp->Skew_op = new TYPE(linearOp);
-      PHIST_CHK_IERR(SUBR(skew_projection_Op_create)(myOp->Prec_op,myOp->V,myOp->BV,myOp->Skew_op,iflag),*iflag);
-        
-      PHIST_CHK_IERR(SUBR(linearOp_product_extend)(myOp->k_op,myOp->preProj_op,iflag),*iflag);
-      PHIST_CHK_IERR(SUBR(linearOp_product_extend)(myOp->k_op,myOp->AB_op,iflag),*iflag);
-      PHIST_CHK_IERR(SUBR(linearOp_product_extend)(myOp->k_op,myOp->postProj_op,iflag),*iflag);
-      PHIST_CHK_IERR(SUBR(linearOp_product_extend)(myOp->k_op,myOp->Prec_op,iflag),*iflag);
-      PHIST_CHK_IERR(SUBR(linearOp_product_extend)(myOp->k_op,myOp->Skew_op,iflag),*iflag);
-    }
-  }
-  
-  else
-  {
-    PHIST_SOUT(PHIST_ERROR,"there is no such method in %s implemented\n"
-                           "choose between NONE 0, PRE 1, POST 2, PRE_POST 3, SKEW 4 and ALL 7\n"
-                           "(file %s, line %d)\n",__FUNCTION__,__FILE__,__LINE__);
-  *iflag=-1;
-  return;
-  } 
 
   jdOp->A = (const void*)myOp;
   jdOp->apply = SUBR(jadaOp_apply);
