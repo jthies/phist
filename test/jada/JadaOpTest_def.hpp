@@ -179,7 +179,7 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,_N_,MATNAME>,
       phist_Eprojection method= phist_PROJ_NONE;
 
       TYPE(linearOp) jadaOp;
-      SUBR(jadaOp_variable_create)(opA_,NULL,NULL,q_,NULL,sigma_,NULL,_NV_,&jadaOp,method,0,&iflag_);
+      SUBR(jadaOp_create_impl)(opA_,NULL,NULL,q_,NULL,sigma_,NULL,_NV_,&jadaOp,method,0,&iflag_);
       ASSERT_EQ(0,iflag_);
 
       jadaOp.destroy(&jadaOp,&iflag_);
@@ -199,10 +199,10 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,_N_,MATNAME>,
       ASSERT_EQ(0,iflag_);
 
       TYPE(linearOp) proj_Op;
-      SUBR(projection_Op_create)(qb_, Bq_, &proj_Op, &iflag_);
+      SUBR(projOp_create)(qb_, Bq_, &proj_Op, &iflag_);
       ASSERT_EQ(0,iflag_);
 
-      SUBR(projection_Op_delete)(&proj_Op, &iflag_);
+      SUBR(projOp_delete)(&proj_Op, &iflag_);
       ASSERT_EQ(0,iflag_);
 
       SUBR(jadaOp_delete)(&jdOp,&iflag_);
@@ -224,9 +224,9 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,_N_,MATNAME>,
       jdOp.apply(st::one(),jdOp.A,vec2_,st::zero(),vec3_,&iflag_);
       ASSERT_EQ(0,iflag_);
 
-      //compare projection_Op with jadaOp with only projection
+      //compare projOp with jadaOp with only projection
       TYPE(linearOp) proj_Op;
-      SUBR(projection_Op_create)(q_, q_, &proj_Op, &iflag_);
+      SUBR(projOp_create)(q_, q_, &proj_Op, &iflag_);
       ASSERT_EQ(0,iflag_);
 
       // apply projection
@@ -251,7 +251,7 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,_N_,MATNAME>,
       SUBR(jadaOp_delete)(&jdOp,&iflag_);
       ASSERT_EQ(0,iflag_);
 
-      SUBR(projection_Op_delete)(&proj_Op, &iflag_);
+      SUBR(projOp_delete)(&proj_Op, &iflag_);
       ASSERT_EQ(0,iflag_);
     }
   }
@@ -270,7 +270,7 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,_N_,MATNAME>,
 
       //compare to apply and applyT projection
       TYPE(linearOp) proj_Op;
-      SUBR(projection_Op_create)(qb_,Bq_,&proj_Op,&iflag_);
+      SUBR(projOp_create)(qb_,Bq_,&proj_Op,&iflag_);
       ASSERT_EQ(0,iflag_);
 
       // apply projection
@@ -302,7 +302,7 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,_N_,MATNAME>,
 
       SUBR(jadaOp_delete)(&jdOp,&iflag_);
       ASSERT_EQ(0,iflag_);
-      SUBR(projection_Op_delete)(&proj_Op,&iflag_);
+      SUBR(projOp_delete)(&proj_Op,&iflag_);
       ASSERT_EQ(0,iflag_);
 
     }
@@ -323,7 +323,7 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,_N_,MATNAME>,
 
       //with projection operator
       TYPE(linearOp) proj_Op;
-      SUBR(projection_Op_create)(q_, q_, &proj_Op, &iflag_);
+      SUBR(projOp_create)(q_, q_, &proj_Op, &iflag_);
       ASSERT_EQ(0,iflag_);
 
       opA_->apply_shifted(st::one(),opA_->A,sigma_,vec2_,st::zero(),vec4_,&iflag_);
@@ -347,7 +347,7 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,_N_,MATNAME>,
 
       SUBR(jadaOp_delete)(&jdOp,&iflag_);
       ASSERT_EQ(0,iflag_);
-      SUBR(projection_Op_delete)(&proj_Op,&iflag_);
+      SUBR(projOp_delete)(&proj_Op,&iflag_);
       ASSERT_EQ(0,iflag_);
     }
   }
@@ -400,7 +400,7 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,_N_,MATNAME>,
 
       //with projection operator
       TYPE(linearOp) proj_Op;
-      SUBR(projection_Op_create)(qb_,Bq_,&proj_Op,&iflag_);
+      SUBR(projOp_create)(qb_,Bq_,&proj_Op,&iflag_);
       ASSERT_EQ(0,iflag_);
 
       proj_Op.apply(st::one(),proj_Op.A,vec3_,st::zero(),vec4_,&iflag_);
@@ -435,7 +435,7 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,_N_,MATNAME>,
 
       SUBR(jadaOp_delete)(&jdOp,&iflag_);
       ASSERT_EQ(0,iflag_);
-      SUBR(projection_Op_delete)(&proj_Op,&iflag_);
+      SUBR(projOp_delete)(&proj_Op,&iflag_);
       ASSERT_EQ(0,iflag_);
     }
   }
@@ -588,7 +588,7 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,_N_,MATNAME>,
     if( typeImplemented_ && !problemTooSmall_ )
     {
       TYPE(linearOp) proj_Op;
-      SUBR(projection_Op_create)(qb_,Bq_,&proj_Op,&iflag_);
+      SUBR(projOp_create)(qb_,Bq_,&proj_Op,&iflag_);
       ASSERT_EQ(0,iflag_);
 
       // apply pre_projection
@@ -603,7 +603,7 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,_N_,MATNAME>,
 
        ASSERT_NEAR(mt::one(),MvecsEqual(vec1_,vec2_),1000*mt::eps());
 
-       SUBR(projection_Op_delete)(&proj_Op,&iflag_);
+       SUBR(projOp_delete)(&proj_Op,&iflag_);
        ASSERT_EQ(0,iflag_);
     }
   }
@@ -616,7 +616,7 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,_N_,MATNAME>,
       _ST_ beta=st::prand();
 
       TYPE(linearOp) proj_Op;
-      SUBR(projection_Op_create)(qb_,Bq_,&proj_Op,&iflag_);
+      SUBR(projOp_create)(qb_,Bq_,&proj_Op,&iflag_);
       ASSERT_EQ(0,iflag_);
 
       SUBR(mvec_add_mvec)(st::one(),vec1_,st::zero(),vec3_,&iflag_);
@@ -635,7 +635,7 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,_N_,MATNAME>,
       ASSERT_EQ(0,iflag_);
       ASSERT_NEAR(mt::one(),MvecsEqual(vec1_,vec3_),std::sqrt(mt::eps()));
 
-      SUBR(projection_Op_delete)(&proj_Op,&iflag_);
+      SUBR(projOp_delete)(&proj_Op,&iflag_);
       ASSERT_EQ(0,iflag_);
     }
   }
@@ -650,7 +650,7 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,_N_,MATNAME>,
 
       //with projection and shifted operators
       TYPE(linearOp) proj_Op;
-      SUBR(projection_Op_create)(qb_,Bq_,&proj_Op,&iflag_);
+      SUBR(projOp_create)(qb_,Bq_,&proj_Op,&iflag_);
       ASSERT_EQ(0,iflag_);
 
       proj_Op.apply(st::one(),proj_Op.A,vec3_,st::zero(),vec4_,&iflag_);
@@ -690,7 +690,7 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,_N_,MATNAME>,
       ASSERT_EQ(0,iflag_);
       ASSERT_NEAR(mt::one(),MvecsEqual(vec4_,vec2_),1000*VTest::releps());
 
-      SUBR(projection_Op_delete)(&proj_Op,&iflag_);
+      SUBR(projOp_delete)(&proj_Op,&iflag_);
       ASSERT_EQ(0,iflag_);
     }
   }
@@ -806,7 +806,7 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,_N_,MATNAME>,
     if( typeImplemented_ && !problemTooSmall_ )
     {
       TYPE(linearOp) proj_Op;
-      SUBR(projection_Op_create)(q_,q_,&proj_Op,&iflag_);
+      SUBR(projOp_create)(q_,q_,&proj_Op,&iflag_);
       ASSERT_EQ(0,iflag_);
 
       // apply to X
@@ -829,7 +829,7 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,_N_,MATNAME>,
 
       ASSERT_NEAR(mt::one(),SdMatEqual(mat1_,st::zero()),500*mt::eps());
 
-      SUBR(projection_Op_delete)(&proj_Op,&iflag_);
+      SUBR(projOp_delete)(&proj_Op,&iflag_);
       ASSERT_EQ(0,iflag_);
     }
   }
@@ -841,7 +841,7 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,_N_,MATNAME>,
 
       //with projection and shifted operators
       TYPE(linearOp) proj_Op;
-      SUBR(projection_Op_create)(q_,q_,&proj_Op,&iflag_);
+      SUBR(projOp_create)(q_,q_,&proj_Op,&iflag_);
       ASSERT_EQ(0,iflag_);
 
       proj_Op.apply(st::one(),proj_Op.A,vec3_,st::zero(),vec4_,&iflag_);
@@ -857,7 +857,7 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,_N_,MATNAME>,
 
       ASSERT_NEAR(mt::one(),SdMatEqual(mat1_,st::zero()),500*mt::eps());
 
-      SUBR(projection_Op_delete)(&proj_Op,&iflag_);
+      SUBR(projOp_delete)(&proj_Op,&iflag_);
       ASSERT_EQ(0,iflag_);
     }
   }
@@ -867,7 +867,7 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,_N_,MATNAME>,
     if( typeImplemented_ && !problemTooSmall_ )
     {
       TYPE(linearOp) proj_Op;
-      SUBR(projection_Op_create)(qb_,Bq_,&proj_Op,&iflag_);
+      SUBR(projOp_create)(qb_,Bq_,&proj_Op,&iflag_);
       ASSERT_EQ(0,iflag_);
 
       // apply to X
@@ -884,19 +884,19 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,_N_,MATNAME>,
 
       ASSERT_NEAR(mt::one(),SdMatEqual(mat1_,st::zero()),500*mt::eps());
 
-      SUBR(projection_Op_delete)(&proj_Op,&iflag_);
+      SUBR(projOp_delete)(&proj_Op,&iflag_);
       ASSERT_EQ(0,iflag_);
     }
   }
 
-  TEST_F(CLASSNAME, apply_jadaOp_variable_check_with_method_none)
+  TEST_F(CLASSNAME, apply_check_with_method_none)
   {
     if( typeImplemented_ && !problemTooSmall_ )
     {
       phist_Eprojection method= phist_PROJ_NONE;
 
       TYPE(linearOp) jadaOp;
-      SUBR(jadaOp_variable_create)(opAB_,opB_,NULL,qb_,Bq_,sigma_,NULL,_NV_,&jadaOp,method,0,&iflag_);
+      SUBR(jadaOp_create_impl)(opAB_,opB_,NULL,qb_,Bq_,sigma_,NULL,_NV_,&jadaOp,method,0,&iflag_);
       ASSERT_EQ(0,iflag_);
 
       _ST_ alpha=st::prand();
@@ -926,14 +926,14 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,_N_,MATNAME>,
     }
   }
 
-  TEST_F(CLASSNAME, apply_jadaOp_variable_check_with_method_pre)
+  TEST_F(CLASSNAME, apply_check_with_method_pre)
   {
     if( typeImplemented_ && !problemTooSmall_ )
     {
       phist_Eprojection method= phist_PROJ_PRE;
 
       TYPE(linearOp) jadaOp;
-      SUBR(jadaOp_variable_create)(opAB_,opB_,NULL,qb_,Bq_,sigma_,NULL,_NV_,&jadaOp,method,0,&iflag_);
+      SUBR(jadaOp_create_impl)(opAB_,opB_,NULL,qb_,Bq_,sigma_,NULL,_NV_,&jadaOp,method,0,&iflag_);
       ASSERT_EQ(0,iflag_);
 
       _ST_ alpha=st::prand();
@@ -962,21 +962,21 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,_N_,MATNAME>,
       SUBR(mvec_add_mvec)(alpha,vec4_,beta,vec3_,&iflag_);
       ASSERT_EQ(0,iflag_);
 
-      ASSERT_NEAR(mt::one(),MvecsEqual(vec2_,vec3_),10*VTest::releps());
+      ASSERT_NEAR(mt::one(),MvecsEqual(vec2_,vec3_),1000*VTest::releps());
 
       jadaOp.destroy(&jadaOp,&iflag_);
       ASSERT_EQ(0,iflag_);
     }
   }
 
-  TEST_F(CLASSNAME, apply_jadaOp_variable_check_with_method_post)
+  TEST_F(CLASSNAME, apply_check_with_method_post)
   {
     if( typeImplemented_ && !problemTooSmall_ )
     {
       phist_Eprojection method= phist_PROJ_POST;
 
       TYPE(linearOp) jadaOp;
-      SUBR(jadaOp_variable_create)(opAB_,opB_,NULL,qb_,Bq_,sigma_,NULL,_NV_,&jadaOp,method,0,&iflag_);
+      SUBR(jadaOp_create_impl)(opAB_,opB_,NULL,qb_,Bq_,sigma_,NULL,_NV_,&jadaOp,method,0,&iflag_);
       ASSERT_EQ(0,iflag_);
 
       _ST_ alpha=st::prand();
@@ -1003,21 +1003,21 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,_N_,MATNAME>,
       SUBR(mvec_add_mvec)(alpha,vec4_,beta,vec3_,&iflag_);
       ASSERT_EQ(0,iflag_);
 
-      ASSERT_NEAR(mt::one(),MvecsEqual(vec2_,vec3_),10*VTest::releps());
+      ASSERT_NEAR(mt::one(),MvecsEqual(vec2_,vec3_),100*VTest::releps());
 
       jadaOp.destroy(&jadaOp,&iflag_);
       ASSERT_EQ(0,iflag_);
     }
   }
 
-  TEST_F(CLASSNAME, apply_jadaOp_variable_check_with_method_pre_post)
+  TEST_F(CLASSNAME, apply_check_with_method_pre_post)
   {
     if( typeImplemented_ && !problemTooSmall_ )
     {
       phist_Eprojection method= phist_PROJ_PRE_POST;
 
       TYPE(linearOp) jadaOp;
-      SUBR(jadaOp_variable_create)(opAB_,opB_,NULL,qb_,Bq_,sigma_,NULL,_NV_,&jadaOp,method,0,&iflag_);
+      SUBR(jadaOp_create_impl)(opAB_,opB_,NULL,qb_,Bq_,sigma_,NULL,_NV_,&jadaOp,method,0,&iflag_);
       ASSERT_EQ(0,iflag_);
 
       _ST_ alpha=st::prand();
@@ -1050,7 +1050,7 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,_N_,MATNAME>,
       SUBR(mvec_add_mvec)(alpha,vec4_,beta,vec3_,&iflag_);
       ASSERT_EQ(0,iflag_);
 
-      ASSERT_NEAR(mt::one(),MvecsEqual(vec2_,vec3_),10*VTest::releps());
+      ASSERT_NEAR(mt::one(),MvecsEqual(vec2_,vec3_),100*VTest::releps());
 
       jadaOp.destroy(&jadaOp,&iflag_);
       ASSERT_EQ(0,iflag_);

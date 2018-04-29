@@ -68,14 +68,14 @@ void SUBR(jadaOp_set_leftPrecond)(TYPE(linearOp_ptr) jadaOp, TYPE(const_linearOp
 
 //! Create projection operator
 //! Y <- alpha*(I - W*V')X + beta*Y
-void SUBR(projection_Op_create)(TYPE(const_mvec_ptr) V, TYPE(const_mvec_ptr) W, TYPE(linearOp_ptr) proj_Op, int* iflag);
+void SUBR(projOp_create)(TYPE(const_mvec_ptr) V, TYPE(const_mvec_ptr) W, TYPE(linearOp_ptr) proj_Op, int* iflag);
 
 //! Delete projection operator
-void SUBR(projection_Op_delete)(TYPE(linearOp_ptr) proj_Op, int *iflag);
+void SUBR(projOp_delete)(TYPE(linearOp_ptr) proj_Op, int *iflag);
 
 //! Create skew projection operator for a preconditioner P_op
 //! Y <- (I - P_op\V (BV'P_op\V)^{-1} (BV)') * X
-void SUBR(skew_projection_Op_create)(TYPE(const_linearOp_ptr) P_op,
+void SUBR(skewProjOp_create)(TYPE(const_linearOp_ptr) P_op,
         TYPE(const_mvec_ptr) V, TYPE(const_mvec_ptr) BV,
         TYPE(linearOp_ptr) skew_Op, int* iflag);
 
@@ -95,7 +95,7 @@ void SUBR(skew_projection_Op_create)(TYPE(const_linearOp_ptr) P_op,
 //! \param onlyPrec will change the methods "SKEW" and "ALL":
 //! onlyPrec == 0: we use skew-projection and preconditioner,
 //! onlyPrec == 1: we only use the preconditioner
-void SUBR(jadaOp_variable_create)(TYPE(const_linearOp_ptr)    AB_op,
+void SUBR(jadaOp_create_impl)(TYPE(const_linearOp_ptr)    AB_op,
                          TYPE(const_linearOp_ptr)     B_op, TYPE(const_linearOp_ptr)    Prec_op,
                          TYPE(const_mvec_ptr)  V,       TYPE(const_mvec_ptr)  BV,
                          const _ST_            sigma[], const _ST_ sigma_prec[],int     nvec,
