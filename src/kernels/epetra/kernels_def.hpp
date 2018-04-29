@@ -237,11 +237,18 @@ extern "C" void SUBR(sparseMat_create_fromRowFunc)(TYPE(sparseMat_ptr) *vA, phis
 //! \name get information about the data distribution in a matrix (maps)
 
 //!@{
-extern "C" void SUBR(sparseMat_get_local_nnz)(TYPE(const_sparseMat_ptr) vA, int64_t* local_nnz, int* iflag)
+extern "C" void SUBR(sparseMat_local_nnz)(TYPE(const_sparseMat_ptr) vA, int64_t* local_nnz, int* iflag)
 {
   *iflag=0;
   PHIST_CAST_PTR_FROM_VOID(const Epetra_CrsMatrix,A,vA,*iflag);
   *local_nnz = static_cast<int64_t>(A->NumMyNonzeros());
+}
+
+extern "C" void SUBR(sparseMat_global_nnz)(TYPE(const_sparseMat_ptr) vA, int64_t* global_nnz, int* iflag)
+{
+  *iflag=0;
+  PHIST_CAST_PTR_FROM_VOID(const Epetra_CrsMatrix,A,vA,*iflag);
+  *global_nnz = static_cast<int64_t>(A->NumGlobalNonzeros());
 }
 
 //! get the row distribution of the matrix

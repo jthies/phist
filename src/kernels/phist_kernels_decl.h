@@ -141,7 +141,12 @@ void SUBR(sparseMat_get_context)(TYPE(const_sparseMat_ptr) A,
 //! get number of nonzeros on this MPI rank (should NOT include padding or symmetry-exploiting matrix formats, i.e.
 //! should return the actual number of non-zeros in the matrix also if only about half of them are stored or additional
 //! zeros are stored for better vectorization).
-void SUBR(sparseMat_get_local_nnz)(TYPE(const_sparseMat_ptr) A, int64_t* local_nnz, int* iflag);
+void SUBR(sparseMat_local_nnz)(TYPE(const_sparseMat_ptr) A, int64_t* local_nnz, int* iflag);
+
+//! get number of nonzeros across all MPI ranks (should NOT include padding or symmetry-exploiting matrix formats, i.e.
+//! should return the actual number of non-zeros in the matrix also if only about half of them are stored or additional
+//! zeros are stored for better vectorization).
+void SUBR(sparseMat_global_nnz)(TYPE(const_sparseMat_ptr) A, int64_t* global_nnz, int* iflag);
 
 //@}
 //@}
