@@ -384,6 +384,10 @@ extern "C" void SUBR(jadaOp_variable_create)(TYPE(const_linearOp_ptr)    AB_op,
     myOp->Prec_op->shifts = (_ST_*)sigma_prec;
     myOp->Prec_op->use_transpose=0;
   }
+  else
+  {
+    myOp->Prec_op=NULL;
+  }
   
   // setup jadaOp members
   myOp->B_op   = B_op;
@@ -402,6 +406,11 @@ extern "C" void SUBR(jadaOp_variable_create)(TYPE(const_linearOp_ptr)    AB_op,
   {
     PHIST_CHK_IERR(SUBR(mvec_num_vectors)(V, &nvecp, iflag), *iflag);
   }  
+
+  // make sure all operators are initialized to NULL
+  myOp->preProj_op=NULL;
+  myOp->postProj_op=NULL;
+  myOp->Skew_op=NULL;
   
   // case NONE
   if(method==phist_PROJ_NONE)
