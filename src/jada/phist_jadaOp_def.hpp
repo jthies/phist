@@ -117,7 +117,7 @@ class TYPE(jadaOp_data)
   //! destructor
   TYPE(jadaOp_data)::~TYPE(jadaOp_data)()
   {
-    if (AB_op) delete preProj_op;
+    if (AB_op) delete AB_op;
     if (preProj_op) delete preProj_op;
     if (postProj_op) delete postProj_op;
     if (skewProj_op) delete skewProj_op;
