@@ -123,7 +123,7 @@ class TYPE(jadaOp_data)
     if (preProj_op) delete preProj_op;
     if (postProj_op) delete postProj_op;
     if (skewProj_op) delete skewProj_op;
-    if (precon_op) delete precon_op;
+    //if (precon_op) delete precon_op;
     leftPrecon_op=nullptr;
   }
 
@@ -591,15 +591,20 @@ extern "C" void SUBR(jadaOp_set_leftPrecond)(TYPE(linearOp_ptr) jdOp, TYPE(const
   {
     PHIST_CAST_PTR_FROM_VOID(TYPE(jadaOp_data), jdDat, jdOp->A, *iflag);
     PHIST_CAST_PTR_FROM_VOID(TYPE(jadaOp_data), jdPrec, jadaPrec->A, *iflag);  
+    // TODO: may be an overkill here, e.g. for symmetric EVP SKEW_POST should be enough.
     phist_Eprojection method= phist_PROJ_ALL;
-    TYPE(linearOp) *jadaOp = new TYPE(linearOp);
-    PHIST_CHK_IERR(SUBR(jadaOp_create_impl)(jdDat->AB_op, jdDat->B_op, jdPrec->precon_op, jdDat->V, jdDat->BV, jdDat->sigma, jdPrec->sigma, jdDat->num_shifts, jadaOp, method, jdPrec->projType, iflag),*iflag);  
-    PHIST_CAST_PTR_FROM_VOID(TYPE(jadaOp_data), jadaDat, jadaOp->A, *iflag);
-    jadaDat->leftPrecon_op = jadaPrec;
-    
-    jdOp->destroy(jdOp,iflag);
-    *jdOp = *jadaOp;
-    delete jadaOp;
+    TYPE(linearOp) *tmp_jdOp = new TYPE(linearOp);
+    PHIST_CHK_IERR(SUBR(jadaOp_create_impl)(jdDat->AB_op, jdDat->B_op, jdPrec->precon_op, jdDat->V, jdDat->BV, jdDat->sigma, jdPrec->sigma, jdDat->num_shifts, 
+        tmp_jdOp, method, jdPrec->projType, iflag),*iflag);
+    PHIST_CAST_PTR_FROM_VOID(TYPE(jadaOp_data), tmp_jdDat, tmp_jdOp->A, *iflag);
+    tmp_jdDat->leftPrecon_op = jadaPrec;
+
+    // swap the jadaOp_data objects between the old and new object, and delete the new one
+    TYPE(jadaOp_data)* swp = tmp_jdDat;
+    tmp_jdOp->A =     jdDat;
+    jdOp->A     = tmp_jdDat;
+    SUBR(linearOp_destroy)(tmp_jdOp,iflag),*iflag);
+
   }
 }
 
