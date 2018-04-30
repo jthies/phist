@@ -86,6 +86,8 @@ void SUBR(linearOp_wrap_sparseMat)(TYPE(linearOp_ptr) op, TYPE(const_sparseMat_p
   *iflag=0;
   op->A = A;
   op->aux=NULL;
+  op->use_transpose=0;
+  op->shifts=NULL;
   PHIST_CHK_IERR(SUBR(sparseMat_get_range_map)(A,&op->range_map,iflag),*iflag);
   PHIST_CHK_IERR(SUBR(sparseMat_get_domain_map)(A,&op->domain_map,iflag),*iflag);
   op->apply = &SUBR(sparseMat_times_mvec);
@@ -174,6 +176,8 @@ void SUBR(linearOp_wrap_sparseMat_pair)(TYPE(linearOp_ptr) op,
   pair->B=B;
   op->A=(void*)(pair);
   op->aux=NULL;
+  op->use_transpose=0;
+  op->shifts=NULL;
   op->apply=&SUBR(private_linearOp_apply_sparseMat_pair_only_A);
   op->apply_shifted=&SUBR(private_linearOp_apply_sparseMat_pair_shifted);
   op->update=NULL;
@@ -193,6 +197,9 @@ TYPE(const_linearOp_ptr) A, TYPE(const_linearOp_ptr) B, int* iflag)
 
   op->range_map=A->range_map;
   op->domain_map=B->domain_map;
+
+  op->use_transpose=0;
+  op->shifts=NULL;
 
   op->apply=&SUBR(private_linearOp_apply_linearOp_product);
   op->apply_shifted=NULL;
