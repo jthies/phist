@@ -441,7 +441,7 @@ extern "C" void SUBR(jadaOp_create_impl)(TYPE(const_linearOp_ptr)    AB_op,
     PHIST_CHK_IERR(SUBR(linearOp_product_extend)(myOp->k_op,myOp->postProj_op,iflag),*iflag);
   }
 
-  if (myOp->precon_op)
+  if (precon_op)
   {
     PHIST_CHK_IERR(SUBR(linearOp_product_extend)(myOp->k_op,myOp->precon_op,iflag),*iflag);
     if(method&phist_PROJ_SKEW)
