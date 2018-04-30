@@ -6,16 +6,13 @@
 /* Contact: Jonas Thies (Jonas.Thies@DLR.de)                                               */
 /*                                                                                         */
 /*******************************************************************************************/
-/*! MPI_Isend for an mvec
 
- \todo documentation
+/*! MPI_Isend for sending the local part of an mvec to another process
 */
 void SUBR(mvec_Isend)(TYPE(const_mvec_ptr) V, int dest, int tag, 
         MPI_Comm comm, MPI_Request* req, int* iflag);
 
-/*! MPI_Irecv for an mvec
-
- \todo documentation
+/*! MPI_Irecv for receiving the local part of an mvec from another process
  */
 void SUBR(mvec_Irecv)(TYPE(const_mvec_ptr) V, int dest, int tag, 
         MPI_Comm comm, MPI_Request* req, int* iflag);

@@ -8,6 +8,8 @@
 /*******************************************************************************************/
 
 //! \defgroup core Core functionality used by algorithms
+
+//! \addtogroup core
 //@{
 
 //!\name basic operator concept, "something that only provides Y=alpha*Op*X + beta*Y"

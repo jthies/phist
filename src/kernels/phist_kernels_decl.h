@@ -76,7 +76,7 @@ extern "C" {
 //! returns 0 if the library implements the data type, -99 otherwise.
 void SUBR(type_avail)(int* iflag);
 
-//!   \defgroup crsmat Sparse matrix functions (sparseMat_t) 
+//!   \defgroup crsmat Sparse matrix functions (sparseMat) 
 //@{
 //! \name Matrix input from a file
 //!
@@ -281,7 +281,7 @@ void SUBR(sdMat_from_device)(TYPE(sdMat_ptr) M, int* iflag);
 
 //@}
 
-//!   \defgroup mvec and sdMat I/O
+//!   \defgroup IO_kernels I/O routines for mvecs and sdMats
 /*! note: these functions only read and write the data, not the map, comm etc.
 If you want to read an mvec from file, you have to create it first with a consitent map object.
  */
@@ -301,7 +301,7 @@ void SUBR(sdMat_read_bin)(TYPE(sdMat_ptr) M, const char* filename, int* iflag);
 
 //@}
 
-//!   \defgroup mvec Multi-vector functions (mvec_t) 
+//!   \defgroup mvec Multi-vector functions (mvec) 
 //@{
 
 //! this function can be e.g. used to permute or redistribute vectors, the vector
@@ -350,7 +350,7 @@ void SUBR(mvec_set_block)(TYPE(mvec_ptr) V,
 
 //@}
 
-//!   \defgroup sdmat Small dense matrix functions (sdMat_t) 
+//!   \defgroup sdmat Small dense matrix functions (sdMat) 
 //@{
 
 //! get a new matrix that is a view of some rows and columns of the original one, 

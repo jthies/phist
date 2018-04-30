@@ -33,12 +33,18 @@ typedef int MPI_Status;
 extern "C" {
 #endif
 
-/*! \defgroup mpi_kernels additional operations implemented for all libs at once
+/*! \addtogroup kernels
+@{
+*/
+
+/*! \defgroup mpi_kernels communication operations implemented for all kernel libraries in one place
 @{
 */
 
 #define PHIST_CLASSFILE_DEF "phist_mpi_kernels_decl.h"
 #include "phist_gen_all.h"
+
+/*@}*/
 
 /*@}*/
 
