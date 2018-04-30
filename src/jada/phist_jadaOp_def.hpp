@@ -603,8 +603,7 @@ extern "C" void SUBR(jadaOp_set_leftPrecond)(TYPE(linearOp_ptr) jdOp, TYPE(const
     TYPE(jadaOp_data)* swp = tmp_jdDat;
     tmp_jdOp->A =     jdDat;
     jdOp->A     = tmp_jdDat;
-    SUBR(linearOp_destroy)(tmp_jdOp,iflag),*iflag);
-
+    PHIST_CHK_IERR(SUBR(linearOp_destroy)(tmp_jdOp,iflag),*iflag);
   }
 }
 
