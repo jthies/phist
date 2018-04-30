@@ -313,7 +313,7 @@ void SUBR(linearOp_product_create)(TYPE(linearOp_ptr) k_op, int* iflag)
   k_Op->Xtmp = NULL;
   k_Op->Xtmp2 = NULL;
   k_op->A = (void*)k_Op;
-  k_op->use_transpose = NULL;
+  k_op->use_transpose = 0;
   k_op->shifts = NULL;
   k_op->apply = &SUBR(private_linearOp_product_apply);
   k_op->applyT = NULL;
