@@ -71,39 +71,9 @@ class TYPE(jadaOp_data)
   public:
   
   // allocate required member operators
-  TYPE(jadaOp_data)(phist_Eprojection method, TYPE(linearOp_ptr) precOp))
-  : AB_op(nullptr), B_op(nullptr), leftPrecon_op(precOp),
-    preProj_op(nullptr), postProj_op(nullptr), precon_op(nullptr),
-    skewProj_op(nullptr), k_op(nullptr), V(nullptr), BV(nullptr), num_shifts(0);
-  {
-    AB_op = new TYPE(linearOp);
-    if (method&phist_PROJ_PRE)
-    {
-      preProj_op = new TYPE(linearOp);
-    }
-    if (method&phist_PROJ_PRE)
-    {
-      postProj_op = new TYPE(linearOp);
-    }
-    if (leftPreconOp!=nullptr) 
-    {
-      myOp->precon_op = new TYPE(linearOp);
-      if (method&phist_PROJ_SKEW)
-      {
-        myOp->skewProj_op = new TYPE(linearOp);
-      }
-    }
-  }
-  //! destructor
-  ~TYPE(jadaOp_data)()
-  {
-    if (AB_op) delete preProj_op;
-    if (preProj_op) delete preProj_op;
-    if (postProj_op) delete postProj_op;
-    if (skewProj_op) delete skewProj_op;
-    if (precon_op) delete precon_op;
-    leftPreconOp=nullptr;
-  }
+  TYPE(jadaOp_data)(phist_Eprojection method, TYPE(const_linearOp_ptr) precOp);
+  // destructor
+  ~TYPE(jadaOp_data)();
 
   TYPE(linearOp_ptr)    AB_op;   // operator of the general matrix A
   TYPE(const_linearOp_ptr)    B_op;   // operator of the hpd. matrix B, assumed I when NULL
@@ -120,6 +90,40 @@ class TYPE(jadaOp_data)
   const _ST_*           sigma;  // array of NEGATIVE shifts, assumed to have correct size; TODO: what about 'complex' shifts for real JDQR?
   const _ST_*           sigma_prec; //array of shifts for the preconditioner precon_op
 };
+
+  TYPE(jadaOp_data)::TYPE(jadaOp_data)(phist_Eprojection method, TYPE(const_linearOp_ptr) precOp)
+  : AB_op(nullptr), B_op(nullptr), leftPrecon_op(precOp),
+    preProj_op(nullptr), postProj_op(nullptr), precon_op(nullptr),
+    skewProj_op(nullptr), k_op(nullptr), V(nullptr), BV(nullptr), num_shifts(0)
+  {
+    AB_op = new TYPE(linearOp);
+    if (method&phist_PROJ_PRE)
+    {
+      preProj_op = new TYPE(linearOp);
+    }
+    if (method&phist_PROJ_PRE)
+    {
+      postProj_op = new TYPE(linearOp);
+    }
+    if (leftPrecon_op!=nullptr) 
+    {
+      precon_op = new TYPE(linearOp);
+      if (method&phist_PROJ_SKEW)
+      {
+        skewProj_op = new TYPE(linearOp);
+      }
+    }
+  }
+  //! destructor
+  TYPE(jadaOp_data)::~TYPE(jadaOp_data)()
+  {
+    if (AB_op) delete preProj_op;
+    if (preProj_op) delete preProj_op;
+    if (postProj_op) delete postProj_op;
+    if (skewProj_op) delete skewProj_op;
+    if (precon_op) delete precon_op;
+    leftPrecon_op=nullptr;
+  }
 
 // private struct to keep all the pointers we need in order to apply the operator.
 class TYPE(projOp_data)
@@ -384,7 +388,7 @@ extern "C" void SUBR(jadaOp_create_impl)(TYPE(const_linearOp_ptr)    AB_op,
   *iflag = 0;
 
   // allocate jadaOp struct
-  TYPE(jadaOp_data) *myOp = new TYPE(jadaOp_data)(method); 
+  TYPE(jadaOp_data) *myOp = new TYPE(jadaOp_data)(method, precon_op); 
 
   if (AB_op->apply_shifted==NULL)
   {
@@ -397,7 +401,7 @@ extern "C" void SUBR(jadaOp_create_impl)(TYPE(const_linearOp_ptr)    AB_op,
   *(myOp->AB_op) = *AB_op;
   myOp->AB_op->shifts = (_ST_*)sigma;
   myOp->AB_op->use_transpose=0;
-  myOp->leftPreconOp=precon_op;
+  myOp->leftPrecon_op=precon_op;
   
   if(precon_op != NULL)
   {
