@@ -964,7 +964,7 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,_N_,MATNAME>,
 
       ASSERT_NEAR(mt::one(),MvecsEqual(vec2_,vec3_),1000*VTest::releps());
 
-      jadaOp.destroy(&jadaOp,&iflag_);
+      SUBR(linearOp_destroy)(&jadaOp,&iflag_);
       ASSERT_EQ(0,iflag_);
     }
   }
