@@ -434,15 +434,13 @@ extern "C" void SUBR(jadaOp_create_impl)(TYPE(const_linearOp_ptr)    AB_op,
   if (myOp->Prec_op)
   {
     PHIST_CHK_IERR(SUBR(linearOp_product_extend)(myOp->k_op,myOp->Prec_op,iflag),*iflag);
+    if(method&phist_PROJ_SKEW)
+    {
+      myOp->Skew_op = new TYPE(linearOp);
+      PHIST_CHK_IERR(SUBR(skewProjOp_create)(myOp->Prec_op,myOp->V,myOp->BV,myOp->Skew_op,iflag),*iflag);
+      PHIST_CHK_IERR(SUBR(linearOp_product_extend)(myOp->k_op,myOp->Skew_op,iflag),*iflag);
+    }
   }
-
-  if(method&phist_PROJ_SKEW)
-  {
-    myOp->Skew_op = new TYPE(linearOp);
-    PHIST_CHK_IERR(SUBR(skewProjOp_create)(myOp->Prec_op,myOp->V,myOp->BV,myOp->Skew_op,iflag),*iflag);
-    PHIST_CHK_IERR(SUBR(linearOp_product_extend)(myOp->k_op,myOp->Skew_op,iflag),*iflag);
-  }
-
   jdOp->A = (const void*)myOp;
   jdOp->apply = SUBR(jadaOp_apply);
   jdOp->applyT = NULL;
