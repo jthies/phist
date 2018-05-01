@@ -6,6 +6,7 @@
 /* Contact: Jonas Thies (Jonas.Thies@DLR.de)                                               */
 /*                                                                                         */
 /*******************************************************************************************/
+
 extern "C" void SUBR(sparseMat_delete)(TYPE(sparseMat_ptr) A, int* iflag);
 extern "C" void SUBR(mvec_delete)(TYPE(mvec_ptr) V, int* iflag);
 extern "C" void SUBR(sdMat_delete)(TYPE(sdMat_ptr) V, int* iflag);
