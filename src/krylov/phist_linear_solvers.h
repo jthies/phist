@@ -22,8 +22,14 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+//! \defgroup linear_solvers Iterative methods for linear systems
+//! \ingroup krylov
+//!@{
+
 #define PHIST_CLASSFILE_DEF "phist_linear_solvers_decl.h"
 #include "phist_gen_all.h"
+//!@}
 #ifdef __cplusplus
 }
 #endif
