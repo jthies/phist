@@ -25,6 +25,10 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+//! \defgroup linearOp linear operator interface \ingroup core
+//!@{
+
 #ifdef PHIST_HAVE_SP
 #include "phist_gen_s.h"
 #include "phist_operator_decl.h"
@@ -37,6 +41,8 @@ extern "C" {
 #include "phist_operator_decl.h"
 
 #include "phist_gen_clean.h"
+
+//!@}
 
 #ifdef __cplusplus
 }

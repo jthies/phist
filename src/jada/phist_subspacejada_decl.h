@@ -7,10 +7,6 @@
 /*                                                                                         */
 /*******************************************************************************************/
 
-//! \defgroup bjdqr Jacobi-Davidson QR method with blocking, locking and restart
-//@{
-
-
 //! Subspace Jacobi-Davidson for extreme eigenvalues
 
 //! Tries to compute a partial Schur form \f$(Q,R)\f$ of dimension opts.nEigs                       
@@ -57,5 +53,5 @@ void SUBR(subspacejada)( TYPE(const_linearOp_ptr) A_op,  TYPE(const_linearOp_ptr
                          int *nConv,                int *nIter,
                         int* iflag);
 
-//@}
+
 
