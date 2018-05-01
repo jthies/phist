@@ -1,7 +1,7 @@
 #ifndef HIST_JADA_H
 #define HIST_JADA_H
 
-//! \defgroup jada Jacobi-Davidson method and tools
+//! \defgroup jada jada: Jacobi-Davidson method and tools
 //!@{
 
 #include "phist_jadaCorrectionSolver.h"

@@ -19,13 +19,12 @@
 #include "likwid.h"
 #endif
 
-#include "phist_macros.h"
-#include "phist_enums.h"
+#include "phist_tools.h"
 #include "phist_kernels.h"
-#include "phist_operator.h"
-#include ${PHIST_TG_HFILE}
-#include "phist_ScalarTraits.hpp"
+#include "phist_core.h"
 #include "phist_driver_utils.h"
+
+#include ${PHIST_TG_HFILE}
 
 typedef phist::ScalarTraits<_ST_> st;
 

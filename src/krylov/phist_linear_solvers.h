@@ -23,7 +23,7 @@
 extern "C" {
 #endif
 
-//! \defgroup linear_solvers Iterative methods for linear systems
+//! \defgroup linear_solvers linear_solvers: Iterative methods for linear systems
 //! \ingroup krylov
 //!@{
 

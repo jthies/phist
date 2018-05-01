@@ -23,7 +23,7 @@
 
 #endif //DOXYGEN
 
-//! \defgroup orthog orthogonalization routines
+//! \defgroup orthog orthog: orthogonalization routines
 //! \ingroup core
 //!@{
 #ifdef __cplusplus

@@ -3,7 +3,7 @@
 
 #include "phist_config.h"
 
-//! \defgroup krylov Krylov subspace methods
+//! \defgroup krylov krylov: Krylov subspace methods
 //!@{
 
 /* blocked Krylov solvers used as correction solvers in jada */

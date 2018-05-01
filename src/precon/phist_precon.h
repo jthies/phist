@@ -30,7 +30,7 @@
 extern "C" {
 #endif
 
-//! \defgroup precon Preconditioning interface
+//! \defgroup precon precon: Preconditioning interface
 //!@{
 
 //! data structure used internally for storing preconditioner

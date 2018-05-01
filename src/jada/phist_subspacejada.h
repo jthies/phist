@@ -26,7 +26,8 @@
 extern "C" {
 #endif
 
-//! \defgroup bjdqr Jacobi-Davidson QR method with blocking, locking and restart \ingroup jada
+//! \defgroup bjdqr subspacejada: Jacobi-Davidson QR method with blocking, locking and restart
+//! \ingroup jada
 //@{
 
 #ifdef PHIST_HAVE_SP

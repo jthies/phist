@@ -39,7 +39,7 @@
 
 #endif //DOXYGEN
 
-//! \defgroup tools Utility functions and macros
+//! \defgroup tools tools: Utility functions and macros
 //!@{
 
 # include "phist_macros.h"

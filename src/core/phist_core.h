@@ -9,7 +9,7 @@
 #ifndef PHIST_CORE_H
 #define PHIST_CORE_H
 
-//! \defgroup core Core functionality for iterative solvers
+//! \defgroup core core: Common functionality for iterative solvers
 //!@{
 
 #include "phist_core_flags.h"

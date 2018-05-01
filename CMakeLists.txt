@@ -1340,6 +1340,8 @@ install(FILES ${PROJECT_BINARY_DIR}/phist_config.h DESTINATION ${INCLUDE_INSTALL
 file(GLOB PHIST_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/src/*/*.h 
                         ${CMAKE_CURRENT_SOURCE_DIR}/src/kernels/${PHIST_KERNEL_LIB}/phist_typedefs.h 
                         ${CMAKE_CURRENT_SOURCE_DIR}/src/tools/*.hpp
+                        ${CMAKE_CURRENT_SOURCE_DIR}/drivers/phist_driver_utils.h
+                        ${CMAKE_CURRENT_SOURCE_DIR}/drivers/phist_driver_utils_decl.hpp
                         )
 install(FILES ${PHIST_HEADERS} DESTINATION ${INCLUDE_INSTALL_DIR})
 

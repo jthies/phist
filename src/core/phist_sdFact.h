@@ -25,7 +25,8 @@
 extern "C" {
 #endif
 
-//! \defgroup sdfact various factorization methods for small dense matrices \ingroup core
+//! \defgroup sdFact sdFact: various factorization methods for small dense matrices
+//! \ingroup core
 //!
 //! These kernels are highly accurate but not necessarily efficient, If the
 //! kernel lib supports PHIST_HIGH_PRECISION_KERNELS (e.g. the builtin kernels

@@ -26,7 +26,8 @@
 extern "C" {
 #endif
 
-//! \defgroup linearOp linear operator interface \ingroup core
+//! \defgroup linearOp linearOp: operator interface
+//! \ingroup core
 //!@{
 
 #ifdef PHIST_HAVE_SP
