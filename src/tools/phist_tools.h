@@ -39,6 +39,9 @@
 
 #endif //DOXYGEN
 
+//! \defgroup tools Utility functions and macros
+//!@{
+
 # include "phist_macros.h"
 
 #ifdef __cplusplus
@@ -151,6 +154,8 @@ const char* phist_ghost_error2str(ghost_error code);
 int phist_ordered_fprintf(MPI_Comm comm, const char* fmt, ...);
 
 # endif
+
+//!@}
 
 #ifdef __cplusplus
 }

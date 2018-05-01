@@ -7,9 +7,6 @@
 /*                                                                                         */
 /*******************************************************************************************/
 
-//! \defgroup precon methods to construct, update and destroy a preconditioner
-//@{
-
 //! create a preconditioner for an iterative linear solver
 
 //! This function can be used to create an operator that can be used to precondition linear systems     
@@ -84,7 +81,6 @@ void SUBR(precon_apply_shifted)(_ST_ alpha, void const* P, _ST_ const* sigma,
         TYPE(const_mvec_ptr) X, 
         _ST_ beta, TYPE(mvec_ptr) Y, int* iflag);
 
-//@}
 
 
 
