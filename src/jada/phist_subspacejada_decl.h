@@ -7,9 +7,6 @@
 /*                                                                                         */
 /*******************************************************************************************/
 
-//! \addtogroup jada
-//@{
-
 //! \defgroup bjdqr Jacobi-Davidson QR method with blocking, locking and restart
 //@{
 
@@ -62,4 +59,3 @@ void SUBR(subspacejada)( TYPE(const_linearOp_ptr) A_op,  TYPE(const_linearOp_ptr
 
 //@}
 
-//@}

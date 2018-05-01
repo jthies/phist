@@ -8,7 +8,8 @@ HIDE_UNDOC_MEMBERS     = YES
 INPUT                  = ./src/ README.md ${CMAKE_BINARY_DIR}/cxx_bindings/
 FILE_PATTERNS          = "*.h" "*.md" "*.hpp"
 RECURSIVE              = YES
-EXCLUDE_PATTERNS       = "*/src/craft/*" \
+EXCLUDE_PATTERNS       = "*/src/kernels/*/*" \
+                         "*/src/craft/*" \
                          "*_def.*" \
                          "*_decl*"
 FILTER_PATTERNS        = "*.h=\"cpp -C -DDOXYGEN ${INCLUDE_FLAGS} -I.\""

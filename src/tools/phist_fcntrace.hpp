@@ -9,12 +9,14 @@
 #ifndef PHIST_FCN_TRACE_HPP
 #define PHIST_FCN_TRACE_HPP
 
+#include "phist_config.h"
+
+#ifndef DOXYGEN
+
 #ifndef __cplusplus
 #error "this is a C++ header"
 #endif
 
-#ifndef DOXYGEN
-#include "phist_config.h"
 
 /* needs to be included before system headers for some intel compilers+mpi */
 #ifdef PHIST_HAVE_MPI
@@ -41,13 +43,13 @@
 
 #endif /* DOXYGEN */
 
-// this is an object that prints a message when created and when destroyed.
-// Its sole purpose is to implement a macro PHIST_ENTER_FCN (phist_macros.h) that
-// will generate output like this:
-// ENTER xyz
-// ...
-// LEAVE xyz
-// for some functino xyz. The macro is defined empty of PHIST_OUTLEV<PHIST_TRACE
+//! this is an object that prints a message when created and when destroyed.
+//! Its sole purpose is to implement a macro PHIST_ENTER_FCN (phist_macros.h) that
+//! will generate output like this:
+//! ENTER xyz
+//! ...
+//! LEAVE xyz
+//! for some functino xyz. The macro is defined empty of PHIST_OUTLEV<PHIST_TRACE
 class phist_FcnTrace
 {
   public:
@@ -131,8 +133,8 @@ class phist_FcnTrace
 
 
 
-// Small helper class for PHIST_ENTER_KERNEL_FCN (phist_macros.h),
-// which returns a modified name when nested
+//! Small helper class for PHIST_ENTER_KERNEL_FCN (phist_macros.h),
+//! which returns a modified name when nested
 class phist_CheckKernelFcnNesting
 {
   public:

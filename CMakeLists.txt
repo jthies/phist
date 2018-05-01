@@ -1600,6 +1600,7 @@ add_dependencies(phist_kernels_${PHIST_KERNEL_LIB} cxx_headers)
 find_package(Doxygen 1.7.0 QUIET)
 if (DOXYGEN_FOUND)
     add_custom_target(doc ${DOXYGEN_EXECUTABLE} ${CMAKE_BINARY_DIR}/phist.doxyfile WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+    add_dependencies(doc cxx_headers)
 endif()
 
 # Add optional target "coverage" to genereate code coverage report (console / XML)
