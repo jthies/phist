@@ -12,8 +12,8 @@ EXCLUDE_PATTERNS       = "*/src/kernels/*/*" \
                          "*/src/craft/*" \
                          "*_def.*" \
                          "*_decl*"
-FILTER_PATTERNS        = "*.h=\"cpp -C -DDOXYGEN ${INCLUDE_FLAGS} -I.\""
-FILTER_PATTERNS        = "*.hpp=\"cpp -C -DDOXYGEN ${INCLUDE_FLAGS} -I.\""
+FILTER_PATTERNS        = "*.h=\"cpp -CC -DDOXYGEN ${INCLUDE_FLAGS} -I.\""
+FILTER_PATTERNS        = "*.hpp=\"c++ -E -Wp,-CC -DDOXYGEN ${INCLUDE_FLAGS} -I.\""
 USE_MDFILE_AS_MAINPAGE = README.md
 REFERENCES_RELATION    = YES
 HTML_TIMESTAMP         = YES
