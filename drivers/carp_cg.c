@@ -27,7 +27,7 @@ GHOST_REGISTER_DT_D(my_datatype)
 
 
 #include "phist_gen_d.h"
-#include "phist_driver_utils.h"
+#include "phist_driver_utils_decl.h"
 
 typedef enum {
 FROM_FILE=0,
