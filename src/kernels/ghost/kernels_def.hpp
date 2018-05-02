@@ -1533,8 +1533,7 @@ _ST_* ydoty, _ST_* xdoty, int* iflag)
   *iflag=0;
 
   PHIST_COUNT_MATVECS(vx);
-  PHIST_PERFCHECK_VERIFY_SPMV(alpha,vA,vx,beta,vy,gamma,delta,((ydoty!=NULL)+(xdoty!=NULL)),iflag);
-
+  PHIST_PERFCHECK_VERIFY_SPMV(alpha,vA,_ST_(0),vx,beta,vy,gamma,delta,((ydoty!=NULL)+(xdoty!=NULL)),iflag);
 
   PHIST_CAST_PTR_FROM_VOID(ghost_sparsemat,A,vA,*iflag);
   PHIST_CAST_PTR_FROM_VOID(ghost_densemat,x,vx,*iflag);
@@ -1697,6 +1696,7 @@ extern "C" void SUBR(sparseMat_times_mvec_vadd_mvec)(_ST_ alpha, TYPE(const_spar
   *iflag=0;
 
   PHIST_COUNT_MATVECS(vx);
+  PHIST_PERFCHECK_VERIFY_SPMV(alpha,vA,_ST_(1),vx,beta,vy,_ST_(0),_ST_(0),0,iflag);
 
   PHIST_CAST_PTR_FROM_VOID(ghost_sparsemat,A,vA,*iflag);
   PHIST_CAST_PTR_FROM_VOID(ghost_densemat,x,vx,*iflag);
