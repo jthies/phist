@@ -297,7 +297,7 @@ contains
   ! at some point
   !
   ! The problem is chosen by providing
-  ! a hex number like e.g. 0xA3 or 0xB1 to select problem A1 or B3, respectively
+  ! a hex number like e.g. 0xA3 or 0xB1 to select problem A3 or B1, respectively
   subroutine MATPDE3D_selectProblem(prob,iflag) bind(C,name='MATPDE3D_selectProblem')
   use, intrinsic :: iso_c_binding
   integer(kind=C_INT), value :: prob
