@@ -6,11 +6,6 @@
 /* Contact: Jonas Thies (Jonas.Thies@DLR.de)                                               */
 /*                                                                                         */
 /*******************************************************************************************/
-//! \defgroup linear_solvers Iterative methods for linear systems
-//@{
-
-//! \defgroup blockedGMRES blocked GMRES solver for general linear systems
-//@{
 
 //! gmres state object
 
@@ -77,8 +72,8 @@ typedef TYPE(blockedGMRESstate) const * TYPE(const_blockedGMRESstate_ptr);
 //! (Note: a real block variant should be possible, since A-s_jI gives the *SAME* Krylov-subspace as A,
 //! but it would be difficult to add a new system to an existing (generalized) krylov-subspace)
 //!
-//! \param *nIter On input, *nIter indicates the total max number of iterations allowed, maxIter, for any system.
-//! On output, *nIter indicates the number of blocked iterations performed. For technical reasons
+//! \param [in] *nIter indicates the total max number of iterations allowed, maxIter, for any system.
+//! \param [out] *nIter indicates the number of blocked iterations performed. For technical reasons
 //! this includes the initial residual computation if you pass in a non-zero vector x to _reset, so
 //! the actual number of GMRES iterations may differ (it can be found for each state in S[i]->totalIter).
 //!
@@ -103,11 +98,11 @@ typedef TYPE(blockedGMRESstate) const * TYPE(const_blockedGMRESstate_ptr);
 //! 3 (maxIter exceeded) or a negative value if an error occurred related to this particular system.
 //!
 //! \return The global iflag flag will then be set to the minimum of all the status flags of the individual
-//! states (converged, basis full or failed), that is:
-//! -1 if any error occurred,
-//!  0 if anyone converged and there was no error,
-//!  1 if everyone is still running fine but the function exited for some obscure reason (should never happen),
-//!  2 if all systems need to be restarted,
+//! states (converged, basis full or failed), that is: <br>
+//! -1 if any error occurred, <br>
+//!  0 if anyone converged and there was no error, <br>
+//!  1 if everyone is still running fine but the function exited for some obscure reason (should never happen), <br>
+//!  2 if all systems need to be restarted, <br>
 //!  3 if all systems reached the maximum number of iterations.
 //!
 //! \warning you cannot mix together states from different calls to blockedGMRESstates_create! The way to
@@ -171,5 +166,3 @@ void SUBR(blockedGMRESstates_updateSol)(TYPE(blockedGMRESstate_ptr) S_array[], i
                 TYPE(const_linearOp_ptr) rightPrecon,
                 TYPE(mvec_ptr) x, _MT_ *resNorm, int scaleSolutionToOne, int* iflag);
 
-//@}
-//@}

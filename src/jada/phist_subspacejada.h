@@ -25,6 +25,11 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+//! \defgroup bjdqr subspacejada: Jacobi-Davidson QR method with blocking, locking and restart
+//! \ingroup jada
+//@{
+
 #ifdef PHIST_HAVE_SP
 #include "phist_gen_s.h"
 #include "phist_subspacejada_decl.h"
@@ -37,6 +42,8 @@ extern "C" {
 #include "phist_subspacejada_decl.h"
 
 #include "phist_gen_clean.h"
+
+//!@}
 
 #ifdef __cplusplus
 }

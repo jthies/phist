@@ -7,7 +7,8 @@
 /*                                                                                         */
 /*******************************************************************************************/
 
-//! orthogonalize an mvec against an already orthogonal one. \ingroup core
+
+//! \brief orthogonalize an mvec against an already orthogonal one.
 
 //! This is the main orthogonalization routine in PHIST.           
 //! It takes an orthogonal basis V and a set of vectors W,         
@@ -63,7 +64,7 @@ void SUBR(orthog)(TYPE(const_mvec_ptr) V,
                      TYPE(sdMat_ptr) R2,
                      int numSweeps, int* rankVW, int* iflag);
 
-//! expert variant of orthog that gives more power to the user. \ingroup core
+//! expert variant of orthog that gives more power to the user.
 
 //! This function is called by orthog and allows some additional tweaking.   
 //! It assumes that B*W and WtW=W'*BW are already available. It also allows  

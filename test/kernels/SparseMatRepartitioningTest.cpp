@@ -12,14 +12,10 @@
 #include "phist_kernels.h"
 #include "../tools/MatrixIO.h"
 
-#ifdef PHIST_HAVE_ESSEX_PHYSICS
-#include "essex-physics/matfuncs.h"
-#else
 #include "matfuncs.h"
-#endif
 
 #include "phist_gen_d.h"
-#include "phist_driver_utils.h"
+#include "phist_driver_utils_decl.h"
 #include "../tools/TestHelpers.h"
 #include "TestWithType.h"
 

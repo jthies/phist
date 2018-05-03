@@ -7,12 +7,6 @@
 /*                                                                                         */
 /*******************************************************************************************/
 
-//! \defgroup core Core functionality used by algorithms
-//@{
-
-//!\name basic operator concept, "something that only provides Y=alpha*Op*X + beta*Y"
-//@{
-
 //! The struct is used for storing a linear Operator.
 typedef struct TYPE(linearOp) {
  void const* A; //!< Data structure needed for representing A
@@ -117,12 +111,12 @@ void SUBR(linearOp_identity)(TYPE(linearOp_ptr) op,
                              phist_const_map_ptr  range_map,
                              phist_const_map_ptr domain_map, int* iflag);
 
-//@}
 
 //! \name wrappers that simply call the corresponding function in the linearOp struct
 //! These are particularly useful for Fortran users, for which it is awkward to use  
 //! the c_funptr members of the linearOp types (cf. https://bitbucket.org/essex/phist_fort)
-//@{
+//!@{
+
  //! Pointer to function for computing Y=alpha*A*X+beta*Y
  void SUBR(linearOp_apply)(_ST_ alpha, TYPE(const_linearOp_ptr) A_op, 
         TYPE(const_mvec_ptr) X, _ST_ beta,  TYPE(mvec_ptr) Y, int* iflag);
@@ -155,7 +149,4 @@ void SUBR(linearOp_identity)(TYPE(linearOp_ptr) op,
                         int* iflag);
 
 //@}
-
-//@}
-
 

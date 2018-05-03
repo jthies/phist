@@ -67,9 +67,15 @@ const char* filename,int* iflag)
   *iflag=PHIST_NOT_IMPLEMENTED;
 }
 
-extern "C" void SUBR(sparseMat_get_local_nnz)(TYPE(const_sparseMat_ptr) vA, int64_t* local_nnz, int* iflag)
+extern "C" void SUBR(sparseMat_local_nnz)(TYPE(const_sparseMat_ptr) vA, int64_t* local_nnz, int* iflag)
 {
   *local_nonzeros=0;
+  *iflag=PHIST_NOT_IMPLEMENTED;
+}
+
+extern "C" void SUBR(sparseMat_global_nnz)(TYPE(const_sparseMat_ptr) vA, int64_t* global_nnz, int* iflag)
+{
+  *global_nonzeros=0;
   *iflag=PHIST_NOT_IMPLEMENTED;
 }
 

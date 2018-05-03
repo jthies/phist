@@ -10,11 +10,17 @@
 #ifndef PHIST_EXCEPTION_HPP
 #define PHIST_EXCEPTION_HPP
 
+#ifndef DOXYGEN
 #include <exception>
 #include "phist_tools.h"
+#endif
 
 namespace phist
 {
+
+//! \addtogroup cxx_interface
+//!@{
+
   //! class for reporting an error (negative) or warning (positive) iflag on return
   class Exception : public std::exception
   {
@@ -38,7 +44,7 @@ namespace phist
     int iflag_;
   
   };
-
+//@!}
 }
 
 #endif

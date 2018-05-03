@@ -13,7 +13,7 @@ extern "C" {
 //! apply a transformation matrix M to a given search space V and AV, BV and the projection H=V'AV
 void SUBR(transform_searchSpace)(TYPE(mvec_ptr) V, TYPE(mvec_ptr) AV, TYPE(mvec_ptr) BV, TYPE(sdMat_ptr) H, TYPE(sdMat_ptr) M, int generalizedEigenproblem, int* iflag);
 
-//! apply a transformation matrices M to given search spaces V and W, BV 
+//! apply a transformation matrices MV, MW to given search spaces V and W, BV 
 //! and the projections H=W'V, H_A=W'AV:
 //!
 //! V   <- V*MV

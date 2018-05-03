@@ -72,20 +72,20 @@ shift $((OPTIND-1))
 declare -A MODULES_KERNELS
 MODULES_KERNELS=( 
   ["builtin"]=""
-  ["ghost"]="gsl"
-  ["epetra"]="lapack trilinos/trilinos-${TRILINOS_VERSION}"
-  ["tpetra"]="lapack trilinos/trilinos-${TRILINOS_VERSION}" 
+  ["ghost"]=""
+  ["epetra"]="trilinos/trilinos-${TRILINOS_VERSION}"
+  ["tpetra"]="trilinos/trilinos-${TRILINOS_VERSION}" 
   ["petsc"]="petsc" 
   ["eigen"]="Eigen" )
 
 declare -A MODULES_KERNELS_OPTIONAL
 MODULES_KERNELS_OPTIONAL=(
   ["builtin"]="ColPack parmetis trilinos"
-  ["ghost"]="ColPack trilinos/trilinos-11.12.1"
+  ["ghost"]="ColPack trilinos"
   ["epetra"]=""
   ["tpetra"]=""
-  ["petsc"]="" 
-  ["eigen"]="" )
+  ["petsc"]="trilinos" 
+  ["eigen"]="trilinos" )
 
 
 ## prepare system for compilation

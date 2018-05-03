@@ -7,9 +7,6 @@
 /*                                                                                         */
 /*******************************************************************************************/
 
-//! \defgroup precon methods to construct, update and destroy a preconditioner
-//@{
-
 //! create a preconditioner for an iterative linear solver
 
 //! This function can be used to create an operator that can be used to precondition linear systems     
@@ -25,7 +22,7 @@
 //!                       
 //! \param sigma If sigma is 0, B is not touched. If sigma!=0 but B==NULL, B=I (identity matrix)     
 //! is assumed.
-//! \param Vkern&BVkern For some preconditioners it may be useful to provide (an approximation of) the kernel of            
+//! \param Vkern,BVkern For some preconditioners it may be useful to provide (an approximation of) the kernel of            
 //! A-sigma*B, this can be done via Vkern and BVkern. If they are NULL, they are not used anyway.
 //!                                                                                                     
 //! \param method The string method="usage" will lead to a list of available preconditioners being printed.
@@ -84,7 +81,6 @@ void SUBR(precon_apply_shifted)(_ST_ alpha, void const* P, _ST_ const* sigma,
         TYPE(const_mvec_ptr) X, 
         _ST_ beta, TYPE(mvec_ptr) Y, int* iflag);
 
-//@}
 
 
 

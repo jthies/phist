@@ -250,7 +250,7 @@ if (NOT TPL_LAPACKE_LIBRARIES)
   else()
     find_library (LAPACKE_LIBRARY lapacke ${LAPACKE_LIBDIR})
     if (LAPACKE_LIBRARY MATCHES "LAPACKE_LIBRARY-NOTFOUND")
-      message(FATAL_ERROR "Did not find the LAPACKe library based on the LAPACK_LIBRARIES you provided, please set"
+      message(FATAL_ERROR "Did not find the LAPACKe library based on the LAPACK_LIBRARIES you provided, please set "
                           "LAPACKE_LIBRARIES and LAPACKE_INCLUDE_DIRS instead (including lapacke,lapack and blas library "
                           "names/inc dirs) or leave it to CMake to locate BLAS, LAPACK and LAPACKe.")
     else()
@@ -838,10 +838,19 @@ if (PHIST_KERNEL_LIB STREQUAL "epetra")
   LIST(APPEND PHIST_KERNEL_SOURCE ${PROJECT_SOURCE_DIR}/src/kernels/epetra/hg_repart.cpp)
 endif()
 
-# sopme `derived' kernel functions, e.g. mvec_my_length is implemented via mvec_get_map/map_get_local_lenth etc.
+# some `derived' kernel functions, e.g. mvec_my_length is implemented via mvec_get_map/map_get_local_lenth etc.
 # and common things like benchmarks
 LIST(APPEND PHIST_KERNEL_SOURCE ${PROJECT_SOURCE_DIR}/src/kernels/common/kernels_common_impl.cpp
                                 ${PROJECT_SOURCE_DIR}/src/kernels/common/stream_bench.c)
+
+if (PHIST_USE_CRAFT)
+  set(CRAFT_DIR "${PROJECT_SOURCE_DIR}/src/craft/") 
+  set(CRAFT_BUILD_GHOST OFF)
+  set(CRAFT_BUILD_PHIST ON)
+  include(${CRAFT_DIR}/CRAFT_VARS.txt) 
+  add_definitions(-DPHIST_CP)
+  add_library(craft SHARED ${CRAFT_SOURCE}) 
+endif()
 
 set (PHIST_TOOLS_SOURCE ${PROJECT_SOURCE_DIR}/src/tools/phist_tools.cpp
                         ${PROJECT_SOURCE_DIR}/src/tools/phist_random.c
@@ -857,6 +866,8 @@ set (PHIST_CORE_SOURCE ${PROJECT_SOURCE_DIR}/src/core/phist_operator.cpp
                        ${PROJECT_SOURCE_DIR}/src/core/phist_orthogrr.cpp
                        ${PROJECT_SOURCE_DIR}/src/core/phist_orthogrrfused.cpp
                        ${PROJECT_SOURCE_DIR}/src/core/phist_svrr.cpp
+                       ${PROJECT_SOURCE_DIR}/src/core/phist_schur_decomp.cpp
+                       ${PROJECT_SOURCE_DIR}/src/core/phist_transform_searchspace.cpp
                        ${PROJECT_SOURCE_DIR}/src/core/phist_kpm.cpp
                        )
 
@@ -889,12 +900,10 @@ if(PHIST_USE_CRAFT)
 endif()
 set (PHIST_JADA_SOURCE   ${PROJECT_SOURCE_DIR}/src/jada/phist_jadaOp.cpp
                          ${PROJECT_SOURCE_DIR}/src/jada/phist_jadaOpts.cpp
-                         ${PROJECT_SOURCE_DIR}/src/jada/phist_schur_decomp.cpp
                          ${PROJECT_SOURCE_DIR}/src/jada/phist_subspacejadaS.cpp
                          ${PROJECT_SOURCE_DIR}/src/jada/phist_subspacejadaC.cpp
                          ${PROJECT_SOURCE_DIR}/src/jada/phist_subspacejadaD.cpp
                          ${PROJECT_SOURCE_DIR}/src/jada/phist_subspacejadaZ.cpp
-                         ${PROJECT_SOURCE_DIR}/src/jada/phist_transform_searchspace.cpp
                          ${PROJECT_SOURCE_DIR}/src/jada/phist_jadaCorrectionSolver.cpp
                          )
 set(PHIST_PRECON_SOURCE ${PROJECT_SOURCE_DIR}/src/precon/phist_preconS.cpp
@@ -934,25 +943,10 @@ endif()
 
 if(PHIST_KERNEL_LIB STREQUAL "eigen")
   find_package (Eigen3 3.3 REQUIRED NO_MODULE)
-  include_directories(${EIGEN3_INCLUDE_DIRS})
+include_directories(${EIGEN3_INCLUDE_DIRS})
   add_definitions(-DEIGEN_NO_AUTOMATIC_RESIZING)
   add_definitions(-DEIGEN_INITIALIZE_MATRICES_BY_ZERO)
 endif()
-
-if (PHIST_USE_CRAFT)
-        find_package(CRAFT REQUIRED)
-        if(CRAFT_FOUND)
-                message (STATUS "CRAFT package is found ${CRAFT_INCLUDE_PATH}")
-                include_directories(${CRAFT_INCLUDE_PATH})
-                link_libraries(${CRAFT_LIBRARIES})
-                set (CMAKE_C_FLAGS        "${CMAKE_C_FLAGS}      ${CRAFT_FLAGS}")
-    set (CMAKE_CXX_FLAGS      "${CMAKE_CXX_FLAGS}    ${CRAFT_FLAGS}")
-
-        else()
-                message (STATUS "CRAFT package is NOT found")
-        endif()
-endif()
-
 
 add_library(phist_tools ${PHIST_TOOLS_SOURCE})
 add_library(phist_core ${PHIST_CORE_SOURCE})
@@ -972,6 +966,10 @@ target_link_libraries(phist_kernels_${PHIST_KERNEL_LIB}                         
 target_link_libraries(phist_core                                          phist_kernels_${PHIST_KERNEL_LIB} phist_tools)
 target_link_libraries(phist_precon                             phist_core phist_kernels_${PHIST_KERNEL_LIB} phist_tools)
 target_link_libraries(phist_solvers               phist_precon phist_core phist_kernels_${PHIST_KERNEL_LIB} phist_tools)
+if(PHIST_USE_CRAFT)
+  LIST(APPEND library_list craft)
+  target_link_libraries(phist_kernels_${PHIST_KERNEL_LIB}                                                     craft)
+endif()
 
 if (MPACK_FOUND)
       target_link_libraries(phist_core ${MPACK_LIBRARIES})
@@ -1152,8 +1150,8 @@ if( PHIST_PERFCHECK )
   option(PHIST_PERFCHECK_REALISTIC "Switch from ideal performance predictions to more realistic ones (e.g. for views)!" OFF)
 endif()
 
-set(PHIST_PEAK_FLOPS_CPU 884e9 CACHE STRING "Peak GFlop/s rate of the CPU component (for PERFCHECK only)")
-set(PHIST_PEAK_FLOPS_GPU 1.43e12 CACHE STRING "Peak GFlop/s rate of the GPU component (for PERFCHECK only)")
+set(PHIST_PEAK_FLOPS_CPU -1 CACHE STRING "Peak GFlop/s rate of the CPU component (for the roofline model in PERFCHECK only. If you don't know this value, just leave it at -1 and it will be ignored)")
+set(PHIST_PEAK_FLOPS_GPU -1 CACHE STRING "Peak GFlop/s rate of the GPU component (for the roofline model in PERFCHECK only. If you don't know this value, just leave it at -1 and it will be ignored)")
 
 set(INCLUDE_FLAGS "")
 get_property(dirs DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY INCLUDE_DIRECTORIES)
@@ -1323,12 +1321,20 @@ if (${BUILD_SHARED_LIBS})
   install(TARGETS phist_core EXPORT phistLibraries LIBRARY DESTINATION ${LIBRARY_INSTALL_DIR})
   install(TARGETS phist_precon EXPORT phistLibraries LIBRARY DESTINATION ${LIBRARY_INSTALL_DIR})
   install(TARGETS phist_solvers EXPORT phistLibraries LIBRARY DESTINATION ${LIBRARY_INSTALL_DIR})
+  if(PHIST_USE_CRAFT)
+    install(TARGETS craft EXPORT phistLibraries LIBRARY DESTINATION ${LIBRARY_INSTALL_DIR})
+  endif()
+
 else()
   install(TARGETS phist_kernels_${PHIST_KERNEL_LIB} EXPORT phistLibraries ARCHIVE DESTINATION ${LIBRARY_INSTALL_DIR})
   install(TARGETS phist_tools EXPORT phistLibraries ARCHIVE DESTINATION ${LIBRARY_INSTALL_DIR})
   install(TARGETS phist_core EXPORT phistLibraries ARCHIVE DESTINATION ${LIBRARY_INSTALL_DIR})
   install(TARGETS phist_precon EXPORT phistLibraries ARCHIVE DESTINATION ${LIBRARY_INSTALL_DIR})
   install(TARGETS phist_solvers EXPORT phistLibraries ARCHIVE DESTINATION ${LIBRARY_INSTALL_DIR})
+  if(PHIST_USE_CRAFT)
+     install(TARGETS craft EXPORT phistLibraries ARCHIVE DESTINATION ${LIBRARY_INSTALL_DIR})
+  endif()
+
 endif()
 install(FILES ${PROJECT_BINARY_DIR}/phistConfig.cmake        DESTINATION ${LIBRARY_INSTALL_DIR}/cmake/phist)
 #export(EXPORT phistLibraries FILE "${PROJECT_BINARY_DIR}/phistLibraries.cmake")
@@ -1340,6 +1346,8 @@ install(FILES ${PROJECT_BINARY_DIR}/phist_config.h DESTINATION ${INCLUDE_INSTALL
 file(GLOB PHIST_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/src/*/*.h 
                         ${CMAKE_CURRENT_SOURCE_DIR}/src/kernels/${PHIST_KERNEL_LIB}/phist_typedefs.h 
                         ${CMAKE_CURRENT_SOURCE_DIR}/src/tools/*.hpp
+                        ${CMAKE_CURRENT_SOURCE_DIR}/drivers/phist_driver_utils.h
+                        ${CMAKE_CURRENT_SOURCE_DIR}/drivers/phist_driver_utils_decl.hpp
                         )
 install(FILES ${PHIST_HEADERS} DESTINATION ${INCLUDE_INSTALL_DIR})
 
@@ -1600,6 +1608,7 @@ add_dependencies(phist_kernels_${PHIST_KERNEL_LIB} cxx_headers)
 find_package(Doxygen 1.7.0 QUIET)
 if (DOXYGEN_FOUND)
     add_custom_target(doc ${DOXYGEN_EXECUTABLE} ${CMAKE_BINARY_DIR}/phist.doxyfile WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+    add_dependencies(doc cxx_headers)
 endif()
 
 # Add optional target "coverage" to genereate code coverage report (console / XML)

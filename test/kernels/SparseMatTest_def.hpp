@@ -325,6 +325,32 @@ protected:
     }
   }
 
+  TEST_F(CLASSNAME, local_nnz)
+  {
+    int64_t expected_nnz=-1, nnz;
+#if MATNAME == MATNAME_spzero
+    expected_nnz=nloc_; // note: the file contains explicit zeros, which the matrix can't know.
+#elif MATNAME == MATNAME_speye
+    expected_nnz=nloc_;
+#endif
+    SUBR(sparseMat_local_nnz)(A_,&nnz,&iflag_);
+    ASSERT_EQ(0,iflag_);
+    if (expected_nnz>=0) ASSERT_EQ(expected_nnz,nnz);
+  }
+
+  TEST_F(CLASSNAME, global_nnz)
+  {
+    int64_t expected_nnz=-1, nnz;
+#if MATNAME == MATNAME_spzero
+    expected_nnz=nglob_; // note: the file contains explicit zeros, which the matrix can't know.
+#elif MATNAME == MATNAME_speye
+    expected_nnz=nglob_;
+#endif
+    SUBR(sparseMat_global_nnz)(A_,&nnz,&iflag_);
+    ASSERT_EQ(0,iflag_);
+    if (expected_nnz>0) ASSERT_EQ(expected_nnz,nnz);
+  }
+
 #if MATNAME == MATNAME_spzero
   TEST_F(CLASSNAME, A0_times_mvec) 
   {

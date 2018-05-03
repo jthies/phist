@@ -6,7 +6,8 @@
 /* Contact: Jonas Thies (Jonas.Thies@DLR.de)                                               */
 /*                                                                                         */
 /*******************************************************************************************/
-/*! \file random.h
+
+/*! \file phist_random.h
  * a variant of George Marsaglia's KISS random number generator with jump ahead
  * \author "Melven Roehrig-Zoellner <Melven.Roehrig-Zoellner@DLR.de>
  * inspired by https://github.com/cmcqueen/simplerandom and http://web.mst.edu/~vojtat/class_5403/kiss05/rkiss05.f90

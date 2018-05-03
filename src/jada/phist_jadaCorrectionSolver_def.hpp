@@ -16,7 +16,6 @@ void SUBR(jadaCorrectionSolver_create)(TYPE(jadaCorrectionSolver_ptr) *me, phist
   *me = new TYPE(jadaCorrectionSolver);
   (*me)->method_ = opts.innerSolvType;
   (*me)->leftPrecon=NULL; 
-  (*me)->rightPrecon=NULL; 
 
   int innerSolvBlockSize=opts.innerSolvBlockSize;
   if (innerSolvBlockSize<0) innerSolvBlockSize=opts.blockSize;
@@ -39,7 +38,6 @@ void SUBR(jadaCorrectionSolver_create)(TYPE(jadaCorrectionSolver_ptr) *me, phist
   }
   else if ((*me)->method_==phist_QMR || (*me)->method_==phist_BICGSTAB)
   {
-    (*me)->rightPrecon=(TYPE(linearOp_ptr))opts.preconOp;
     (*me)->preconSkewProject=opts.preconSkewProject;
   }
   else if ((*me)->method_==phist_CARP_CG)
@@ -59,7 +57,6 @@ void SUBR(jadaCorrectionSolver_create)(TYPE(jadaCorrectionSolver_ptr) *me, phist
   }
   else if ((*me)->method_==phist_NO_LINSOLV)
   {
-    (*me)->rightPrecon=(TYPE(linearOp_ptr))opts.preconOp;
     (*me)->preconSkewProject=opts.preconSkewProject;
   }
   else
@@ -207,7 +204,7 @@ void SUBR(jadaCorrectionSolver_run)(TYPE(jadaCorrectionSolver_ptr) me,
     q=(TYPE(mvec_ptr))Qtil; Bq=(TYPE(mvec_ptr))BQtil;
   }
 
-  if (me->rightPrecon && me->preconSkewProject)
+/*  if (me->rightPrecon && me->preconSkewProject)
   {
     q=NULL; Bq=NULL;
     phist_const_map_ptr map;
@@ -227,7 +224,7 @@ void SUBR(jadaCorrectionSolver_run)(TYPE(jadaCorrectionSolver_ptr) me,
     {
       Bq=q;
     }
-  }
+  }*/
 
   // make sure these vectors get deleted at the end of the scope
   MvecOwner<_ST_> _q(q!=Qtil?q:NULL),_Bq(( (Bq!=q)&&(Bq!=BQtil) )?Bq:NULL);
@@ -240,14 +237,6 @@ void SUBR(jadaCorrectionSolver_run)(TYPE(jadaCorrectionSolver_ptr) me,
     {
       // not all preconditioners may support this, so only warn on non-zero output
       SUBR(precon_update)(me->leftPrecon,prec_sigma,q,Bq,iflag);
-      if (*iflag) PHIST_SOUT(PHIST_WARNING,"precon_update returned non-zero code %d\n"
-                                           "(file %s, line %d). Ignoring return value.\n",
-                                           *iflag,__FILE__,__LINE__);
-    }
-    if (me->rightPrecon!=NULL)
-    {
-      // not all preconditioners may support this, so only warn on non-zero output
-      SUBR(precon_update)(me->rightPrecon,prec_sigma,q,Bq,iflag);
       if (*iflag) PHIST_SOUT(PHIST_WARNING,"precon_update returned non-zero code %d\n"
                                            "(file %s, line %d). Ignoring return value.\n",
                                            *iflag,__FILE__,__LINE__);
@@ -276,19 +265,6 @@ void SUBR(jadaCorrectionSolver_run)(TYPE(jadaCorrectionSolver_ptr) me,
     MvecOwner<_ST_> __res(_res!=res?_res:NULL);
     // wrap the preconditioner so that apply_shifted is called
       TYPE(linearOp_ptr) jadaPrec=NULL;
-
-    if (me->rightPrecon!=NULL)
-    {
-      std::vector<_ST_> shifts(totalNumSys, st::zero());
-      if (me->method_==phist_NO_LINSOLV)
-      {
-        // use actual shifts instead of 0's
-        for (int i=0; i<totalNumSys; i++) shifts[i]=-sigma[i];
-      }
-
-      PHIST_CHK_IERR(SUBR(jadaPrec_create)(me->rightPrecon,q,Bq,&shifts[0],totalNumSys,jadaPrec,me->preconSkewProject,iflag),*iflag);
-
-    }
 
       if (me->method_==phist_NO_LINSOLV)
       {
@@ -373,7 +349,7 @@ void SUBR(jadaCorrectionSolver_run)(TYPE(jadaCorrectionSolver_ptr) me,
   TYPE(linearOp) jadaOp;
   PHIST_CHK_IERR(SUBR(jadaOp_create)(AB_op, B_op, Qtil, BQtil, &currShifts[0], k, &jadaOp, iflag), *iflag);
 
-    TYPE(linearOp) jadaPrecL, jadaPrecR, *jadaPrecLeft=NULL, *jadaPrecRight=NULL;
+    TYPE(linearOp) jadaPrecL, *jadaPrecLeft=NULL;
     
   // the RHS used, if there is no left preconditioning this is just a pointer to res, otherwise
   // it is allocated and the preconditioner is applied
@@ -390,11 +366,6 @@ void SUBR(jadaCorrectionSolver_run)(TYPE(jadaCorrectionSolver_ptr) me,
     PHIST_CHK_IERR(jadaPrecL.apply(st::one(),jadaPrecL.A,res,st::zero(),rhs,iflag),*iflag);
     jadaPrecLeft=&jadaPrecL;
     PHIST_CHK_IERR(SUBR(jadaOp_set_leftPrecond)(&jadaOp,jadaPrecLeft,iflag),*iflag);
-  }
-  else if (me->rightPrecon!=NULL)
-  {
-    PHIST_CHK_IERR(SUBR(jadaPrec_create)(me->rightPrecon,q,Bq,&preconShifts[0],totalNumSys,&jadaPrecR,me->preconSkewProject,iflag),*iflag);
-    jadaPrecRight=&jadaPrecR;
   }
   
   // in case a preconditioned copy was made, delete it at the end of the scope
@@ -474,7 +445,7 @@ PHIST_TASK_BEGIN(ComputeTask)
     if( me->method_==phist_MINRES )
     {
       int nIter=maxIter;
-      PHIST_CHK_NEG_IERR(SUBR(blockedMINRESstates_iterate)(&jadaOp, jadaPrecRight, &activeStates[0], k, &nIter, iflag), 
+      PHIST_CHK_NEG_IERR(SUBR(blockedMINRESstates_iterate)(&jadaOp, NULL, &activeStates[0], k, &nIter, iflag), 
       *iflag);
     }
     else if (me->method_==phist_CARP_CG)
@@ -484,7 +455,7 @@ PHIST_TASK_BEGIN(ComputeTask)
     else
     {
       int nIter=maxIter;
-      PHIST_CHK_NEG_IERR(SUBR(blockedGMRESstates_iterate)(&jadaOp, jadaPrecRight,&activeStates[0], k, &nIter, useIMGS, iflag), *iflag);
+      PHIST_CHK_NEG_IERR(SUBR(blockedGMRESstates_iterate)(&jadaOp, NULL,&activeStates[0], k, &nIter, useIMGS, iflag), *iflag);
     }
 
     // optimization to use always full blocks and ignore tolerances
@@ -493,7 +464,7 @@ PHIST_TASK_BEGIN(ComputeTask)
       int ind = index[activeStates[0]->id];
       PHIST_CHK_IERR(SUBR(mvec_view_block)(t, &t_i, ind, ind+k-1, iflag), *iflag);
       _MT_ tmp[k];
-      PHIST_CHK_IERR(SUBR(blockedGMRESstates_updateSol)(&activeStates[0], k, jadaPrecRight, t_i, tmp, false, iflag), 
+      PHIST_CHK_IERR(SUBR(blockedGMRESstates_updateSol)(&activeStates[0], k, NULL, t_i, tmp, false, iflag), 
       *iflag);
       for(int i = 0; i < k; i++)
       {
@@ -511,7 +482,7 @@ PHIST_TASK_BEGIN(ComputeTask)
           int ind = index[activeStates[i]->id];
           PHIST_CHK_IERR(SUBR(mvec_view_block)(t, &t_i, ind, ind, iflag), *iflag);
           _MT_ tmp;
-          PHIST_CHK_IERR(SUBR(blockedGMRESstates_updateSol)(&activeStates[i],1,jadaPrecRight, t_i, &tmp, false, iflag), 
+          PHIST_CHK_IERR(SUBR(blockedGMRESstates_updateSol)(&activeStates[i],1,NULL, t_i, &tmp, false, iflag), 
           *iflag);
 
           if( activeStates[i]->status == 3 )
@@ -566,10 +537,6 @@ PHIST_TASK_END(iflag)
   if (jadaPrecLeft!=NULL)
   {
     PHIST_CHK_IERR(jadaPrecLeft->destroy(jadaPrecLeft, iflag), *iflag);
-  }
-  if (jadaPrecRight!=NULL)
-  {
-    PHIST_CHK_IERR(jadaPrecRight->destroy(jadaPrecRight, iflag), *iflag);
   }
   PHIST_CHK_IERR(SUBR(jadaOp_delete)(&jadaOp, iflag), *iflag);
   *iflag = nUnconvergedSystems;

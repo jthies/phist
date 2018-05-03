@@ -8,28 +8,29 @@
 /*******************************************************************************************/
 #include "phist_enums.h"
 
+
+//! \brief The jadaCorrectionSolver uses the blockedGMRES to calculate approximate solutions to a set of Jacobi-Davidson correction equations.
 //!
-//! The jadaCorrectionSolver uses the blockedGMRES to calculate approximate solutions to a set of Jacobi-Davidson correction equations.
 //! It provides a simple interface and takes care of restarting/pipelining issues
 //!
 typedef struct TYPE(jadaCorrectionSolver) {
-  //! \name internal data structures
+  //! \name Internal data structures
   //@{
-  int                   hermitian; //! some inner solver schemes may be able to make use of this info
-  int                   innerSolvBlockSize_; //! number of blockedGMRES states iterated at once
-  TYPE(blockedGMRESstate_ptr) *blockedGMRESstates_; //! blockedGMRES states
-  TYPE(carp_cgState_ptr) *carp_cgStates_; //! can use CARP-CG alternatively
-  phist_ElinSolv     method_;    //! supported values are GMRES, MINRES, CARP_CG and CUSTOM.
+  int                   hermitian; //!< Some inner solver schemes may be able to make use of this info
+  int                   innerSolvBlockSize_; //!< Number of blockedGMRES states iterated at once
+  TYPE(blockedGMRESstate_ptr) *blockedGMRESstates_; //!< blockedGMRES states
+  TYPE(carp_cgState_ptr) *carp_cgStates_; //!< Can use CARP-CG alternatively
+  phist_ElinSolv     method_;    //!< Supported values are GMRES, MINRES, CARP_CG and CUSTOM.
   
   int preconSkewProject;
 
   TYPE(linearOp_ptr) leftPrecon;
-  TYPE(linearOp_ptr) rightPrecon;
 
-  //! pointer to solver object if innerSolvType==USER_DEFINED
+  //! Pointer to solver object if innerSolvType==USER_DEFINED
   void* customSolver_;
 
-  //! this function is used instead of phist_jadaCorrectionSolver_run if innerSolvType is USER_DEFINED.
+  //! \brief This function is used instead of phist_jadaCorrectionSolver_run if innerSolvType is USER_DEFINED.
+  //!
   //! For subspacejada with block size 1 it is enough to implement the simpler interface below,
   //! we first check in those cases if that interface is set before checking for this one.
   void (*customSolver_run)(         void*  customSolverData,
@@ -42,7 +43,7 @@ typedef struct TYPE(jadaCorrectionSolver) {
                                     int robust,                int abortAfterFirstConvergedInBlock,
                                     int *iflag);
 
-  //! simplified interface if only single-vector jdqr or subspacejada is used.
+  //! Simplified interface if only single-vector jdqr or subspacejada is used.
   void (*customSolver_run1)(        void*  customSolverData,
                                     void const*    A_op,     void const*    B_op,
                                     void const*    Qtil,     void const*    BQtil,
@@ -55,34 +56,34 @@ typedef struct TYPE(jadaCorrectionSolver) {
   //@}
 } TYPE(jadaCorrectionSolver);
 
+//! Pointer to jadaCorrectionSolver object
 typedef TYPE(jadaCorrectionSolver)* TYPE(jadaCorrectionSolver_ptr);
-
+//! Pointer to const jadaCorrectionSolver object
 typedef TYPE(jadaCorrectionSolver) const * TYPE(const_jadaCorrectionSolver_ptr);
 
 
-//! create a jadaCorrectionSolver object
+//! Create a jadaCorrectionSolver object
 void SUBR(jadaCorrectionSolver_create)(TYPE(jadaCorrectionSolver_ptr) *me, phist_jadaOpts opts,
         phist_const_map_ptr map, int *iflag);
         
-//! delete a jadaCorrectionSolver object
+//! Delete a jadaCorrectionSolver object
 void SUBR(jadaCorrectionSolver_delete)(TYPE(jadaCorrectionSolver_ptr) jdCorrSolver, int *iflag);
 
 
-//! calculate approximate solutions to given set of jacobi-davidson correction equations
+//! \brief Calculate approximate solutions to given set of Jacobi-Davidson correction equations
 //!
-//! arguments:
-//! jdCorrSolver    the jadaCorrectionSolver object
-//! A_op            matrix A passed to jadaOp_create
-//! B_op            matrix B passed to jadaOp_create
-//! Qtil            projection vectors V passed to jadaOp_create
-//! BQtil           projection vectors BV passed to jadaOp_create
-//! sigma           (pos.!) shifts, -sigma[i], i in {1, ..., nvec} is passed to the jadaOp
-//! res             JD residuals, e.g. rhs of the correction equations
-//! resIndex        if not NULL, specifies permutation of the residual array to avoid unnecessary copying in the jada-algorithm
-//! tol             desired accuracy (gmres residual tolerance) of the individual systems
-//! maxIter         maximal number of iterations after which individial systems should be aborted
-//! t               returns approximate solution vectors
-//! iflag            a value > 0 indicates the number of systems that have not converged to the desired tolerance
+//! \param jdCorrSolver    the jadaCorrectionSolver object
+//! \param A_op            matrix A passed to jadaOp_create
+//! \param B_op            matrix B passed to jadaOp_create
+//! \param Qtil            projection vectors V passed to jadaOp_create
+//! \param BQtil           projection vectors BV passed to jadaOp_create
+//! \param sigma           (pos.!) shifts, -sigma[i], i in {1, ..., nvec} is passed to the jadaOp
+//! \param res             JD residuals, e.g. rhs of the correction equations
+//! \param resIndex        if not NULL, specifies permutation of the residual array to avoid unnecessary copying in the jada-algorithm
+//! \param tol             desired accuracy (gmres residual tolerance) of the individual systems
+//! \param maxIter         maximal number of iterations after which individial systems should be aborted
+//! \param t               returns approximate solution vectors
+//! \param iflag            a value > 0 indicates the number of systems that have not converged to the desired tolerance
 void SUBR(jadaCorrectionSolver_run)(TYPE(jadaCorrectionSolver_ptr) jdCorrSolver,
                                     TYPE(const_linearOp_ptr)    BA_op, TYPE(const_linearOp_ptr) B_op, 
                                     TYPE(const_mvec_ptr)  Qtil,        TYPE(const_mvec_ptr)     BQtil,

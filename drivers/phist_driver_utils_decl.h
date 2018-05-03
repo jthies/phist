@@ -11,6 +11,9 @@
 
 #include "phist_config.h"
 
+//! \defgroup driver_utils \ingroup tools
+//!@{
+
 #ifndef _ST_
 #error "this file should be included after a phist_gen_X header"
 #endif
@@ -94,12 +97,13 @@ void SUBR(create_matrix_with_context)(TYPE(sparseMat_ptr)* mat, phist_const_cont
 //! columns.
 void SUBR(create_sol_and_rhs)(const char* problem, TYPE(const_sparseMat_ptr) A,
                         TYPE(mvec_ptr) sol, TYPE(mvec_ptr) rhs, int* iflag);
-
+//!
 int phist_sizeof_lidx();
+//!
 int phist_sizeof_gidx();
 
 #ifdef __cplusplus
 } //extern "C"
 #endif
-
+//!@}
 #endif

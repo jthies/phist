@@ -26,7 +26,7 @@
 #include "phist_jadaOp.h"
 #include ${PHIST_TG_HFILE}
 #include "phist_ScalarTraits.hpp"
-#include "phist_driver_utils.h"
+#include "phist_driver_utils_decl.h"
 
 typedef phist::ScalarTraits<_ST_> st;
 
