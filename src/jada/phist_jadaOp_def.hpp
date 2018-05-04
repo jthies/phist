@@ -106,7 +106,7 @@ class TYPE(jadaOp_data)
     {
       postProj_op = new TYPE(linearOp);
     }
-    if (leftPrecon_op!=nullptr) 
+    if (precOp!=nullptr) 
     {
       precon_op = new TYPE(linearOp);
       if (method&phist_PROJ_SKEW)
@@ -178,10 +178,10 @@ extern "C" void SUBR(jadaOp_delete)(TYPE(linearOp_ptr) jdOp, int *iflag)
   TYPE(jadaOp_data) *jadaOp = (TYPE(jadaOp_data)*) jdOp->A;
 
   // delete inner Operators
-  if (jadaOp->preProj_op!=NULL)  PHIST_CHK_IERR(SUBR(linearOp_destroy)(jadaOp->preProj_op, iflag), *iflag);
-  if (jadaOp->postProj_op!=NULL) PHIST_CHK_IERR(SUBR(linearOp_destroy)(jadaOp->postProj_op, iflag), *iflag);
-  if (jadaOp->skewProj_op!=NULL) PHIST_CHK_IERR(SUBR(linearOp_destroy)(jadaOp->skewProj_op, iflag), *iflag);
-  if (jadaOp->k_op!=NULL)        PHIST_CHK_IERR(SUBR(linearOp_destroy)(jadaOp->k_op, iflag), *iflag);
+  if (jadaOp->preProj_op!=NULL)  PHIST_CHK_IERR(jadaOp->preProj_op->destroy(jadaOp->preProj_op, iflag), *iflag);
+  if (jadaOp->postProj_op!=NULL) PHIST_CHK_IERR(jadaOp->postProj_op->destroy(jadaOp->postProj_op, iflag), *iflag);
+  if (jadaOp->skewProj_op!=NULL) PHIST_CHK_IERR(jadaOp->skewProj_op->destroy(jadaOp->skewProj_op, iflag), *iflag);
+  if (jadaOp->k_op!=NULL)        PHIST_CHK_IERR(jadaOp->k_op->destroy(jadaOp->k_op, iflag), *iflag);
 
   delete jadaOp;
   jdOp->A=NULL;
@@ -435,7 +435,6 @@ extern "C" void SUBR(jadaOp_create_impl)(TYPE(const_linearOp_ptr)    AB_op,
   
   if (method&phist_PROJ_POST)
   {
-    myOp->postProj_op = new TYPE(linearOp);
     PHIST_CHK_IERR(SUBR(projOp_create)(myOp->V,myOp->BV,myOp->postProj_op,iflag),*iflag);
     myOp->postProj_op->use_transpose = 1; 
     PHIST_CHK_IERR(SUBR(linearOp_product_extend)(myOp->k_op,myOp->postProj_op,iflag),*iflag);
@@ -504,13 +503,8 @@ extern "C" void SUBR(jadaPrec_delete)(TYPE(linearOp_ptr) jdPrec, int *iflag)
   TYPE(jadaOp_data) *jadaPrec = (TYPE(jadaOp_data)*) jdPrec->A;
 
   // delete inner Operators
+  if (jadaPrec->skewProj_op!=NULL) PHIST_CHK_IERR(jadaPrec->skewProj_op->destroy(jadaPrec->skewProj_op, iflag), *iflag); 
   if (jadaPrec->k_op!=NULL) PHIST_CHK_IERR(jadaPrec->k_op->destroy(jadaPrec->k_op, iflag), *iflag);
-  delete jadaPrec->k_op;
-
-  if (jadaPrec->skewProj_op!=NULL) PHIST_CHK_IERR(jadaPrec->skewProj_op->destroy(jadaPrec->skewProj_op, iflag), *iflag);
-  delete jadaPrec->skewProj_op;
-  
-  delete jadaPrec->AB_op;
   
   // delete jadaOp
   delete jadaPrec;
@@ -602,8 +596,8 @@ extern "C" void SUBR(jadaOp_set_leftPrecond)(TYPE(linearOp_ptr) jdOp, TYPE(const
     // swap the jadaOp_data objects between the old and new object, and delete the new one
     TYPE(jadaOp_data)* swp = tmp_jdDat;
     tmp_jdOp->A =     jdDat;
-    jdOp->A     = tmp_jdDat;
-    PHIST_CHK_IERR(SUBR(linearOp_destroy)(tmp_jdOp,iflag),*iflag);
+    jdOp->A     = swp;
+    PHIST_CHK_IERR(tmp_jdOp->destroy(tmp_jdOp,iflag),*iflag);
   }
 }
 
