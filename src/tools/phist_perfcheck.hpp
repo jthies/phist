@@ -10,6 +10,9 @@
 #define PHIST_PERFCHECK_HPP
 
 #include "phist_config.h"
+
+#ifndef DOXYGEN
+
 /* needs to be included before system headers for some intel compilers+mpi */
 #ifdef PHIST_HAVE_MPI
 #include <mpi.h>
@@ -19,6 +22,8 @@
 #include <ghost.h>
 #endif
 
+#endif /* DOXYGEN */
+
 #ifndef PHIST_PERFCHECK
 
 #define PHIST_PERFCHECK_VERIFY(functionName, benchFormula, flops)
@@ -27,11 +32,14 @@
 
 #else
 
+#ifndef DOXYGEN
+
 #include "phist_timemonitor.hpp"
 #include <map>
 #include <sstream>
 #include <string>
 
+#endif /* DOXYGEN */
 
 /*! Defines a performance check, e.g. measure time until scope is left and compare it to the expected time.
  * Results (and especially large deviations) can be reported later.
@@ -88,6 +96,7 @@ namespace phist_PerfCheck
   class PerfCheckTimer : public Timer
   {
     public:
+      //!
       PerfCheckTimer(const char* name, const char* sn1, double n1, 
                                        const char* sn2, double n2, 
                                        const char* sn3, double n3, 
@@ -111,18 +120,21 @@ namespace phist_PerfCheck
         total_Gflops_performed_in_kernels +=flops*1.0e-9;
       }
       
+      //!
       ~PerfCheckTimer()
       {
         double elapsed=wtime_available()? get_wtime()-wtime_: 0.0;
         total_time_spent_in_kernels+=elapsed;
       }
 
-      // generate and print statistics
+      //! generate and print statistics
       static void summarize(int verbosity);
 
     protected:
+      //!
       static Timer::TimeDataMap expectedResults_;
 
+      //!
       static std::string constructName(const char* name, 
                                        const char* sn1, double n1, 
                                        const char* sn2, double n2, 

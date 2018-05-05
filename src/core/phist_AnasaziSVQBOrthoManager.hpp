@@ -109,7 +109,7 @@ namespace Anasazi {
       int rankQiX; // rank of [Q[i],X] before orthog (we'll randomize the null-space, so unless iflag=-8 is returned,
                    // [Q[i] X] has full rank afterwards)
       _MT_ rankTol=mt::rankTol();
-      _MT_ orthoEps=mt::eps();
+      _MT_ orthoEps=std::sqrt(mt::eps());
       int numSweeps=3;
       try {
       iflag|=PHIST_ORTHOG_TRIANGULAR_R1;

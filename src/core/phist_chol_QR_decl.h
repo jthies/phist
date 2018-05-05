@@ -6,7 +6,8 @@
 /* Contact: Jonas Thies (Jonas.Thies@DLR.de)                                               */
 /*                                                                                         */
 /*******************************************************************************************/
-//! rank revealing Cholesky-QR with pivoting and null space randomization
+
+//! rank revealing Cholesky-QR with pivoting and null space randomization \ingroup core
 
 //! SVQB algorithm (Stathopoulos & Wu, SISC 23 (6),2165-2182)
 //! with rank-revealing pivoted cholesky (SVRR)
@@ -23,6 +24,8 @@
 //! sdMat_to_device so that it is up-to-date on both host and
 //! device (if applicable).
 void SUBR(chol_QRp)(TYPE(mvec_ptr) V, TYPE(sdMat_ptr) R, int perm[], int* iflag);
+
+//! simplified interface for Cholesky QR orthogonalization \ingroup core
 
 //! this variant of chol_QR discards the perm array. It has the same interface
 //! as mvec_QR but returns a column-permuted upper triangular matrix R.

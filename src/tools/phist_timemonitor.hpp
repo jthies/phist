@@ -10,9 +10,14 @@
 #define PHIST_TIMEMONITOR_HPP
 
 #include "phist_config.h"
+
+#ifndef DOXYGEN
+
 #ifdef PHIST_HAVE_OPENMP
 #include <omp.h>
 #endif
+
+#endif /* DOXYGEN */
 
 extern "C" const char* phist_retcode2str(int code);
 
@@ -20,10 +25,14 @@ extern "C" const char* phist_retcode2str(int code);
 
 // use the Trilinos implementation of a TimeMonitor
 
+#ifndef DOXYGEN
+
 // the Teuchos time monitor is a bit fancier when it comes
 // to non bulk-synchronous execution models like master/slave
 # include "Teuchos_TimeMonitor.hpp"
 # include "Teuchos_DefaultComm.hpp"
+
+#endif /* DOXYGEN */
 
 # define PHIST_CXX_TIMER(s) static Teuchos::RCP<Teuchos::Time> TimeFrom_PHIST_CXX_TIMER; \
                             if( TimeFrom_PHIST_CXX_TIMER.is_null() ) \
@@ -48,30 +57,33 @@ extern "C" const char* phist_retcode2str(int code);
 
 #endif /* PHIST_USE_TEUCHOS_TIMEMONITOR */
 
+#ifndef DOXYGEN
+
 # include <map>
 # include <string>
 
+#endif /* DOXYGEN */
 
-// encapsulates functions and classes needed for function level time monitoring
+//! encapsulates functions and classes needed for function level time monitoring
 namespace phist_TimeMonitor
 {
-  // used to time a function
+  //! used to time a function
   class Timer
   {
     public:
-      // start timer
+      //! start timer
       Timer(const char* s);
 
-      // stop timer
+      //! stop timer
       ~Timer();
 
-      // calculates the results and prints them
+      //! calculates the results and prints them
       static void summarize(void);
 
     protected:
       std::string name_;
       double wtime_;
-      // simple struct that stores data
+      //! simple struct that stores data
       struct TimeData
       {
         unsigned long numberOfCalls;

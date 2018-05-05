@@ -23,6 +23,9 @@
 
 #endif //DOXYGEN
 
+//! \defgroup orthog orthog: orthogonalization routines
+//! \ingroup core
+//!@{
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -42,5 +45,5 @@ extern "C" {
 #ifdef __cplusplus
 }
 #endif
-
+//!@}
 #endif

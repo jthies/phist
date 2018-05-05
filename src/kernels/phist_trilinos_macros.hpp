@@ -6,6 +6,7 @@
 /* Contact: Jonas Thies (Jonas.Thies@DLR.de)                                               */
 /*                                                                                         */
 /*******************************************************************************************/
+#ifndef DOXYGEN
 #include "Teuchos_Utils.hpp"
 #include "Teuchos_StandardCatchMacros.hpp"
 
@@ -15,3 +16,4 @@
 try {func;} TEUCHOS_STANDARD_CATCH_STATEMENTS(true,std::cerr,_success); \
 if (!_success) {_FLAG_=-77; return;}}
 #endif
+#endif /* DOXYGEN */

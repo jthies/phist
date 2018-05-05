@@ -23,7 +23,7 @@
 // in order to use the driver utils header, we first have to
 // specify which data type we will use (real double (D) here)
 #include "phist_gen_d.h"
-#include "phist_driver_utils.h"
+#include "phist_driver_utils_decl.h"
 
 /* This is a first example program to introduce 
    the PHIST concept of kernel operations independent

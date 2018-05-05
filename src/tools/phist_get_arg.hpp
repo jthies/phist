@@ -11,13 +11,17 @@
 
 #ifdef __cplusplus
 
+#ifndef DOXYGEN
 #include <iostream>
 #include <sstream>
+#endif /* DOXYGEN */
 
-// command-line parsing tool for C++ main programs
-// if the given position is smaller than argc, parse
-// the argument argv[pos], otherwise use the default value
-// given.
+//! \ingroup driver_utils
+
+//! command-line parsing tool for C++ main programs
+//! if the given position is smaller than argc, parse
+//! the argument argv[pos], otherwise use the default value
+//! given.
 template<typename T>
 T get_arg(int argc, char** argv, int pos, T& default_val)
 {

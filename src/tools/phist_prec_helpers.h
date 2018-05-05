@@ -6,7 +6,8 @@
 /* Contact: Jonas Thies (Jonas.Thies@DLR.de)                                               */
 /*                                                                                         */
 /*******************************************************************************************/
-/*! \file prec_helpers.h
+
+/*! \file phist_prec_helpers.h
  * Some helpful definitions for fast parallel BLAS like functions with high precision for different blocksizes for mvec_module
  * \author "Melven Roehrig-Zoellner <Melven.Roehrig-Zoellner@DLR.de>
  *

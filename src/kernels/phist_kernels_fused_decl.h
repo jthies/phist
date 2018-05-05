@@ -6,7 +6,8 @@
 /* Contact: Jonas Thies (Jonas.Thies@DLR.de)                                               */
 /*                                                                                         */
 /*******************************************************************************************/
-//! \defgroup fused fused 
+
+//! \defgroup fused fused kernels that combine operations to reduce memory traffic
 //!
 //! advanced fused kernels for which default implementations         
 //! are available but which may benefit from special attention int he kernel library.   

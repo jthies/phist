@@ -6,6 +6,9 @@
 /* Contact: Jonas Thies (Jonas.Thies@DLR.de)                                               */
 /*                                                                                         */
 /*******************************************************************************************/
+
+//! Schur decomposition of an sdMat \ingroup core
+
  //!                                                                                             
  //! this function does an in-place Schur decomposition of T(1:m,1:m) into ~T and S: T = S'*~T*S.
  //! The Ritz values appear on the diagonal of ~T (for the real case there may be 2x2 blocks     
@@ -42,6 +45,8 @@
  void SUBR(SchurDecomp)(_ST_* T, int ldT, _ST_* S, int ldS,
          int m, int nselect, int nsort, phist_EeigSort which, _MT_ tol,
          void* ev, int *iflag);
+
+ //! Schur dcomposition for generalized eigenvalue problems \ingroup core
          
  //! generalized Schur Decomposition, (S,T)->(~S,~T,VS,WS) such that                            
  //! (T,S) = ( VS*~S*WS^T, VS*~T*WS^T ), with ~S upper Schur and ~T upper triangular. The       
@@ -52,18 +57,22 @@
                            int m, int nselect, int nsort, phist_EeigSort which, _MT_ tol,
                            void* ev, int* iflag);
 
+ //! sort Schur form \ingroup core
+
  //! reorder multiple eigenvalues in a given (partial) Schur decomposition by the smallest 
  //! residual norm of the unprojected problem must be sorted up to nselected to work correctly!
  void SUBR(ReorderPartialSchurDecomp)(_ST_* T, int ldT, _ST_* S, int ldS,
         int m, int nselected, phist_EeigSort which, _MT_ tol, _MT_* resNorm, void* ev, int* permutation, int *iflag);
 
 
+ //! sort Schur form (for generalized EVP) \ingroup core
+
  //! reorder multiple eigenvalues in a given (partial) generalized Schur decomposition by the smallest 
  //! residual norm of the unprojected problem must be sorted up to nselected to work correctly!
  void SUBR(ReorderPartialGenSchurDecomp)(_ST_* S, int ldS, _ST_* T, int ldT, _ST_* VS, int ldVS, _ST_* WS, int ldWS,
         int m, int nselected, phist_EeigSort which, _MT_ tol, _MT_* resNorm, void* ev, int* permutation, int *iflag);
 
-//! high-level function to convert an eigenbasis Q into eigenvectors X
+//! high-level function to convert an eigenbasis Q into eigenvectors X \ingroup core
 
 //! given Q,R: AQ=QR, computes X: AX=X*D with D a diagonal matrix.
 //! R is overwritten by D, X must be pre-allocated, Q must be orthonormal.

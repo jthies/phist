@@ -34,8 +34,8 @@ typedef phist_gidx ghost_gidx;
 
 #endif
 
-//! \defgroup kernels Kernel function interface
-//@{
+//! \defgroup kernels kernels: Kernel function interface
+//!@{
 
 //! @file phist_kernels.h
 //! @brief Definition of an abstract interface for basic operations needed by iterative solvers.
@@ -278,7 +278,7 @@ void phist_Zmvec_combine(phist_Zmvec_ptr V, phist_Dconst_mvec_ptr reV, phist_Dco
 #include "phist_gen_clean.h"
 #endif /* DOXYGEN_NO_TG */
 
-//@}
+//!@}
 
 #endif 
 

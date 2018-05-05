@@ -92,7 +92,7 @@ int innerSolvRobust; //!< Extra effort to get good jada updates
                      
   int innerSolvStopAfterFirstConverged;
   
-  int innerSolvMaxProjectionSpace; //!< \brief Allow at most <k> vectors to be projected out in the
+  int innerSolvMaxProjectionSpace; //!< \brief Allow at most \<k\> vectors to be projected out in the
                                    //!< inner solver, even if more eigenvectors have been locked already.
                                    //!<
                                    //!< A value <0 indicates that all locked vectors are projected out.

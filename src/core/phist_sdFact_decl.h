@@ -6,17 +6,6 @@
 /* Contact: Jonas Thies (Jonas.Thies@DLR.de)                                               */
 /*                                                                                         */
 /*******************************************************************************************/
-//! \defgroup sdfact sdMat kernels for factoring small dense matrices.
-//!
-//! These kernels are highly accurate but not necessarily efficient, If the
-//! kernel lib supports PHIST_HIGH_PRECISION_KERNELS (e.g. the builtin kernels
-//! with AVX2), the input *iflag=PHIST_ROBUST_REDUCTIONS enables the high precision
-//! variants. Otherwise, standard precision is used.
-//! 
-//! Note: you should always make sure that on hybrid CPU/GPU systems the sdMat values on the
-//! host and device are synchronized by calling sdMat_from(to)_device before (after) using 
-//! these functions. They all assume that the data obtained from sdMat_extract_view/error is
-//! up-to-date with the device, and do not call to_device afterwards.
 
 //! cholesky decomposition. \ingroup sdFact
 
@@ -78,3 +67,4 @@ void SUBR(sdMat_svd)(TYPE(sdMat_ptr) A, TYPE(sdMat_ptr) U, TYPE(sdMat_ptr) Sigma
 //! subroutines XGEQR and XGEMQR to explicitly construct the Q factor. On output,
 //! A is overwritten by R.
 void SUBR(sdMat_qr)(TYPE(sdMat_ptr) Q, TYPE(sdMat_ptr) R, int* iflag);
+

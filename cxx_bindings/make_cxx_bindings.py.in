@@ -25,6 +25,7 @@ def class_template(class_name):
 
 namespace phist {
 
+//! \ingroup cxx_bindings
 template<typename ST>
 '''+\
 'class '+class_name+'\n'\
@@ -61,9 +62,13 @@ for mod_name in modules:
 
     module_includes='''
 #include \"phist_config.h\"
+#ifndef DOXYGEN
 #include \"phist_exception.hpp\"
-#include \"phist_'''+mod_name+'.h\"\n\n'
-    
+#include \"phist_'''+mod_name+'''.h\"
+#endif
+
+'''
+
     module_hpp_file.write(module_includes)
     
     module_hpp_file.write(class_template(mod_name))
@@ -76,6 +81,7 @@ for mod_name in modules:
 namespace phist 
 {
 
+  //! \ingroup cxx_bindings
   template<>
   class """+mod_name+"<_ST_>\n"+\
     """  {
@@ -143,6 +149,7 @@ namespace phist
                 module_decl_file.write("#ifdef PHIST_HAVE_BELOS\n")
             
             module_decl_file.write(\
+            "    //! \see phist_D"+name+"\n"+\
             "    static void "+name+"("+args+")\n    {\n"+\
             "      SUBR("+name+")("+arg_names+");"+\
             """

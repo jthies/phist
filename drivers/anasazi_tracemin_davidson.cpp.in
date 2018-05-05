@@ -25,7 +25,7 @@
 #include "phist_iter_op.h"
 
 #include ${PHIST_TG_HFILE}
-#include "phist_driver_utils.h"
+#include "phist_driver_utils_decl.h"
 
 void SUBR(print_usage)(char* argv[],int pos)
 {

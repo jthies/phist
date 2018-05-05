@@ -12,8 +12,13 @@
 #include "phist_typedefs.h"
 #include "phist_ScalarTraits.hpp"
 
+//!
 namespace phist {
 
+//! \defgroup cxx_interface C++ bindings for PHIST
+//!@{
+
+//! traits class to define object types depending on the scalar type
 template<typename ST>
 class types
 {
@@ -39,6 +44,6 @@ class types
     typedef typename st::linearOp_t* linearOp_ptr;
     typedef typename st::linearOp_t const* const_linearOp_ptr;
 };
-
+//!@}
 }
 #endif

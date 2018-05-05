@@ -15,7 +15,7 @@
 #endif
 
 //! \addtogroup kernels
-//@{
+//!@{
 
 /*! @file phist_kernels_decl.h 
     @brief basic operations involving matrices and vectors 
@@ -76,9 +76,11 @@ extern "C" {
 //! returns 0 if the library implements the data type, -99 otherwise.
 void SUBR(type_avail)(int* iflag);
 
-//!   \defgroup crsmat Sparse matrix functions (sparseMat_t) 
-//@{
-//! \name Matrix input from a file
+//! \defgroup crsmat sparseMat: Sparse matrix functions (sparseMat)
+//! \ingroup kernels
+//!@{
+
+//! \defgroup sparseMat_IO Matrix input from a file
 //!
 //! optional flags:
 //! * PHIST_SPARSEMAT_PERM_GLOBAL
@@ -87,7 +89,7 @@ void SUBR(type_avail)(int* iflag);
 //!
 //! If a predefined map is used, the permutation and partitioning is defined solely by the map.
 //!
-///@{
+///!@{
 
 //! read a matrix from a MatrixMarket (ASCII) file \ingroup(crsmat)
 void SUBR(sparseMat_read_mm)(TYPE(sparseMat_ptr)* A, phist_const_comm_ptr comm,
@@ -113,10 +115,10 @@ void SUBR(sparseMat_read_hb_with_context)(TYPE(sparseMat_ptr)* A, phist_const_co
 void SUBR(sparseMat_read_bin_with_context)(TYPE(sparseMat_ptr)* A, phist_const_context_ptr ctx,
 const char* filename,int* iflag);
 
-///@}
+///!@}
 
 //! \name get information about the data distribution in a matrix (maps) and matrix properties
-///@{
+///!@{
 
 //! get the row distribution of the matrix
 void SUBR(sparseMat_get_row_map)(TYPE(const_sparseMat_ptr) A, 
@@ -148,11 +150,11 @@ void SUBR(sparseMat_local_nnz)(TYPE(const_sparseMat_ptr) A, int64_t* local_nnz, 
 //! zeros are stored for better vectorization).
 void SUBR(sparseMat_global_nnz)(TYPE(const_sparseMat_ptr) A, int64_t* global_nnz, int* iflag);
 
-//@}
-//@}
+//!@}
+//!@}
 
 //! \name constructors
-//@{
+//!@{
 
 //! create a block-vector. \ingroup mvec
 void SUBR(mvec_create)(TYPE(mvec_ptr)* V, phist_const_map_ptr map, int nvec, 
@@ -169,10 +171,10 @@ void SUBR(mvec_create)(TYPE(mvec_ptr)* V, phist_const_map_ptr map, int nvec,
 void SUBR(sdMat_create)(TYPE(sdMat_ptr)* M, 
         int nrows, int ncols, phist_const_comm_ptr comm, int* iflag);
 
-//@}
+//!@}
 
 //! \name destructors
-//@{
+//!@{
 
 //! delete sparseMat \ingroup crsmat
 void SUBR(sparseMat_delete)(TYPE(sparseMat_ptr) A, int* iflag);
@@ -183,10 +185,10 @@ void SUBR(mvec_delete)(TYPE(mvec_ptr) V, int* iflag);
 //! delete sdMat \ingroup sdmat
 void SUBR(sdMat_delete)(TYPE(sdMat_ptr) M, int* iflag);
 
-//@}
+//!@}
 
 //! \name getting data from objects
-//@{
+//!@{
 
 //! retrieve the map of the vectors in V \ingroup mvec
 void SUBR(mvec_get_map)(TYPE(const_mvec_ptr) V, phist_const_map_ptr* map, int* iflag);
@@ -259,13 +261,13 @@ void SUBR(sdMat_extract_view)(TYPE(sdMat_ptr) M, _ST_** M_raw,
 void SUBR(sdMat_extract_error)(TYPE(sdMat_ptr) M, _ST_** MC_raw, int* iflag);
 #endif
 
-//@}
+//!@}
 
 //! \name data transfer between host and device (for kernel libs that support GPUs).
 //!
 //! These functions should return 0 if a GPU transfer is not needed, for instance because
 //! the kernel lib does not support GPUs or the object was not created to live on a GPU.
-//@{
+//!@{
 
 //! copy multi-vector (mvec) data from the host CPU to the GPU. \ingroup mvec
 void SUBR(mvec_to_device)(TYPE(mvec_ptr) V, int* iflag);
@@ -279,13 +281,14 @@ void SUBR(sdMat_to_device)(TYPE(sdMat_ptr) M, int* iflag);
 //! copy small dense matrix (sdmat) data from the GPU to the host CPU \ingroup sdmat
 void SUBR(sdMat_from_device)(TYPE(sdMat_ptr) M, int* iflag);
 
-//@}
+//!@}
 
-//!   \defgroup mvec and sdMat I/O
+//! \defgroup IO_kernels I/O routines for mvecs and sdMats
+//! \ingroup kernels
 /*! note: these functions only read and write the data, not the map, comm etc.
 If you want to read an mvec from file, you have to create it first with a consitent map object.
  */
-//@{
+//!@{
 
 //! write mvec data to file
 void SUBR(mvec_write_bin)(TYPE(const_mvec_ptr) V, const char* filename, int* iflag);
@@ -299,10 +302,11 @@ void SUBR(sdMat_write_bin)(TYPE(const_sdMat_ptr) M, const char* filename, int* i
 //! read sdMat data from file
 void SUBR(sdMat_read_bin)(TYPE(sdMat_ptr) M, const char* filename, int* iflag);
 
-//@}
+//!@}
 
-//!   \defgroup mvec Multi-vector functions (mvec_t) 
-//@{
+//! \defgroup mvec mvec: Multi-vector functions (mvec)
+//! \ingroup kernels
+//!@{
 
 //! this function can be e.g. used to permute or redistribute vectors, the vector
 //! entries of v_in will be copied into v_out, which may be based on a different map.
@@ -348,10 +352,11 @@ void SUBR(mvec_set_block)(TYPE(mvec_ptr) V,
                              TYPE(const_mvec_ptr) Vblock,
                              int jmin, int jmax, int* iflag);
 
-//@}
+//!@}
 
-//!   \defgroup sdmat Small dense matrix functions (sdMat_t) 
-//@{
+//! \defgroup sdmat sdMat: Small dense matrix functions (sdMat) 
+//! \ingroup kernels
+//!@{
 
 //! get a new matrix that is a view of some rows and columns of the original one, 
 //! Mblock = M(imin:imax,jmin:jmax). The behavior is analogous to mvec_view_block.
@@ -377,10 +382,10 @@ void SUBR(sdMat_set_block)(TYPE(sdMat_ptr) M,
                              TYPE(const_sdMat_ptr) Mblock,
                              int imin, int imax, int jmin, int jmax, int* iflag);
 
-//@}
+//!@}
 
 //! \name initialize/fill mvecs and sdMats
-//@{
+//!@{
 
 //! put scalar value into all elements of a multi-vector \ingroup mvec
 void SUBR(mvec_put_value)(TYPE(mvec_ptr) V, _ST_ value, int* iflag);
@@ -405,7 +410,7 @@ void SUBR(mvec_put_func)(TYPE(mvec_ptr) V,
 //! both host and device mem  are updated (if applicable).
 void SUBR(sdMat_identity)(TYPE(sdMat_ptr) M, int* iflag);
 
-//@}
+//!@}
 
 //! print a vector to the screen (for debugging) \ingroup mvec
 void SUBR(mvec_print)(TYPE(const_mvec_ptr) V, int* iflag);
@@ -414,7 +419,7 @@ void SUBR(mvec_print)(TYPE(const_mvec_ptr) V, int* iflag);
 void SUBR(sdMat_print)(TYPE(const_sdMat_ptr) M, int* iflag);
 
 //! \name Numerical functions
-//@{
+//!@{
 
 //! column-wise 2-norm \ingroup mvec
 
@@ -535,7 +540,7 @@ void SUBR(sdMat_times_sdMatT)(_ST_ alpha, TYPE(const_sdMat_ptr) V,
                               int* iflag);
 
 //! \addtogroup crsmat
-//@{
+//!@{
 
 //! Exchange elements of x between different processes, used to overlap spMVM communication with other operations.
 //! Set the flag PHIST_SPMVM_ONLY_LOCAL in the call to sparseMat_times_mvec* to indicate all data is already there!
@@ -634,9 +639,9 @@ void SUBR(mvec_gather_mvecs)(TYPE(mvec_ptr) V, TYPE(const_mvec_ptr) W[], int nbl
 void SUBR(mvec_scatter_mvecs)(TYPE(const_mvec_ptr) V, TYPE(mvec_ptr) W[], int nblocks, int *iflag);
 #endif
 
-//@}
+//!@}
 
 #ifdef __cplusplus
 } //extern "C"
 #endif
-//@}
+//!@}

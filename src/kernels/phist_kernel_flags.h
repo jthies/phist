@@ -151,7 +151,7 @@
    */
 #define PHIST_MVEC_REPLICATE_DEVICE_MEM 1
 
-/*! \def pHIST_ROBUST_REDUCTIONS
+/*! \def PHIST_ROBUST_REDUCTIONS
 
     use more accurate reducitons or other floating point operations if available.
  */

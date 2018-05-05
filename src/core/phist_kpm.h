@@ -6,6 +6,7 @@
 /* Contact: Jonas Thies (Jonas.Thies@DLR.de)                                               */
 /*                                                                                         */
 /*******************************************************************************************/
+
 #ifndef PHIST_KPM_H
 #define PHIST_KPM_H
 
@@ -25,6 +26,11 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+//! \defgroup poly poly: Evaluating matrix polynomials
+//! \ingroup core
+//!@{
+
 #ifdef PHIST_HAVE_SP
 #include "phist_gen_s.h"
 #include "phist_kpm_decl.h"
@@ -37,6 +43,8 @@ extern "C" {
 #include "phist_kpm_decl.h"
 
 #include "phist_gen_clean.h"
+
+//!@}
 
 #ifdef __cplusplus
 }

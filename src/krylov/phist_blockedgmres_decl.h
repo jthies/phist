@@ -6,11 +6,6 @@
 /* Contact: Jonas Thies (Jonas.Thies@DLR.de)                                               */
 /*                                                                                         */
 /*******************************************************************************************/
-//! \defgroup linear_solvers Iterative methods for linear systems
-//@{
-
-//! \defgroup blockedGMRES blocked GMRES solver for general linear systems
-//@{
 
 //! gmres state object
 
@@ -171,5 +166,3 @@ void SUBR(blockedGMRESstates_updateSol)(TYPE(blockedGMRESstate_ptr) S_array[], i
                 TYPE(const_linearOp_ptr) rightPrecon,
                 TYPE(mvec_ptr) x, _MT_ *resNorm, int scaleSolutionToOne, int* iflag);
 
-//@}
-//@}

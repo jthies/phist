@@ -30,6 +30,9 @@
 extern "C" {
 #endif
 
+//! \defgroup precon precon: Preconditioning interface
+//!@{
+
 //! data structure used internally for storing preconditioner
 //! data (this will be the A_ field in the linearOp_t, but the
 //! user should only work with linearOp instead of this one directly)
@@ -56,6 +59,8 @@ typedef struct {
 #include "phist_gen_z.h"
 #include "phist_precon_decl.h"
 #include "phist_gen_clean.h"
+
+//!@}
 
 #ifdef __cplusplus
 }

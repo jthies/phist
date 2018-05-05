@@ -20,13 +20,13 @@
 #endif
 
 #ifndef PHIST_HAVE_GHOST
-/*! \def GHOST_LIDX_T
+/*! \def G_LIDX_T
 
 kind parameter for ghost local indices (used to define row function arguments)
 */
 #define G_LIDX_T C_INT32_T
 # ifdef PHIST_FORCE_32BIT_GIDX
-/*! \def GHOST_GIDX_T
+/*! \def G_GIDX_T
 
 kind parameter for ghost global indices (used to define row function arguments)
 */
