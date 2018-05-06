@@ -350,19 +350,19 @@ extern "C" phist_Eprojection str2projection(const char* c_str)
   return s;
 }
 
-#define INST_IO_OP(_EWHAT,_WHAT2STR,_STR2WHAT) \
-std::istream& operator>>(std::istream& is, _EWHAT& e) \
+#define INST_IO_OP(EWHAT,WHAT2STR,STR2WHAT) \
+std::istream& operator>>(std::istream& is, EWHAT& e) \
 { \
   std::string tmp; \
   is>>tmp; \
-  PHIST_SOUT(PHIST_DEBUG,"try to parse %s '%s'\n",#_EWHAT,tmp.c_str()); \
-  e=_STR2WHAT(tmp.c_str()); \
+  PHIST_SOUT(PHIST_DEBUG,"try to parse %s '%s'\n",#EWHAT,tmp.c_str()); \
+  e=STR2WHAT(tmp.c_str()); \
   return is; \
 } \
 \
-std::ostream& operator<< (std::ostream& os, const _EWHAT& e) \
+std::ostream& operator<< (std::ostream& os, const EWHAT& e) \
 { \
-  os << _WHAT2STR(e); \
+  os << WHAT2STR(e); \
   return os; \
 }
 
