@@ -919,7 +919,7 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,_N_,MATNAME>,
       SUBR(mvec_add_mvec)(alpha,vec4_,beta,vec3_,&iflag_);
       ASSERT_EQ(0,iflag_);
 
-      ASSERT_NEAR(mt::one(),MvecsEqual(vec2_,vec3_),10*VTest::releps());
+      ASSERT_NEAR(mt::one(),MvecsEqual(vec2_,vec3_),20*VTest::releps());
 
       jadaOp.destroy(&jadaOp,&iflag_);
       ASSERT_EQ(0,iflag_);
