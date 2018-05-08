@@ -15,7 +15,7 @@
 #include "phist_subspacejada.h"
 #include "phist_jadaOpts.h"
 #include "phist_gen_d.h"
-#include "phist_driver_utils.h"
+#include "phist_driver_utils_decl.h"
 #include "phist_ScalarTraits.hpp"
 #include "phist_std_typedefs.hpp"
 
