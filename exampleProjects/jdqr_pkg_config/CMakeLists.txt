@@ -11,9 +11,11 @@ include_directories(${PHIST_INCLUDE_DIRS})
 link_directories(${PHIST_LIBRARY_DIRS})
 link_libraries(${PHIST_LIBRARIES})
 
-# we also need MPI
-find_package(MPI REQUIRED)
-set(CMAKE_CXX_LINK_FLAGS ${CMAKE_CXX_LINK_FLAGS} ${MPI_CXX_LINK_FLAGS})
-link_libraries(${MPI_CXX_LIBRARIES})
+if (NOT PHIST_LIBRARIES MATCHES "phist_kernels_eigen")
+  # we also need MPI
+  find_package(MPI REQUIRED)
+  set(CMAKE_CXX_LINK_FLAGS ${CMAKE_CXX_LINK_FLAGS} ${MPI_CXX_LINK_FLAGS})
+  link_libraries(${MPI_CXX_LIBRARIES})
+endif()
 
 add_executable(Djdqr Djdqr.cpp)
