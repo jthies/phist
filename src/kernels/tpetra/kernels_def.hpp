@@ -210,7 +210,6 @@ extern "C" void SUBR(sparseMat_global_nnz)(TYPE(const_sparseMat_ptr) A, int64_t*
   PHIST_CAST_PTR_FROM_VOID(const Traits<_ST_>::sparseMat_t, mat, A, *iflag);
   *global_nnz=(int64_t)(mat->getGraph()->getGlobalNumEntries());
   *iflag=0;
-  *global_nnz=0;
 }
 
 extern "C" void SUBR(sparseMat_get_row_map)(TYPE(const_sparseMat_ptr) A, 
