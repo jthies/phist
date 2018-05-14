@@ -70,6 +70,7 @@ using ::phist::BelosMV;
     int iflag=0;
     ST* B_raw=nullptr;
     phist_lidx lda;
+    kt::sdMat_from_device(const_cast<sdMat_ptr>(Bphist),&iflag);
     kt::sdMat_extract_view(const_cast<sdMat_ptr>(Bphist),&B_raw,&lda,&iflag);
     for (int j=0; j<B.numCols(); j++)
     {
@@ -93,6 +94,7 @@ using ::phist::BelosMV;
         B_raw[j*lda+i]=B(i,j);
       }
     }
+    kt::sdMat_to_device(const_cast<sdMat_ptr>(Bphist),&iflag);
   }
 
 
@@ -125,6 +127,10 @@ using ::phist::BelosMV;
     phist_const_map_ptr map=nullptr;
     kt::mvec_get_map(mv.get(),&map,&iflag);
     mvec_ptr new_mvec=nullptr;
+    // note: there is no way right now to determine wether the host side of
+    // mv is allocated, so in order to make the tests work we always allocate 
+    // the host side here.
+    iflag=PHIST_MVEC_REPLICATE_DEVICE_MEM;
     kt::mvec_create(&new_mvec,map,numvecs,&iflag);
     return mvec_rcp(new_mvec,true);
   }
