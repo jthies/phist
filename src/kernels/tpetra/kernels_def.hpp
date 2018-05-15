@@ -834,7 +834,7 @@ extern "C" void SUBR(sparseMat_times_mvec)(_ST_ alpha, TYPE(const_sparseMat_ptr)
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
 
   PHIST_COUNT_MATVECS(x);
-  PHIST_PERFCHECK_VERIFY_SPMV(alpha,vA,_ST_(0),vx,beta,vy,ST(0),ST(0),false,iflag);
+  PHIST_PERFCHECK_VERIFY_SPMV(alpha,A,_ST_(0),x,beta,y,_ST_(0),_ST_(0),false,iflag);
 
   PHIST_CAST_PTR_FROM_VOID(const Traits<_ST_>::sparseMat_t, matrix, A, *iflag);
   PHIST_CAST_PTR_FROM_VOID(const Traits<_ST_>::mvec_t, mvecIn, x, *iflag);
