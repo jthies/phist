@@ -393,7 +393,7 @@ extern "C" const char* phist_kernel_lib()
 #elif defined(PHIST_KERNEL_LIB_PETSC)
   return "petsc";
 #elif defined(PHIST_KERNEL_LIB_EIGEN)
-  return "Eigen";
+  return "eigen";
 #else
 #error "No appropriate PHIST_KERNEL_LIB_... defined!"
 #endif

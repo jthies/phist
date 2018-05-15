@@ -978,7 +978,15 @@ return;
       
 #endif      
       // check that W is correctly orthonormalized 
+      SUBR(mvec_from_device)(W_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(mvec_from_device)(W2_,&iflag_);
+      ASSERT_EQ(0,iflag_);
 #ifdef ORTHOG_WITH_HPD_B
+      SUBR(mvec_from_device)(BW_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(mvec_from_device)(BW2_,&iflag_);
+      ASSERT_EQ(0,iflag_);
       ASSERT_NEAR(mt::one(),WTest::ColsAreBOrthogonal(W_vp_,BW_vp_,nloc_,ldaW_,ldaBW_,stride_,mpi_comm_),std::sqrt(mt::eps()));
       ASSERT_NEAR(mt::one(),WTest::ColsAreBNormalized(W_vp_,BW_vp_,nloc_,ldaW_,ldaBW_,stride_,mpi_comm_),std::sqrt(mt::eps()));
       ASSERT_NEAR(mt::one(),WTest::ColsAreBOrthogonal(W2_vp_,BW2_vp_,nloc_,ldaW2_,ldaBW2_,stride_,mpi_comm_),std::sqrt(mt::eps()));
@@ -1141,7 +1149,15 @@ return;
       
 #endif      
       // check that W is correctly orthonormalized 
+      SUBR(mvec_from_device)(W_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(mvec_from_device)(W2_,&iflag_);
+      ASSERT_EQ(0,iflag_);
 #ifdef ORTHOG_WITH_HPD_B
+      SUBR(mvec_from_device)(BW_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(mvec_from_device)(BW2_,&iflag_);
+      ASSERT_EQ(0,iflag_);
       ASSERT_NEAR(mt::one(),WTest::ColsAreBOrthogonal(W_vp_,BW_vp_,nloc_,ldaW_,ldaBW_,stride_,mpi_comm_),std::sqrt(mt::eps()));
       ASSERT_NEAR(mt::one(),WTest::ColsAreBNormalized(W_vp_,BW_vp_,nloc_,ldaW_,ldaBW_,stride_,mpi_comm_),std::sqrt(mt::eps()));
       ASSERT_NEAR(mt::one(),WTest::ColsAreBOrthogonal(W2_vp_,BW2_vp_,nloc_,ldaW2_,ldaBW2_,stride_,mpi_comm_),std::sqrt(mt::eps()));
