@@ -1,4 +1,5 @@
 #!/bin/bash
+
 export PHIST_BASE=${HOME}/essex/phist/
 export TRILINOS_HOME=/unsecured/thie_jo/local/
 
@@ -22,3 +23,5 @@ cmake -DPHIST_KERNEL_LIB=tpetra \
       -DPHIST_ENABLE_SP=OFF \
       -DPHIST_BENCH_LARGE_N=1000000000 \
       ${PHIST_BASE}
+
+make -j 

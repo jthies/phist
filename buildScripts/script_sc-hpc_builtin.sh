@@ -1,5 +1,5 @@
 #!/bin/bash
-PHIST_BASE=${HOME}/phist/
+PHIST_BASE=${HOME}/essex/phist/
 
 module purge
 CMP=gcc@7.3.0

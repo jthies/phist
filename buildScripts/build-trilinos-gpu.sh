@@ -1,4 +1,9 @@
 #!/bin/bash
+
+# NOTE: this is a script to configure and compile Trilinos with CUDA support (tested for the 12.x master branch),
+#       it is NOT directly related to PHST, but produces a Trilinos installation (at least on our CPU/GPU cluster with Volta GPUs)
+#       that 'works' with PHIST_KERNEL_LIB=tpetra. See script_sc-hpc_tpetra_cuda.sh for a corresponding file to build PHIST.
+
 module purge
 source <(spack module loads --dependencies openmpi+cuda %gcc@5.4.0)
 spack load cmake
