@@ -23,12 +23,15 @@
 
 #endif //DOXYGEN
 
-//! \defgroup orthog orthog: orthogonalization routines
-//! \ingroup core
-//!@{
+
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+//! \defgroup orthog orthog: orthogonalization routines
+//! \ingroup core
+//!@{
+
 #ifdef PHIST_HAVE_SP
 #include "phist_gen_s.h"
 #include "phist_orthog_decl.h"
@@ -41,9 +44,9 @@ extern "C" {
 #include "phist_orthog_decl.h"
 
 #include "phist_gen_clean.h"
-
+//!@}
 #ifdef __cplusplus
 }
 #endif
-//!@}
+
 #endif

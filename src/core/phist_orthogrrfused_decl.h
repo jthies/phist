@@ -7,7 +7,7 @@
 /*                                                                                         */
 /*******************************************************************************************/
 
-//! internal implementation of the orthog function, the regular orthog should be used as a frontend in actual algorithms.
+//! \brief internal implementation of the orthog function, the regular orthog should be used as a frontend in actual algorithms. \ingroup core
 
 //! Does not randomize the null space (if any). Note that the arguments are renamed and reordered, this should 
 //! eventually be adjusted to avoid confusion. Here, W is the orthogonal space, V is orthogonalized against W, and the

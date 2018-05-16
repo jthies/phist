@@ -67,6 +67,9 @@ typedef TYPE(linearOp)* TYPE(linearOp_ptr);
 //! Pointer to a const linearOp
 typedef const TYPE(linearOp)* TYPE(const_linearOp_ptr);
 
+//! \addtogroup linearOp
+//!@{
+
 //! \brief This function can be used to create an operator which encapsulates a CRS matrix.
 //!
 //! It does not allocate memory for the op struct, the caller has to do that beforehand.
@@ -136,9 +139,9 @@ void SUBR(linearOp_identity)(TYPE(linearOp_ptr) op,
         TYPE(const_mvec_ptr) X, _ST_ beta,  TYPE(mvec_ptr) Y, int* iflag);
  //! \brief Apply function that respects the use_transpose and shifts members of struct linearOp.
  //!
- //! It acts like
- //! linearOp_apply if use_transpose == 0 & shifts == NULL
- //! linearOp_applyT if use_transpose == 1 & shifts == NULL
+ //! It acts like: <br>
+ //! linearOp_apply if use_transpose == 0 & shifts == NULL <br>
+ //! linearOp_applyT if use_transpose == 1 & shifts == NULL <br>
  //! linearOp_apply_shifted if use_transpose = 0 & shifts != NULL
  void SUBR(linearOp_apply_respective)(_ST_ alpha, TYPE(const_linearOp_ptr) A_op,
         TYPE(const_mvec_ptr) X, _ST_ beta,  TYPE(mvec_ptr) Y, int* iflag);
@@ -165,4 +168,4 @@ void SUBR(linearOp_identity)(TYPE(linearOp_ptr) op,
                         int* iflag);
 
 //!@}
-
+//!@}

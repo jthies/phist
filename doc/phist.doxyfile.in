@@ -10,8 +10,7 @@ FILE_PATTERNS          = "*.h" "*.md" "*.hpp"
 RECURSIVE              = YES
 EXCLUDE_PATTERNS       = "*/src/kernels/*/*" \
                          "*/src/craft/*" \
-                         "*_def.*" \
-                         "*_decl*"
+                         "*_def.*" 
 FILTER_PATTERNS        = "*.h=\"cpp -CC -DDOXYGEN ${INCLUDE_FLAGS} -I.\""
 FILTER_PATTERNS        = "*.hpp=\"c++ -E -Wp,-CC -DDOXYGEN ${INCLUDE_FLAGS} -I.\""
 USE_MDFILE_AS_MAINPAGE = README.md
