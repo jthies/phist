@@ -1,0 +1,5 @@
+<ParameterList name="MultiLevelPreconditioner">
+  <Parameter name="default values" type="string" value="NSSA"/>
+  <Parameter name="aggregation: damping factor" type="double" value="1.333"/>
+  <Parameter name="smoother: type" type="string" value="symmetric Gauss-Seidel"/>
+</ParameterList>
