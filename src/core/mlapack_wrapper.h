@@ -23,17 +23,23 @@
 extern "C" {
 #endif
 
-//! symmetric eigenvalue decomposition in simulated quad precision (using function
-//! Rsyevd, cf. lapack routine dsyevd)
+//! \name interface to multiple-precision lapack routines used in PHIST
+//! \addtogroup core
+//!@{
+
+//! \brief symmetric eigenvalue decomposition in simulated quad precision (using function
+//! Rsyevd, cf. lapack routine dsyevd) \ingroup core
 void phist_Drsyev(int n, double *restrict a, double *restrict aC, int lda,
                        double *restrict w, double *restrict wC, int *iflag);
 
-//! general singular value decomposition of an m times n matrix
+//! \brief general singular value decomposition of an m times n matrix \ingroup core
 void phist_Drgesvd(const char *jobu, const char *jobvt, int m, int n,
             double *restrict a, double *restrict aC, int lda, double *restrict s, double *restrict sC,
             double *restrict u, double *restrict uC, int ldu, double *restrict vt, double *restrict vtC, 
             int ldvt, int *iflag);             
 
+//!@}
+            
 #ifdef __cplusplus
 } //extern "C"
 #endif

@@ -6,10 +6,11 @@
 /* Contact: Jonas Thies (Jonas.Thies@DLR.de)                                               */
 /*                                                                                         */
 /*******************************************************************************************/
-
+//! \addtogroup orthog
+//!@{
 
 //! \brief orthogonalize an mvec against an already orthogonal one.
-
+//!
 //! This is the main orthogonalization routine in PHIST.           
 //! It takes an orthogonal basis V and a set of vectors W,         
 //! and computes [Q,R1,R2] such that Q*R1 = W-V*R2, Q'Q=I.         
@@ -64,8 +65,8 @@ void SUBR(orthog)(TYPE(const_mvec_ptr) V,
                      TYPE(sdMat_ptr) R2,
                      int numSweeps, int* rankVW, int* iflag);
 
-//! expert variant of orthog that gives more power to the user.
-
+//! \brief expert variant of orthog that gives more power to the user.
+//!
 //! This function is called by orthog and allows some additional tweaking.   
 //! It assumes that B*W and WtW=W'*BW are already available. It also allows  
 //! you to specify the desired orthogonalization tolerance (orthoEps) and    
@@ -83,4 +84,4 @@ void SUBR(orthog_impl)(TYPE(const_mvec_ptr) V,
                      _MT_ rankTol, _MT_ orthoEps,
                      int* iflag);
 
-
+//!@}

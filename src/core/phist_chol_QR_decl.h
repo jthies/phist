@@ -7,8 +7,8 @@
 /*                                                                                         */
 /*******************************************************************************************/
 
-//! rank revealing Cholesky-QR with pivoting and null space randomization \ingroup core
-
+//! \brief rank revealing Cholesky-QR with pivoting and null space randomization \ingroup core
+//!
 //! SVQB algorithm (Stathopoulos & Wu, SISC 23 (6),2165-2182)
 //! with rank-revealing pivoted cholesky (SVRR)
 //! If the input vector has m columns and rank r, iflag=m-r is
@@ -25,8 +25,8 @@
 //! device (if applicable).
 void SUBR(chol_QRp)(TYPE(mvec_ptr) V, TYPE(sdMat_ptr) R, int perm[], int* iflag);
 
-//! simplified interface for Cholesky QR orthogonalization \ingroup core
-
+//! \brief simplified interface for Cholesky QR orthogonalization \ingroup core
+//!
 //! this variant of chol_QR discards the perm array. It has the same interface
 //! as mvec_QR but returns a column-permuted upper triangular matrix R.
 void SUBR(chol_QR)(TYPE(mvec_ptr) V, TYPE(sdMat_ptr) R, int* iflag);
