@@ -7,7 +7,8 @@
 /*                                                                                         */
 /*******************************************************************************************/
 //! \brief The Belos package from Trilinos provides block Krylov solvers.
-//! We currently provide access to four diffrent methods.         
+//! We currently provide access to four diffrent methods. \ingroup krylov
+//!
 //!
 //! method=0: block GMRES <br>
 //! method=1: pseudo-block GMRES <br>

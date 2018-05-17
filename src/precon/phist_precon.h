@@ -33,9 +33,10 @@ extern "C" {
 //! \defgroup precon precon: Preconditioning interface
 //!@{
 
-//! data structure used internally for storing preconditioner
-//! data (this will be the A_ field in the linearOp_t, but the
-//! user should only work with linearOp instead of this one directly)
+//! \brief data structure used internally for storing preconditioner data
+//!
+//! this will be the A_ field in the linearOp_t, but the
+//! user should only work with linearOp instead of this one directly
 typedef struct {
   //! \brief identifies the preconditioner type (e.g. IFPACK)
   //!

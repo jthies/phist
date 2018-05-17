@@ -28,7 +28,7 @@ extern "C" {
 
 //! \defgroup bjdqr subspacejada: Jacobi-Davidson QR method with blocking, locking and restart
 //! \ingroup jada
-//@{
+//!@{
 
 #ifdef PHIST_HAVE_SP
 #include "phist_gen_s.h"

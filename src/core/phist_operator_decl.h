@@ -6,7 +6,9 @@
 /* Contact: Jonas Thies (Jonas.Thies@DLR.de)                                               */
 /*                                                                                         */
 /*******************************************************************************************/
-
+//! \addtogroup linearOp
+//!@{
+    
 //! The struct is used for storing a linear Operator.
 typedef struct TYPE(linearOp) {
  void const* A; //!< Data structure needed for representing A
@@ -66,9 +68,6 @@ typedef struct TYPE(linearOp) {
 typedef TYPE(linearOp)* TYPE(linearOp_ptr);
 //! Pointer to a const linearOp
 typedef const TYPE(linearOp)* TYPE(const_linearOp_ptr);
-
-//! \addtogroup linearOp
-//!@{
 
 //! \brief This function can be used to create an operator which encapsulates a CRS matrix.
 //!

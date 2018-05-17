@@ -7,15 +7,8 @@
 /*                                                                                         */
 /*******************************************************************************************/
 
-//! \ingroup linear_solvers
-//@{
-
-//! \defgroup blockedBiCGStab blocked BiCGStab solver for symmetric or general linear systems
-//@{
-
-
 //! \brief A simple BiCGStab implementation that works on several vectors simultaneously,
-//! building a separate Krylov subspace for each of them.
+//! building a separate Krylov subspace for each of them. \ingroup blockedBiCGStab
 //!
 //! For more information on blocked solvers see phist_blockedgmres_decl.h
 //! In contrast to our GMRES solver, BiCGStab does not work with a state object but simply runs
@@ -40,6 +33,3 @@ void SUBR( blockedBiCGStab_iterate ) (TYPE(const_linearOp_ptr) Op,
                 TYPE(const_linearOp_ptr) rightPreconOp,
                 TYPE(const_mvec_ptr) rhs, TYPE(mvec_ptr) sol, TYPE(const_mvec_ptr) V,
                 int numSys, int *nIter, _MT_ const tol[], int* iflag);
-
-//@}
-//@}

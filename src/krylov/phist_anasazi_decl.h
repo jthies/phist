@@ -7,7 +7,7 @@
 /*                                                                                         */
 /*******************************************************************************************/
 //! \brief The Anasazi package from Trilinos provides block eigensolvers.
-//! We currently provide access to the following methods
+//! We currently provide access to the following methods \ingroup krylov
 //!
 //! block Krylov Schur  (no choice given to the user)
 //! 

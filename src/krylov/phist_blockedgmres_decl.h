@@ -7,8 +7,11 @@
 /*                                                                                         */
 /*******************************************************************************************/
 
-//! gmres state object
+//! \addtogroup blockedGMRES
+//!@{
 
+//! \brief gmres state object
+//!
 //! iteration status object for the pipelined GMRES
 //! iteration we currently use as approximate solver
 //! for the correction equation.
@@ -33,14 +36,14 @@
 //! of using this object to build up a restarted GMRES.
 typedef struct TYPE(blockedGMRESstate) {
   //! \name input and output args:
-  //@{
+  //!@{
   int id;               //!< used to identify the system solved, set in blockedGMRESSates_create, don't modify!
   _MT_ tol;             //!< convergence tolerance for this system (can be adjusted any time)
   int status;           //!< -2: not initialized, -1: resetted, 0: converged, 1: not yet converged, 2: basis full 3: max iters exceeded
   int totalIter;        //!< counts the total number of iterations (also over restarts)
-  //@}
+  //!@}
   //! \name  internal data structures
-  //@{
+  //!@{
   int lastVind_;        //!< index of the last element in the V-buffer
   int curDimV_;         //!< current dimension of the subspace in V_
   TYPE(mvec_ptr) b_;    //!< right hand side vector of the system Ax=b
@@ -53,7 +56,7 @@ typedef struct TYPE(blockedGMRESstate) {
   _ST_ prevBeta_;       //!< previous secondary diagonal entry for the MINRES variant (from the unrotated Hessenberg (here tridiagonal) matrix)
 
   void *Vbuff;          //!< ring buffer for the subspaces V
-  //@}
+  //!@}
 } TYPE(blockedGMRESstate);
 
 typedef TYPE(blockedGMRESstate)* TYPE(blockedGMRESstate_ptr);
@@ -166,3 +169,4 @@ void SUBR(blockedGMRESstates_updateSol)(TYPE(blockedGMRESstate_ptr) S_array[], i
                 TYPE(const_linearOp_ptr) rightPrecon,
                 TYPE(mvec_ptr) x, _MT_ *resNorm, int scaleSolutionToOne, int* iflag);
 
+//!@}

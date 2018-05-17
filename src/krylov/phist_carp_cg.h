@@ -25,6 +25,30 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+//! \defgroup carp_cg CARP-CG row projection method for general (shifted) linear systems
+//! \ingroup linear_solvers
+//!
+//! Blocked CARP-CG solver for general shifted matrices A-sigma[j]I.
+//!
+//! Where a different shift is allowed for each RHS (as is required in our
+//! block JDQR method). A special feature of this implementation is that it
+//! can handle complex shifts even if the kernel library doesn't offer complex
+//! kernels. To implement this, we use some wrapper classes defined in phist_carp_cg_kernels_decl.hpp.
+//!
+//! Another feature introduced this way is using additional projections to `precondition' the iteration.
+//! The linear system solved is then in fact
+//!
+//!     |A-sigma[j]I    V||x+i*xi  |   |b|
+//!     | V'            0||x'+i*xi'| = |0|
+//!
+//! The algorithm is CGMN (CG on the minimum norm problem AA'x=b with SSOR pre-
+//! conditioning, implemented following the work of Bjoerck and Elfving (1979)).
+//! The parallelization of the Kaczmarz sweeps is left to the kernel library
+//! (functions carp_setup, carp_sweep). 
+//!
+//!@{
+
 #ifdef PHIST_HAVE_SP
 #include "phist_gen_s.h"
 #include "phist_carp_cg_decl.h"
@@ -37,7 +61,7 @@ extern "C" {
 #include "phist_carp_cg_decl.h"
 
 #include "phist_gen_clean.h"
-
+//!@}
 #ifdef __cplusplus
 }
 #endif

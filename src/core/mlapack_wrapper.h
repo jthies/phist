@@ -28,11 +28,11 @@ extern "C" {
 //!@{
 
 //! \brief symmetric eigenvalue decomposition in simulated quad precision (using function
-//! Rsyevd, cf. lapack routine dsyevd) \ingroup core
+//! Rsyevd, cf. lapack routine dsyevd) 
 void phist_Drsyev(int n, double *restrict a, double *restrict aC, int lda,
                        double *restrict w, double *restrict wC, int *iflag);
 
-//! \brief general singular value decomposition of an m times n matrix \ingroup core
+//! \brief general singular value decomposition of an m times n matrix 
 void phist_Drgesvd(const char *jobu, const char *jobvt, int m, int n,
             double *restrict a, double *restrict aC, int lda, double *restrict s, double *restrict sC,
             double *restrict u, double *restrict uC, int ldu, double *restrict vt, double *restrict vtC, 

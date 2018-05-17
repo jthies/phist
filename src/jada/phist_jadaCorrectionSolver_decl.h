@@ -8,6 +8,8 @@
 /*******************************************************************************************/
 #include "phist_enums.h"
 
+//! \addtogroup jada
+//!@{
 
 //! \brief The jadaCorrectionSolver uses the blockedGMRES to calculate approximate solutions to a set of Jacobi-Davidson correction equations.
 //!
@@ -15,7 +17,7 @@
 //!
 typedef struct TYPE(jadaCorrectionSolver) {
   //! \name Internal data structures
-  //@{
+  //!@{
   int                   hermitian; //!< Some inner solver schemes may be able to make use of this info
   int                   innerSolvBlockSize_; //!< Number of blockedGMRES states iterated at once
   TYPE(blockedGMRESstate_ptr) *blockedGMRESstates_; //!< blockedGMRES states
@@ -53,7 +55,7 @@ typedef struct TYPE(jadaCorrectionSolver) {
                                     TYPE(mvec_ptr)        t,
                                     int robust,
                                     int *                 iflag);
-  //@}
+  //!@}
 } TYPE(jadaCorrectionSolver);
 
 //! Pointer to jadaCorrectionSolver object
@@ -92,3 +94,5 @@ void SUBR(jadaCorrectionSolver_run)(TYPE(jadaCorrectionSolver_ptr) jdCorrSolver,
                                     int                   maxIter,     TYPE(mvec_ptr)           t,
                                     int useIMGS, int abortAfterFirstConvergedInBlock, int updatePrecon,
                                     int *                 iflag);
+
+//!@}
