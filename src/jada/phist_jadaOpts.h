@@ -24,6 +24,9 @@
 extern "C" {
 #endif
 
+//! \addtogroup jada
+//!@{
+
 /*! This struct can be used to consistently pass 
     parameters to our various Jacobi-Davidson methods.
 */
@@ -176,9 +179,9 @@ int innerSolvRobust; //!< Extra effort to get good jada updates
 
 //! Overwrite the struct members from a file containing lines like this:
 //!
-//! numEigs 8
-//! which LM
-//! how STANDARD
+//! numEigs 8 <br>
+//! which LM <br>
+//! how STANDARD <br>
 //! convTol 1.0e-8
 //!
 //! The function is not at all fancy, it won't warn about invalid entries, doesn't
@@ -191,6 +194,8 @@ void phist_jadaOpts_setDefaults(phist_jadaOpts *opts);
 
 //! Print jadaOpts to a file or stream. The result can be used as input for subsequent runs
 void phist_jadaOpts_toFile(phist_jadaOpts const *opts, FILE* stream);
+
+//!@}
 
 #ifdef __cplusplus
 } //extern "C"

@@ -7,7 +7,7 @@
 /*                                                                                         */
 /*******************************************************************************************/
 
-//! Subspace Jacobi-Davidson for extreme eigenvalues
+//! \brief Subspace Jacobi-Davidson for extreme eigenvalues \ingroup bjdqr
 
 //! Tries to compute a partial Schur form \f$(Q,R)\f$ of dimension opts.nEigs                       
 //! of the stencil \f$A*x-\lambda*B*x\f$ with a general linear operator \f$A\f$ and a                   
