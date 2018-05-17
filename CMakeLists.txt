@@ -1121,6 +1121,15 @@ foreach(PKG ${OPTIONAL_TRILI_PKG})
   message(STATUS ${TPL_REPORT})
 endforeach()
 
+if (PHIST_HAVE_ANASAZI)
+  set(PHIST_ANASAZI_THEIR_ORTHO_MANAGER OFF CACHE LOGICAL "In the Anasazi interface, rely on the Trilinos orthogonalization routines rather than our own.")
+  mark_as_advanced(PHIST_ANASAZI_THEIR_ORTHO_MANAGER)
+endif()
+if (PHIST_HAVE_BELOS)
+  set(PHIST_BELOS_THEIR_ORTHO_MANAGER OFF CACHE LOGICAL "In the Belos interface, rely on the Trilinos orthogonalization routines rather than our own.")
+  mark_as_advanced(PHIST_BELOS_THEIR_ORTHO_MANAGER)
+endif()
+
 if (PHIST_KERNEL_LIB STREQUAL "tpetra")
   if ("CUDA" IN_LIST Tpetra_TPL_LIST)
     # compiling tpetra/kokkos with CUDA is tricky and requires special flags

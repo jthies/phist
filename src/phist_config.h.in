@@ -136,6 +136,9 @@ kernel libs) ?
  */
 #cmakedefine PHIST_HAVE_MPACK_QD
 
+/* TPL-specific settings */
+#cmakedefine PHIST_ANASAZI_THEIR_ORTHO_MANAGER
+#cmakedefine PHIST_BELOS_THEIR_ORTHO_MANAGER
 
 /* timing/profiling/benchmarking behavior */
 #cmakedefine LIKWID_PERFMON
