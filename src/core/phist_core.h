@@ -9,6 +9,8 @@
 #ifndef PHIST_CORE_H
 #define PHIST_CORE_H
 
+//! \file phist_core.h: include all of PHIST's core functionality as a single header.
+
 //! \defgroup core core: Common functionality for iterative solvers
 //!@{
 

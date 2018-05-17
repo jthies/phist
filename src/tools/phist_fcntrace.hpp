@@ -17,12 +17,6 @@
 #error "this is a C++ header"
 #endif
 
-
-/* needs to be included before system headers for some intel compilers+mpi */
-#ifdef PHIST_HAVE_MPI
-#include <mpi.h>
-#endif
-
 #include <string>
 #include <vector>
 

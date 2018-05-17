@@ -11,12 +11,10 @@
 
 #include "phist_config.h"
 
+/*! \file phist_operator.h: linear operator interface */
+
 #ifndef DOXYGEN
 
-/* needs to be included before system headers for some intel compilers+mpi */
-#ifdef PHIST_HAVE_MPI
-#include <mpi.h>
-#endif
 #include "phist_void_aliases.h"
 #include "phist_typedefs.h"
 

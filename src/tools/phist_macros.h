@@ -45,18 +45,18 @@
 #define PHIST_TOUCH(x) (void)(x);
 #endif
 
-/*! macro to print a C-style message (optionally with arguments) to the phist default stream
+/*! \def PHIST_OUT macro to print a C-style message (optionally with arguments) to the phist default stream
     if the given level<=PHIST_OUTLEV. The message is printed on all MPI ranks and prefixed with
     the MPI rank.
  */
 #define PHIST_OUT(level,msg, ...) phist_printf(level,0,(const char*)msg, ##__VA_ARGS__);
 
-/*! similar to PHIST_OUT but only rank 0 in the phist default communicator prints the message, and the prefix is 
-omitted.
+/*! \def PHIST_SOUT similar to PHIST_OUT but only rank 0 in the phist default communicator prints the message, and the prefix is omitted.
 */
 #define PHIST_SOUT(level,msg, ...) phist_printf(level,1,(const char*)msg, ##__VA_ARGS__);
 
 #ifdef PHIST_HAVE_MPI
+//! \def PHIST_ORDERED_OUT - print message on several MPI processes in an ordered way (VERY expensive!)
 #define PHIST_ORDERED_OUT(level,mpicomm,msg, ...) {                                  \
         if(PHIST_OUTLEV >= level) {                                                  \
                 phist_ordered_fprintf(mpicomm, (const char*)msg, ##__VA_ARGS__);     \
@@ -66,6 +66,7 @@ omitted.
 #define PHIST_ORDERED_OUT(level,mpicomm,msg, ...) PHIST_SOUT(level, (const char*)msg, ##__VA_ARGS__);
 #endif
 
+//! \def PHIST_WARN_MISSING_KERNEL used internally to print warning messages about e.g. missing fused kernels
 #define PHIST_WARN_MISSING_KERNEL(function_name) \
   {\
     static bool first_time=true;\
@@ -93,7 +94,7 @@ omitted.
 #define PHIST_TIMEMONITOR_PERLINE_MACRO
 #endif
 
-//! checks an iflag flag passed to a void function for non-zero value, assigns it to FLAG,
+//! \def PHIST_CHK_IERR checks an iflag flag passed to a void function for non-zero value, assigns it to FLAG,
 //! prints an error message and returns if non-zero (to be used in void functions)
 #ifdef __cplusplus
 #define PHIST_CHK_IERR(func,FLAG) { PHIST_TIMEMONITOR_PERLINE_MACRO \
@@ -126,14 +127,15 @@ PHIST_OUT(PHIST_ERROR,"Error code %d (%s) returned from call %s\n(file %s, line 
 # include <ghost/config.h>
 # include <ghost/types.h>
 # endif
-// check return value from GHOST
+//! \def PHIST_CHK_GERR  check return value from GHOST
 #define PHIST_CHK_GERR(func,FLAG) { PHIST_TIMEMONITOR_PERLINE_MACRO \
 ghost_error PHIST_CHK_gerr=func; FLAG=PHIST_SUCCESS; if (PHIST_CHK_gerr!=GHOST_SUCCESS) { FLAG=PHIST_FUNCTIONAL_ERROR;\
 PHIST_OUT(PHIST_ERROR,"Error code %d (%s) returned from call %s\n(file %s, line %d)\n",\
 (FLAG),(phist_ghost_error2str(PHIST_CHK_gerr)),(#func),(__FILE__),(__LINE__)); return;}\
 }
 #endif
-//! checks an iflag flag passed to a void function for negative value, assigns it to FLAG,
+
+//! \def PHIST_CHK_NEG_IERR checks an iflag flag passed to a void function for negative value, assigns it to FLAG,
 //! prints an error message and returns if non-zero (to be used in void functions)
 #ifndef PHIST_CHK_NEG_IERR
 #ifdef __cplusplus
@@ -158,7 +160,7 @@ PHIST_OUT(PHIST_ERROR,"Error code %d (%s) returned from call %s\n(file %s, line 
 #endif
 
 
-//! like PHIST_CHK_IERR, but returns iflag (to be used in int functions returning an error code)
+//! \def PHIST_ICHK_IERR like PHIST_CHK_IERR, but returns iflag (to be used in int functions returning an error code)
 #define PHIST_ICHK_IERR(func,FLAG) { PHIST_TIMEMONITOR_PERLINE_MACRO \
 {func; if ((FLAG)!=PHIST_SUCCESS && (FLAG)!=PHIST_DEPRECATED) { \
 PHIST_OUT(PHIST_ERROR,"Error code %d (%s) returned from call %s\n(file %s, line %d)\n",\
@@ -166,25 +168,15 @@ PHIST_OUT(PHIST_ERROR,"Error code %d (%s) returned from call %s\n(file %s, line 
 else if (FLAG==PHIST_DEPRECATED) { FLAG=PHIST_SUCCESS; \
 PHIST_OUT(PHIST_WARNING,"Warning, function %s is DEPRECATED.\n(file %s, line %d)\n",(#func),(__FILE__),(__LINE__));}}}
 
+//! \def PHIST_ICHK_NEG_IERR like PHIST_CHK_NEG_IERR, but returns iflag (to be used in int functions returning an error code)
 #define PHIST_ICHK_NEG_IERR(func,FLAG) { PHIST_TIMEMONITOR_PERLINE_MACRO \
 {func; if (FLAG<PHIST_SUCCESS) { \
 PHIST_OUT(PHIST_ERROR,"Error code %d (%s) returned from call %s\n(file %s, line %d)\n",\
 (FLAG),(phist_retcode2str(FLAG)),(#func),(__FILE__),(__LINE__)); return FLAG;}}}
 
-#ifdef __cplusplus
-//! like PHIST_CHK_IERR, but throw an exception on non-zero iflag
-#define PHIST_TCHK_IERR(func,FLAG) { PHIST_TIMEMONITOR_PERLINE_MACRO \
-{func; if (FLAG!=PHIST_SUCCESS && FLAG!=PHIST_DEPRECATED) { \
-PHIST_OUT(PHIST_ERROR,"Error code %d (%s) returned from call %s\n(file %s, line %d)\n",\
-(FLAG),(phist_retcode2str(FLAG)),(#func),(__FILE__),(__LINE__)); throw FLAG;} \
-else if (FLAG==PHIST_DEPRECATED) { FLAG=PHIST_SUCCESS; \
-PHIST_OUT(PHIST_WARNING,"Warning, function %s is DEPRECATED.\n(file %s, line %d)\n",(#func),__FILE__,__LINE__);}}}
-
-#endif
-
-// macros for checking MPI errors. We may want to define them differently
-// to properly catch node failures etc.
+//! \def PHIST_CHK_MPIERR to properly catch node failures etc.
 #define PHIST_CHK_MPIERR(call, iflag) PHIST_CHK_IERR(call,iflag)
+//! \def PHIST_ICHK_MPIERR to properly catch node failures etc.
 #define PHIST_ICHK_MPIERR(call, iflag) PHIST_ICHK_IERR(call,iflag)
 
 

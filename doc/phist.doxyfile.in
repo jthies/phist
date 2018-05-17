@@ -10,9 +10,12 @@ FILE_PATTERNS          = "*.h" "*.md" "*.hpp"
 RECURSIVE              = YES
 EXCLUDE_PATTERNS       = "*/src/kernels/*/*" \
                          "*/src/craft/*" \
-                         "*_def.*" 
-FILTER_PATTERNS        = "*.h=\"cpp -CC -DDOXYGEN ${INCLUDE_FLAGS} -I.\""
-FILTER_PATTERNS        = "*.hpp=\"c++ -E -Wp,-CC -DDOXYGEN ${INCLUDE_FLAGS} -I.\""
+                         "*_def.*" \
+                         "*_decl.*" \
+                         "*/src/tools/phist_gen_*.h" \
+                         "*/src/tools/phist_macros.h"
+FILTER_PATTERNS        = "*.h=\"c++ -E -Wp,-C -DDOXYGEN ${INCLUDE_FLAGS} -I.\""
+FILTER_PATTERNS        = "*.hpp=\"c++ -E -Wp,-C -DDOXYGEN ${INCLUDE_FLAGS} -I.\""
 USE_MDFILE_AS_MAINPAGE = README.md
 REFERENCES_RELATION    = YES
 HTML_TIMESTAMP         = YES
