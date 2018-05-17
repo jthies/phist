@@ -7,13 +7,7 @@
 /*                                                                                         */
 /*******************************************************************************************/
 
-//! \ingroup linear_solvers
-//@{
-
-//! \defgroup blockedPCG blocked PCG solver for symmetric or general linear systems
-//@{
-
-//! \brief A simple PCG implementation that works on several vectors simultaneously.
+//! \brief A simple PCG implementation that works on several vectors simultaneously. \ingroup blockedPCG
 //!
 //! For more information on blocked solvers see phist_blockedgmres_decl.h
 //! In contrast to our GMRES solver, PCG does not work with a state object but simply runs
@@ -38,6 +32,3 @@ void SUBR( blockedPCG_iterate ) (TYPE(const_linearOp_ptr) op,
                 TYPE(const_linearOp_ptr) preconOp,
                 TYPE(const_mvec_ptr) rhs, TYPE(mvec_ptr) sol,
                 int numSys, int *nIter, _MT_ const tol[], int* iflag);
-
-//@}
-//@}

@@ -26,8 +26,14 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+//! \defgroup blockedPCG blocked PCG solver for symmetric or general linear systems
+//! \ingroup linear_solvers
+//!@{
+
 #define PHIST_CLASSFILE_DEF "phist_blockedpcg_decl.h"
 #include "phist_gen_all.h"
+//!@}
 #ifdef __cplusplus
 }
 #endif

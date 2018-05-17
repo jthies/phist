@@ -26,6 +26,11 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+//! \defgroup blockedGMRES blocked GMRES solver for general linear systems
+//! \ingroup linear_solvers
+//!@{
+
 #ifdef PHIST_HAVE_SP
 #include "phist_gen_s.h"
 #include "phist_blockedgmres_decl.h"
@@ -38,7 +43,7 @@ extern "C" {
 #include "phist_blockedgmres_decl.h"
 
 #include "phist_gen_clean.h"
-
+//!@}
 #ifdef __cplusplus
 }
 #endif

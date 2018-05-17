@@ -18,4 +18,9 @@ REFERENCES_RELATION    = YES
 HTML_TIMESTAMP         = YES
 MATHJAX_RELPATH        = http://www.mathjax.org/mathjax
 GENERATE_LATEX         = NO
+ENABLE_PREPROCESSING   = YES
 MACRO_EXPANSION        = YES
+EXPAND_ONLY_PREDEF     = YES
+PREDEFINED             = "SUBR(x) = phist_X ## x" \
+                         "TYPE(x) = phist_X ## x"
+EXCLUDE                = ./src/core/phist_operator.h
