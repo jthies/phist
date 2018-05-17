@@ -6,6 +6,13 @@
 /* Contact: Jonas Thies (Jonas.Thies@DLR.de)                                               */
 /*                                                                                         */
 /*******************************************************************************************/
+
+/*
+#ifndef USE_FUSED_OPS
+#define USE_FUSED_OPS 1
+#endif
+*/
+
 //! orthogonalize an mvec against an already orthogonal one.
 extern "C" void SUBR(orthog)(TYPE(const_mvec_ptr) V,
                      TYPE(mvec_ptr) W,
@@ -99,17 +106,24 @@ extern "C" void SUBR(orthog_impl)(TYPE(const_mvec_ptr) V,
   if (V!=NULL)
   {
     if (robust) *iflag=PHIST_ROBUST_REDUCTIONS;
-// the fused variant currently doesn't detect the rank of [V W] correctly in all cases, see issue #188
-//    PHIST_CHK_NEG_IERR(SUBR(orthogrrfused)(V, BW, R2, R1, WtW, iflag),*iflag);
+#ifdef USE_FUSED_OPS
+    // the fused variant currently doesn't detect the rank of [V W] correctly in all cases, see issue #188
+    PHIST_CHK_NEG_IERR(SUBR(orthogrrfused)(V, BW, R2, R1, WtW, iflag),*iflag);
+#else
     PHIST_CHK_NEG_IERR(SUBR(orthogrrB)(V, W, BW, B, R2, R1, NULL,WtW, orthoEps,numSweeps,rankTol,iflag),*iflag);
+#endif
     dim0=*iflag; // return value of orthog is rank of null space of [V W] on entry
     *rankVW=m+k-dim0;
   }
   else
   {
-    // fused orthog core doesn't allow V==NULL, so use orthogrr instead
     if (robust) *iflag=PHIST_ROBUST_REDUCTIONS;
+#ifdef USE_FUSED_OPS
+    // fused orthog core doesn't allow V==NULL, so use orthogrr instead
+    PHIST_CHK_NEG_IERR(SUBR(orthogrrfused)(V, W, BW, B, R2, R1, NULL,WtW, orthoEps,numSweeps,rankTol,iflag),*iflag);
+#else
     PHIST_CHK_NEG_IERR(SUBR(orthogrrB)(V, W, BW, B, R2, R1, NULL,WtW, orthoEps,numSweeps,rankTol,iflag),*iflag);
+#endif
     dim0=*iflag; // return value of orthog is rank of null space of [V W] on entry
     *rankVW=k-dim0;
   }

@@ -7,7 +7,9 @@
 /*                                                                                         */
 /*******************************************************************************************/
 
+#ifndef PHIST_BELOS_THEIR_ORTHO_MANAGER
 #include "phist_BelosICGSOrthoManager.hpp"
+#endif
 
 #define PHIST_rcp phist::mvec_rcp< _ST_ >
 

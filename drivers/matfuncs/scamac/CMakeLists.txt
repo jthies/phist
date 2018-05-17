@@ -248,7 +248,7 @@ set_tests_properties(TestSimple PROPERTIES PASS_REGULAR_EXPRESSION "Hubbard")
 
 
 add_executable(TestRandom scamac_test_random.c)
-target_link_libraries(TestRandom scamac)
+target_link_libraries(TestRandom scamac m)
 add_test(TestRandom TestRandom)
 
 
