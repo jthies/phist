@@ -858,8 +858,6 @@ extern "C" void SUBR(sparseMat_times_mvec_vadd_mvec)(_ST_ alpha, TYPE(const_spar
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   *iflag=0;
 
-  PHIST_COUNT_MATVECS(x);
-
   int nvec;
   PHIST_CHK_IERR(SUBR(mvec_num_vectors)(x, &nvec, iflag), *iflag);
 
