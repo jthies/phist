@@ -7,6 +7,9 @@
 /*                                                                                         */
 /*******************************************************************************************/
 
+//! \addtogroup mpi_kernels
+//!@{
+
 /*! MPI_Isend for sending the local part of an mvec to another process
 */
 void SUBR(mvec_Isend)(TYPE(const_mvec_ptr) V, int dest, int tag, 
@@ -25,3 +28,4 @@ void SUBR(mvec_Irecv)(TYPE(const_mvec_ptr) V, int dest, int tag,
  */
 void SUBR(sdMat_sync_values)(TYPE(sdMat_ptr) V, phist_const_comm_ptr comm, int* iflag);
 
+//!@}

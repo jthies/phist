@@ -11,7 +11,6 @@ RECURSIVE              = YES
 EXCLUDE_PATTERNS       = "*/src/kernels/*/*" \
                          "*/src/craft/*" \
                          "*_def.*" \
-                         "*_decl.*" \
                          "*/src/tools/phist_gen_*.h" \
                          "*/src/tools/phist_macros.h"
 FILTER_PATTERNS        = "*.h=\"c++ -E -Wp,-C -DDOXYGEN ${INCLUDE_FLAGS} -I.\""
@@ -26,4 +25,3 @@ MACRO_EXPANSION        = YES
 EXPAND_ONLY_PREDEF     = YES
 PREDEFINED             = "SUBR(x) = phist_X ## x" \
                          "TYPE(x) = phist_X ## x"
-EXCLUDE                = ./src/core/phist_operator.h

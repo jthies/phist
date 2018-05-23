@@ -30,7 +30,7 @@
 */
 
 /*! \ingroup kernels */
-/*@{*/
+/*!@{*/
 
 /*! def PHIST_IFLAG_DEFAULT */
 #define PHIST_IFLAG_DEFAULT 0
@@ -169,7 +169,7 @@
    and should not be used in the code anywhere because they are subject
    to change. The purpose of these flags is benchmarking only.
 */
-/*@{*/
+/*!@{*/
 
 /*! \def PHIST_SPMVM_ONLY_LOCAL */
 #define PHIST_SPMVM_ONLY_LOCAL 1024
@@ -183,7 +183,7 @@
 /*! \def PHIST_SPMVM_TASK */
 #define PHIST_SPMVM_TASK 8192
 
-/*@}*/
+/*!@}*/
 
 /*! \def PHIST_SDMAT_RUN_ON_HOST
 
@@ -210,6 +210,6 @@
  */
 #define PHIST_SDMAT_RUN_ON_HOST_AND_DEVICE (PHIST_SDMAT_RUN_ON_HOST|PHIST_SDMAT_RUN_ON_DEVICE)
 
-/*@}*/
+/*!@}*/
 
 #endif

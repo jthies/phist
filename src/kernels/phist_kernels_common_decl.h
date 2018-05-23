@@ -9,7 +9,7 @@
 #include "phist_macros.h"
 
 //! \addtogroup kernels
-//@{
+//!@{
 
 /*! @file phist_kernels_common_decl.h 
     @brief simple derived functions implemented for all kernel libs centrally
@@ -21,14 +21,19 @@ extern "C" {
 #endif
 
 
-//! \name getting data from objects
-//@{
+//! \name getting data from sparseMat
+//!@{
 
 //! get global sparseMat size (number of rows) \ingroup crsmat
 void SUBR(sparseMat_global_nrows)(TYPE(sparseMat_ptr) A, phist_gidx* s, int* iflag);
 
 //! get global sparseMat size (number of columns) \ingroup crsmat
 void SUBR(sparseMat_global_ncols)(TYPE(sparseMat_ptr) A, phist_gidx* s, int* iflag);
+
+//!@}
+
+//! \name getting data from mvec
+//!@{
 
 //! retrieve local length of the vectors in V \ingroup mvec
 void SUBR(mvec_my_length)(TYPE(const_mvec_ptr) V, phist_lidx* len, int* iflag);
@@ -39,10 +44,12 @@ void SUBR(mvec_global_length)(TYPE(const_mvec_ptr) V, phist_gidx* len, int* ifla
 //! retrieve the comm used for MPI communication in V \ingroup mvec
 void SUBR(mvec_get_comm)(TYPE(const_mvec_ptr) V, phist_const_comm_ptr* comm, int* iflag);
 
-//@}
+//!@}
 
-//! create a new mvec with the same dimensions (number of rows and columns) and
-//! distribution (map)  as an existing one. The values of the new object are not
+//! \brief create a new mvec with the same dimensions (number of rows and columns) and
+//! distribution (map)  as an existing one. \ingroup mvec
+//!
+//! The values of the new object are not
 //! initialized explicitly, so if you want to clone the vector contents as well,
 //! you will have to call mvec_set_block afterwards (or similar). *V must be NULL
 //! on input. The function accepts the same input values for iflag as mvec_create 
@@ -51,8 +58,8 @@ void SUBR(mvec_get_comm)(TYPE(const_mvec_ptr) V, phist_const_comm_ptr* comm, int
 //! to manually add flags here like MVEC_REPLICATE_DEVICE_MEM
 void SUBR(mvec_clone_shape)(TYPE(mvec_ptr)* V, TYPE(const_mvec_ptr) V_in, int* iflag);
 
-//! "fill" an mvec from a user-provided array.
-
+//! "fill" an mvec from a user-provided array. \ingroup mvec
+//!
 //! If the mvec V has n local rows and k columns (as returned by mvec_my_length and mvec_num_vectors, resp.),
 //! then ...
 //! If input_row_major==1, then data[i*lda+j], i=0..n-1, j=0..k-1

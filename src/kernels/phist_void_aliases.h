@@ -9,6 +9,10 @@
 #ifndef PHIST_VOID_ALIASES_H
 #define PHIST_VOID_ALIASES_H
 
+//! \defgroup void_alias void aliases
+//! \ingroup kernels
+//!@{
+
 //! wrapper for the MPI communicator
 typedef void* phist_comm_ptr;
 //! pointer to const MPI communicator
@@ -39,5 +43,5 @@ typedef const void* phist_const_context_ptr;
 #include "phist_gen_z.h"
 #include "phist_void_aliases_decl.h"
 #include "phist_gen_clean.h"
-
+//!@}
 #endif
