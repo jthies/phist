@@ -15,9 +15,13 @@
 #include "phist_macros.h"
 #endif
 
+//! \defgroup tasks PHIST_TASK Macros
+//! \ingroup tools
+//!@{
+
 /*! \def PHIST_TASK_DECLARE(taskName)
  *  Declare a tasks (e.g. a variable taskName of some type to be used later!)
- *  \taskName new identifier
+ *  \param taskName new identifier
  */
 
 /*! \def PHIST_TASK_BEGIN(taskName)
@@ -294,5 +298,5 @@ static inline void phist_wait_ghost_task(ghost_task** task, int* iflag)
 #define PHIST_MAIN_TASK_END }
 
 #endif /* PHIST_HAVE_CXX11_LAMBDAS */
-
+//!@}
 #endif /* PHIST_TASKS_HPP */

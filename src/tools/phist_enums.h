@@ -11,51 +11,58 @@
 
 #include "phist_config.h"
 
-//! defines which eigenvalues are sought resp. how they should be sorted
+//! \defgroup enums phist enums
+//! \ingroup tools
+//!@{
+
+//! \brief defines which eigenvalues are sought resp. how they should be sorted
+//!
 //! for computing eigenvalues near (far away from) a specific target, 
 //! pass a shifted operator and "SM" ("LM") to the eigensolver and shift the
 //! resulting eigenvalues back (eigenvectors are invariant under shifting).
 typedef enum phist_EeigSort 
 {
   phist_NO_EIGSORT=0,
-  phist_LM=1,   // largest magnitude
-  phist_SM=2,   // smallest magnitude
-  phist_LR=3,   // largest real part
-  phist_SR=4,   // smallest real part
-  phist_TARGET=5, // seek eigenvalues near a specific target
-  phist_INVALID_EIGSORT // returned if str2eigSort gets an invalid string
+  phist_LM=1,   //!< largest magnitude
+  phist_SM=2,   //!< smallest magnitude
+  phist_LR=3,   //!< largest real part
+  phist_SR=4,   //!< smallest real part
+  phist_TARGET=5, //!< seek eigenvalues near a specific target
+  phist_INVALID_EIGSORT //!< returned if str2eigSort gets an invalid string
 } phist_EeigSort;
 
 //! how the eigenvalues of A are approximated in the subspace V
 typedef enum phist_EeigExtr 
 {
-  phist_STANDARD=0, //! use Ritz values, eig(V'AV)
-  phist_HARMONIC=1, //! use harmonic Ritz values, more suitable for inner eigenvalues [eig((AV)'AV)]
+  phist_STANDARD=0, //!< use Ritz values, eig(V'AV)
+  phist_HARMONIC=1, //!< use harmonic Ritz values, more suitable for inner eigenvalues [eig((AV)'AV)]
   phist_INVALID_EIGEXTR
 } phist_EeigExtr;
 
 //! how to approximately solve linear systems AX=B
 typedef enum phist_ElinSolv 
 {
-  phist_NO_LINSOLV=0, // do nothing: X=B
-  phist_GMRES=1, // GMRES for general matrices (with left and/or right preconditioning)
-  phist_MINRES=2, // MINRES for symmetric and indefinite matrices
-  phist_QMR=3, // QMR for general matrices
-  phist_BICGSTAB=4, // BiCGStab for general matrices
-  phist_CARP_CG=5, // CG on the normal equations, preconditioned by CARP (parallel SSOR)
-  phist_USER_LINSOLV=98,// user wants to provide custom solver
-  phist_INVALID_LINSOLV // returned if str2linSolv gets an invalid string
+  phist_NO_LINSOLV=0, //!< do nothing: X=B
+  phist_GMRES=1, //!< GMRES for general matrices (with left and/or right preconditioning)
+  phist_MINRES=2, //!< MINRES for symmetric and indefinite matrices
+  phist_QMR=3, //!< QMR for general matrices
+  phist_BICGSTAB=4, //!< BiCGStab for general matrices
+  phist_CARP_CG=5, //!< CG on the normal equations, preconditioned by CARP (parallel SSOR)
+  phist_USER_LINSOLV=98,//!< user wants to provide custom solver
+  phist_INVALID_LINSOLV //!< returned if str2linSolv gets an invalid string
 } phist_ElinSolv;
 
+//! symmetry of matrix A
 typedef enum phist_EmatSym 
 {
-  phist_GENERAL=0,    /*! no known symmetry properties */
-  phist_HERMITIAN=1,  /*! A=A^H */
-  phist_COMPLEX_SYMMETRIC=2, /*! A=A^T */
-  phist_PATTERN_SYMMETRIC=3, /*! G=G^T with G_ij=1 if A_ij!=0, G_ij=0 otherwise */ 
+  phist_GENERAL=0,    //!< no known symmetry properties
+  phist_HERMITIAN=1,  //!< A=A^H
+  phist_COMPLEX_SYMMETRIC=2, //!< A=A^T
+  phist_PATTERN_SYMMETRIC=3, //! G=G^T with G_ij=1 if A_ij!=0, G_ij=0 otherwise
   phist_INVALID_MATSYM
 } phist_EmatSym;
 
+//! preconditioner
 typedef enum phist_Eprecon
 {
   phist_NO_PRECON=0,
@@ -67,9 +74,10 @@ typedef enum phist_Eprecon
   phist_INVALID_PRECON
 } phist_Eprecon;
 
-//! define operators involving pre, post and skew projection
-//! for the Jacobi-Davidson method. The general form of the
-//! jadaOp (see phist_jadaOp_decl.h) is
+//! \brief define operators involving pre, post and skew projection
+//! for the Jacobi-Davidson method.
+//!
+//! The general form of the jadaOp (see phist_jadaOp_decl.h) is
 //!
 //! P_skew K^{-1} P_post (A-sigma_j B) P_pre,
 //!
@@ -78,8 +86,8 @@ typedef enum phist_Eprecon
 //! V_K=K\V, and (') denoting transposition, 
 //! the operators are defined as
 //!
-//! P_skew = I - V_K*(W'V_K)^{-1}W'
-//! P_pre  = I - V (BV)'
+//! P_skew = I - V_K*(W'V_K)^{-1}W' <br>
+//! P_pre  = I - V (BV)' <br>
 //! P_post = P_pre' = I - BV V'
 //!
 //! Using this enum one can 'turn on/off' the projections,
@@ -157,4 +165,5 @@ std::ostream& operator<<(std::ostream& is, const phist_Eprojection& s);
 //!@}
 
 #endif
+//!@}
 #endif

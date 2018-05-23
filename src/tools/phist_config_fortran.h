@@ -10,7 +10,7 @@
 #ifndef PHIST_CONFIG_FORTRAN_H
 #define PHIST_CONFIG_FORTRAN_H
 
-/*! \file phist_config_fortran.h
+/*! \file phist_config_fortran.h \ingroup tools
 
     This file contains additional macros that can be used in Fortran code to e.g. define kind parameters.
 */
@@ -20,13 +20,13 @@
 #endif
 
 #ifndef PHIST_HAVE_GHOST
-/*! \def G_LIDX_T
+/*! \def G_LIDX_T 
 
 kind parameter for ghost local indices (used to define row function arguments)
 */
 #define G_LIDX_T C_INT32_T
 # ifdef PHIST_FORCE_32BIT_GIDX
-/*! \def G_GIDX_T
+/*! \def G_GIDX_T 
 
 kind parameter for ghost global indices (used to define row function arguments)
 */
