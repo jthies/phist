@@ -12,7 +12,7 @@
 #ifdef PHIST_HAVE_BELOS
 
 #ifndef _ST_
-#error "you must to include a 'phist_gen_X' header before this filee!"
+#error "you must to include a 'phist_gen_X' header before this file!"
 #endif
 
 #include "phist_trilinos_type_config.h"

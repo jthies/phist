@@ -6,7 +6,9 @@
 /* Contact: Jonas Thies (Jonas.Thies@DLR.de)                                               */
 /*                                                                                         */
 /*******************************************************************************************/
+#ifndef DOXYGEN
 #include "phist_enums.h"
+#endif //DOXYGEN
 
 //! \addtogroup jada
 //!@{

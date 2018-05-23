@@ -10,11 +10,11 @@
 #define PHIST_KERNELS_H
 
 #include "phist_config.h"
-#include "phist_mpi_kernels.h"
-#include "phist_kernel_flags.h"
 
 #ifndef DOXYGEN
 
+#include "phist_mpi_kernels.h"
+#include "phist_kernel_flags.h"
 #include "phist_tools.h"
 
 // note: the phist_typedefs.h file is provided in the subdirectory

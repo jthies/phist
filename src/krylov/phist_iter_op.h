@@ -9,9 +9,13 @@
 #ifndef PHIST_KRYLOV_AS_OPERATOR_H
 #define PHIST_KRYLOV_AS_OPERATOR_H
 
+#ifndef DOXYGEN
+
 #include "phist_config.h"
 #include "phist_operator.h"
 #include "phist_enums.h"
+
+#endif //DOXYGEN
 
 #define PHIST_CLASSFILE_DEF "phist_iter_op_decl.h"
 #include "phist_gen_all.h"

@@ -7,7 +7,7 @@
 /*                                                                                         */
 /*******************************************************************************************/
 
-//! \brief SVQB method for orthonormalizing an mvec \ingroup core
+//! \brief SVQB method for orthonormalizing an mvec \ingroup orthog
 
 //! SVQB algorithm (Stathopoulos & Wu, SISC 23 (6),2165-2182).
 //!

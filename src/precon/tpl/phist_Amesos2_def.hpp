@@ -7,7 +7,10 @@
 /*                                                                                         */
 /*******************************************************************************************/
 #include "phist_config.h"
+
+#ifndef DOXYGEN
 #include "phist_PreconTraits.hpp"
+#endif //DOXYGEN
 
 #ifdef PHIST_HAVE_AMESOS2
 # warning "Amesos2 interface not implemented"

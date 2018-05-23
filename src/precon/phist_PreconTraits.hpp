@@ -9,10 +9,14 @@
 #ifndef PHIST_PRECON_TRAITS_HPP
 #define PHIST_PRECON_TRAITS_HPP
 
+#ifndef DOXYGEN
+
 #include "phist_config.h"
 #include "phist_enums.h"
 #include "phist_operator.h"
 #include "phist_ScalarTraits.hpp"
+
+#endif //DOXYGEN
 
 namespace phist {
 
