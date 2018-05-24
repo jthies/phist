@@ -54,7 +54,6 @@ void phist_Dprec_qb(double *__restrict__ a,  double *__restrict__ aC,
                     phist_lidx n, phist_lidx lda, int *rank, int* iflag);
 
 //!@}
-                    
 #ifdef __cplusplus
 } //extern "C"
 #endif

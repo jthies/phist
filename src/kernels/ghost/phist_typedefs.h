@@ -63,6 +63,8 @@ typedef ghost_gidx phist_gidx;
 # warning "neglecting config option PHIST_FORCE_32BIT_GIDX with ghost kernels, choice depends on GHOOST installation!"
 #endif
 
+#ifndef DOXYGEN
 #include "phist_void_aliases.h"
+#endif //DOXYGEN
 
 #endif

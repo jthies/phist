@@ -15,7 +15,9 @@
 #error "you must to include a 'phist_gen_X' header before this file!"
 #endif
 
+#ifndef DOXYGEN
 #include "phist_trilinos_type_config.h"
+#endif //DOXYGEN
 
 #ifdef PHIST_TRILINOS_TYPE_AVAIL
 

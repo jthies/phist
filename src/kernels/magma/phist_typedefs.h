@@ -49,6 +49,8 @@ typedef magma_int_t phist_gidx;
 #define PRlidx "d"
 #define PRgidx "d"
 
+#ifndef DOXYGEN
 #include "phist_void_aliases.h"
+#endif //DOXYGEN
 
 #endif

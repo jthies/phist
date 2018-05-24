@@ -42,6 +42,8 @@ typedef int64_t phist_gidx;
 # warning "neglecting config option PHIST_FORCE_32BIT_GIDX with builtin kernels!"
 #endif
 
+#ifndef DOXYGEN
 #include "phist_void_aliases.h"
+#endif //DOXYGEN
 
 #endif

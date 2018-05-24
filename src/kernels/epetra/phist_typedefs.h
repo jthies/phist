@@ -54,6 +54,8 @@ typedef long long int phist_gidx;
 
 #define PRlidx "d"
 
+#ifndef DOXYGEN
 #include "phist_void_aliases.h"
+#endif //DOXYGEN
 
 #endif

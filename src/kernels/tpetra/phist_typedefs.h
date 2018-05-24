@@ -57,6 +57,8 @@ typedef ptrdiff_t phist_gidx;
 typedef int phist_lidx;
 #define PRlidx "d"
 
+#ifndef DOXYGEN
 #include "phist_void_aliases.h"
+#endif //DOXYGEN
 
 #endif
