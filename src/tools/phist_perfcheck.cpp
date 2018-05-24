@@ -139,9 +139,9 @@ namespace phist_PerfCheck
     for(int i = 0; i < nTimers; i++)
     {
       // sort by difference to expectation
-      //sortBy[i] = std::abs(maxTotalTime[i]-maxTotalExpected[i]);
+      sortBy[i] = std::abs(maxTotalTime[i]-maxTotalExpected[i]);
       // sort by total time consumed by kernel
-      sortBy[i]=maxTotalTime[i];
+      //sortBy[i]=maxTotalTime[i];
     }
     std::vector<int> sortedIndex(nTimers);
     for(int i = 0; i < nTimers; i++)
