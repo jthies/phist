@@ -11,7 +11,7 @@
 
 #include "phist_config.h"
 
-/*! \file phist_operator.h: linear operator interface */
+/*! \file phist_operator.h \brief linear operator interface */
 
 #ifndef DOXYGEN
 

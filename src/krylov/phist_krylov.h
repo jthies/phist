@@ -2,7 +2,7 @@
 #define PHIST_KRYLOV_H
 
 #include "phist_config.h"
-
+//! \file phist_krylov.h include all of PHIST's krylov functonality as a single header
 //! \defgroup krylov krylov: Krylov subspace methods
 //!@{
 

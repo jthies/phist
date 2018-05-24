@@ -6,6 +6,9 @@
 /* Contact: Jonas Thies (Jonas.Thies@DLR.de)                                               */
 /*                                                                                         */
 /*******************************************************************************************/
+//! \file phist_jadaCorrectionSolver_decl.h 
+//! \brief calculate approximate solutions to a set of Jacobi-Davidson correction equations
+
 #ifndef DOXYGEN
 #include "phist_enums.h"
 #endif //DOXYGEN

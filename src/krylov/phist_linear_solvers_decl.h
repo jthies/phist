@@ -6,6 +6,8 @@
 /* Contact: Jonas Thies (Jonas.Thies@DLR.de)                                               */
 /*                                                                                         */
 /*******************************************************************************************/
+//! \file phist_linear_solvers_decl.h 
+//! \brief Iterative methods for linear systems
 
 //! \ingroup linear_solvers
 //!@{

@@ -6,6 +6,8 @@
 /* Contact: Jonas Thies (Jonas.Thies@DLR.de)                                               */
 /*                                                                                         */
 /*******************************************************************************************/
+//! \file phist_enums.h
+//! \brief phist enums 
 #ifndef PHIST_ENUMS_H
 #define PHIST_ENUMS_H
 
@@ -128,7 +130,7 @@ phist_Eprojection str2projection(const char* str);
 #ifdef __cplusplus
 }
 
-//! \name read enum types from input stream
+//! \name read enum types from input stream \ingroup enums
 //! @{
 
 //!
@@ -146,7 +148,7 @@ std::istream& operator>>(std::istream& is, phist_Eprojection& s);
 
 //!@}
 
-//! \name write enum types to stream
+//! \name write enum types to stream \ingroup enums
 //! @{
 
 //!

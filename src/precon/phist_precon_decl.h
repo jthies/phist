@@ -6,6 +6,8 @@
 /* Contact: Jonas Thies (Jonas.Thies@DLR.de)                                               */
 /*                                                                                         */
 /*******************************************************************************************/
+//! \file phist_precon_decl.h 
+//! \brief Implementation of preconditioning routines
 
 //! \addtogroup precon
 //!@{

@@ -6,6 +6,8 @@
 /* Contact: Jonas Thies (Jonas.Thies@DLR.de)                                               */
 /*                                                                                         */
 /*******************************************************************************************/
+//! \file phist_jadaOp_decl.h 
+//! \brief routines to create operator for Jacobi-Davidson and projection operators
 
 //! \addtogroup jada
 //!@{

@@ -6,6 +6,9 @@
 /* Contact: Jonas Thies (Jonas.Thies@DLR.de)                                               */
 /*                                                                                         */
 /*******************************************************************************************/
+//! \file phist_schur_decomp_decl.h
+//! \brief Implementation of Schur decomposition routines
+
 //! \name Schur decomposition
 //! \addtogroup core
 //!@{
@@ -32,11 +35,11 @@
  //!                                                                                             
  //! we get for nselect=3, nsort=1, which=LM:                                                    
  //!                                                                                             
- //!   f x x x x                                                                                 
- //!     b c x x                                                                                 
- //!     d b x x                                                                                 
- //!         e x                                                                                 
- //!           a                                                                                 
+ //!     f x x x x                                                                                 
+ //!       b c x x                                                                                 
+ //!       d b x x                                                                                 
+ //!           e x                                                                                 
+ //!             a                                                                                 
  //!                                                                                             
  //! so we guarantee that the largest one nsort is in the upper left corner,                   
  //! and that the 3 largest ones appear first in any order.                                      
@@ -48,7 +51,7 @@
          int m, int nselect, int nsort, phist_EeigSort which, _MT_ tol,
          void* ev, int *iflag);
 
- //! \brief Schur dcomposition for generalized eigenvalue problems
+ //! \brief Schur decomposition for generalized eigenvalue problems
          
  //! generalized Schur Decomposition, (S,T)->(~S,~T,VS,WS) such that                            
  //! (T,S) = ( VS*~S*WS^T, VS*~T*WS^T ), with ~S upper Schur and ~T upper triangular. The       

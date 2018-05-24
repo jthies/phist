@@ -6,7 +6,8 @@
 /* Contact: Jonas Thies (Jonas.Thies@DLR.de)                                               */
 /*                                                                                         */
 /*******************************************************************************************/
-
+//! \file phist_normF_decl.h
+//! \brief Implementation of Fobenius norm
 
 //! \name Frobenius norm
 //! \addtogroup core

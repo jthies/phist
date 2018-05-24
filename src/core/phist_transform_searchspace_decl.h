@@ -6,6 +6,9 @@
 /* Contact: Jonas Thies (Jonas.Thies@DLR.de)                                               */
 /*                                                                                         */
 /*******************************************************************************************/
+//! \file phist_transform_searchspace_decl.h
+//! \brief routines to transform the searchspace
+
 #ifdef __cplusplus
 extern "C" {
 #endif

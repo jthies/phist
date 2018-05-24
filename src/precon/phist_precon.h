@@ -6,6 +6,9 @@
 /* Contact: Jonas Thies (Jonas.Thies@DLR.de)                                               */
 /*                                                                                         */
 /*******************************************************************************************/
+//! \file phist_precon.h 
+//! \brief Preconditioning interface
+
 #ifndef PHIST_PRECON_H
 #define PHIST_PRECON_H
 

@@ -6,6 +6,9 @@
 /* Contact: Jonas Thies (Jonas.Thies@DLR.de)                                               */
 /*                                                                                         */
 /*******************************************************************************************/
+//! \file phist_operator_decl.h
+//! \brief Implementation of Linear operator interface
+
 //! \addtogroup linearOp
 //!@{
     

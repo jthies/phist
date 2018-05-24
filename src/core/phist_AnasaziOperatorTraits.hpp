@@ -6,6 +6,8 @@
 /* Contact: Jonas Thies (Jonas.Thies@DLR.de)                                               */
 /*                                                                                         */
 /*******************************************************************************************/
+//! \file phist_AnasaziOperatorTraits.hpp
+
 #ifndef PHIST_ANASAZI_OPERATOR_TRAITS_HPP
 #define PHIST_ANASAZI_OPERATOR_TRAITS_HPP
 

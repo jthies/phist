@@ -6,6 +6,9 @@
 /* Contact: Jonas Thies (Jonas.Thies@DLR.de)                                               */
 /*                                                                                         */
 /*******************************************************************************************/
+//! \file phist_belos_decl.h 
+//! \brief access to block Krylov solvers of the Belos package from Trilinos
+
 //! \brief The Belos package from Trilinos provides block Krylov solvers.
 //! We currently provide access to four diffrent methods. \ingroup krylov
 //!

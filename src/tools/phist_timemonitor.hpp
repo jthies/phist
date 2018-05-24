@@ -6,6 +6,9 @@
 /* Contact: Jonas Thies (Jonas.Thies@DLR.de)                                               */
 /*                                                                                         */
 /*******************************************************************************************/
+//! \file phist_timemonitor.hpp 
+//! \brief functions and classes needed for function level time monitoring
+
 #ifndef PHIST_TIMEMONITOR_HPP
 #define PHIST_TIMEMONITOR_HPP
 

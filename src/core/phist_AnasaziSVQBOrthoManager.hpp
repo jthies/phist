@@ -6,6 +6,8 @@
 /* Contact: Jonas Thies (Jonas.Thies@DLR.de)                                               */
 /*                                                                                         */
 /*******************************************************************************************/
+//! \file phist_AnasaziSVQBOrthoManager.hpp
+//! \brief orthogonalization routine in Anasazi
 
 #include "phist_config.h"
 
@@ -31,6 +33,11 @@
 
 namespace Anasazi {
 
+  //! overloads the crucial orthogonalization routine in Anasazi     
+  //! for our wrapped mvec objects, replacing it by phist's orthog.
+  //! The reason is that Anasazis implementation makes heavy use of  
+  //! single-column views, which are unnecessary and particularly  
+  //! inefficient for kernel libraries using row-major storage. 
   template<>
   int SVQBOrthoManager<_ST_, ::phist::BelosMV< _ST_ >, ::phist::types< _ST_ >::linearOp>::findBasis(
                 ::phist::BelosMV< _ST_ > &X, Teuchos::RCP<::phist::BelosMV< _ST_ > > MX, 

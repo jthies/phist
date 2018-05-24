@@ -6,9 +6,12 @@
 /* Contact: Jonas Thies (Jonas.Thies@DLR.de)                                               */
 /*                                                                                         */
 /*******************************************************************************************/
+//! \file phist_blockedqmr_decl.h 
+//! \brief blocked QMR solver for symmetric or general linear systems
 
 //! \brief A simple QMR implementation that works on several vectors simultaneously,
 //! building a separate Krylov subspace for each of them. \ingroup blockedQMR
+//!
 //!
 //! For more information on blocked solvers see phist_blockedgmres_decl.h
 //! In contrast to our GMRES solver, QMR does not work with a state object but simply runs

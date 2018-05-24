@@ -6,6 +6,9 @@
 /* Contact: Jonas Thies (Jonas.Thies@DLR.de)                                               */
 /*                                                                                         */
 /*******************************************************************************************/
+//! \file phist_orthog_decl.h 
+//! \brief orthogonalization routines for mvecs
+
 //! \addtogroup orthog
 //!@{
 

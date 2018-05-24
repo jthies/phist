@@ -6,6 +6,9 @@
 /* Contact: Jonas Thies (Jonas.Thies@DLR.de)                                               */
 /*                                                                                         */
 /*******************************************************************************************/
+//! \file phist_anasazi_decl.h 
+//! \brief access to block eigensolvers of the Anasazi package from Trilinos
+
 //! \brief The Anasazi package from Trilinos provides block eigensolvers.
 //! We currently provide access to the following methods \ingroup krylov
 //!

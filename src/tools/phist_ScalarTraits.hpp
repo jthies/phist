@@ -6,6 +6,7 @@
 /* Contact: Jonas Thies (Jonas.Thies@DLR.de)                                               */
 /*                                                                                         */
 /*******************************************************************************************/
+//! \file phist_ScalarTraits.hpp
 #ifndef PHIST_SCALAR_TRAITS_HPP
 #define PHIST_SCALAR_TRAITS_HPP
 

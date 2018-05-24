@@ -6,6 +6,8 @@
 /* Contact: Jonas Thies (Jonas.Thies@DLR.de)                                               */
 /*                                                                                         */
 /*******************************************************************************************/
+//! \file phist_carp_cg_decl.h 
+//! \brief CARP-CG row projection method for general (shifted) linear systems
 
 //! \addtogroup carp_cg
 //!@{
@@ -50,13 +52,16 @@ typedef struct TYPE(carp_cgState) {
   //!@}
   //! \name set by reset() function
   //!@{
+      
   //! rhs vector
   TYPE(const_mvec_ptr) b_;
+  
   //!@}
   //! \name internal CARP data structures
   //!@{
   void* aux_; //!< work arg to carp_sweep (dep. on kernel lib)
   _MT_ *omega_;//!< relaxation parameter
+  
   //!@}
 
   //! \name  internal CG data structures
@@ -75,7 +80,9 @@ typedef struct TYPE(carp_cgState) {
   //!@}
 } TYPE(carp_cgState);
 
+//! Pointer to a carp_cgState object
 typedef TYPE(carp_cgState)* TYPE(carp_cgState_ptr);
+//! Pointer to a const carp_cgState object
 typedef TYPE(carp_cgState) const * TYPE(const_cgState_ptr);
     
 //! constructor

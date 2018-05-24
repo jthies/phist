@@ -6,6 +6,8 @@
 /* Contact: Jonas Thies (Jonas.Thies@DLR.de)                                               */
 /*                                                                                         */
 /*******************************************************************************************/
+//! \file phist_blockedgmres_decl.h 
+//! \brief blocked GMRES solver for general linear systems
 
 //! \addtogroup blockedGMRES
 //!@{
@@ -41,6 +43,7 @@ typedef struct TYPE(blockedGMRESstate) {
   _MT_ tol;             //!< convergence tolerance for this system (can be adjusted any time)
   int status;           //!< -2: not initialized, -1: resetted, 0: converged, 1: not yet converged, 2: basis full 3: max iters exceeded
   int totalIter;        //!< counts the total number of iterations (also over restarts)
+  
   //!@}
   //! \name  internal data structures
   //!@{
@@ -56,6 +59,7 @@ typedef struct TYPE(blockedGMRESstate) {
   _ST_ prevBeta_;       //!< previous secondary diagonal entry for the MINRES variant (from the unrotated Hessenberg (here tridiagonal) matrix)
 
   void *Vbuff;          //!< ring buffer for the subspaces V
+  
   //!@}
 } TYPE(blockedGMRESstate);
 

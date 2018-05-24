@@ -6,6 +6,8 @@
 /* Contact: Jonas Thies (Jonas.Thies@DLR.de)                                               */
 /*                                                                                         */
 /*******************************************************************************************/
+//! \file phist_get_arg.hpp
+//! \brief get arguments out of command-line
 #ifndef PHIST_GETARG_HPP
 #define PHIST_GETARG_HPP
 
@@ -16,9 +18,8 @@
 #include <sstream>
 #endif /* DOXYGEN */
 
-//! \ingroup driver_utils
-
 //! command-line parsing tool for C++ main programs
+//!
 //! if the given position is smaller than argc, parse
 //! the argument argv[pos], otherwise use the default value
 //! given.

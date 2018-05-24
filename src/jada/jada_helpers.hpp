@@ -6,6 +6,9 @@
 /* Contact: Jonas Thies (Jonas.Thies@DLR.de)                                               */
 /*                                                                                         */
 /*******************************************************************************************/
+//! \file jada_helpers.hpp
+//! \brief compare functors with tolerance
+
 #include "phist_config.h"
 
 #ifndef DOXYGEN

@@ -6,6 +6,8 @@
 /* Contact: Jonas Thies (Jonas.Thies@DLR.de)                                               */
 /*                                                                                         */
 /*******************************************************************************************/
+//! \file phist_BelosICGSOrthoManager.hpp
+//! \brief orthogonalization routine in Belos
 
 #include "phist_config.h"
 

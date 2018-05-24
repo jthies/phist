@@ -6,6 +6,8 @@
 /* Contact: Jonas Thies (Jonas.Thies@DLR.de)                                               */
 /*                                                                                         */
 /*******************************************************************************************/
+//! \file phist_sdFact_decl.h
+//! \brief various factorization methods for small dense matrices
 
 //! \addtogroup sdFact
 //!@{

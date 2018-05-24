@@ -6,6 +6,8 @@
 /* Contact: Jonas Thies (Jonas.Thies@DLR.de)                                               */
 /*                                                                                         */
 /*******************************************************************************************/
+//! \file phist_kernels_fused_decl.h 
+//! \brief fused kernels that combine operations to reduce memory traffic
 
 //! \defgroup fused fused kernels that combine operations to reduce memory traffic
 //! \ingroup kernels
@@ -37,15 +39,15 @@
 extern "C" {
 #endif
 
-//! perform concatenated sparse matrix-vector products with two matrices
-
+//! \brief perform concatenated sparse matrix-vector products with two matrices
+//!
 //! y = alpha*(shifts1[j]*A1 + shifts2[j]*A2) + beta*Y
 void SUBR(fused_spmv_pair)(_ST_ alpha, _ST_ const shifts1[], TYPE(const_sparseMat_ptr) A1,
                                        _ST_ const shifts2[], TYPE(const_sparseMat_ptr) A2,
                                        TYPE(const_mvec_ptr) X,
                            _ST_ beta, TYPE(mvec_ptr) Y, int* iflag);
 
-//! W=alpha*A*V + beta*W_in, WdotW[i] = W(:,i)'W(:,i), VdotW[i]=V(:,i)'W(:,i) with W_in=W on input.
+//! \brief W=alpha*A*V + beta*W_in, WdotW[i] = W(:,i)'W(:,i), VdotW[i]=V(:,i)'W(:,i) with W_in=W on input.
 //!
 //! understands *iflag=PHIST_NO_GLOBAL_REDUCTION, in which case the dot products
 //! are only carried out per MPI process.
@@ -56,7 +58,7 @@ void SUBR(fused_spmv_mvdot)(_ST_ alpha, TYPE(const_sparseMat_ptr) A, TYPE(const_
                             _ST_* WdotW, _ST_* VdotW,
                             int* iflag);
 
-//! W=alpha*A*V + beta*W_in, WtW = W'W, VtW = V'W, with W=W_in on input.
+//! \brief W=alpha*A*V + beta*W_in, WtW = W'W, VtW = V'W, with W=W_in on input.
 //!
 //! understands *iflag=PHIST_NO_GLOBAL_REDUCTION, in which case the inner products
 //! are only carried out per MPI process.
@@ -69,7 +71,7 @@ void SUBR(fused_spmv_mvTmv)(_ST_ alpha, TYPE(const_sparseMat_ptr) A, TYPE(const_
                              int* iflag);
 
 
-//! like fused_spmv_mvdot, and compute U=gamma*W+delta*U *after updating W*
+//! \brief like fused_spmv_mvdot, and compute U=gamma*W+delta*U *after updating W*
 //!
 //! Any of U, WdotW, VdotW may be NULL and will not be touched in that case.
 void SUBR(fused_spmv_mvdot_mvadd)(_ST_ alpha, TYPE(const_sparseMat_ptr) A, TYPE(const_mvec_ptr)  V,

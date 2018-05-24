@@ -6,8 +6,12 @@
 /* Contact: Jonas Thies (Jonas.Thies@DLR.de)                                               */
 /*                                                                                         */
 /*******************************************************************************************/
+//! \file phist_simple_lanczos_decl.h 
+//! \brief Implementation of simple Lanczos routines
+
 //! \brief A simple Lanczos process to compute the largest and smallest eigenvalue 
 //! of a linear operator. \ingroup krylov
+//!
 //!
 //! This code is mainly intended as a testbed 
 //! for fault tolerance (FT) capabilities in PHIST right now. Only block size 1 

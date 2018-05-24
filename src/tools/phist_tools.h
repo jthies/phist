@@ -8,7 +8,7 @@
 /*******************************************************************************************/
 #ifndef PHIST_TOOLS_H
 #define PHIST_TOOLS_H
-
+//! \file phist_tools.h 
 #include "phist_config.h"
 
 #ifndef DOXYGEN

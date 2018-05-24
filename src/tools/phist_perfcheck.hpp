@@ -6,6 +6,8 @@
 /* Contact: Jonas Thies (Jonas.Thies@DLR.de)                                               */
 /*                                                                                         */
 /*******************************************************************************************/
+//! \file phist_perfcheck.hpp
+//! \brief performance check
 #ifndef PHIST_PERFCHECK_HPP
 #define PHIST_PERFCHECK_HPP
 
@@ -41,7 +43,9 @@
 
 #endif /* DOXYGEN */
 
-/*! Defines a performance check, e.g. measure time until scope is left and compare it to the expected time.
+/*! \def PHIST_PERFCHECK_VERIFY(functionName,n1,n2,n3,n4,n5,n6,n7, benchFormula,flops) 
+
+Defines a performance check, e.g. measure time until scope is left and compare it to the expected time.
  * Results (and especially large deviations) can be reported later.
  * \param functionName name of the function, ideally with required block sizes appended
  * \param benchFormula formula to calculate expected time
@@ -56,7 +60,9 @@
 MPI_Allreduce(MPI_IN_PLACE,(valstar),1,MPI_DOUBLE,MPI_SUM,MPI_COMM_WORLD);
 #endif
 
-/*! Defines a new benchmark for the performance check
+/*! \def PHIST_PERFCHECK_BENCHMARK(benchName, benchFunction)
+
+Defines a new benchmark for the performance check
  * \param benchName the name of the benchmark
  * \param benchFunction the benchmark function, should be "void fun(double* benchVal, int*ierr)"
  */
@@ -76,7 +82,8 @@ double benchName(double factor) { \
 } \
 }
 
-/*! Print gathered data from performance checks
+/*! \def PHIST_PERFCHECK_SUMMARIZE(verbosity) phist_PerfCheck::PerfCheckTimer::summarize(verbosity);
+ Print gathered data from performance checks
  */
 #define PHIST_PERFCHECK_SUMMARIZE(verbosity) phist_PerfCheck::PerfCheckTimer::summarize(verbosity);
 

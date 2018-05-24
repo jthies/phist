@@ -6,8 +6,12 @@
 /* Contact: Jonas Thies (Jonas.Thies@DLR.de)                                               */
 /*                                                                                         */
 /*******************************************************************************************/
+//! \file phist_iter_op_decl.h 
+//! \brief wrap up an iterative solver as an operator
+
 //! \brief wrap up an iterative solver as an operator \ingroup krylov
 //! 
+//!
 //! that is op->apply(alpha,op,X,beta,Y) will actually 
 //! approximate Y=(A-sigma*I)\ X. alpha and beta are
 //! not used, resp. must be alpha=1, beta=0. 

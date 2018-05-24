@@ -15,6 +15,9 @@
 #include "phist_macros.h"
 #endif
 
+//! \file phist_tasks.h 
+//! \brief phist_task macros
+
 //! \defgroup tasks PHIST_TASK Macros
 //! \ingroup tools
 //!@{

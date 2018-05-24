@@ -6,6 +6,9 @@
 /* Contact: Jonas Thies (Jonas.Thies@DLR.de)                                               */
 /*                                                                                         */
 /*******************************************************************************************/
+//! \file phist_BelosOperatorTraits.hpp
+//! \brief Implementation of the Belos::OperatorTraits for phist_linearOp_t.
+
 #ifndef PHIST_BELOS_OPERATOR_TRAITS_HPP
 #define PHIST_BELOS_OPERATOR_TRAITS_HPP
 

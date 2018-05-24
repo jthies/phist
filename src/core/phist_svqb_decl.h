@@ -6,6 +6,8 @@
 /* Contact: Jonas Thies (Jonas.Thies@DLR.de)                                               */
 /*                                                                                         */
 /*******************************************************************************************/
+//! \file phist_svqb_decl.h
+//! \brief SVQB method for orthonormalizing an mvec
 
 //! \brief SVQB method for orthonormalizing an mvec \ingroup orthog
 
@@ -18,7 +20,7 @@
 //! If the output matrix is denoted
 //! by Q, Q and V are related by Q=V*B.
 //!
-//! The third argument, E, 
+//! The third argument, e, 
 //! should be preallocated by the user with m elements, m being
 //! the number of columns in V.
 //!

@@ -6,7 +6,11 @@
 /* Contact: Jonas Thies (Jonas.Thies@DLR.de)                                               */
 /*                                                                                         */
 /*******************************************************************************************/
+//! \file phist_simple_arnoldi_decl.h 
+//! \brief Implementation of simple Arnoldi routines
+
 //! \brief A simple Arnoldi process to start up the JaDa iteration. \ingroup krylov
+//!
 //!
 //! Given a minimum basis size m, compute V(:,1:m+1), 
 //! H(1:m+1,1:m) such that A*V(:,1:m) = V(:,1:m+1)*H(1:m+1,1:m)

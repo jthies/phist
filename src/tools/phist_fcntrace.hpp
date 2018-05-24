@@ -6,6 +6,8 @@
 /* Contact: Jonas Thies (Jonas.Thies@DLR.de)                                               */
 /*                                                                                         */
 /*******************************************************************************************/
+//! \file phist_fcntrace.hpp
+//! \brief trace of functions
 #ifndef PHIST_FCN_TRACE_HPP
 #define PHIST_FCN_TRACE_HPP
 
@@ -37,7 +39,8 @@
 
 #endif /* DOXYGEN */
 
-//! this is an object that prints a message when created and when destroyed.
+//! \brief this is an object that prints a message when created and when destroyed.
+//!
 //! Its sole purpose is to implement a macro PHIST_ENTER_FCN (phist_macros.h) that
 //! will generate output like this:
 //! ENTER xyz

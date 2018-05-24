@@ -6,17 +6,22 @@
 /* Contact: Jonas Thies (Jonas.Thies@DLR.de)                                               */
 /*                                                                                         */
 /*******************************************************************************************/
+//! \file phist_orthogrr_decl.h
+//! \brief internal orthog functions
 
-//! \brief internal implementation of the orthog function, the regular orthog should be used as frontend in actual algorithms. \ingroup core
+//! \brief internal implementation of the orthog function, the regular orthog should be used as frontend in actual algorithms. \ingroup orthog
 
-//! which does not randomize the null space (if any). Note that the arguments are renamed and reordered, this should 
+//! Does not randomize the null space (if any).
+//!
+//! \note the arguments are renamed and reordered, this should 
 //! eventually be adjusted to avoid confusion. Here, W is the orthogonal space, V is orthogonalized against W, and the
 //! relation that holds after the subroutine (with Q=V on output) is Q*R1 = V-W*R2, Q'Q=I
+//!
 //! On input, VtV must contain V'V (in host memory for device processes).
 void SUBR(orthogrr)(TYPE(const_mvec_ptr) W, TYPE(mvec_ptr) V, TYPE(sdMat_ptr) R2, TYPE(sdMat_ptr) R1, 
         TYPE(const_sdMat_ptr) WtW_I, TYPE(sdMat_ptr) VtV, _MT_ desiredEps, int maxIter, _MT_ rankTol, int* iflag);
 
-//! \brief B-orthogonalization interface \ingroup core
+//! \brief B-orthogonalization interface \ingroup orthog
 //!
 //! BV is in- and output (contains BQ afterwards).
 //! VtV should contain V'BV in host memory.

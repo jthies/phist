@@ -49,23 +49,26 @@ void SUBR(mvec_get_comm)(TYPE(const_mvec_ptr) V, phist_const_comm_ptr* comm, int
 //! \brief create a new mvec with the same dimensions (number of rows and columns) and
 //! distribution (map)  as an existing one. \ingroup mvec
 //!
+//!
 //! The values of the new object are not
 //! initialized explicitly, so if you want to clone the vector contents as well,
-//! you will have to call mvec_set_block afterwards (or similar). *V must be NULL
-//! on input. The function accepts the same input values for iflag as mvec_create 
+//! you will have to call mvec_set_block afterwards (or similar).
+//!
+//! *V must be NULL on input. The function accepts the same input values for iflag as mvec_create 
 //! and will simply pass them on to the mvec_create function for the new object, so
 //! in order to clone an mvec with exactly the same properties it may  be necessary
 //! to manually add flags here like MVEC_REPLICATE_DEVICE_MEM
 void SUBR(mvec_clone_shape)(TYPE(mvec_ptr)* V, TYPE(const_mvec_ptr) V_in, int* iflag);
 
-//! "fill" an mvec from a user-provided array. \ingroup mvec
+//! \brief "fill" an mvec from a user-provided array. \ingroup mvec
+//!
 //!
 //! If the mvec V has n local rows and k columns (as returned by mvec_my_length and mvec_num_vectors, resp.),
-//! then ...
+//! then ... <br>
 //! If input_row_major==1, then data[i*lda+j], i=0..n-1, j=0..k-1
-//! should contain the element to be placed in row i and column j of V.
+//! should contain the element to be placed in row i and column j of V. <br>
 //! If input_row_major==0, then data[j*lda+i], i=0..n-1, j=0..k-1
-//! should contain the element to be placed in row i and column j of V.
+//! should contain the element to be placed in row i and column j of V.<br>
 //!
 //! There is a corresponding function mvec_set_data for the reverse operation.
 //!

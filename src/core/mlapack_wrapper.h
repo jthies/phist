@@ -7,9 +7,9 @@
 /*                                                                                         */
 /*******************************************************************************************/
 /*! \file mlapack_wrapper.h
- * interface to multiple-precision lapack routines used in PHIST
+ * \brief interface to multiple-precision lapack routines used in PHIST
+ * 
  * \author "Jonas Thies" <Jonas.Thies@DLR.de>
- *
 */
 
 #include "phist_config.h"

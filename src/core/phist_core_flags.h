@@ -11,8 +11,10 @@
 
 /*! \file phist_core_flags.h
    
-   some flags that influence the behavior of core functions, see also
-   phist_kernel_flags.h for an introduction to flags in PHIST.
+   \brief some flags that influence the behavior of core functions
+
+   
+   see also phist_kernel_flags.h for an introduction to flags in PHIST.
    
    The values 2^[16...23] are reserved for core functionality for now, again, 
    if there is no function that accepts flags A and B, A==B is allowed.

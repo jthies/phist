@@ -6,8 +6,8 @@
 /* Contact: Jonas Thies (Jonas.Thies@DLR.de)                                               */
 /*                                                                                         */
 /*******************************************************************************************/
-/*! \file prec_kernels_def.hpp
- * Generic Implementation of interface in phist_prec_kernels.h
+/*! \file phist_sdFact_def.hpp
+ * Generic Implementation of interface in phist_sdFact.h
  * (should eventually be used by e.g. GHOST as well).
  * 
  * \author "Jonas Thies" <Jonas.Thies@DLR.de>
@@ -17,7 +17,7 @@
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
-// implementation of public interface to kernels in prec_kernels.c                            //
+// implementation of public interface to kernels in phist_sdFact.c                            //
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
 extern "C" void SUBR(sdMat_cholesky)(TYPE(sdMat_ptr) M, int* perm, int* rank, _MT_ rankTol, int* iflag)
@@ -74,7 +74,7 @@ extern "C" void SUBR(sdMat_backwardSubst_sdMat)(const TYPE(sdMat_ptr) R, int* pe
   }
 }
 
-// forward substitution. \ingroup prec
+// forward substitution. 
 
 // forward substitution for pivoted conj. transposed upper triangular cholesky factor
 extern "C" void SUBR(sdMat_forwardSubst_sdMat)(const TYPE(sdMat_ptr) R, int* perm, int rank, TYPE(sdMat_ptr) X, int* iflag)

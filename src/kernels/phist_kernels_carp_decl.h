@@ -6,6 +6,8 @@
 /* Contact: Jonas Thies (Jonas.Thies@DLR.de)                                               */
 /*                                                                                         */
 /*******************************************************************************************/
+//! \file phist_kernels_carp_decl.h 
+//! \brief kernels to implement CARP
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -19,7 +21,7 @@ extern "C" {
 //! all Q columns at once or one-by-one.
 //!@{
 
-//! create data structures needed for subsequent calls to carp_sweep: 
+//! \brief create data structures needed for subsequent calls to carp_sweep: 
 //!
 //! \param [in] numShifts number of shifts sigma 
 //! \param [in] sigma sigma_r,sigma_i possibly complex shifts sigma=sigma_r+i*sigma_i
@@ -48,8 +50,8 @@ void SUBR(carp_sweep)(TYPE(const_sparseMat_ptr) A,
 
 //! perform KACZ forward/backward sweep on the `augmented' system       
 //!                                                                     
-//! | A-sigma[j]I  Q ||X|   |Rhs| <br>
-//! | Q'           0 ||q| = |0  |
+//!     | A-sigma[j]I  Q ||X|   |Rhs| 
+//!     | Q'           0 ||q| = |0  |
 //!                                                                     
 //! where Q'Q=I should be orthonormal. For the moment we only allow a   
 //! real-valued Q in real arithmetic (this may change in the future).   

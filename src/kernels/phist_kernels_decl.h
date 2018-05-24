@@ -141,14 +141,16 @@ void SUBR(sparseMat_get_range_map)(TYPE(const_sparseMat_ptr) A,
 void SUBR(sparseMat_get_context)(TYPE(const_sparseMat_ptr) A,
         phist_const_context_ptr* ctx, int* iflag);
 
-//! get number of nonzeros on this MPI rank (should NOT include padding or symmetry-exploiting matrix formats
+//! \brief get number of nonzeros on this MPI rank (should NOT include padding or symmetry-exploiting matrix formats
 //! 
+//!
 //! i.e. should return the actual number of non-zeros in the matrix also if only about half of them are stored or additional
 //! zeros are stored for better vectorization).
 void SUBR(sparseMat_local_nnz)(TYPE(const_sparseMat_ptr) A, int64_t* local_nnz, int* iflag);
 
-//! get number of nonzeros across all MPI ranks (should NOT include padding or symmetry-exploiting matrix formats,
+//! \brief get number of nonzeros across all MPI ranks (should NOT include padding or symmetry-exploiting matrix formats,
 //! 
+//!
 //! i.e. should return the actual number of non-zeros in the matrix also if only about half of them are stored or additional
 //! zeros are stored for better vectorization).
 void SUBR(sparseMat_global_nnz)(TYPE(const_sparseMat_ptr) A, int64_t* global_nnz, int* iflag);
@@ -162,10 +164,11 @@ void SUBR(sparseMat_global_nnz)(TYPE(const_sparseMat_ptr) A, int64_t* global_nnz
 void SUBR(mvec_create)(TYPE(mvec_ptr)* V, phist_const_map_ptr map, int nvec, 
         int* iflag);
 
-//! construct small dense matrix \ingroup sdmat
+//! \brief construct small dense matrix \ingroup sdmat
+//!
 //!
 //! create a small dense n x m matrix on all procs in comm,   
-//! with column major ordering.
+//! with column major ordering.<br>
 //! If comm!=NULL, the object has the capability to communicate
 //! and can be used in functions like mvecT_times_mvec if the  
 //! map of the mvecs uses the same comm. Otherwise, it is a lo-
@@ -195,6 +198,7 @@ void SUBR(mvec_num_vectors)(TYPE(const_mvec_ptr) V, int* nvec, int* iflag);
 
 //! \brief copy the entries of an mvec into a user-provided array. \ingroup mvec
 //!
+//!
 //! If the mvec V has n local rows and k columns (as returned by mvec_my_length and mvec_num_vectors, resp.),
 //! then ...<br>
 //! If input_row_major==1, then data[i*lda+j], i=0..n-1, j=0..k-1
@@ -214,7 +218,8 @@ void SUBR(mvec_num_vectors)(TYPE(const_mvec_ptr) V, int* nvec, int* iflag);
 //!
 void SUBR(mvec_get_data)(TYPE(const_mvec_ptr) V, _ST_* data, phist_lidx lda, int output_row_major, int* iflag);
 
-//! extract view from multi-vector. \ingroup mvec
+//! \brief extract view from multi-vector. \ingroup mvec
+//!
 //!
 //! Sets the user-provided val pointer to point to the
 //! beginning of the first vector, and puts the leading dimension of the array into lda,
@@ -244,7 +249,8 @@ void SUBR(sdMat_get_nrows)(TYPE(const_sdMat_ptr) M, int* nrows, int* iflag);
 //! get number of cols in local dense matrix. \ingroup sdmat
 void SUBR(sdMat_get_ncols)(TYPE(const_sdMat_ptr) M, int* ncols, int* iflag);
 
-//! extract view from small dense matrix. \ingroup sdmat
+//! \brief extract view from small dense matrix. \ingroup sdmat
+//!
 //!
 //! See comment for mvec_extract_view for details,
 //! the macro indicating row-major storage layout is PHIST_SDMATS_ROW_MAJOR.
@@ -253,6 +259,7 @@ void SUBR(sdMat_extract_view)(TYPE(sdMat_ptr) M, _ST_** M_raw,
 
 #ifdef PHIST_HIGH_PRECISION_KERNELS
 //! \brief extract pointer to least significant bits of double-double matrix elements
+//!
 //!
 //! this obviously makes some assumptions on how the high precision arithmetic is
 //! implemented by the kernel lib, but as we will only support these features with
@@ -295,7 +302,7 @@ void SUBR(sdMat_from_device)(TYPE(sdMat_ptr) M, int* iflag);
 
 //! \defgroup IO_kernels I/O routines for mvecs and sdMats
 //! \ingroup kernels
-/*! note: these functions only read and write the data, not the map, comm etc.
+/*! \note these functions only read and write the data, not the map, comm etc.
 If you want to read an mvec from file, you have to create it first with a consitent map object.
  */
 //!@{
@@ -322,7 +329,7 @@ void SUBR(sdMat_read_bin)(TYPE(sdMat_ptr) M, const char* filename, int* iflag);
 //! entries of v_in will be copied into v_out, which may be based on a different map.
 void SUBR(mvec_to_mvec)(TYPE(const_mvec_ptr) v_in, TYPE(mvec_ptr) v_out, int* iflag);
 
-//! get a new vector that is a view of some columns of the original one Vblock = V(:,jmin:jmax).
+//! \brief get a new vector that is a view of some columns of the original one Vblock = V(:,jmin:jmax).
 //!
 //!  The new object Vblock is created but does not
 //! allocate memory for the vector entries, instead using the entries from V
@@ -425,7 +432,8 @@ void SUBR(sdMat_random)(TYPE(sdMat_ptr) V, int* iflag);
 //! put scalar value into all elements of a small dense matrix \ingroup sdmat
 void SUBR(sdMat_put_value)(TYPE(sdMat_ptr) V, _ST_ value, int* iflag);
 
-//! put identity matrix into a small dense matrix \ingroup sdmat
+//! \brief put identity matrix into a small dense matrix \ingroup sdmat
+//!
 //!
 //! If M is not square and k=min(nrows,ncols), M(1:k,1:k)=I and all other entries are set to 0.
 //! If *iflag|PHIST_SDMAT_RUN_ON_HOST, only the host memory is  updated. Otherwise (by default), 
@@ -443,14 +451,16 @@ void SUBR(sdMat_print)(TYPE(const_sdMat_ptr) M, int* iflag);
 //! \name Numerical functions for mvec
 //!@{
 
-//! column-wise 2-norm \ingroup mvec
-
+//! \brief column-wise 2-norm \ingroup mvec
+//!
+//!
 //! compute the 2-norm) of each column of v
 //! (vnrm[i] must be pre-allocated by caller)
 void SUBR(mvec_norm2)(TYPE(const_mvec_ptr) V, 
                         _MT_* vnrm, int *iflag);
 
-//! normalize each column. \ingroup mvec
+//! \brief normalize each column. \ingroup mvec
+//!
 //!
 //! normalize (in the 2-norm) each column of v and return ||v||_2
 //! for each vector i in vnrm[i] (must be pre-allocated by caller)
@@ -465,7 +475,8 @@ void SUBR(mvec_scale)(TYPE(mvec_ptr) V,
 void SUBR(mvec_vscale)(TYPE(mvec_ptr) V, 
                             const _ST_* scalar, int* iflag);
 
-//! y=alpha*x+beta*y. \ingroup mvec
+//! \brief y=alpha*x+beta*y. \ingroup mvec
+//!
 //!
 //! This function can also be used for special cases such as
 //! alpha=0 => scale y <br>
@@ -486,7 +497,8 @@ void SUBR(mvec_dot_mvec)(TYPE(const_mvec_ptr) V,
                             TYPE(const_mvec_ptr) W, 
                             _ST_* vw, int* iflag);
 
-//! inner product of two multi-vectors. \ingroup mvec
+//! \brief inner product of two multi-vectors. \ingroup mvec
+//!
 //!
 //! dense tall skinny matrix-matrix product yielding a small dense matrix
 //! C=alpha*V'*W+beta*C. C is replicated on all MPI processes sharing V and W.
@@ -494,7 +506,8 @@ void SUBR(mvecT_times_mvec)(_ST_ alpha, TYPE(const_mvec_ptr) V,
                                        TYPE(const_mvec_ptr) W, 
                                        _ST_ beta, TYPE(sdMat_ptr) C, int* iflag);
 
-//! W=alpha*V*C + beta*W \ingroup mvec
+//! \brief W=alpha*V*C + beta*W \ingroup mvec
+//!
 //!
 //! n x m multi-vector times m x k dense matrix gives n x k multi-vector
 void SUBR(mvec_times_sdMat)(_ST_ alpha, TYPE(const_mvec_ptr) V, 
@@ -503,16 +516,17 @@ void SUBR(mvec_times_sdMat)(_ST_ alpha, TYPE(const_mvec_ptr) V,
                                        int* iflag);
 
 
-//! V <- V*M \ingroup mvec
+//! \brief V <- V*M \ingroup mvec
 //!
-//! Note that M may be rectangular with ncols<nrows, in which case only the first
+//! \note that M may be rectangular with ncols<nrows, in which case only the first
 //! ncols columns of V are overwritten.
 //!
 //! A naive default implementation for this rather uncommon kernel is available in common/kernels_no_inplace_VC.cpp
 //! so that we can easily support kernel libraries that don't have it.
 void SUBR(mvec_times_sdMat_inplace)(TYPE(mvec_ptr) V, TYPE(const_sdMat_ptr) M, int *iflag);
 
-//! W <- = V*C + W*D \ingroup mvec
+//! \brief W <- = V*C + W*D \ingroup mvec
+//!
 //!
 //! augmented kernel with two multi-vectors and two sdMats.
 //! A naive default implementation for this rather uncommon kernel is available in common/kernels_no_inplace_VC.cpp
@@ -539,7 +553,8 @@ void SUBR(sdMatT_add_sdMat)(_ST_ alpha, TYPE(const_sdMat_ptr) A,
                             int* iflag);
 
 
-//! C=beta*C+alpha*A*B. \ingroup sdmat
+//! \brief C=beta*C+alpha*A*B. \ingroup sdmat
+//!
 //!
 //! n x m small dense matrix times m x k small dense matrix gives n x k small dense matrix,
 //! C=alpha*V*W + beta*C
@@ -548,7 +563,8 @@ void SUBR(sdMat_times_sdMat)(_ST_ alpha, TYPE(const_sdMat_ptr) V,
                               _ST_ beta,       TYPE(sdMat_ptr) C,
                               int* iflag);
 
-//! C=beta*C+alpha*V'*W. \ingroup sdmat
+//! \brief C=beta*C+alpha*V'*W. \ingroup sdmat
+//!
 //!
 //! m x n conj. transposed small dense matrix times m x k small dense matrix gives n x k small dense matrix,
 //! C=alpha*V'*W + beta*C
@@ -557,7 +573,8 @@ void SUBR(sdMatT_times_sdMat)(_ST_ alpha, TYPE(const_sdMat_ptr) V,
                               _ST_ beta,        TYPE(sdMat_ptr) C,
                               int* iflag);
 
-//! C=beta*C+alpha*V*W'. \ingroup sdmat
+//! \brief C=beta*C+alpha*V*W'. \ingroup sdmat
+//!
 //!
 //! n x m small dense matrix times conj. transposed k x m small dense matrix gives n x k small dense matrix,
 //! C=alpha*V*W' + beta*C
@@ -575,16 +592,16 @@ void SUBR(sdMat_times_sdMatT)(_ST_ alpha, TYPE(const_sdMat_ptr) V,
 //! Set the flag PHIST_SPMVM_ONLY_LOCAL in the call to sparseMat_times_mvec* to indicate all data is already there!
 void SUBR(sparseMat_times_mvec_communicate)(TYPE(const_sparseMat_ptr) A, TYPE(const_mvec_ptr) x, int* iflag);
 
-//! y=alpha*A*x+beta*y.
-
+//! \brief y=alpha*A*x+beta*y.
+//!
 //! The scalars alpha and beta are expected to be of the
 //! same type as the entries in the vectors and matrix. Mixing of types is
 //! not allowed.
 void SUBR(sparseMat_times_mvec)(_ST_ alpha, TYPE(const_sparseMat_ptr) A, 
         TYPE(const_mvec_ptr) x, _ST_ beta, TYPE(mvec_ptr) y, int* iflag);
 
-//! y=alpha*A^H*x+beta*y.
-
+//! \brief y=alpha*A^H*x+beta*y.
+//!
 //! The scalars alpha and beta are expected to be of the
 //! same type as the entries in the vectors and matrix. Mixing of types is
 //! not allowed. In the complex case, the conjugate transpose is used.
@@ -599,8 +616,9 @@ void SUBR(sparseMat_times_mvec_add_mvec)(_ST_ alpha, TYPE(const_sparseMat_ptr) A
 void SUBR(sparseMat_times_mvec_vadd_mvec)(_ST_ alpha, TYPE(const_sparseMat_ptr) A,
         const _ST_ shifts[], TYPE(const_mvec_ptr) x, _ST_ beta, TYPE(mvec_ptr) y, int* iflag);
 
-//! 'tall skinny' QR decomposition, V=Q*R, Q'Q=I, R upper triangular. \ingroup mvec
-
+//! \brief 'tall skinny' QR decomposition, V=Q*R, Q'Q=I, R upper triangular. \ingroup mvec
+//!
+//!
 //! Q is computed in place of V. If V does not have full rank, iflag>0  
 //! indicates the dimension of the null-space of V. The first m-iflag   
 //! columns of Q are an orthogonal basis of the column space of V, the  
@@ -617,8 +635,8 @@ void SUBR(sparseMat_times_mvec_vadd_mvec)(_ST_ alpha, TYPE(const_sparseMat_ptr) 
 void SUBR(mvec_QR)(TYPE(mvec_ptr) V, 
                      TYPE(sdMat_ptr) R, int* iflag);
 
-//! create matrix from a function that returns entries row-wise
-
+//! \brief create matrix from a function that returns entries row-wise
+//!
 //! this is the same form in which matrices are created from functions
 //! in ghost and how the test problems in essex/physics are defined.
 //!
@@ -632,7 +650,7 @@ void SUBR(sparseMat_create_fromRowFunc)(TYPE(sparseMat_ptr) *A, phist_const_comm
         phist_gidx nrows, phist_gidx ncols, phist_lidx maxnne,
         phist_sparseMat_rowFunc rowFunPtr, void* last_arg, int *iflag);
 
-//! create a sparse matrix from a row func and use a distribution prescribed by a given context
+//! \brief create a sparse matrix from a row func and use a distribution prescribed by a given context
 //! (that is, assume the same shape as another matrix)
 //!
 //! optional flags: as fromRowFunc

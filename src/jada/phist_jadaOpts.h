@@ -7,7 +7,7 @@
 /*                                                                                         */
 /*******************************************************************************************/
 /*! \file phist_jadaOpts.h
- * Definition of a struct to pass parameters to Jacobi-Davidson methods and some functions
+ * \brief Definition of a struct to pass parameters to Jacobi-Davidson methods and some functions
  * to set the parameters.
  *
  * For implementation of the functions, see file src/jada/phist_jadaOpts.cpp
@@ -44,10 +44,9 @@ phist_EeigExtr how; //!< \brief Use standard or harmonic Ritz values, etc.
                //!< HARMONIC for inner ones. Other methods may be
                //!< added later.
 
-/**********************************
- * JaDa configuration             *
- **********************************/
-
+//! \name JaDa configuration
+//!@{
+ 
 int maxIters; //!< Maximum iterations allowed
 int blockSize; //!< Only for block methods (subspacejada)
 int lookAhead; //!< Consider at most 'lookAhead' unconverged eigenvalues at a time (set it to -1 for the default of 2*blockSize)
@@ -72,10 +71,10 @@ double initialShift_r; //!< Can be used to start with an initial shift
 double initialShift_i; //!< Imaginary part of initial shift
 
 int initialShiftIters; //!< Perform given number of iterations with a fixed shift
+//!@}
 
-/**********************************
- * inner solver configuration     *
- **********************************/
+//! \name inner solver configuration
+//!@{
 
 phist_ElinSolv innerSolvType; //!< \brief GMRES, MINRES, CARP_CG, USER_DEFINED and NO_LINSOLV currently supported.
                               //!<
@@ -172,7 +171,7 @@ int innerSolvRobust; //!< Extra effort to get good jada updates
                                     int maxIter,          void* t,
                                     int robust,
                                     int * iflag);
-
+//!@}
 } phist_jadaOpts;
 
 //! Get jada options from a simple ASCII file and place them in the struct passed to the solvers.

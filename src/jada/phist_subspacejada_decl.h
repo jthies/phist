@@ -6,6 +6,8 @@
 /* Contact: Jonas Thies (Jonas.Thies@DLR.de)                                               */
 /*                                                                                         */
 /*******************************************************************************************/
+//! \file phist_subspacejada_decl.h
+//! \brief Jacobi-Davidson QR method with blocking, locking and restart
 
 //! \brief Subspace Jacobi-Davidson for extreme eigenvalues \ingroup bjdqr
 

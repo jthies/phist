@@ -29,7 +29,7 @@ extern "C" {
 //! with AVX2), the input *iflag=PHIST_ROBUST_REDUCTIONS enables the high precision
 //! variants. Otherwise, standard precision is used.
 //! 
-//! Note: you should always make sure that on hybrid CPU/GPU systems the sdMat values on the
+//! \note you should always make sure that on hybrid CPU/GPU systems the sdMat values on the
 //! host and device are synchronized by calling sdMat_from(to)_device before (after) using 
 //! these functions. They all assume that the data obtained from sdMat_extract_view/error is
 //! up-to-date with the device, and do not call to_device afterwards.
