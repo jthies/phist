@@ -13,7 +13,7 @@
 //!
 //! The arguments scale and shift have to map the spectrum of A into [-1,1]. <br>
 //! M is the number of iterations. <br>
-//! Output array mu is assumed to have size 2 * M * #cols(x). <br>
+//! Output array mu is assumed to have size 2 * M * |cols(x)|. <br>
 //! Currently there are no additional options for iflag.
 void SUBR(kpm)(TYPE(mvec_ptr) x, TYPE(sparseMat_ptr) A, _MT_ scale, _MT_ shift, int M, _MT_* mu, int* iflag);
 

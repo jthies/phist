@@ -17,10 +17,10 @@
 //!
 //! Applying the preconditioner is done via the usual apply member functions of the linearOp struct.          
 //!
-//! The preconditioning method is selected based on the string <method>. Options are                    
+//! The preconditioning method is selected based on the string "method". Options are                    
 //! passed via the options string. The methods available depend on the kernel lib used and the          
 //! optional libraries found while building phist. Passing in method="usage". The option string         
-//! in turn depends on the input <method>. Passing in a supported method and options="usage" prints     
+//! in turn depends on the input "method". Passing in a supported method and options="usage" prints     
 //! usage information for that particular preconditioner.                        
 //!                       
 //! \param sigma If sigma is 0, B is not touched. If sigma!=0 but B==NULL, B=I (identity matrix)     

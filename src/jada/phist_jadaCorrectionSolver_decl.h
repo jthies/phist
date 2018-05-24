@@ -77,7 +77,7 @@ void SUBR(jadaCorrectionSolver_delete)(TYPE(jadaCorrectionSolver_ptr) jdCorrSolv
 //! \brief Calculate approximate solutions to given set of Jacobi-Davidson correction equations
 //!
 //! \param jdCorrSolver    the jadaCorrectionSolver object
-//! \param A_op            matrix A passed to jadaOp_create
+//! \param AB_op            matrix A passed to jadaOp_create
 //! \param B_op            matrix B passed to jadaOp_create
 //! \param Qtil            projection vectors V passed to jadaOp_create
 //! \param BQtil           projection vectors BV passed to jadaOp_create
@@ -89,7 +89,7 @@ void SUBR(jadaCorrectionSolver_delete)(TYPE(jadaCorrectionSolver_ptr) jdCorrSolv
 //! \param t               returns approximate solution vectors
 //! \param iflag            a value > 0 indicates the number of systems that have not converged to the desired tolerance
 void SUBR(jadaCorrectionSolver_run)(TYPE(jadaCorrectionSolver_ptr) jdCorrSolver,
-                                    TYPE(const_linearOp_ptr)    BA_op, TYPE(const_linearOp_ptr) B_op, 
+                                    TYPE(const_linearOp_ptr)    AB_op, TYPE(const_linearOp_ptr) B_op, 
                                     TYPE(const_mvec_ptr)  Qtil,        TYPE(const_mvec_ptr)     BQtil,
                                     const _ST_            sigma[],     TYPE(const_mvec_ptr)     res,      
                                     const int             resIndex[],  const _MT_               tol[],    

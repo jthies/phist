@@ -13,7 +13,7 @@
 //! for fault tolerance (FT) capabilities in PHIST right now. Only block size 1 
 //! is implemented.
 //!
-//! \param [in] A linearOp whose largest eigenpair is sought
+//! \param [in] A_op linearOp whose largest eigenpair is sought
 //! \param [in] *numIter maximum number of iterations allowed
 //!
 //! \param [out] *lambda_min,*lambda_max approximations to the largest and smallest eigenvalue

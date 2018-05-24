@@ -43,10 +43,10 @@ void SUBR(jadaOp_delete)(TYPE(linearOp_ptr)  jdOp, int *iflag);
 //! If V is given, the preconditioner application will include either <br>
 //!
 //! a skew-projection (if projType==1) <br>
-//! Y <- (I - P_op\V (BV'P_op\V)^{-1} (BV)') P_op\X                                                      
+//! Y <- (I - P_op\ V (BV'P_op\ V)^{-1} (BV)') P_op\ X                                                      
 //!                                                                                                      
 //! a regular projection (if projType==0) <br>
-//! Y <- (I - V(BV)') P_op\X                                                                             
+//! Y <- (I - V(BV)') P_op\ X                                                                             
 //!                                                                                                      
 //! If BV==NULL, BV=V is assumed.                                                                        
 void SUBR(jadaPrec_create)(TYPE(const_linearOp_ptr) P_op, 
@@ -77,7 +77,7 @@ void SUBR(projOp_delete)(TYPE(linearOp_ptr) proj_Op, int *iflag);
 
 //! \brief Create skew projection operator for a preconditioner P_op
 //!
-//! Y <- (I - P_op\V (BV'P_op\V)^{-1} (BV)') * X
+//! Y <- (I - P_op\ V (BV'P_op\ V)^{-1} (BV)') * X
 void SUBR(skewProjOp_create)(TYPE(const_linearOp_ptr) P_op,
         TYPE(const_mvec_ptr) V, TYPE(const_mvec_ptr) BV,
         TYPE(linearOp_ptr) skew_Op, int* iflag);
@@ -90,7 +90,7 @@ void SUBR(skewProjOp_create)(TYPE(const_linearOp_ptr) P_op,
 //! "PRE": op*X = (A+B*sigma)(I-V*BV')*X (with pre-projection), <br>
 //! "POST": op*X = (I-BV*V')(A+B*sigma)*X (with post-projection), <br>
 //! "PRE_POST": op*X = (I-BV*V')(A+B*sigma)(I-V*BV')*X (with pre- and post-projection), <br>
-//! "SKEW": op*X = (I-(K\V)*((BV)'K\V)^{-1}*(BV)')*(K\+sigma*I)*(A+B*sigma)*X (with skew-projection and
+//! "SKEW": op*X = (I-(K\ V)*((BV)'K\ V)^{-1}*(BV)')*(K\+sigma*I)*(A+B*sigma)*X (with skew-projection and
 //! preconditioner K), <br>
 //! "ALL": op*X = P_{skew}*(K\+sigma*I)*P_{proj}^T*(A+B*sigma)*P_{proj}*X (with pre-, post-,
 //! skew-projection and preconditioner)

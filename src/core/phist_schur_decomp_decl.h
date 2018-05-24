@@ -17,10 +17,10 @@
  //! for complex conjugate pairs). The nselect and nsort flags indicate in which order they      
  //! should appear: <br>
  //! nselect=nsort=0: unsorted <br>
- //! nselect>0: the first <nselect> Ritz values (if the last one is a complex conjugate pair 
- //!            <nselect+1>) appear in any order in the upper left corner of T <br>
- //! 0<nsort<nselect: in addition to moving a cluster of <nselect> eigenvalues, sort the
- //!             first <nsort> of them in the upper left corner. <br>
+ //! nselect>0: the first nselect Ritz values (if the last one is a complex conjugate pair 
+ //!            nselect+1) appear in any order in the upper left corner of T <br>
+ //! 0<nsort<nselect: in addition to moving a cluster of nselect eigenvalues, sort the
+ //!             first nsort of them in the upper left corner. <br>
  //!                                                                                             
  //! Example: if the Schur form is                                                               
  //!                                                                                             
@@ -38,7 +38,7 @@
  //!         e x                                                                                 
  //!           a                                                                                 
  //!                                                                                             
- //! so we guarantee that the largest one <nsort> is in the upper left corner,                   
+ //! so we guarantee that the largest one nsort is in the upper left corner,                   
  //! and that the 3 largest ones appear first in any order.                                      
  //!                                                                                             
  //! The type of the array ev is in fact _CT_ (dimension m), but we passit in as void* because   

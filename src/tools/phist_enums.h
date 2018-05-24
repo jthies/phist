@@ -83,7 +83,7 @@ typedef enum phist_Eprecon
 //!
 //! with W=B*V (B hpd, B=I for standard EVP),
 //! K some preconditioner for (A-sigma_j *B),
-//! V_K=K\V, and (') denoting transposition, 
+//! V_K=K\ V, and (') denoting transposition, 
 //! the operators are defined as
 //!
 //! P_skew = I - V_K*(W'V_K)^{-1}W' <br>

@@ -22,7 +22,7 @@ extern "C" {
 //! create data structures needed for subsequent calls to carp_sweep: 
 //!
 //! \param [in] numShifts number of shifts sigma 
-//! \param [in] sigma_r,sigma_i possibly complex shifts sigma=sigma_r+i*sigma_i
+//! \param [in] sigma sigma_r,sigma_i possibly complex shifts sigma=sigma_r+i*sigma_i
 //!
 //! \param [out] *work should be NULL on input and not touched while
 //! carp_sweep is being called. If no longer needed, it should be cleaned

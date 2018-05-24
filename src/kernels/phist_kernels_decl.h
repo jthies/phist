@@ -219,7 +219,7 @@ void SUBR(mvec_get_data)(TYPE(const_mvec_ptr) V, _ST_* data, phist_lidx lda, int
 //! Sets the user-provided val pointer to point to the
 //! beginning of the first vector, and puts the leading dimension of the array into lda,
 //! such that the element j of vector i is val[i*lda+j]. If PHIST_MVECS_ROW_MAJOR is
-//! #defined, the storage is transposed and element j of vector i is found at val[j*lda+i].
+//! defined, the storage is transposed and element j of vector i is found at val[j*lda+i].
 //!
 //! \note lda may be larger than the actual local vector length as obtained by 
 //! mvec_my_length. This function is dangerous in the sense that it would force the 
