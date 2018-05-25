@@ -25,7 +25,7 @@ def class_template(class_name):
 
 namespace phist {
 
-//! \ingroup cxx_bindings
+//! class '''+class_name+''' \ingroup cxx_bindings
 template<typename ST>
 '''+\
 'class '+class_name+'\n'\
@@ -81,7 +81,7 @@ for mod_name in modules:
 namespace phist 
 {
 
-  //! \ingroup cxx_bindings
+  //! class """+mod_name+""" \ingroup cxx_bindings
   template<>
   class """+mod_name+"<_ST_>\n"+\
     """  {
