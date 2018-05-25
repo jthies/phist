@@ -1251,6 +1251,8 @@ target_link_libraries(phist_tools ${external_libs})
 file(GLOB TG_C_Drivers ${CMAKE_CURRENT_SOURCE_DIR}/drivers/*.c.in )
 file(GLOB TG_CXX_Drivers ${CMAKE_CURRENT_SOURCE_DIR}/drivers/*.cpp.in )
 
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/drivers)
+
 foreach (infile ${TG_C_Drivers})
   get_filename_component(filebase ${infile} NAME_WE)
   foreach (tc ${TG_Types})
@@ -1394,6 +1396,8 @@ else()
                   tools)
 endif()
 
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR})
+
 foreach(label ${PHIST_TESTS})
   string(TOUPPER ${label} label_uc)
 
@@ -1427,6 +1431,8 @@ endforeach()
 # some example drivers which haven't made their way into the drivers/ directory
 file(GLOB C_Examples ${CMAKE_CURRENT_SOURCE_DIR}/examples/*/*.c )
 file(GLOB CXX_Examples ${CMAKE_CURRENT_SOURCE_DIR}/examples/*/*.cpp )
+
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/examples)
 
 foreach (infile ${C_Examples})
   get_filename_component(filebase ${infile} NAME_WE)
