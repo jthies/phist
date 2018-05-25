@@ -22,8 +22,7 @@
 
 #endif
 
-// compare functors with tolerance
-
+//! compare functors with tolerance to select largest magnitude
 template<typename T>
 class SelectLM
 {
@@ -56,6 +55,7 @@ class SelectLM
     MT tol_;
 };
 
+//! compare functors with tolerance to select smalest magnitude
 template<typename T>
 class SelectSM
 {
@@ -88,6 +88,7 @@ class SelectSM
     MT tol_;
 };
 
+//! compare functors with tolerance to select largest real part
 template<typename T>
 class SelectLR
 {
@@ -108,6 +109,7 @@ class SelectLR
     MT tol_;
 };
 
+//! compare functors with tolerance to select smalest real part
 template<typename T>
 class SelectSR
 {
@@ -129,7 +131,7 @@ class SelectSR
 };
 
 
-
+//! sorts eigenvalues with given sort type (LM,SM,LR,SR)
 template<typename MT>
 void SortEig(std::complex<MT>* ev,int n,int* idx,phist_EeigSort which, MT tol, int* iflag)
 {

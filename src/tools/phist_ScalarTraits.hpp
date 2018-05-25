@@ -56,7 +56,7 @@ class ScalarTraits
 };
 
 #ifdef PHIST_HAVE_SP
-//!
+//! basic numerics traits for dispatching depending on scalar data type
 template<>
 class ScalarTraits< float >
 {
@@ -232,7 +232,7 @@ class ScalarTraits< float >
 };
 #endif
 
-//!
+//! basic numerics traits for dispatching depending on scalar data type
 template<>
 class ScalarTraits< double >
 {
@@ -412,7 +412,7 @@ class ScalarTraits< double >
   static inline constexpr magn_t rankTol(bool high_prec=false) {return high_prec? 1.0e-25: 10.0*eps();}
 };
 
-//!
+//! basic numerics traits for dispatching depending on scalar data type
 template<typename MT>
 class ScalarTraits< std::complex<MT> >
 {

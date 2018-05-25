@@ -19,79 +19,79 @@ extern "C" void SUBR(sdMat_delete)(TYPE(sdMat_ptr) V, int* iflag);
 //!
 //! A typical use of these classes is:
 //! 
-//! {
-//! TYPE(mvec_ptr) tmp_V;
-//! PHIST_CHK_IERR(SUBR(mvec_create)(&tmp_V,map,nvec,iflag),*iflag);
-//! mvecOwner<ST> ownV(tmpV);
-//! PHIST_CHK_IERR(... some other calls ...)
-//! ...
-//! wherever the program leaves the scope, tmp_V is deleted without
-//! the user having to call SUBR(mvec_delete)
-//! }
+//!     {
+//!     TYPE(mvec_ptr) tmp_V;
+//!     PHIST_CHK_IERR(SUBR(mvec_create)(&tmp_V,map,nvec,iflag),*iflag);
+//!     mvecOwner<ST> ownV(tmpV);
+//!     PHIST_CHK_IERR(... some other calls ...)
+//!     ...
+//!     wherever the program leaves the scope, tmp_V is deleted without
+//!     the user having to call SUBR(mvec_delete)
+//!     }
 
-//!
+//! mvec owner object
 template<> class MvecOwner<_ST_>
 {
 
   public:
 
-    //!
+    //! constructor
     MvecOwner(TYPE(mvec_ptr) v=NULL){v_=v;}
 
-    //!
+    //! destructor
     ~MvecOwner(){int iflag=0; if (v_!=NULL) SUBR(mvec_delete)(v_,&iflag);}
     
-    //!
+    //! set mvec pointer
     void set(TYPE(mvec_ptr) v) {v_=v;}
 
   private:
   
-    //!
+    //! wraped mvec pointer
     TYPE(mvec_ptr) v_;
     
 };
 
 
-//!
+//! sdMat owner object
 template<> class SdMatOwner<_ST_>
 {
 
   public:
   
-    //!
+    //! constructor
     SdMatOwner(TYPE(sdMat_ptr) v=NULL){v_=v;}
 
-    //!
+    //! destructor
     ~SdMatOwner(){int iflag=0; if (v_!=NULL) SUBR(sdMat_delete)(v_,&iflag);}
 
-    //!
+    //! set sdMat pointer
     void set(TYPE(sdMat_ptr) v) {v_=v;}
 
   private:
   
-    //!
+    //! wraped sdMat pointer
     TYPE(sdMat_ptr) v_;
 };
 
 
-//!
+//! sparseMat owner object
 template<> class SparseMatOwner<_ST_>
 {
 
   public:
 
-    //!
+    //! constructor
     SparseMatOwner(TYPE(sparseMat_ptr) v=NULL){v_=v;}
 
-    //!
+    //! destructor
     ~SparseMatOwner(){int iflag=0; if (v_!=NULL) SUBR(sparseMat_delete)(v_,&iflag);}
 
-    //!
+    //! set sparseMat pointer
     void set(TYPE(sparseMat_ptr) v) {v_=v;}
 
   private:
   
-    //!
+    //! wraped sparseMat pointer
     TYPE(sparseMat_ptr) v_;
 };
 

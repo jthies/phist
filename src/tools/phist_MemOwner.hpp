@@ -19,15 +19,15 @@
 //!
 //! A typical use of these classes is:
 //! 
-//! {
-//! TYPE(mvec_ptr) tmp_V;
-//! PHIST_CHK_IERR(SUBR(mvec_create)(&tmp_V,map,nvec,iflag),*iflag);
-//! mvecOwner<ST> ownV(tmpV);
-//! PHIST_CHK_IERR(... some other calls ...)
-//! ...
-//! wherever the program leaves the scope, tmp_V is deleted without
-//! the user having to call SUBR(mvec_delete)
-//! }
+//!     {
+//!     TYPE(mvec_ptr) tmp_V;
+//!     PHIST_CHK_IERR(SUBR(mvec_create)(&tmp_V,map,nvec,iflag),*iflag);
+//!     mvecOwner<ST> ownV(tmpV);
+//!     PHIST_CHK_IERR(... some other calls ...)
+//!     ...
+//!     wherever the program leaves the scope, tmp_V is deleted without
+//!     the user having to call SUBR(mvec_delete)
+//!     }
 
 #ifndef DOXYGEN
 #include "phist_kernels.h"
