@@ -27,7 +27,7 @@
 #endif //DOXYGEN
 
 // this file is mostly copied from the Belos Tpetra adapter implementation in Trilinos 11.2.4
-
+//! namespace for Belos
 namespace Belos {
 
   ////////////////////////////////////////////////////////////////////

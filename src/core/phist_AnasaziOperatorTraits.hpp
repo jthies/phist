@@ -21,7 +21,7 @@
 #include "phist_BelosOperatorTraits.hpp"
 
 #endif /* DOXYGEN */
-
+//! namespace for Anasazi
 namespace Anasazi 
 {
 
