@@ -5,6 +5,7 @@ PROJECT_BRIEF          = "Pipelined Hybrid-parallel Iterative Solver Toolkit"
 OUTPUT_DIRECTORY       = doc
 OPTIMIZE_OUTPUT_FOR_C  = YES
 HIDE_UNDOC_MEMBERS     = YES
+LAYOUT_FILE            = ${PROJECT_SOURCE_DIR}/doc/DoxygenLayout.xml
 INPUT                  = ./src/ README.md ${CMAKE_BINARY_DIR}/cxx_bindings/ ./doc/related_pages.txt
 FILE_PATTERNS          = "*.h" "*.md" "*.hpp"
 RECURSIVE              = YES

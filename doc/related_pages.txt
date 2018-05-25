@@ -1,22 +1,23 @@
 /** 
- * \page docu Informations to the Documentation
+ * \page docu About this documentation
  * 
- * This documentation is based on the grouping of the functions in phist, which can be found under Modules 
- * in the bar above. So take a look there to get a description of the functions.
+ * This documentation tries to group the functions available in PHIST. A good starting point when looking for
+ * specific functionality is the "Function Groups" tab in the top bar. The C++ interface is documented in a separate
+ * group. It is based on C++ traits classes for each function group to make it easier to call functions from templated C++ code.
+ * There is currently no documention for the Fortran 2003 bindings, in order to generate the bindings you have to download and 
+ * build the phist_fort tool available [ here ](https://bitbucket.org/essex/ghost).
  *
  * The main groups are:
- * - core: Common functionality for iterative solvers <br>
- *          (includes definition of a linear operator, orthogonalization routines, factorization methods for small dense matrices,...)
- * - jada: Jacobi-Davidson method and tools
  * - kernels: Kernel function interface <br>
  *          (includes functions for matrix and vector operations, communication operations, ...)
+ * - core: Common functionality for iterative solvers <br>
+ *          (includes definition of a linear operator, orthogonalization routines, factorization methods for small dense matrices,...)
  * - krylov: Krylov subspace methods <br>
  *          (includes linear solvers like blocked GMRES, blocked BICGStab,...)
+ * - jada: Jacobi-Davidson method and tools
  * - precon: Preconditioning interface
  * - tools: Utility functions and macros <br>
  *          (includes enumerations, a random number generator, ...)
- * - C++ bindings for PHIST
- *
  *
  * \section phist_Xfunction_name
  *
@@ -32,10 +33,10 @@
  * out of S,D,C and Z. The functions are then called phist_Sfunction_name, phist_Dfunction_name,...
  * depending on **X**.
  *
- * To provide, having the same function documented for each data type, we write **phist_Xfunction_name**
+ * To avoid having the same function documented for each data type, we write **phist_Xfunction_name**
  * in the documentation if you can choose between different data types in the function function_name of phist.
  *
- * Analogeously we write **phist_Xtype_name** for such types of phist.
+ * Analogously we write **phist_Xtype_name** for the basic data types of phist.
  *
  * See also [ wiki on Scalar Data Types in phist](https://bitbucket.org/essex/phist/wiki/Developer_Guide/02 Scalar Data Types.wiki)
  *
