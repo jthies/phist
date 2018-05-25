@@ -149,7 +149,7 @@ namespace phist
                 module_decl_file.write("#ifdef PHIST_HAVE_BELOS\n")
             
             module_decl_file.write(\
-            "    //! \see phist_D"+name+"\n"+\
+            "    //! \see phist_X"+name+"\n"+\
             "    static void "+name+"("+args+")\n    {\n"+\
             "      SUBR("+name+")("+arg_names+");"+\
             """
