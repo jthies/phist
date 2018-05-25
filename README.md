@@ -53,7 +53,18 @@ The git repository can be checked out using the command
 
   git clone git@bitbucket.org:essex/phist
 
-Instructions for compiling PHIST can be found [ here ](https://bitbucket.org/essex/phist/wiki/User_Guide/000 Installation.wiki)
+PHIST uses Cmake, and for trying it out you can just stick with the default settings.
+Detailed instructions for compiling PHIST can be found [ here ](https://bitbucket.org/essex/phist/wiki/User_Guide/000 Installation.wiki)
+
+There are two categories of programs being built: drivers are examples of high-level algorithms that can be used to e.g. 
+compute some eigenvalues of a matrix. They are installed along with the headers and libraries of PHIST. The other 
+category (examples) includes benchmarks and examples of kernels and core functionality which are more interesting to 
+advanced users and developers than to end users.
+
+A number of scripts that show how to use these drivers can be found in the exampleRuns/ directory. They may have to be 
+adjusted to your system.
+
+Finally there are small examples of how to use PHIST in an external application in the exampleProjects/ subdirectory.
 
 Contact
 =======
