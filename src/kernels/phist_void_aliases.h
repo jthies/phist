@@ -9,7 +9,7 @@
 #ifndef PHIST_VOID_ALIASES_H
 #define PHIST_VOID_ALIASES_H
 
-//! \defgroup void_alias void aliases
+//! \defgroup void_alias Basic data structures implemented by the kernel library
 //! \ingroup kernels
 //!@{
 
