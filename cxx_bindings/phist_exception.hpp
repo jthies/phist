@@ -18,7 +18,7 @@
 namespace phist
 {
 
-//! \addtogroup cxx_interface
+//! \ingroup cxx_bindings
 //!@{
 
   //! class for reporting an error (negative) or warning (positive) iflag on return
@@ -26,10 +26,10 @@ namespace phist
   {
     public:
     
-    //!
+    //! constructor
     Exception(int iflag) : std::exception(), iflag_(iflag) {}
  
-   //!
+   //! destructor
    ~Exception(){}
    
    //!
@@ -44,7 +44,7 @@ namespace phist
     int iflag_;
   
   };
-//@!}
+//!@}
 }
 
 #endif

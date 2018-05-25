@@ -12,10 +12,10 @@
 #include "phist_typedefs.h"
 #include "phist_ScalarTraits.hpp"
 
-//!
+//! namespace for phist
 namespace phist {
 
-//! \defgroup cxx_interface C++ bindings for PHIST
+//! \defgroup cxx_bindings C++ bindings for PHIST
 //!@{
 
 //! traits class to define object types depending on the scalar type
