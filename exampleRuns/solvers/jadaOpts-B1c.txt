@@ -1,0 +1,20 @@
+symmetry        GENERAL
+
+numEigs         10
+which           SR
+convTol         1.0e-6
+
+blockSize       2
+maxIters        400
+minBas          40
+maxBas          80
+
+innerSolvBlockSize      2
+innerSolvType           GMRES
+innerSolvMaxBas         10
+innerSolvMaxIters       10
+innerSolvRobust         0
+innerSolvStopAfterFirstConverged        1
+
+preconType              ML
+preconOpts              mlOpts-B1c.xml
