@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# several examples of using the subspacejada driver
+
 # compute the smallest few eigenvalues of a 3D laplacian
 mpirun -np 2 ./phist_Dsubspacejada BENCH3D-32-A0 I opts-herm-SM.txt
 
