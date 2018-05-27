@@ -651,12 +651,6 @@ elseif (PHIST_KERNEL_LIB STREQUAL "builtin")
     set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -mavx -mavx2 -mfma")
     set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mavx -mavx2 -mfma")
     set (CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -mavx -mavx2 -mfma")
-
-    if (NOT MPACK_FOUND)
-      message(WARNING "did not find mlapack_dd library, as you are compiling with high precision kernels, you may want to provide this library."
-                      "It can be obtained from http://mplapack.sourceforge.net/ and should be compiled with support for double-double (dd) core operations."
-                      "If it is already installed and you want to use it, set MPACK_DIR to provide a hint where it can be found.")
-    endif()
   endif()
 
   if( NOT PHIST_HAVE_MPI )
@@ -971,10 +965,6 @@ if(PHIST_USE_CRAFT)
   target_link_libraries(phist_kernels_${PHIST_KERNEL_LIB}                                                     craft)
 endif()
 
-if (MPACK_FOUND)
-      target_link_libraries(phist_core ${MPACK_LIBRARIES})
-endif()
-
 if(PHIST_KERNEL_LIB STREQUAL "ghost")
   find_package(GHOST 1.1.1 REQUIRED CONFIG)
 elseif(PHIST_USE_GHOST)
@@ -998,6 +988,7 @@ endif()
 if (PHIST_USE_MPACK)
   find_package (MPACK QUIET)
   if (MPACK_FOUND)
+    target_link_libraries(phist_core ${MPACK_LIBRARIES})
     include_directories(${MPACK_INCLUDE_DIRS})
     link_directories(${MPACK_LIBRARY_DIRS})
     message(STATUS "mpack found, enabled high precision lapack!")
