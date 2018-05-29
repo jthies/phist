@@ -35,7 +35,7 @@
 int main(int argc, char** argv)
 {
   int rank, num_proc;
-  int i, iflag;
+  int i, iflag = 0;
 
   phist_comm_ptr comm;
   sparseMat_ptr A;

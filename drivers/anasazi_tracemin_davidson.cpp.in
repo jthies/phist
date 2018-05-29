@@ -46,7 +46,7 @@ void SUBR(print_usage)(char* argv[],int pos)
 int main(int argc, char** argv)
 {
 #include "phist_std_typedefs.hpp"
-  int i, iflag;
+  int i, iflag = 0;
 
   comm_ptr comm;
   sparseMat_ptr A,B;

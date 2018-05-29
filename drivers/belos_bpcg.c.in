@@ -29,7 +29,7 @@
 int main(int argc, char** argv)
   {
   int rank, num_proc;
-  int i, iflag;
+  int i, iflag = 0;
   bool verbose;
 
   phist_comm_ptr comm;
