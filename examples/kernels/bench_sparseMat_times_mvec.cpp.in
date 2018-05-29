@@ -54,7 +54,7 @@ PHIST_TASK_END(iflag)
 int main(int argc, char** argv)
 {
   int rank, num_proc;
-  int iflag;
+  int iflag = 0;
   int verbose, sparseMat_flag, spmv_flag;
 
   phist_comm_ptr comm = NULL;

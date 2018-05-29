@@ -34,7 +34,7 @@ void myMain(int argc, char** argv, int &iflag);
 
 int main(int argc, char** argv)
 {
-  int iflag;
+  int iflag = 0;
   PHIST_ICHK_IERR(phist_kernels_init(&argc,&argv,&iflag),iflag);
   PHIST_MAIN_TASK_BEGIN
 

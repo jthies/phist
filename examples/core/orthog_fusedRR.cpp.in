@@ -58,7 +58,7 @@ void sdMat_orthoError(const_sdMat_ptr M, ST d, int rank, MT *err, int *ierr)
 //! it using orthogrr.
 int main(int argc, char** argv)
 {
-  int ierr;
+  int ierr = 0;
 
   phist_comm_ptr comm = NULL;
   phist_map_ptr map = NULL;

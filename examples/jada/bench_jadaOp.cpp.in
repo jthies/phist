@@ -33,7 +33,7 @@ typedef phist::ScalarTraits<_ST_> st;
 int main(int argc, char** argv)
 {
   int rank, num_proc;
-  int iflag;
+  int iflag = 0;
 
   phist_comm_ptr comm = NULL;
   sparseMat_ptr A = NULL;

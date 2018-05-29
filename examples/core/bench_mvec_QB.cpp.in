@@ -38,7 +38,7 @@ typedef phist::ScalarTraits<MT> mt;
 //! it using svqb.
 int main(int argc, char** argv)
 {
-  int ierr;
+  int ierr = 0;
 
   phist_comm_ptr comm = NULL;
   phist_map_ptr map = NULL;
