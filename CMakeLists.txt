@@ -74,7 +74,7 @@ option(PHIST_USE_LIKWID "Enable instrumentation for likwid-perfctr" OFF)
 option(PHIST_BUILD_MIC "Build for Intel MIC" OFF)
 
 option(PHIST_HAVE_SSE  "enable SSE SIMD intrinsics in PHIST code" ON)
-option(PHIST_HAVE_AVX  "enable AVX SIMD intrinsics in PHIST code" OFF)
+option(PHIST_HAVE_AVX  "enable AVX SIMD intrinsics in PHIST code" ON)
 option(PHIST_HAVE_AVX2 "enable AVX2 SIMD intrinsics in PHIST code" OFF)
 option(PHIST_HAVE_AVX512 "enable AVX512 SIMD intrinsics in PHIST code" ${PHIST_BUILD_MIC})
 
@@ -304,7 +304,6 @@ endif()
 ##############################################################################
 # compiler-dependent flags 
 ##############################################################################
-
 
 if (CMAKE_C_COMPILER_ID STREQUAL "GNU")
 
