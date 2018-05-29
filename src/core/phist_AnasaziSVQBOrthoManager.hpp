@@ -6,16 +6,20 @@
 /* Contact: Jonas Thies (Jonas.Thies@DLR.de)                                               */
 /*                                                                                         */
 /*******************************************************************************************/
+//! \file phist_AnasaziSVQBOrthoManager.hpp
+//! \brief orthogonalization routine in Anasazi
 
 #include "phist_config.h"
 
 #ifdef PHIST_HAVE_ANASAZI
 
 #ifndef _ST_
-#error "you must to include a 'phist_gen_X' header before this filee!"
+#error "you must to include a 'phist_gen_X' header before this file!"
 #endif
 
+#ifndef DOXYGEN
 #include "phist_trilinos_type_config.h"
+#endif //DOXYGEN
 
 #ifdef PHIST_TRILINOS_TYPE_AVAIL
 
@@ -29,6 +33,11 @@
 
 namespace Anasazi {
 
+  //! overloads the crucial orthogonalization routine in Anasazi     
+  //! for our wrapped mvec objects, replacing it by phist's orthog.
+  //! The reason is that Anasazis implementation makes heavy use of  
+  //! single-column views, which are unnecessary and particularly  
+  //! inefficient for kernel libraries using row-major storage. 
   template<>
   int SVQBOrthoManager<_ST_, ::phist::BelosMV< _ST_ >, ::phist::types< _ST_ >::linearOp>::findBasis(
                 ::phist::BelosMV< _ST_ > &X, Teuchos::RCP<::phist::BelosMV< _ST_ > > MX, 
@@ -56,14 +65,26 @@ namespace Anasazi {
     Teuchos::RCP< phist::BelosMV< _ST_ > > X_or_MX=MX;
     Teuchos::RCP< const phist::BelosMV< _ST_ > > Qi=Teuchos::null;
     pt::const_mvec_ptr vQi=nullptr;
+    int ncolsX = MVT::GetNumberVecs(X);
     
-    if (MX==Teuchos::null) X_or_MX=Teuchos::rcp(&X,false);
+    if (MX==Teuchos::null) 
+    {
+      if(_Op.get()!=NULL)
+      {
+        X_or_MX = MVT::Clone(X,ncolsX);
+        OPT::Apply(*(_Op.get()),X,*X_or_MX);
+      }
+      else
+      {
+        X_or_MX=Teuchos::rcp(&X,false);
+      }
+    }
     if (Q.size()>0) {Qi=Q[0]; vQi=Qi->get();}
 
     phist_const_comm_ptr comm;
     pk::mvec_get_comm(X.get(),&comm,&iflag);
     pt::sdMat_ptr Bphist=NULL, Cphist=NULL, XtMX=NULL;
-    int ncolsX = MVT::GetNumberVecs(X);
+    
     int ncolsQ = -1;
 
     pk::sdMat_create(&Bphist,ncolsX,ncolsX,comm,&iflag);
@@ -97,10 +118,10 @@ namespace Anasazi {
       int rankQiX; // rank of [Q[i],X] before orthog (we'll randomize the null-space, so unless iflag=-8 is returned,
                    // [Q[i] X] has full rank afterwards)
       _MT_ rankTol=mt::rankTol();
-      _MT_ orthoEps=mt::eps();
+      _MT_ orthoEps=std::sqrt(mt::eps());
       int numSweeps=3;
       try {
-      iflag=PHIST_ORTHOG_TRIANGULAR_R1;
+      iflag|=PHIST_ORTHOG_TRIANGULAR_R1;
       phist::core< _ST_ >::orthog_impl
           (vQi,X.get(),_Op.get(),X_or_MX->get(),
           XtMX,Bphist,Cphist,

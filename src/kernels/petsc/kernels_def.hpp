@@ -176,6 +176,24 @@ extern "C" void SUBR(sparseMat_read_hb_with_context)(TYPE(sparseMat_ptr)* A, phi
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   *iflag=PHIST_NOT_IMPLEMENTED;
 }
+
+extern "C" void SUBR(sparseMat_local_nnz)(TYPE(const_sparseMat_ptr) vA, int64_t* local_nnz, int* iflag)
+{
+  PHIST_CAST_PTR_FROM_VOID(const Traits<_ST_>::sparseMat_t,A,vA,*iflag);
+  MatInfo info;
+  PHIST_CHK_IERR(*iflag=MatGetInfo(A->m,MAT_LOCAL,&info),*iflag);
+  *local_nnz=int64_t(info.nz_used);
+  *iflag=0;
+}
+
+extern "C" void SUBR(sparseMat_global_nnz)(TYPE(const_sparseMat_ptr) vA, int64_t* global_nnz, int* iflag)
+{
+  PHIST_CAST_PTR_FROM_VOID(const Traits<_ST_>::sparseMat_t,A,vA,*iflag);
+  MatInfo info;
+  PHIST_CHK_IERR(*iflag=MatGetInfo(A->m,MAT_GLOBAL_SUM,&info),*iflag);
+  *global_nnz=int64_t(info.nz_used);
+}
+
 extern "C" void SUBR(sparseMat_get_row_map)(TYPE(const_sparseMat_ptr) vA, phist_const_map_ptr* map, int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);

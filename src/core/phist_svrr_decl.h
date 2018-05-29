@@ -6,7 +6,10 @@
 /* Contact: Jonas Thies (Jonas.Thies@DLR.de)                                               */
 /*                                                                                         */
 /*******************************************************************************************/
-//! rank-revealing "Cholesky QR" of an mvec
+//! \file phist_svrr_decl.h 
+//! \brief SVQB algorithm with rank-revealing "Cholesky QR"
+
+//! \brief rank-revealing "Cholesky QR" of an mvec \ingroup core
 
 //! SVQB algorithm (Stathopoulos & Wu, SISC 23 (6),2165-2182)
 //! with rank-revealing pivoted cholesky (SVRR)

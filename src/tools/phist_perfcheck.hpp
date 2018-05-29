@@ -6,10 +6,15 @@
 /* Contact: Jonas Thies (Jonas.Thies@DLR.de)                                               */
 /*                                                                                         */
 /*******************************************************************************************/
+//! \file phist_perfcheck.hpp
+//! \brief performance check
 #ifndef PHIST_PERFCHECK_HPP
 #define PHIST_PERFCHECK_HPP
 
 #include "phist_config.h"
+
+#ifndef DOXYGEN
+
 /* needs to be included before system headers for some intel compilers+mpi */
 #ifdef PHIST_HAVE_MPI
 #include <mpi.h>
@@ -19,6 +24,8 @@
 #include <ghost.h>
 #endif
 
+#endif /* DOXYGEN */
+
 #ifndef PHIST_PERFCHECK
 
 #define PHIST_PERFCHECK_VERIFY(functionName, benchFormula, flops)
@@ -27,13 +34,18 @@
 
 #else
 
+#ifndef DOXYGEN
+
 #include "phist_timemonitor.hpp"
 #include <map>
 #include <sstream>
 #include <string>
 
+#endif /* DOXYGEN */
 
-/*! Defines a performance check, e.g. measure time until scope is left and compare it to the expected time.
+/*! \def PHIST_PERFCHECK_VERIFY(functionName,n1,n2,n3,n4,n5,n6,n7, benchFormula,flops) 
+
+Defines a performance check, e.g. measure time until scope is left and compare it to the expected time.
  * Results (and especially large deviations) can be reported later.
  * \param functionName name of the function, ideally with required block sizes appended
  * \param benchFormula formula to calculate expected time
@@ -48,7 +60,9 @@
 MPI_Allreduce(MPI_IN_PLACE,(valstar),1,MPI_DOUBLE,MPI_SUM,MPI_COMM_WORLD);
 #endif
 
-/*! Defines a new benchmark for the performance check
+/*! \def PHIST_PERFCHECK_BENCHMARK(benchName, benchFunction)
+
+Defines a new benchmark for the performance check
  * \param benchName the name of the benchmark
  * \param benchFunction the benchmark function, should be "void fun(double* benchVal, int*ierr)"
  */
@@ -68,7 +82,8 @@ double benchName(double factor) { \
 } \
 }
 
-/*! Print gathered data from performance checks
+/*! \def PHIST_PERFCHECK_SUMMARIZE(verbosity) phist_PerfCheck::PerfCheckTimer::summarize(verbosity);
+ Print gathered data from performance checks
  */
 #define PHIST_PERFCHECK_SUMMARIZE(verbosity) phist_PerfCheck::PerfCheckTimer::summarize(verbosity);
 
@@ -88,6 +103,7 @@ namespace phist_PerfCheck
   class PerfCheckTimer : public Timer
   {
     public:
+      //!
       PerfCheckTimer(const char* name, const char* sn1, double n1, 
                                        const char* sn2, double n2, 
                                        const char* sn3, double n3, 
@@ -106,14 +122,26 @@ namespace phist_PerfCheck
 #endif
         double t_peak = flops/peak;
         expectedResults_[name_].update(std::max(expectedTime,t_peak));
+      
+        total_GByte_transferred_in_kernels += 0.0; //TODO
+        total_Gflops_performed_in_kernels +=flops*1.0e-9;
+      }
+      
+      //!
+      ~PerfCheckTimer()
+      {
+        double elapsed=wtime_available()? get_wtime()-wtime_: 0.0;
+        total_time_spent_in_kernels+=elapsed;
       }
 
-      // generate and print statistics
+      //! generate and print statistics
       static void summarize(int verbosity);
 
     protected:
+      //!
       static Timer::TimeDataMap expectedResults_;
 
+      //!
       static std::string constructName(const char* name, 
                                        const char* sn1, double n1, 
                                        const char* sn2, double n2, 
@@ -145,6 +173,16 @@ namespace phist_PerfCheck
 
         return oss.str();
       }
+  
+  protected:
+  
+    //! keep track of global statistics on this MPI process
+    static double total_GByte_transferred_in_kernels;
+    //! keep track of global statistics on this MPI process
+    static double total_Gflops_performed_in_kernels;
+    //! keep track of global statistics on this MPI process
+    static double total_time_spent_in_kernels;
+  
   };
 }
 

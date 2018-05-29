@@ -6,18 +6,23 @@
 /* Contact: Jonas Thies (Jonas.Thies@DLR.de)                                               */
 /*                                                                                         */
 /*******************************************************************************************/
+//! \file phist_get_arg.hpp
+//! \brief get arguments out of command-line
 #ifndef PHIST_GETARG_HPP
 #define PHIST_GETARG_HPP
 
 #ifdef __cplusplus
 
+#ifndef DOXYGEN
 #include <iostream>
 #include <sstream>
+#endif /* DOXYGEN */
 
-// command-line parsing tool for C++ main programs
-// if the given position is smaller than argc, parse
-// the argument argv[pos], otherwise use the default value
-// given.
+//! command-line parsing tool for C++ main programs
+//!
+//! if the given position is smaller than argc, parse
+//! the argument argv[pos], otherwise use the default value
+//! given.
 template<typename T>
 T get_arg(int argc, char** argv, int pos, T& default_val)
 {
@@ -50,7 +55,7 @@ PHIST_SOUT(PHIST_VERBOSE,"%s\n",ss.str().c_str()); \
 if (!(_valid_)) \
 {\
   PHIST_SOUT(PHIST_ERROR,"parameter %d had an illegal value!\n" \
-                         "Typically, phist drivers will print a usage message when run without arguments.",p);\
+                         "Typically, phist drivers will print a usage message when run without arguments.\n",p);\
   return PHIST_INVALID_INPUT;\
 }\
 }

@@ -15,9 +15,16 @@
 #include "phist_macros.h"
 #endif
 
+//! \file phist_tasks.h 
+//! \brief phist_task macros
+
+//! \defgroup tasks PHIST_TASK Macros
+//! \ingroup tools
+//!@{
+
 /*! \def PHIST_TASK_DECLARE(taskName)
  *  Declare a tasks (e.g. a variable taskName of some type to be used later!)
- *  \taskName new identifier
+ *  \param taskName new identifier
  */
 
 /*! \def PHIST_TASK_BEGIN(taskName)
@@ -35,34 +42,34 @@
  * Marks the end of a task and waits for it to finish.
  * With GHOST this task allocates (and blocks) all available resources (e.g. cores)!
  * \warning currently only works in a void functions as it uses PHIST_CHK_IERR internally (so it may return with an error!)
- * \param tas_ierr (int*), for errors
+ * \param task_ierr (int*), for errors
  */
 
 /*! \def PHIST_TASK_END_NOWAIT(task_ierr)
  * Marks the end of a task and runs it in the background
  * With GHOST this task has no resources (e.g. cores)
  * \warning currently only works in a void functions as it uses PHIST_CHK_IERR internally (so it may return with an error!)
- * \param tas_ierr (int*), for errors
+ * \param task_ierr (int*), for errors
  */
 
 /*! \def PHIST_TASK_WAIT(taskName,task_ierr)
  * Waits for a background task to finish (e.g. one with PHIST_TASK_END_NOWAIT)
  * \warning currently only works in a void functions as it uses PHIST_CHK_IERR internally (so it may return with an error!)
  * \param taskName task identifier
- * \param tas_ierr (int*), for errors
+ * \param task_ierr (int*), for errors
  */
 
 /*! \def PHIST_TASK_POST_STEP(task_ierr)
  * (Semaphore post) Marks some kind of progress in the *current* task (you can wait for it in *another* task with PHIST_TASK_WAIT_STEP)
  * \warning currently only works in a void functions as it uses PHIST_CHK_IERR internally (so it may return with an error!)
- * \param tas_ierr (int*), for errors
+ * \param task_ierr (int*), for errors
  */
 
 /*! \def PHIST_TASK_WAIT_STEP(taskName,task_ierr)
  * (Semaphore wait) Wait for a PHIST_TASK_POST_STEP to be called in the specified task
  * \warning currently only works in a void functions as it uses PHIST_CHK_IERR internally (so it may return with an error!)
  * \param taskName task identifier
- * \param tas_ierr (int*), for errors
+ * \param task_ierr (int*), for errors
  */
 
 /*! \def PHIST_MAIN_TASK_BEGIN
@@ -294,5 +301,5 @@ static inline void phist_wait_ghost_task(ghost_task** task, int* iflag)
 #define PHIST_MAIN_TASK_END }
 
 #endif /* PHIST_HAVE_CXX11_LAMBDAS */
-
+//!@}
 #endif /* PHIST_TASKS_HPP */

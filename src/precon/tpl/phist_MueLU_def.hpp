@@ -7,7 +7,10 @@
 /*                                                                                         */
 /*******************************************************************************************/
 #include "phist_config.h"
+
+#ifndef DOXYGEN
 #include "phist_PreconTraits.hpp"
+#endif //DOXYGEN
 
 #ifdef PHIST_HAVE_MUELU
 # warning "MueLU interface not implemented"

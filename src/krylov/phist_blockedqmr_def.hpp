@@ -8,7 +8,7 @@
 /*******************************************************************************************/
 
 // implementation of gmres on several systems simultaneously
-void SUBR(blockedQMR_iterate)(TYPE(const_linearOp_ptr) Aop, TYPE(const_linearOp_ptr) Pop,
+extern "C" void SUBR(blockedQMR_iterate)(TYPE(const_linearOp_ptr) Aop, TYPE(const_linearOp_ptr) Pop,
         TYPE(const_mvec_ptr) rhs, TYPE(mvec_ptr) sol_in, TYPE(const_mvec_ptr) V,
         int numSys, int* nIter, _MT_ const tol[], int symmetry, int* iflag)
 {

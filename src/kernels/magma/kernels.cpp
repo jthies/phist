@@ -130,24 +130,28 @@ void phist_map_get_iupper(phist_const_map_ptr vmap, phist_gidx* iupper, int* ifl
 
 #include "phist_gen_s.h"
 #include "kernels_def.hpp"
+#include "../common/default_mvec_get_data_def.hpp"
 #include "kernels_no_carp.cpp"
 #include "kernels_no_inplace_VC.cpp"
 #include "kernels_no_fused.cpp"
 
 #include "phist_gen_d.h"
 #include "kernels_def.hpp"
+#include "../common/default_mvec_get_data_def.hpp"
 #include "kernels_no_carp.cpp"
 #include "kernels_no_inplace_VC.cpp"
 #include "kernels_no_fused.cpp"
 
 #include "phist_gen_c.h"
 #include "kernels_def.hpp"
+#include "../common/default_mvec_get_data_def.hpp"
 #include "kernels_no_carp.cpp"
 #include "kernels_no_inplace_VC.cpp"
 #include "kernels_no_fused.cpp"
 
 #include "phist_gen_z.h"
 #include "kernels_def.hpp"
+#include "../common/default_mvec_get_data_def.hpp"
 #include "kernels_no_carp.cpp"
 #include "kernels_no_inplace_VC.cpp"
 #include "../common/kernels_no_VC_add_WD.cpp"

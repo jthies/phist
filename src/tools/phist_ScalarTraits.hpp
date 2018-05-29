@@ -6,10 +6,14 @@
 /* Contact: Jonas Thies (Jonas.Thies@DLR.de)                                               */
 /*                                                                                         */
 /*******************************************************************************************/
+//! \file phist_ScalarTraits.hpp
 #ifndef PHIST_SCALAR_TRAITS_HPP
 #define PHIST_SCALAR_TRAITS_HPP
 
 #include "phist_config.h"
+
+#ifndef DOXYGEN
+
 /* needs to be included before system headers for some intel compilers+mpi */
 #ifdef PHIST_HAVE_MPI
 #include <mpi.h>
@@ -33,22 +37,26 @@
 #include <ghost/types.h>
 #endif
 
+#endif /* DOXYGEN */
+
 #ifdef PHIST_KERNEL_LIB_BUILTIN
 extern "C" void phist_Drandom_number(int,double*);
 #endif
 
 namespace phist {
 
+//! basic numerics traits for dispatching depending on scalar data type
 template<typename ST>
 class ScalarTraits
 {
   public: 
-  
+
   typedef typename ST::MissingImplementationOfScalarTraitsClass error;
   
 };
 
 #ifdef PHIST_HAVE_SP
+//! basic numerics traits for dispatching depending on scalar data type
 template<>
 class ScalarTraits< float >
 {
@@ -223,6 +231,8 @@ class ScalarTraits< float >
 
 };
 #endif
+
+//! basic numerics traits for dispatching depending on scalar data type
 template<>
 class ScalarTraits< double >
 {
@@ -402,7 +412,7 @@ class ScalarTraits< double >
   static inline constexpr magn_t rankTol(bool high_prec=false) {return high_prec? 1.0e-25: 10.0*eps();}
 };
 
-
+//! basic numerics traits for dispatching depending on scalar data type
 template<typename MT>
 class ScalarTraits< std::complex<MT> >
 {

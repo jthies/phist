@@ -1,0 +1,145 @@
+/*******************************************************************************************/
+/* This file is part of the PHIST software available at https://bitbucket.org/essex/phist/ */
+/* You may redistribute it and/or modify it under the terms of the BSD-style licence       */
+/* included in this software.                                                              */
+/*                                                                                         */
+/* Contact: Jonas Thies (Jonas.Thies@DLR.de)                                               */
+/*                                                                                         */
+/*******************************************************************************************/
+#include "phist_config.h"
+
+#ifdef PHIST_HAVE_MPI
+#include <mpi.h>
+#endif
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdbool.h>
+#ifdef PHIST_HAVE_LIKWID
+#include "likwid.h"
+#endif
+
+#include "phist_macros.h"
+#include "phist_enums.h"
+#include "phist_kernels.h"
+#include "phist_operator.h"
+#include "phist_jadaOp.h"
+#include ${PHIST_TG_HFILE}
+#include "phist_ScalarTraits.hpp"
+#include "phist_driver_utils_decl.h"
+
+typedef phist::ScalarTraits<_ST_> st;
+
+int main(int argc, char** argv)
+{
+  int rank, num_proc;
+  int iflag;
+
+  phist_comm_ptr comm = NULL;
+  sparseMat_ptr A = NULL;
+  TYPE(linearOp) opA;
+  _ST_* sigma = NULL;
+  TYPE(linearOp) jadaOp;
+  phist_const_map_ptr map = NULL;
+  mvec_ptr x = NULL;
+  mvec_ptr y = NULL;
+  mvec_ptr q = NULL;
+  
+  PHIST_ICHK_IERR(phist_kernels_init(&argc,&argv,&iflag),iflag);
+PHIST_MAIN_TASK_BEGIN
+  PHIST_ICHK_IERR(phist_comm_create(&comm,&iflag),iflag);
+
+  PHIST_ICHK_IERR(phist_comm_get_rank(comm, &rank,&iflag),iflag);
+  PHIST_ICHK_IERR(phist_comm_get_size(comm, &num_proc,&iflag),iflag);
+
+
+  if (argc<4)
+  {
+    PHIST_SOUT(PHIST_INFO,"Usage: %s <matrix> <nprojvecs> <nvecs> [<repart>]\n", argv[0]);
+    // print usage message for creating/reading a matrix
+    SUBR(create_matrix)(NULL, NULL, "usage",&iflag);
+    return 1;
+  }
+
+  const char* matname=argv[1];
+  int nproj = atoi(argv[2]);
+  int nvecs = atoi(argv[3]);
+  int repart=0;
+  if (argc>4)
+  {
+    repart=atoi(argv[4]);
+  }
+  
+
+  iflag = PHIST_IFLAG_DEFAULT;
+  if( repart )
+  {
+    iflag |= PHIST_SPARSEMAT_PERM_GLOBAL;
+  }
+  if( nvecs > 1 )
+  {
+    iflag |= PHIST_SPARSEMAT_OPT_BLOCKSPMVM;
+  }
+  else
+  {
+    iflag |= PHIST_SPARSEMAT_OPT_SINGLESPMVM;
+  }
+  PHIST_ICHK_IERR(SUBR(create_matrix)(&A, comm, matname, &iflag),iflag);
+  PHIST_ICHK_IERR(SUBR(sparseMat_get_domain_map)(A, &map,&iflag),iflag);
+  PHIST_ICHK_IERR(SUBR(mvec_create)(&x,map,nvecs,&iflag),iflag);
+  PHIST_ICHK_IERR(SUBR(mvec_create)(&y,map,nvecs,&iflag),iflag);
+  PHIST_ICHK_IERR(SUBR(linearOp_wrap_sparseMat)(&opA,A,&iflag),iflag);
+  sigma = new _ST_[nvecs];
+  for(int i = 0; i < nvecs; i++)
+  {
+    sigma[i] = st::rand();
+  }
+  
+  // we manually set the entries of these vectors below, so we need them on the host
+  iflag=PHIST_MVEC_REPLICATE_DEVICE_MEM;
+  PHIST_ICHK_IERR(SUBR(mvec_create)(&q,map,nproj,&iflag),iflag);
+  PHIST_ICHK_IERR(SUBR(mvec_put_value)(q,st::zero(),&iflag),iflag);
+  // set q vectors to unit vectors
+  {
+    phist_lidx ldq;
+    _ST_* q_raw;
+    PHIST_ICHK_IERR(SUBR(mvec_extract_view)(q,&q_raw,&ldq,&iflag),iflag);
+    for(int i = 0; i < nproj; i++)
+      q_raw[i*ldq+i] = st::one();
+    PHIST_ICHK_IERR(SUBR(mvec_to_device)(q,&iflag),iflag);
+  }
+  PHIST_ICHK_IERR(SUBR(jadaOp_create)(&opA,NULL,q,NULL,sigma,nvecs,&jadaOp,&iflag),iflag);
+
+  PHIST_ICHK_IERR(SUBR(mvec_put_value)(x,st::one(),&iflag),iflag);
+
+  for(int i = 0; i < 120/nvecs; i++)
+  {
+#ifdef PHIST_HAVE_LIKWID
+#pragma omp parallel
+    {
+      LIKWID_MARKER_START("jadaOp_times");
+    }
+#endif
+
+    PHIST_ICHK_IERR(jadaOp.apply(st::one(),jadaOp.A,x,st::zero(),y,&iflag),iflag);
+
+#ifdef PHIST_HAVE_LIKWID
+#pragma omp parallel
+    {
+      LIKWID_MARKER_STOP("jadaOp_times");
+    }
+#endif
+  }
+  PHIST_ICHK_IERR(SUBR(jadaOp_delete)(&jadaOp,&iflag),iflag);
+  delete[] sigma;
+  PHIST_ICHK_IERR(SUBR(mvec_delete)(q,&iflag),iflag);
+  PHIST_ICHK_IERR(SUBR(mvec_delete)(x,&iflag),iflag);
+  PHIST_ICHK_IERR(SUBR(mvec_delete)(y,&iflag),iflag);
+  PHIST_ICHK_IERR(SUBR(sparseMat_delete)(A,&iflag),iflag);
+
+  PHIST_ICHK_IERR(phist_comm_delete(comm,&iflag),iflag);
+PHIST_MAIN_TASK_END
+  PHIST_ICHK_IERR(phist_kernels_finalize(&iflag),iflag);
+
+  return iflag;
+}

@@ -76,6 +76,16 @@ extern "C" void SUBR(sparseMat_create_fromRowFuncAndContext)(TYPE(sparseMat_ptr)
 }
 
 
+extern "C" void SUBR(sparseMat_local_nnz)(TYPE(const_sparseMat_ptr) A, int64_t* local_nnz, int* iflag)
+{
+  *iflag=PHIST_NOT_IMPLEMENTED;
+}
+
+extern "C" void SUBR(sparseMat_global_nnz)(TYPE(const_sparseMat_ptr) A, int64_t* local_nnz, int* iflag)
+{
+  *iflag=PHIST_NOT_IMPLEMENTED;
+}
+
 extern "C" void SUBR(sparseMat_get_row_map)(TYPE(const_sparseMat_ptr) A, phist_const_map_ptr* map, int* iflag)
 {
   *iflag=PHIST_NOT_IMPLEMENTED;
@@ -135,6 +145,11 @@ extern "C" void SUBR(mvec_to_mvec)(TYPE(const_mvec_ptr) v_in, TYPE(mvec_ptr) v_o
 
 
 extern "C" void SUBR(mvec_extract_view)(TYPE(mvec_ptr) V, _ST_** val, phist_lidx* lda, int* iflag)
+{
+  *iflag=PHIST_NOT_IMPLEMENTED;
+}
+
+extern "C" void SUBR(mvec_get_data)(TYPE(const_mvec_ptr) V, _ST_* data, phist_lidx lda, int output_row_major, int* iflag)
 {
   *iflag=PHIST_NOT_IMPLEMENTED;
 }

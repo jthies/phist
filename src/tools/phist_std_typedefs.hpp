@@ -6,6 +6,18 @@
 /* Contact: Jonas Thies (Jonas.Thies@DLR.de)                                               */
 /*                                                                                         */
 /*******************************************************************************************/
+
+//! \file phist_std_typedefs.hpp
+//! you can include this file in a scope to get C++ typedefs for
+//! the  macros defined in a previous include of phist_gen_x.h. 
+//! this allows easier access to traits classes and saves the C++
+//! programmer from writing down all the macros like TYPE(...)
+//! all the time. The programmer must take care that this file
+//! is included once per scope only, otherwise the compiler will 
+//! complain.
+
+#ifndef DOXYGEN
+
 #ifndef __cplusplus
 #error this file is only intended for C++ code. C/Fortran users should \
 stick to the macros defined in 'phist_gen_x.h'
@@ -15,14 +27,6 @@ stick to the macros defined in 'phist_gen_x.h'
 #error you have to include 'phist_ScalarTraits.hpp' before \
 'phist_std_typedefs.hpp'.
 #endif
-
-//! you can include this file in a scope to get C++ typedefs for
-//! the  macros defined in a previous include of phist_gen_x.h. 
-//! this allows easier access to traits classes and saves the C++
-//! programmer from writing down all the macros like TYPE(...)
-//! all the time. The programmer must take care that this file
-//! is included once per scope only, otherwise the compiler will 
-//! complain.
 
 typedef ::phist::ScalarTraits< _ST_ >::scalar_t ST;
 typedef ::phist::ScalarTraits<ST> st;
@@ -43,3 +47,5 @@ typedef st::linearOp_t* linearOp_ptr;
 typedef const st::linearOp_t* const_linearOp_ptr;
 
 typedef mt::blas_cmplx_t blas_cmplx;
+
+#endif /* DOXYGEN */

@@ -18,17 +18,35 @@
 #include "../kernels/KernelTestWithVectors.h"
 #include "../kernels/KernelTestWithSdMats.h"
 
-#ifdef PHIST_HAVE_BELOS
+#if defined(PHIST_HAVE_BELOS)||defined(PHIST_HAVE_ANASAZI)
 #include "phist_types.hpp"
 #include "phist_core.hpp"
 #include "phist_BelosMV.hpp"
+#endif
+
+#ifdef PHIST_HAVE_BELOS
 #include "Belos_PhistAdapter.hpp"
 #include "phist_BelosOperatorTraits.hpp"
 #include "BelosICGSOrthoManager.hpp"
+// reference ortho managers
 #include "BelosIMGSOrthoManager.hpp"
 #include "BelosDGKSOrthoManager.hpp"
 
+// our own orthog-based adaptation:
+#include "BelosICGSOrthoManager.hpp"
 #define PHIST_CLASSFILE_DEF "phist_BelosICGSOrthoManager.hpp"
+#include "phist_gen_all.h"
+#endif
+
+#ifdef PHIST_HAVE_ANASAZI
+#include "Anasazi_PhistAdapter.hpp"
+#include "phist_AnasaziOperatorTraits.hpp"
+
+// we use this as reference ortho manager:
+#include "AnasaziICGSOrthoManager.hpp"
+// and this is our orthog-based adaptation of the SVQB ortho manager
+#include "AnasaziSVQBOrthoManager.hpp"
+#define PHIST_CLASSFILE_DEF "phist_AnasaziSVQBOrthoManager.hpp"
 #include "phist_gen_all.h"
 #endif
 

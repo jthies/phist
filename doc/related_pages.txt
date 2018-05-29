@@ -1,0 +1,55 @@
+/** 
+ * \page docu About this documentation
+ * 
+ * This documentation tries to group the functions available in PHIST. A good starting point when looking for
+ * specific functionality is the "Function Groups" tab in the top bar. The C++ interface is documented in a separate
+ * group. It is based on C++ traits classes for each function group to make it easier to call functions from templated C++ code.
+ * There is currently no documention for the Fortran 2003 bindings, in order to generate the bindings you have to download and 
+ * build the phist_fort tool available [ here ](https://bitbucket.org/essex/ghost).
+ *
+ * The main groups are:
+ * - kernels: Kernel function interface <br>
+ *          (includes functions for matrix and vector operations, communication operations, ...)
+ * - core: Common functionality for iterative solvers <br>
+ *          (includes definition of a linear operator, orthogonalization routines, factorization methods for small dense matrices,...)
+ * - krylov: Krylov subspace methods <br>
+ *          (includes linear solvers like blocked GMRES, blocked BICGStab,...)
+ * - jada: Jacobi-Davidson method and tools
+ * - precon: Preconditioning interface
+ * - tools: Utility functions and macros <br>
+ *          (includes enumerations, a random number generator, ...)
+ *
+ * \section phist_Xfunction_name
+ *
+ * PHIST currently supports four data types for scalar values:
+ * - Single precision real (S)
+ * - Double precision real (D)
+ * - single precision Complex (C)
+ * - double precision complex (Z)
+ *
+ * Macros are used to implement functions for multiple data types.<br>
+ * By including the phist_gen_ **X** .h header, followed by the type-generic declaration
+ * (_decl) or definition (_def) file, we generate the functions for a specific type **X** 
+ * out of S,D,C and Z. The functions are then called phist_Sfunction_name, phist_Dfunction_name,...
+ * depending on **X**.
+ *
+ * To avoid having the same function documented for each data type, we write **phist_Xfunction_name**
+ * in the documentation if you can choose between different data types in the function function_name of phist.
+ *
+ * Analogously we write **phist_Xtype_name** for the basic data types of phist.
+ *
+ * See also [ wiki on Scalar Data Types in phist](https://bitbucket.org/essex/phist/wiki/Developer_Guide/02 Scalar Data Types.wiki)
+ *
+ */
+ 
+ /**
+  * \page links Links
+  *
+  * Here are some links to related pages:
+  *
+  * [ESSEX project](http://blogs.fau.de/essex/) <br>
+  * [ phist main page ](https://bitbucket.org/essex/phist) <br>
+  * [ ghost main page ](https://bitbucket.org/essex/ghost) <br>
+  * [ wiki on phist](https://bitbucket.org/essex/phist/wiki/Home.wiki)
+  * 
+  */

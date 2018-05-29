@@ -40,7 +40,6 @@
 #include "Teuchos_FancyOStream.hpp"
 
 #include "AnasaziBasicEigenproblem.hpp"
-#include "phist_AnasaziSVQBOrthoManager.hpp"
 #include "AnasaziSolverManager.hpp"
 #include "AnasaziBlockKrylovSchurSolMgr.hpp"
 # include "AnasaziTraceMinDavidsonSolMgr.hpp"

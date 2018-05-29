@@ -30,10 +30,18 @@
 */
 
 /*! \ingroup kernels */
-/*@{*/
+/*!@{*/
 
 /*! def PHIST_IFLAG_DEFAULT */
 #define PHIST_IFLAG_DEFAULT 0
+
+/*! \def PHIST_KERNELS_QUIET
+
+    this flag can be passed to phist_kernels-init and phist_kernels_finaliize to supporess output
+    like pinning information and timing results.
+
+ */
+#define PHIST_KERNELS_QUIET 64
 
 /*! \def PHIST_SPARSEMAT_PERM_LOCAL
 
@@ -105,6 +113,15 @@
  */
 #define PHIST_SPARSEMAT_OWN_MAPS 128
 
+/*! \def PHIST_SPARSEMAT_OVERLAP_COMMUNICATION
+
+ suggest to the kernel library to do local computations while waiting for the communication in the sparse
+ matrix-vector product (sparseMat_times_mvec family of functions). This is currently only implemented for
+ GHOST.
+
+*/
+#define PHIST_SPARSEMAT_OVERLAP_COMMUNICATION 256
+
 /*! \def PHIST_SPARSEMAT_FLAGS_DESCRIPTION
 
     This macro provides a string descrbing possible flags
@@ -119,7 +136,8 @@
 "     PHIST_SPARSEMAT_OPT_BLOCKSPMVM  16 \n" \
 "     PHIST_SPARSEMAT_OPT_CARP 32 \n" \
 "     PHIST_SPARSEMAT_QUIET 64 \n" \
-"     PHIST_SPARSEMAT_OWN_MAPS 128 \n"
+"     PHIST_SPARSEMAT_OWN_MAPS 128 \n" \
+"     PHIST_SPARSEMAT_OVERLAP_COMMUNICATION 256\n"
 
 /*! \def PHIST_MVEC_REPLICATE_DEVICE_MEM
 
@@ -133,7 +151,7 @@
    */
 #define PHIST_MVEC_REPLICATE_DEVICE_MEM 1
 
-/*! \def pHIST_ROBUST_REDUCTIONS
+/*! \def PHIST_ROBUST_REDUCTIONS
 
     use more accurate reducitons or other floating point operations if available.
  */
@@ -151,7 +169,7 @@
    and should not be used in the code anywhere because they are subject
    to change. The purpose of these flags is benchmarking only.
 */
-/*@{*/
+/*!@{*/
 
 /*! \def PHIST_SPMVM_ONLY_LOCAL */
 #define PHIST_SPMVM_ONLY_LOCAL 1024
@@ -165,7 +183,7 @@
 /*! \def PHIST_SPMVM_TASK */
 #define PHIST_SPMVM_TASK 8192
 
-/*@}*/
+/*!@}*/
 
 /*! \def PHIST_SDMAT_RUN_ON_HOST
 
@@ -192,6 +210,6 @@
  */
 #define PHIST_SDMAT_RUN_ON_HOST_AND_DEVICE (PHIST_SDMAT_RUN_ON_HOST|PHIST_SDMAT_RUN_ON_DEVICE)
 
-/*@}*/
+/*!@}*/
 
 #endif

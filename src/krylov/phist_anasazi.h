@@ -18,10 +18,9 @@
 #include <mpi.h>
 #endif
 #include "phist_operator.h"
+#include "phist_enums.h"
 
 #endif //DOXYGEN
-
-#include "phist_enums.h"
 
 #ifdef __cplusplus
 extern "C" {

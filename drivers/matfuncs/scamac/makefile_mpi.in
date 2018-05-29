@@ -1,0 +1,11 @@
+SCAMAC_INCDIR = @SCAMAC_INCDIR@
+SCAMAC_LIBDIR = @SCAMAC_LIBDIR@
+
+CC         = mpicc
+CFLAGS     = -I$(SCAMAC_INCDIR)
+LDFLAGS    = -L$(SCAMAC_LIBDIR) -lscamac
+LDLIBS     = -lscamac -lm
+
+mwe_mpi_count: mwe_mpi_count.c
+	$(CC) $(CFLAGS) -o $@ $< $(LDFLAGS) $(LDLIBS) 
+

@@ -23,7 +23,7 @@
 // in order to use the driver utils header, we first have to
 // specify which data type we will use (real double (D) here)
 #include "phist_gen_d.h"
-#include "phist_driver_utils.h"
+#include "phist_driver_utils_decl.h"
 
 /*! this is a simple program that can be used to dump one of our
 internal test cases as a MatrixMarket file. It is only intended

@@ -25,6 +25,7 @@
 
 GTEST_API_ int main(int argc, char **argv) {
     int iflag,test_result;
+    iflag=PHIST_IFLAG_DEFAULT;
     phist_kernels_init(&argc,&argv,&iflag);
     PHIST_MAIN_TASK_BEGIN
     testing::InitGoogleTest(&argc, argv);
@@ -49,6 +50,8 @@ GTEST_API_ int main(int argc, char **argv) {
     test_result=RUN_ALL_TESTS();
 
     PHIST_MAIN_TASK_END
+    // do not print timing information
+    iflag=PHIST_KERNELS_QUIET;
     phist_kernels_finalize(&iflag);
     //ASSERT_INT_EQ(iflag,0);
     return test_result;

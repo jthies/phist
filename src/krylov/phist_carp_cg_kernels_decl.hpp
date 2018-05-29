@@ -6,6 +6,9 @@
 /* Contact: Jonas Thies (Jonas.Thies@DLR.de)                                               */
 /*                                                                                         */
 /*******************************************************************************************/
+//! \file phist_carp_cg_kernels_decl.hpp
+//! \brief internal functions and structs for CARP_CG
+
 //! \name internal data structures for mixed-precision CARP-CG
 //! \note these should not be used directly by the user!
 //!@{
@@ -13,7 +16,7 @@
 //! e(x)tended sparse matrix type with complex shift and augmented 
 //! by additional (dense) rows and columns.
 //! [ A-(sigma_r_[j]+sigma_i_[j])I        Vproj_ ]
-//  [   Vproj'                              0    ] is applied to column j of the input vector
+//!  [   Vproj'                              0    ] is applied to column j of the input vector
 typedef struct TYPE(x_sparseMat) {
   TYPE(const_sparseMat_ptr) A_;
   _MT_ *sigma_r_;
@@ -21,7 +24,7 @@ typedef struct TYPE(x_sparseMat) {
   TYPE(const_mvec_ptr)      Vproj_;
 } TYPE(x_sparseMat);
 
-//! TODO Jonas: put real and imag part consecutively
+// TODO Jonas: put real and imag part consecutively
 
 //! represent augmented complex vector of the form
 //! |v + i vi |
@@ -31,22 +34,23 @@ class TYPE(x_mvec)
   
   public:
 
-    TYPE(mvec_ptr)      vdat_; //! contains the actual vector data, if
-                               //! there is no explicit imaginary part
-                               //! vi vdat_==v_, otherwise vdat_ is 
-                               //! a two*k-column vector with the real
-                               //! and imaginary part stored after each
-                               //! other, so row i contains first the
-                               //! k elements of row i of v_ and then
-                               //! the k elements of the imag part vi_.
-                               //! v_ and vi_ will be views into vdat_.
-                               //! If the storage is column major, the first
-                               //! k vectors are v, the second k are vi.
+    TYPE(mvec_ptr)      vdat_; //!< contains the actual vector data, if
+                               //!< there is no explicit imaginary part
+                               //!< vi vdat_==v_, otherwise vdat_ is 
+                               //!< a two*k-column vector with the real
+                               //!< and imaginary part stored after each
+                               //!< other, so row i contains first the
+                               //!< k elements of row i of v_ and then
+                               //!< the k elements of the imag part vi_.
+                               //!< v_ and vi_ will be views into vdat_.
+                               //!< If the storage is column major, the first
+                               //!< k vectors are v, the second k are vi.
+                               
     TYPE(mvec_ptr)      v_;
     TYPE(mvec_ptr)      vi_;
     TYPE(sdMat_ptr)     vp_;
     TYPE(sdMat_ptr)     vpi_;
-    int nvec_;  //! just for convenience
+    int nvec_;  //!< just for convenience
 
   //! constructor - does not allocate memory, so before the object can
   //! be used you have to call allocate(...)
@@ -74,10 +78,10 @@ class TYPE(x_mvec)
   void get_vi(TYPE(mvec_ptr) xi, int* iflag);
 };
 
-//@}
+//!@}
 
 //! \name some kernel functions for the special-purpose data types x_sparseMat and x_mvec
-//@{
+//!@{
 
 //!
 void SUBR(x_sparseMat_times_mvec)(_ST_ alpha, TYPE(x_sparseMat) const* A, TYPE(x_mvec) const* X,
@@ -107,7 +111,7 @@ void SUBR(x_mvec_vscale)(TYPE(x_mvec)* v, _MT_ const alpha[], int* iflag);
 //! there are two separate kernel functions, with and without augmented rows/cols, this wrapper calls the appropriate one for us.
 void SUBR(x_carp_sweep)(TYPE(x_sparseMat) const* A,TYPE(const_mvec_ptr) b,TYPE(x_mvec)* x, void* carp_data, _MT_ const omega[],int *iflag);
 
-//@}
+//!@}
 
 //! return true if both vectors have an allocated imaginary part,
 //! false if none of them has, and throw an exception if only one of them has.
@@ -149,7 +153,7 @@ inline bool aug_variant(TYPE(x_mvec) const* v1, TYPE(x_mvec) const* v2)
   throw "either both or none of the vectors must be augmented!";
 }
 
-// returns true if both vectors and matrix are augmented by additional rows (rows and cols)
+//! returns true if both vectors and matrix are augmented by additional rows (rows and cols)
 inline bool aug_variant(TYPE(x_sparseMat) const* A, TYPE(x_mvec) const* v1, TYPE(x_mvec) const* v2)
 {
   bool rc=rc_variant(v1,v2);

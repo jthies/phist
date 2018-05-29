@@ -11,12 +11,10 @@
 
 #include "phist_config.h"
 
+/*! \file phist_operator.h \brief linear operator interface */
+
 #ifndef DOXYGEN
 
-/* needs to be included before system headers for some intel compilers+mpi */
-#ifdef PHIST_HAVE_MPI
-#include <mpi.h>
-#endif
 #include "phist_void_aliases.h"
 #include "phist_typedefs.h"
 
@@ -25,6 +23,11 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+//! \defgroup linearOp linearOp: operator interface
+//! \ingroup core
+//!@{
+
 #ifdef PHIST_HAVE_SP
 #include "phist_gen_s.h"
 #include "phist_operator_decl.h"
@@ -37,6 +40,8 @@ extern "C" {
 #include "phist_operator_decl.h"
 
 #include "phist_gen_clean.h"
+
+//!@}
 
 #ifdef __cplusplus
 }

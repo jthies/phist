@@ -14,7 +14,10 @@
 # error "Ifpack only works with Epetra kernel library!"
 #endif
 
+#ifndef DOXYGEN
 #include "phist_void_aliases.h"
+#endif //DOXYGEN
+
 #include "phist_trilinos_macros.hpp"
 #include "phist_macros.h"
 #include "../../kernels/epetra/epetra_helpers.h"

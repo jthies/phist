@@ -1,0 +1,22 @@
+symmetry        HERMITIAN
+
+numEigs         20
+which           SM
+convTol         1.0e-8
+
+blockSize       4
+maxIters        250
+minBas          28
+maxBas          60
+
+innerSolvBlockSize      4
+innerSolvType           MINRES
+innerSolvMaxBas         10
+innerSolvMaxIters       10
+innerSolvRobust         1
+innerSolvStopAfterFirstConverged        1
+
+preconType              IFPACK
+preconOpts              ifpack_options.xml
+preconSkewProject       1
+preconUpdate            0

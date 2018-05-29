@@ -9,6 +9,8 @@
 #ifndef PHIST_MEM_OWNER_HPP
 #define PHIST_MEM_OWNER_HPP
 
+//! \file phist_MemOwner.hpp
+//!
 //! This file contains simple classes to wrap mvec, sdMat and sparseMat
 //! pointers in C++ objects which will take care of their deletion when
 //! destroyed themselves. There is no reference counting mechanism, but
@@ -17,17 +19,19 @@
 //!
 //! A typical use of these classes is:
 //! 
-//! {
-//! TYPE(mvec_ptr) tmp_V;
-//! PHIST_CHK_IERR(SUBR(mvec_create)(&tmp_V,map,nvec,iflag),*iflag);
-//! mvecOwner<ST> ownV(tmpV);
-//! PHIST_CHK_IERR(... some other calls ...)
-//! ...
-//! wherever the program leaves the scope, tmp_V is deleted without
-//! the user having to call SUBR(mvec_delete)
-//! }
+//!     {
+//!     TYPE(mvec_ptr) tmp_V;
+//!     PHIST_CHK_IERR(SUBR(mvec_create)(&tmp_V,map,nvec,iflag),*iflag);
+//!     mvecOwner<ST> ownV(tmpV);
+//!     PHIST_CHK_IERR(... some other calls ...)
+//!     ...
+//!     wherever the program leaves the scope, tmp_V is deleted without
+//!     the user having to call SUBR(mvec_delete)
+//!     }
 
+#ifndef DOXYGEN
 #include "phist_kernels.h"
+#endif
 
 //! mvec owner object
 template<typename T> class MvecOwner

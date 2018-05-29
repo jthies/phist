@@ -1,0 +1,4 @@
+mwe_slepc:
+	make -f makefile_slepc $@
+mwe_mpi_count:
+	make -f makefile_mpi $@

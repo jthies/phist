@@ -1,5 +1,5 @@
 find_package(PythonInterp REQUIRED)
-
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
 file(GLOB INPUT_FILES ${PROJECT_SOURCE_DIR}/src/*/*.h*)
 
 set(STATIC_HPP_FILES phist_types.hpp phist_exception.hpp)

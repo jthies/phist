@@ -6,42 +6,43 @@
 /* Contact: Jonas Thies (Jonas.Thies@DLR.de)                                               */
 /*                                                                                         */
 /*******************************************************************************************/
+//! \file phist_linear_solvers_decl.h 
+//! \brief Iterative methods for linear systems
 
 //! \ingroup linear_solvers
-//@{
+//!@{
 
-//! BiCGStab for a single general non-Hermitian linear systems
+//! \brief BiCGStab for a single general non-Hermitian linear systems
 void SUBR(BiCGStab)(TYPE(const_linearOp_ptr) Op,
                                 TYPE(const_linearOp_ptr) rightPreconOp,
                                 TYPE(const_mvec_ptr) rhs, TYPE(mvec_ptr) sol,
                                 int* nIter, _MT_ const tol, int* iflag);
 
-
-//! Conjugate Gradient method for a single Hermitian and positive definite (hpd) linear systems
+//! \brief Conjugate Gradient method for a single Hermitian and positive definite (hpd) linear systems
 void SUBR(PCG)(TYPE(const_linearOp_ptr) Op,
                                 TYPE(const_linearOp_ptr) preconOp,
                                 TYPE(const_mvec_ptr) rhs, TYPE(mvec_ptr) sol,
                                 int* nIter, _MT_ const tol, int* iflag);
 
-//! high-level user interface that does not require knowledge of the state object. This interface
-//! should be used if you only want run a restarted GMRES solver on one or more systems
-
-//! restarted GMRES implementation that may work on several vectors simultaneously,
+//! \brief restarted GMRES implementation that may work on several vectors simultaneously,
 //! building a separate Krylov subspace for each of them.
 //!
-//! On input, *nIter indicates the total max number of iterations allowed, maxIter, for any system.
-//! On output, *nIter indicates the number of GMRES iterations.
+//! high-level user interface that does not require knowledge of the state object. This interface
+//! should be used if you only want run a restarted GMRES solver on one or more systems
 //!
-//! On output, sol_in gives the solution of the restarted GMRES
+//! \param [in] *nIter indicates the total max number of iterations allowed, maxIter, for any system.
+//! \param [out] *nIter indicates the number of GMRES iterations.
+//!
+//! \param [out] sol_in gives the solution of the restarted GMRES
 //!
 void SUBR(restartedBlockedGMRES)(TYPE(const_linearOp_ptr) Aop, TYPE(const_linearOp_ptr) Pop,
         TYPE(mvec_ptr) rhs, TYPE(mvec_ptr) sol_in, int numSys,
         int* nIter, _MT_ const tol[], int block_size, int max_blocks, int* iflag);
 
-//! restarted GMRES (GMRES(m)) for a single non-Hermitian linear system
-void SUBR(restarteedGMRES)( TYPE(const_linearOp_ptr) Aop, TYPE(const_linearOp_ptr) Pop,
+//! \brief restarted GMRES (GMRES(m)) for a single non-Hermitian linear system
+void SUBR(restartedGMRES)( TYPE(const_linearOp_ptr) Aop, TYPE(const_linearOp_ptr) Pop,
         TYPE(mvec_ptr) rhs, TYPE(mvec_ptr) sol,
         int *nIter, _MT_ tol, int m, int* iflag);
 
 
-//@}
+//!@}

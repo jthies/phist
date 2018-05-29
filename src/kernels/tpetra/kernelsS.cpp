@@ -63,6 +63,7 @@ using namespace phist::tpetra;
 # if defined(HAVE_TEUCHOS_FLOAT)&&defined(HAVE_TPETRA_INST_FLOAT)
 # include "kernels_def.hpp"
 # include "carp_def.hpp" 
+# include "../common/default_mvec_get_data_def.hpp"
 # else
 # warning "Your phist_config.h defines PHIST_HAVE_SP, but your Trilinos installation does not \
 support the float data type, so all 'S' kernels will return with *iflag=-99 (PHIST_NOT_IMPLEMENTED). In order \

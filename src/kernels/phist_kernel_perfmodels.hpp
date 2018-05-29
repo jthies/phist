@@ -29,18 +29,43 @@
 #ifdef PHIST_PERFCHECK_MVEC_LENGTH
 #undef PHIST_PERFCHECK_MVEC_LENGTH
 #endif
+#ifdef PHIST_PERFCHECK_SPARSEMAT_NNZ
+#undef PHIST_PERFCHECK_SPARSEMAT_NNZ
+#endif
 #ifdef PHIST_PERFCHECK_MVEC_LEN_T
 #undef PHIST_PERFCHECK_MVEC_LEN_T
 #endif
 
 #ifdef PHIST_PERFCHECK_SEPARATE_OUTPUT
+#define PHIST_PERFCHECK_SPARSEMAT_NNZ SUBR(sparseMat_local_nnz)
 #define PHIST_PERFCHECK_MVEC_LENGTH SUBR(mvec_my_length)
 #define PHIST_PERFCHECK_MAP_LENGTH phist_map_get_local_length
 #define PHIST_PERFCHECK_MVEC_LEN_T phist_lidx
 #else
+#define PHIST_PERFCHECK_SPARSEMAT_NNZ SUBR(sparseMat_global_nnz)
 #define PHIST_PERFCHECK_MVEC_LENGTH SUBR(mvec_global_length)
 #define PHIST_PERFCHECK_MAP_LENGTH phist_map_get_global_length
 #define PHIST_PERFCHECK_MVEC_LEN_T phist_gidx
+#endif
+
+// flops for operation Y <- a*X + b*Y, including some special cases like a=1, b=0 etc.
+//              
+//          a   
+//        0 1 * 
+//      --------
+//    0|  0 0 1 
+// b  1|  0 1 2 
+//    *|  1 2 3 
+//              
+//
+// (b!=0)&&(b!=1) +     [ col 1]
+// (a!=0)         +     [ col 2]
+// (a!=0)&&(a!=1)       [ col 3]
+#ifndef PHIST_PERFCHECK_AXPBY_FLOPS
+#define PHIST_PERFCHECK_AXPBY_FLOPS(N,a,b)  \
+(( ((b!=_ST_(0))&&(b!=_ST_(1))) + \
+   (a!=_ST_(0))                 + \
+   ((a!=_ST_(0))&&(a!=_ST_(1))) ) * N)
 #endif
 
 // define benchmarks
@@ -49,12 +74,30 @@ PHIST_PERFCHECK_BENCHMARK(STREAM_TRIAD, phist_bench_stream_triad);
 PHIST_PERFCHECK_BENCHMARK(STREAM_STORE, phist_bench_stream_store);
 //PHIST_PERFCHECK_BENCHMARK(STREAM_FROM_DEVICE, phist_bench_stream_from_device);
 //PHIST_PERFCHECK_BENCHMARK(STREAM_TO_DEVICE, phist_bench_stream_to_device);
+#define NO_PERFMODEL_AVAILABLE_YET 0.0
 
 
 //! checks performance for all functions that should require only neglectable time
 #define PHIST_PERFCHECK_VERIFY_SMALL \
   PHIST_PERFCHECK_VERIFY(__FUNCTION__,0,0,0,0,0,0,0, 1.e-5,0);
 
+
+//! prints a warning that the performance model is not yet implemented
+#define PHIST_PERFCHECK_NOT_IMPLEMENTED(flops) \
+  PHIST_PERFCHECK_VERIFY(__FUNCTION__,0,0,0,0,0,0,0,NO_PERFMODEL_AVAILABLE_YET,flops);
+
+
+//! performance model for sparse matrix-vector product with fused operations:
+//! Y <- beta*Y + (A + shift*I)X, s<-gamma*X'Y, t<-delta*Y'Y
+#define PHIST_PERFCHECK_VERIFY_SPMV(a,A,shift,X,b,Y,g,d,num_dots,iflag) \
+  int _nV; \
+  int64_t _nnz; \
+  PHIST_PERFCHECK_MVEC_LEN_T _n; \
+  PHIST_CHK_IERR(SUBR(mvec_num_vectors)(X,&_nV,iflag),*iflag); \
+  PHIST_CHK_IERR(PHIST_PERFCHECK_MVEC_LENGTH(X,&_n,iflag),*iflag); \
+  PHIST_CHK_IERR(PHIST_PERFCHECK_SPARSEMAT_NNZ(A,&_nnz,iflag),*iflag); \
+  double flops = (a!=0)*double(2*_nnz*_nV + (shift!=_ST_(0)*_n*_nV)) + (b!=_ST_(0))*double((1+(b!=_ST_(1)))*_n*_nV) + PHIST_PERFCHECK_AXPBY_FLOPS(_n*_nV,g,d) + double(2*num_dots*_nV*_n); \
+PHIST_PERFCHECK_NOT_IMPLEMENTED(flops);
 
 //! checks performance of mvec_create
 #define PHIST_PERFCHECK_VERIFY_MVEC_CREATE(map,nvec,iflag) \
@@ -204,7 +247,7 @@ PHIST_PERFCHECK_BENCHMARK(STREAM_STORE, phist_bench_stream_store);
   PHIST_CHK_IERR(PHIST_PERFCHECK_MVEC_LENGTH(V,&n,iflag),*iflag); \
   PHIST_CHK_IERR(SUBR(mvec_num_vectors)(V,&nV,iflag),*iflag); \
   *iflag = tmp_iflag; \
-  PHIST_PERFCHECK_VERIFY(__FUNCTION__,(V!=W),nV,0,0,0,0,0, STREAM_LOAD((nV+(V!=W)*nV)*n*sizeof(_ST_)),2*n);
+  PHIST_PERFCHECK_VERIFY(__FUNCTION__,(V!=W),nV,0,0,0,0,0, STREAM_LOAD((nV+(V!=W)*nV)*n*sizeof(_ST_)),2*n*nV);
 
 #else
 
@@ -225,7 +268,7 @@ PHIST_PERFCHECK_BENCHMARK(STREAM_STORE, phist_bench_stream_store);
   int nW_ = std::min(ldW,((nV-1)/cl_size+1)*cl_size); \
   if( nW_+cl_size > ldW ) nW_ = ldW; \
   *iflag = tmp_iflag; \
-  PHIST_PERFCHECK_VERIFY(__FUNCTION__,(V!=W),nV,ldV,ldW,0,0,0, STREAM_LOAD((nV_+(V!=W)*nW_)*n*sizeof(_ST_)),2*n);
+  PHIST_PERFCHECK_VERIFY(__FUNCTION__,(V!=W),nV,ldV,ldW,0,0,0, STREAM_LOAD((nV_+(V!=W)*nW_)*n*sizeof(_ST_)),2*n*nV);
 
 #endif
 
@@ -242,7 +285,7 @@ PHIST_PERFCHECK_BENCHMARK(STREAM_STORE, phist_bench_stream_store);
   PHIST_CHK_IERR(PHIST_PERFCHECK_MVEC_LENGTH(V,&n,iflag),*iflag); \
   PHIST_CHK_IERR(SUBR(mvec_num_vectors)(V,&nV,iflag),*iflag); \
   *iflag = tmp_iflag; \
-  PHIST_PERFCHECK_VERIFY(__FUNCTION__,nV,0,0,0,0,0,0, STREAM_LOAD(nV*n*sizeof(_ST_))+STREAM_TRIAD(2*nV*n*sizeof(_ST_)),3*n);
+  PHIST_PERFCHECK_VERIFY(__FUNCTION__,nV,0,0,0,0,0,0, STREAM_LOAD(nV*n*sizeof(_ST_))+STREAM_TRIAD(2*nV*n*sizeof(_ST_)),3*n*nV);
 
 #else
 
@@ -260,7 +303,7 @@ PHIST_PERFCHECK_BENCHMARK(STREAM_STORE, phist_bench_stream_store);
   int nV_ = std::min(ldV,((nV-1)/cl_size+1)*cl_size); \
   if( nV_+cl_size > ldV ) nV_ = ldV; \
   *iflag = tmp_iflag; \
-  PHIST_PERFCHECK_VERIFY(__FUNCTION__,nV,ldV,0,0,0,0,0, STREAM_LOAD(nV_*n*sizeof(_ST_))+STREAM_TRIAD(2*nV_*n*sizeof(_ST_)),3*n);
+  PHIST_PERFCHECK_VERIFY(__FUNCTION__,nV,ldV,0,0,0,0,0, STREAM_LOAD(nV_*n*sizeof(_ST_))+STREAM_TRIAD(2*nV_*n*sizeof(_ST_)),3*n*nV);
 
 #endif
 
@@ -277,7 +320,7 @@ PHIST_PERFCHECK_BENCHMARK(STREAM_STORE, phist_bench_stream_store);
   PHIST_CHK_IERR(PHIST_PERFCHECK_MVEC_LENGTH(V,&n,iflag),*iflag); \
   PHIST_CHK_IERR(SUBR(mvec_num_vectors)(V,&nV,iflag),*iflag); \
   *iflag = tmp_iflag; \
-  PHIST_PERFCHECK_VERIFY(__FUNCTION__,nV,0,0,0,0,0,0, STREAM_TRIAD(2*nV*n*sizeof(_ST_)),n);
+  PHIST_PERFCHECK_VERIFY(__FUNCTION__,nV,0,0,0,0,0,0, STREAM_TRIAD(2*nV*n*sizeof(_ST_)),n*nV);
 
 #else
 
@@ -295,7 +338,7 @@ PHIST_PERFCHECK_BENCHMARK(STREAM_STORE, phist_bench_stream_store);
   int nV_ = std::min(ldV,((nV-1)/cl_size+1)*cl_size); \
   if( nV_+cl_size > ldV ) nV_ = ldV; \
   *iflag = tmp_iflag; \
-  PHIST_PERFCHECK_VERIFY(__FUNCTION__,nV,ldV,0,0,0,0,0, STREAM_TRIAD(2*nV_*n*sizeof(_ST_)),n);
+  PHIST_PERFCHECK_VERIFY(__FUNCTION__,nV,ldV,0,0,0,0,0, STREAM_TRIAD(2*nV_*n*sizeof(_ST_)),n*nV);
 
 #endif
 
@@ -312,7 +355,7 @@ PHIST_PERFCHECK_BENCHMARK(STREAM_STORE, phist_bench_stream_store);
   PHIST_CHK_IERR(PHIST_PERFCHECK_MVEC_LENGTH(X,&n,iflag),*iflag); \
   PHIST_CHK_IERR(SUBR(mvec_num_vectors)(X,&nV,iflag),*iflag); \
   *iflag = tmp_iflag; \
-  PHIST_PERFCHECK_VERIFY(__FUNCTION__,(a!=st::zero()),(b!=st::zero()),nV,0,0,0,0, STREAM_TRIAD(((a!=st::zero())+(b!=st::zero())+1)*nV*n*sizeof(_ST_)),n*(1+(a!=st::zero())+2*(b!=st::zero())));
+  PHIST_PERFCHECK_VERIFY(__FUNCTION__,(a!=_ST_(0)),(b!=_ST_(0)),nV,0,0,0,0, STREAM_TRIAD(((a!=_ST_(0))+(b!=_ST_(0))+1)*nV*n*sizeof(_ST_)), PHIST_PERFCHECK_AXPBY_FLOPS(n*nV,a,b));
 
 #else
 
@@ -333,7 +376,7 @@ PHIST_PERFCHECK_BENCHMARK(STREAM_STORE, phist_bench_stream_store);
   int nY_ = std::min(ldY,((nV-1)/cl_size+1)*cl_size); \
   if( nY_+cl_size > ldY ) nY_ = ldY; \
   *iflag = tmp_iflag; \
-  PHIST_PERFCHECK_VERIFY(__FUNCTION__,(a!=st::zero()),(b!=st::zero()),nV,nX_,nY_,0,0, STREAM_TRIAD(((a!=st::zero())*nX_+(b!=st::zero())*nY_+nY_)*n*sizeof(_ST_)),n*(1+(a!=st::zero())+2*(b!=st::zero())));
+  PHIST_PERFCHECK_VERIFY(__FUNCTION__,(a!=_ST_(0)),(b!=_ST_(0)),nV,nX_,nY_,0,0, STREAM_TRIAD(((a!=_ST_(0))*nX_+(b!=_ST_(0))*nY_+nY_)*n*sizeof(_ST_)),PHIST_PERFCHECK_AXPBY_FLOPS(n*nV,a,b));
 
 #endif
 
@@ -365,7 +408,7 @@ PHIST_PERFCHECK_BENCHMARK(STREAM_STORE, phist_bench_stream_store);
   PHIST_CHK_IERR(SUBR(mvec_num_vectors)(V,&nV,iflag),*iflag); \
   PHIST_CHK_IERR(SUBR(mvec_num_vectors)(W,&nW,iflag),*iflag); \
   *iflag = tmp_iflag; \
-  PHIST_PERFCHECK_VERIFY(__FUNCTION__,nV,nW,(V!=W),*iflag,0,0,0, STREAM_LOAD((nV+(V!=W)*nW)*n*sizeof(_ST_)),2*n*nV*nV);
+  PHIST_PERFCHECK_VERIFY(__FUNCTION__,nV,nW,(V!=W),*iflag,0,0,0, STREAM_LOAD((nV+(V!=W)*nW)*n*sizeof(_ST_)),2*n*nV*nW);
 
 #else
 
@@ -387,7 +430,7 @@ PHIST_PERFCHECK_BENCHMARK(STREAM_STORE, phist_bench_stream_store);
   int nW_ = std::min(ldW,((nW-1)/cl_size+1)*cl_size); \
   if( nW_+cl_size > ldW ) nW_ = ldW; \
   *iflag = tmp_iflag; \
-  PHIST_PERFCHECK_VERIFY(__FUNCTION__,nV,nW,(V!=W),ldV,ldW,*iflag,0, STREAM_LOAD((nV_+(V!=W)*nW_)*n*sizeof(_ST_)),2*n*nV*nV);
+  PHIST_PERFCHECK_VERIFY(__FUNCTION__,nV,nW,(V!=W),ldV,ldW,*iflag,0, STREAM_LOAD((nV_+(V!=W)*nW_)*n*sizeof(_ST_)),2*n*nV*nW);
 
 #endif
 
@@ -405,7 +448,7 @@ PHIST_PERFCHECK_BENCHMARK(STREAM_STORE, phist_bench_stream_store);
   PHIST_CHK_IERR(SUBR(mvec_num_vectors)(V,&nV,iflag),*iflag); \
   PHIST_CHK_IERR(SUBR(mvec_num_vectors)(W,&nW,iflag),*iflag); \
   *iflag = tmp_iflag; \
-  PHIST_PERFCHECK_VERIFY(__FUNCTION__,nV,nW,(V!=W),*iflag,0,0,0, STREAM_TRIAD((nV+(V!=W)*nW+nW)*n*sizeof(_ST_)),4*n*nV*nV);
+  PHIST_PERFCHECK_VERIFY(__FUNCTION__,nV,nW,(V!=W),*iflag,0,0,0, STREAM_TRIAD((nV+(V!=W)*nW+nW)*n*sizeof(_ST_)), n*2*(nW*nW+nV*nW));
 
 #else
 
@@ -427,7 +470,7 @@ PHIST_PERFCHECK_BENCHMARK(STREAM_STORE, phist_bench_stream_store);
   int nW_ = std::min(ldW,((nW-1)/cl_size+1)*cl_size); \
   if( nW_+cl_size > ldW ) nW_ = ldW; \
   *iflag = tmp_iflag; \
-  PHIST_PERFCHECK_VERIFY(__FUNCTION__,nV,nW,(V!=W),ldV,ldW,*iflag,0, STREAM_TRIAD((nV_+(V!=W)*nW_+nW_)*n*sizeof(_ST_)),4*n*nV*nV);
+  PHIST_PERFCHECK_VERIFY(__FUNCTION__,nV,nW,(V!=W),ldV,ldW,*iflag,0, STREAM_TRIAD((nV_+(V!=W)*nW_+nW_)*n*sizeof(_ST_)), 2*n*(nV*nW+nW*nW));
 
 #endif
 
@@ -446,7 +489,7 @@ PHIST_PERFCHECK_BENCHMARK(STREAM_STORE, phist_bench_stream_store);
   PHIST_CHK_IERR(SUBR(mvec_num_vectors)(V,&nV,iflag),*iflag); \
   PHIST_CHK_IERR(SUBR(mvec_num_vectors)(W,&nW,iflag),*iflag); \
   *iflag = tmp_iflag; \
-  PHIST_PERFCHECK_VERIFY(__FUNCTION__,(a!=st::zero()),(b!=st::zero()),nV,nW,*iflag,0,0, STREAM_TRIAD(((a!=st::zero())*nV+(b!=st::zero())*nW+nW)*n*sizeof(_ST_)),2*n*nV*nW);
+  PHIST_PERFCHECK_VERIFY(__FUNCTION__,(a!=_ST_(0)),(b!=_ST_(0)),nV,nW,*iflag,0,0, STREAM_TRIAD(((a!=_ST_(0))*nV+(b!=_ST_(0))*nW+nW)*n*sizeof(_ST_)),2*n*nV*nW);
 
 #else
 
@@ -468,7 +511,7 @@ PHIST_PERFCHECK_BENCHMARK(STREAM_STORE, phist_bench_stream_store);
   int nW_ = std::min(ldW,((nW-1)/cl_size+1)*cl_size); \
   if( nW_+cl_size > ldW ) nW_ = ldW; \
   *iflag = tmp_iflag; \
-  PHIST_PERFCHECK_VERIFY(__FUNCTION__,(a!=st::zero()),(b!=st::zero()),nV,nW,ldV,ldW,*iflag, STREAM_TRIAD(((a!=st::zero())*nV_+(b!=st::zero())*nW_+nW_)*n*sizeof(_ST_)),2*n*nV*nW);
+  PHIST_PERFCHECK_VERIFY(__FUNCTION__,(a!=_ST_(0)),(b!=_ST_(0)),nV,nW,ldV,ldW,*iflag, STREAM_TRIAD(((a!=_ST_(0))*nV_+(b!=_ST_(0))*nW_+nW_)*n*sizeof(_ST_)),2*n*nV*nW);
 
 #endif
 
@@ -530,6 +573,7 @@ PHIST_PERFCHECK_BENCHMARK(STREAM_STORE, phist_bench_stream_store);
 #define PHIST_PERFCHECK_VERIFY_MVECT_TIMES_MVEC_TIMES_SDMAT(V,W,iflag)
 #define PHIST_PERFCHECK_VERIFY_MVEC_TIMES_SDMAT(a,V,b,W,iflag)
 #define PHIST_PERFCHECK_VERIFY_MVEC_TIMES_SDMAT_INPLACE(V,M,iflag)
+#define PHIST_PERFCHECK_VERIFY_SPMV(a,A,shift,X,b,Y,g,d,num_dots,iflag)
 
 
 #endif

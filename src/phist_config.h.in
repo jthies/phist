@@ -24,7 +24,7 @@
 "C_FLAGS: ${CMAKE_C_FLAGS}\n" \
 "Fortran_FLAGS: ${CMAKE_Fortran_FLAGS}\n"
 
-/*! general verbosity of PHIST:
+/* general verbosity of PHIST:
         0: only print errors
         1: errors and warnings
         2: some info about the progress of the algorthms etc.
@@ -63,7 +63,7 @@ version of the code in addition to the standard
    Zoltan/Isorropia. This parameter has no effect on the builtin and ghost
    kernel interface.
  */
-#cmakedefine PHIST_FORCE_INT_GIDX
+#cmakedefine PHIST_FORCE_32BIT_GIDX
 
 /* do you want to compile the complex valued
 version of the code (only available for some
@@ -136,6 +136,9 @@ kernel libs) ?
  */
 #cmakedefine PHIST_HAVE_MPACK_QD
 
+/* TPL-specific settings */
+#cmakedefine PHIST_ANASAZI_THEIR_ORTHO_MANAGER
+#cmakedefine PHIST_BELOS_THEIR_ORTHO_MANAGER
 
 /* timing/profiling/benchmarking behavior */
 #cmakedefine LIKWID_PERFMON
@@ -173,33 +176,12 @@ kernel libs) ?
 
 #cmakedefine PHIST_TRY_TO_PIN_THREADS
 
-/* disallow Trilinos versions newer than 11.12.x because they have a
-   new interface to Tpetra/Kokkos/TSQR (cf. #124)
-
-# ifdef PHIST_HAVE_KOKKOS
-# include "Trilinos_version.h"
-#  if ((TRILINOS_MAJOR_VERSION>11)||((TRILINOS_MAJOR_VERSION==11)&&(TRILINOS_MINOR_VERSION>1112)))
-#   ifdef PHIST_KERNEL_LIB_TPETRA
-#    warning "Trilinos version >11.12 is not fully supported by PHIST, yet (cf. issue #124)"
-#   endif
-#  else
-#  define OLD_TRILINOS
-#  endif
-# endif
-*/
-/* some more sanity checks */
-/*
-# ifndef PHIST_HAVE_MPI
-# error "MPI is currently a prereq of phist, primarily because of tests. If you need phist without MPI, please contact the developers."
-# endif\
-*/
-
 # ifdef PHIST_HAVE_GHOST
 # include "ghost/config.h"
-#  if defined(GHOST_HAVE_MPI)&&!defined(PHIST_HAVE_MPI)
+#  if defined(GHOST_HAVE_MPI)&&(!defined(PHIST_HAVE_MPI))
 #  error "ghost was compiled with MPI, conflict with phist installation without MPI."
 #  endif
-#  if defined(GHOST_HAVE_MPI)&&!defined(PHIST_HAVE_MPI)
+#  if (!defined(GHOST_HAVE_MPI))&&defined(PHIST_HAVE_MPI)
 #  error "ghost was compiled without MPI, conflict with phist installation with MPI."
 #  endif
 # endif

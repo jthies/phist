@@ -43,26 +43,28 @@
 #include "phist_gen_c.h"
 #if defined(PETSC_USE_REAL_SINGLE) && defined(PETSC_USE_COMPLEX)
 #include "kernels_def.hpp"
+#include "../common/default_mvec_get_data_def.hpp"
 #include "../common/default_context_def.hpp"
 #include "../common/kernels_no_gpu.cpp"
 #include "../common/kernels_no_carp.cpp"
 #include "../common/kernels_no_inplace_VC.cpp"
 #include "../common/kernels_no_VC_add_WD.cpp"
 #include "../common/kernels_no_fused.cpp"
+
+// We can't provide this function because PETSc forces you to choose a single data type at compile time.
+extern "C" void phist_Cmvec_split(phist_Cconst_mvec_ptr V, phist_Smvec* reV, phist_Smvec* imV, int *iflag)
+{
+  *iflag=PHIST_NOT_IMPLEMENTED;
+}
+
+// We can't provide this function because PETSc forces you to choose a single data type at compile time.
+extern "C" void phist_Cmvec_combine(phist_Cmvec_ptr V, phist_Sconst_mvec_ptr reV, phist_Sconst_mvec_ptr imV, int *iflag)
+{
+  *iflag=PHIST_NOT_IMPLEMENTED;
+}
+
 #else
 #include "../common/kernels_no_impl.cpp"
 #endif
-
-// We can't provide this function because PETSc forces you to choose a single data type at compile time.
-void phist_Cmvec_split(phist_Cconst_mvec_ptr V, phist_Smvec* reV, phist_Smvec* imV, int *iflag)
-{
-  *iflag=PHIST_NOT_IMPLEMENTED;
-}
-
-// We can't provide this function because PETSc forces you to choose a single data type at compile time.
-void phist_Cmvec_combine(phist_Cmvec_ptr V, phist_Sconst_mvec_ptr reV, phist_Sconst_mvec_ptr imV, int *iflag)
-{
-  *iflag=PHIST_NOT_IMPLEMENTED;
-}
 
 #endif

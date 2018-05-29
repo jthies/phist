@@ -6,15 +6,14 @@
 /* Contact: Jonas Thies (Jonas.Thies@DLR.de)                                               */
 /*                                                                                         */
 /*******************************************************************************************/
-#include "fmacros.h"
+
 !> \file crsmat_module.f90
 !! defines crsmat_module, the sparseMat implementation of phist builtin kernels
 !! \author "Melven Roehrig-Zoellner <Melven.Roehrig-Zoellner@DLR.de>"
 !! \author "Jonas Thies <Jonas.Thies@DLR.de>"
 !!
 
-#include "phist_config.h"
-
+#include "phist_config_fortran.h"
 #include "phist_kernel_flags.h"
 #include "phist_defs.h"
 
@@ -78,7 +77,8 @@ module crsmat_module
     !--------------------------------------------------------------------------------
     integer                      :: nRows                !< number of rows
     integer                      :: nCols                !< number of columns
-    integer(kind=8)              :: nEntries             !< number of non-zero entries
+    integer(kind=8)              :: nEntries             !< number of non-zero entries on this MPI rank
+    integer(kind=8)              :: nGlobalEntries       !< number of non-zero entries across all MPI ranks
     integer(kind=8), allocatable :: row_offset(:)        !< indices of rows in col_idx and val
     integer(kind=8), allocatable :: nonlocal_offset(:)   !< points to first nonlocal element in each row
     integer,         allocatable :: col_idx(:)           !< column indices
@@ -113,6 +113,14 @@ module crsmat_module
       TYPE(c_ptr), value :: data_arg
       integer(C_INT) :: ierr
     end function matRowFunc
+      
+    function matRowFuncConstructor(data_arg, workspace_ptr) bind(C) result(ierr)
+      use, intrinsic :: iso_c_binding
+      TYPE(c_ptr), value :: data_arg
+      TYPE(c_ptr)         :: workspace_ptr
+      integer(C_INT) :: ierr
+    end function matRowFuncConstructor
+
   end interface
 
 contains
@@ -1881,6 +1889,7 @@ end subroutine permute_local_matrix
     ! create the default map
     call c_f_pointer(comm_ptr, comm)
     call map_setup(A%row_map, comm, globalRows, verbose, ierr)
+    A%nGlobalEntries=globalEntries
     if( ierr .ne. 0 ) return
     
     ! read the matrix data
@@ -2045,7 +2054,8 @@ end subroutine permute_local_matrix
 
   !==================================================================================
   !> read MatrixMarket file
-  subroutine phist_DcrsMat_create_fromRowFunc(A_ptr, comm_ptr,nrows, ncols, maxnne_per_row, rowFunc_ptr, data_arg, ierr) &
+  subroutine phist_DcrsMat_create_fromRowFunc(A_ptr, comm_ptr,nrows, ncols, maxnne_per_row, &
+    & rowFunc_ptr, initFunc_ptr, data_arg, ierr) &
     & bind(C,name='phist_DcrsMat_create_fromRowFunc_f') ! circumvent bug in opari (openmp instrumentalization)
     use, intrinsic :: iso_c_binding
     use env_module, only: newunit
@@ -2057,11 +2067,14 @@ end subroutine permute_local_matrix
     integer(C_INT32_T), value           :: maxnne_per_row
     type(C_PTR),        value :: data_arg
     type(C_FUNPTR),     value       :: rowFunc_ptr
+    type(C_FUNPTR),     value       :: initFunc_ptr
     integer(C_INT),     intent(out) :: ierr
     !--------------------------------------------------------------------------------
     logical :: repart, d2clr, d2clr_and_permute
     type(CrsMat_t), pointer :: A
     procedure(matRowFunc), pointer :: rowFunc => null()
+    procedure(matRowFuncConstructor), pointer :: initFunc => null()
+    TYPE(c_ptr) :: c_work
     !--------------------------------------------------------------------------------
     integer(kind=G_GIDX_T), allocatable :: idx(:,:)
     real(kind=8), allocatable :: val(:)
@@ -2094,6 +2107,9 @@ end subroutine permute_local_matrix
     ierr=0
     ! get procedure pointer
     call c_f_procpointer(rowFunc_ptr, rowFunc)
+    if (c_associated(initFunc_ptr)) then
+      call c_f_procpointer(initFunc_ptr, initFunc)
+    end if
     call c_f_pointer(comm_ptr, comm)
 
     allocate(A)
@@ -2145,11 +2161,18 @@ wtime = mpi_wtime()
     !         array on-the-fly. It also saves us the trouble of making
     !         most things in the loop thread-private.
     A%row_offset(1) = 1_8
-!$omp parallel do schedule(static) ordered
+!$omp parallel private(c_work)
+    if (associated(initFunc)) then
+      c_work=C_NULL_PTR
+      ierr=initFunc(data_arg,c_work)
+    else
+      c_work=data_arg
+    end if
+!$omp do schedule(static) ordered
     do i = 1, A%nRows, 1
 !$omp ordered
       i_ = A%row_map%distrib(A%row_map%me)+i-2
-      ierr=rowFunc(i_, nne, idx(:,1), val,data_arg)
+      ierr=rowFunc(i_, nne, idx(:,1), val,c_work)
       j = A%row_offset(i)
       j_ = j + int(nne-1,kind=8)
       A%global_col_idx(j:j_) = idx(1:nne,1)+1
@@ -2157,6 +2180,10 @@ wtime = mpi_wtime()
       A%row_offset(i+1) = A%row_offset(i)+int(nne,kind=8)
 !$omp end ordered
     end do
+    if (associated(initFunc)) then
+      ierr=initFunc(data_arg, c_work)
+    end if
+!$omp end parallel
     A%nEntries = A%row_offset(A%nRows+1)-1
 
 call mpi_barrier(A%row_map%comm, ierr)
@@ -2165,6 +2192,9 @@ if( verbose .and. A%row_map%me .eq. 0 ) then
   write(*,*) 'read matrix from row func in', wtime, 'seconds'
   flush(6)
 end if
+
+call mpi_allreduce(A%nEntries, A%nGlobalEntries, 1, MPI_INTEGER8, MPI_SUM, &
+                   A%row_map%comm, ierr)
 
 wtime = mpi_wtime()
 
@@ -2339,6 +2369,42 @@ end if
 
     !--------------------------------------------------------------------------------
   end subroutine phist_DcrsMat_get_map
+
+  subroutine phist_DcrsMat_local_nnz(A_ptr, local_nnz, ierr) bind(C,name='phist_DcrsMat_local_nnz_f')
+    use, intrinsic :: iso_c_binding
+    type(c_ptr), value :: A_ptr
+    integer(kind=c_int64_t), intent(out) :: local_nnz
+    integer(kind=c_int), intent(out) :: ierr
+    !--------------------------------------------------------------------------------
+    type(CrsMat_t), pointer :: A
+
+    if( .not. c_associated(A_ptr) ) then
+      ierr = -88
+      return
+    end if
+
+    call c_f_pointer(A_ptr,A)
+    local_nnz = A%nEntries
+  
+  end subroutine phist_DcrsMat_local_nnz
+
+  subroutine phist_DcrsMat_global_nnz(A_ptr, global_nnz, ierr) bind(C,name='phist_DcrsMat_global_nnz_f')
+    use, intrinsic :: iso_c_binding
+    type(c_ptr), value :: A_ptr
+    integer(kind=c_int64_t), intent(out) :: global_nnz
+    integer(kind=c_int), intent(out) :: ierr
+    !--------------------------------------------------------------------------------
+    type(CrsMat_t), pointer :: A
+
+    if( .not. c_associated(A_ptr) ) then
+      ierr = -88
+      return
+    end if
+
+    call c_f_pointer(A_ptr,A)
+    global_nnz = A%nGlobalEntries
+  
+  end subroutine phist_DcrsMat_global_nnz
 
 
   !==================================================================================

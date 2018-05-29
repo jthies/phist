@@ -947,7 +947,7 @@ PHIST_SOUT(PHIST_VERBOSE,"\n");
       PHIST_CHK_IERR(SUBR( sdMat_view_block ) (R_H_,&R_H, 0,     nV-1,      0,     k-1,       iflag), *iflag);
       PHIST_CHK_IERR(SUBR( sdMat_view_block ) (R_H_,&Rr_H,nV,    nV+k-1,    nV,    nV+k-1,    iflag), *iflag);
       int rankV;
-      PHIST_CHK_NEG_IERR(SUBR( orthog ) (Vful, Vv, B_op, Rr_H, R_H, 5, &rankV, iflag), *iflag);
+      PHIST_CHK_NEG_IERR(SUBR( orthog ) (Vful, Vv, B_op, Rr_H, R_H, 3, &rankV, iflag), *iflag);
       // TODO: only take non-random vector if *iflag > 0
       // calculate AVv, BVv
       PHIST_CHK_IERR( AB_op->apply(st::one(), AB_op->A, Vv, st::zero(), AVv, iflag), *iflag);
@@ -993,7 +993,7 @@ PHIST_TESTING_CHECK_SUBSPACE_INVARIANTS;
     if (nQ_out>minBase)
     {
       // we could also return up to nV (current basis size) vectors, but then we'ld have to communicate how many columns exactly are set.
-      // This way the usere knows: nEig, or minBase if I allowed for more space.
+      // This way the user knows: nEig, or minBase if I allowed for more space.
       PHIST_SOUT(PHIST_WARNING,"only setting the first opts.minBas(=%d) columns of Q (rows and cols of R)\n",minBase);
       nQ_out=minBase;
     }

@@ -24,7 +24,7 @@
 #include "phist_belos.h"
 #include ${PHIST_TG_HFILE}
 
-#include "phist_driver_utils.h"
+#include "phist_driver_utils_decl.h"
 
 int main(int argc, char** argv)
   {
@@ -48,7 +48,7 @@ int main(int argc, char** argv)
   char* matname;
   
   int num_iters, nconv;
-  int max_iters,max_blocks,num_rhs;
+  int max_iters,max_blocks=-1,num_rhs; //max_blocks not used by PCG
   int variant=2; // only proper block CG accessible via this driver right now.
   const char *prec_type,*prec_opts;
   

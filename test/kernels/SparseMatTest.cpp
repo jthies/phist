@@ -233,6 +233,10 @@ using namespace ::testing;
 
 // larger tests that also make sense on hybrid CPU/GPU nodes
 
+#ifdef PHIST_KERNEL_LIB_GHOST
+#define TEST_SPMV_MODES 1
+#endif
+
 #define _N_ 388
 #define _M_ 1
 #include "../phist_typed_test_gen.h"

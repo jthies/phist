@@ -29,8 +29,8 @@ SET(CMAKE_SKIP_INSTALL_ALL_DEPENDENCY TRUE)
 # still under development, whereas the next development version may or may not do what
 # the function claims to do, depending on the status of the repository.
 set(PHIST_VERSION_MAJOR 1)
-set(PHIST_VERSION_MINOR 4)
-set(PHIST_VERSION_PATCH 3)
+set(PHIST_VERSION_MINOR 6)
+set(PHIST_VERSION_PATCH 0)
 set(PHIST_VERSION ${PHIST_VERSION_MAJOR}.${PHIST_VERSION_MINOR}.${PHIST_VERSION_PATCH})
 math(EXPR PHIST_VERSION_INT "( ( ${PHIST_VERSION_MAJOR} * 100 ) + ${PHIST_VERSION_MINOR} ) * 100 + ${PHIST_VERSION_PATCH}")
 
@@ -64,7 +64,7 @@ else()
 endif()
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-if (PHIST_KERNEL_LIB STREQUAL "Eigen")
+if (PHIST_KERNEL_LIB STREQUAL "eigen")
   option(PHIST_ENABLE_MPI "Enable MPI within PHIST" OFF)
 else()
   option(PHIST_ENABLE_MPI "Enable MPI within PHIST" ON)
@@ -74,7 +74,7 @@ option(PHIST_USE_LIKWID "Enable instrumentation for likwid-perfctr" OFF)
 option(PHIST_BUILD_MIC "Build for Intel MIC" OFF)
 
 option(PHIST_HAVE_SSE  "enable SSE SIMD intrinsics in PHIST code" ON)
-option(PHIST_HAVE_AVX  "enable AVX SIMD intrinsics in PHIST code" OFF)
+option(PHIST_HAVE_AVX  "enable AVX SIMD intrinsics in PHIST code" ON)
 option(PHIST_HAVE_AVX2 "enable AVX2 SIMD intrinsics in PHIST code" OFF)
 option(PHIST_HAVE_AVX512 "enable AVX512 SIMD intrinsics in PHIST code" ${PHIST_BUILD_MIC})
 
@@ -168,9 +168,9 @@ if (USE_XSDK_DEFAULTS)
 endif()
 
 if (XSDK_INDEX_SIZE EQUAL 32)
-  set(PHIST_FORCE_INT_GIDX_DEFAULT ON)
+  set(PHIST_FORCE_32BIT_GIDX_DEFAULT ON)
 elseif (XSDK_INDEX_SIZE EQUAL 64)
-  set(PHIST_FORCE_INT_GIDX_DEFAULT OFF)
+  set(PHIST_FORCE_32BIT_GIDX_DEFAULT OFF)
 endif()
 
 ########################################################################
@@ -250,7 +250,7 @@ if (NOT TPL_LAPACKE_LIBRARIES)
   else()
     find_library (LAPACKE_LIBRARY lapacke ${LAPACKE_LIBDIR})
     if (LAPACKE_LIBRARY MATCHES "LAPACKE_LIBRARY-NOTFOUND")
-      message(FATAL_ERROR "Did not find the LAPACKe library based on the LAPACK_LIBRARIES you provided, please set"
+      message(FATAL_ERROR "Did not find the LAPACKe library based on the LAPACK_LIBRARIES you provided, please set "
                           "LAPACKE_LIBRARIES and LAPACKE_INCLUDE_DIRS instead (including lapacke,lapack and blas library "
                           "names/inc dirs) or leave it to CMake to locate BLAS, LAPACK and LAPACKe.")
     else()
@@ -304,7 +304,6 @@ endif()
 ##############################################################################
 # compiler-dependent flags 
 ##############################################################################
-
 
 if (CMAKE_C_COMPILER_ID STREQUAL "GNU")
 
@@ -585,7 +584,7 @@ endif()
 # setup which kernel library is being used.
 ##############################################################################
 
-set(PHIST_KERNEL_LIB "builtin" CACHE STRING "Select underlying kernel libraries for phist (builtin|ghost|epetra|tpetra|magma|petsc|Eigen|tpetra12)")
+set(PHIST_KERNEL_LIB "builtin" CACHE STRING "Select underlying kernel libraries for phist (builtin|ghost|epetra|tpetra|magma|petsc|eigen|tpetra12)")
 message(STATUS "kernel lib " ${PHIST_KERNEL_LIB} " ...")
 
 set(REQUIRE_TRILI_PKG,"")
@@ -651,12 +650,6 @@ elseif (PHIST_KERNEL_LIB STREQUAL "builtin")
     set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -mavx -mavx2 -mfma")
     set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mavx -mavx2 -mfma")
     set (CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -mavx -mavx2 -mfma")
-
-    if (NOT MPACK_FOUND)
-      message(WARNING "did not find mlapack_dd library, as you are compiling with high precision kernels, you may want to provide this library."
-                      "It can be obtained from http://mplapack.sourceforge.net/ and should be compiled with support for double-double (dd) core operations."
-                      "If it is already installed and you want to use it, set MPACK_DIR to provide a hint where it can be found.")
-    endif()
   endif()
 
   if( NOT PHIST_HAVE_MPI )
@@ -668,11 +661,11 @@ elseif (PHIST_KERNEL_LIB STREQUAL "magma")
 elseif (PHIST_KERNEL_LIB STREQUAL "petsc")
   set(PHIST_KERNEL_LIB_PETSC 1)
   set(PHIST_MVECS_ROW_MAJOR 0)
-elseif (PHIST_KERNEL_LIB STREQUAL "Eigen")
+elseif (PHIST_KERNEL_LIB STREQUAL "eigen")
   set(PHIST_KERNEL_LIB_EIGEN 1)
   set(PHIST_MVECS_ROW_MAJOR 0 CACHE STRING "wether multi-vectors should be stored in row-major ordering")
   if( PHIST_HAVE_MPI )
-    message(FATAL_ERROR "Eigen kernel lib has no MPI support!")
+    message(FATAL_ERROR "The eigen kernel lib has no MPI support!")
   endif()
 else ()
   message( FATAL_ERROR "PHIST_KERNEL_LIB not set or not recognized" )
@@ -681,40 +674,27 @@ set(PHIST_BENCH_LARGE_N 134217728 CACHE STRING "Dimension for benchmarking tests
 
 option(PHIST_TIMINGS_FULL_TRACE "Try to print full call trace in the TimeMonitor/performance measurements (Warning: may generate *a lot* of output)." Off)
 
-# even without the essex-physics libs we include certain matfuncs for the
-# test cases SpinSZ and Graphene for testing purposes.
-find_package(ESSEX-PHYSICS CONFIG QUIET)
-if (ESSEX-PHYSICS_FOUND)
-  message(STATUS "Found ESSEX-Physics ${ESSEX-PHYSICS_VERSION}. We currently do NOT use matfuncs from this"
-                 "library because it will be superseded by the ESSEX Matrix Collection eventually.")
-  set(PHIST_HAVE_ESSEX_PHYSICS 0)
-#  include_directories(${ESSEX-PHYSICS_INCLUDE_DIRS})
-else()
-#  message(STATUS "ESSEX-Physics not found, will use supplementary implementation")
-  include_directories(${PROJECT_SOURCE_DIR}/drivers/matfuncs)
-endif()
-
-if (NOT DEFINED PHIST_FORCE_INT_GIDX_DEFAULT)
+if (NOT DEFINED PHIST_FORCE_32BIT_GIDX_DEFAULT)
 
 #############################################################################
 # use 32-bit integers as global indices with Epetra by default. This is     #
 # because e.g. Isorropia/Zoltan and our own HYMLS require it. For larger    #
 # runs with Epetra it has to be switched off before compiling PHIST.        #
 #############################################################################
-  if( "${PHIST_KERNEL_LIB}" MATCHES "epetra|petsc|Eigen" )
-    set(PHIST_FORCE_INT_GIDX_DEFAULT ON)
+  if( "${PHIST_KERNEL_LIB}" MATCHES "epetra|petsc|eigen" )
+    set(PHIST_FORCE_32BIT_GIDX_DEFAULT ON)
   else()
-    set(PHIST_FORCE_INT_GIDX_DEFAULT OFF)
+    set(PHIST_FORCE_32BIT_GIDX_DEFAULT OFF)
   endif()
 endif()
 
-option(PHIST_FORCE_INT_GIDX "Use 32-bit global indices for compatiblity with other libs" 
-${PHIST_FORCE_INT_GIDX_DEFAULT})
+option(PHIST_FORCE_32BIT_GIDX "Use 32-bit global indices for compatiblity with other libs" 
+${PHIST_FORCE_32BIT_GIDX_DEFAULT})
 
 ##############################################################################
 # enable single precision and complex valued calculation if supported
 ##############################################################################
-if( "${PHIST_KERNEL_LIB}" MATCHES "tpetra|ghost|magma|petsc|Eigen|tpetra12" )
+if( "${PHIST_KERNEL_LIB}" MATCHES "tpetra|ghost|magma|petsc|eigen|tpetra12" )
   set(PHIST_SUPPORT_SP ON)
   set(PHIST_SUPPORT_COMPLEX ON)
 else()
@@ -738,6 +718,34 @@ if (PHIST_ENABLE_COMPLEX)
   endif()
   set(PHIST_HAVE_CMPLX 1)
 endif()
+
+########################################################
+# configure scamac subtree (scalable matrix generator) #
+########################################################
+
+# some matfuncs (for row-wise scalable generation of test matrices) are
+# included in phist. In particular we now have the 'Scalable Matrix Collection' (scamac)
+# as a subtree. The stand-alone repo is at https://bitbucket.org/essex/MatrixCollection.
+include_directories(${PROJECT_SOURCE_DIR}/drivers/matfuncs)
+include_directories(${PROJECT_SOURCE_DIR}/drivers/matfuncs/scamac)
+include_directories(${CMAKE_BINARY_DIR}/drivers/matfuncs/scamac)
+set(SCAMAC_BUILD_MWE OFF CACHE BOOL "")
+# to avoid conflicts with e.g. ghost (which also uses cblas), disable blas and lapack in the scamac within phist.
+# they are used for allowing to compute some eigenvalues etc., but we are only interested in the matrix generator
+# itself.
+set(SCAMAC_USE_BLAS OFF CACHE BOOL "")
+set(SCAMAC_USE_LAPACK OFF CACHE BOOL "")
+if (PHIST_FORCE_32BIT_GIDX)
+  set(SCAMAC_USE_64 OFF CACHE BOOL "")
+else()
+  set(SCAMAC_USE_64 ON CACHE BOOL "")
+endif()
+add_subdirectory(drivers/matfuncs/scamac)
+
+
+########################################################
+# define source files and libraries                    #
+########################################################
 
 # these specific versions of type-generic drivers have to be created
 if (PHIST_ENABLE_SP)
@@ -811,21 +819,31 @@ else()
                            ${PROJECT_SOURCE_DIR}/drivers/matfuncs/brussolator.f90
                            ${PROJECT_SOURCE_DIR}/src/kernels/phist_mpi_kernels.cpp)
 endif()
-if (NOT ESSEX-PHYSICS_FOUND)
-  LIST(APPEND PHIST_KERNEL_SOURCE ${PROJECT_SOURCE_DIR}/drivers/matfuncs/graphene.c
+
+# these matfuncs have always been in phist and remain there for backwards compatibility,
+# even though the scamac can also generate them.
+LIST(APPEND PHIST_KERNEL_SOURCE ${PROJECT_SOURCE_DIR}/drivers/matfuncs/graphene.c
                                   ${PROJECT_SOURCE_DIR}/drivers/matfuncs/SpinChainSZ.c
                                   ${PROJECT_SOURCE_DIR}/drivers/matfuncs/part_tools.c)
-endif()
 
 # repartitioning with Isorropia/Zoltan
 if (PHIST_KERNEL_LIB STREQUAL "epetra")
   LIST(APPEND PHIST_KERNEL_SOURCE ${PROJECT_SOURCE_DIR}/src/kernels/epetra/hg_repart.cpp)
 endif()
 
-# sopme `derived' kernel functions, e.g. mvec_my_length is implemented via mvec_get_map/map_get_local_lenth etc.
+# some `derived' kernel functions, e.g. mvec_my_length is implemented via mvec_get_map/map_get_local_lenth etc.
 # and common things like benchmarks
 LIST(APPEND PHIST_KERNEL_SOURCE ${PROJECT_SOURCE_DIR}/src/kernels/common/kernels_common_impl.cpp
                                 ${PROJECT_SOURCE_DIR}/src/kernels/common/stream_bench.c)
+
+if (PHIST_USE_CRAFT)
+  set(CRAFT_DIR "${PROJECT_SOURCE_DIR}/src/craft/") 
+  set(CRAFT_BUILD_GHOST OFF)
+  set(CRAFT_BUILD_PHIST ON)
+  include(${CRAFT_DIR}/CRAFT_VARS.txt) 
+  add_definitions(-DPHIST_CP)
+  add_library(craft SHARED ${CRAFT_SOURCE}) 
+endif()
 
 set (PHIST_TOOLS_SOURCE ${PROJECT_SOURCE_DIR}/src/tools/phist_tools.cpp
                         ${PROJECT_SOURCE_DIR}/src/tools/phist_random.c
@@ -841,6 +859,8 @@ set (PHIST_CORE_SOURCE ${PROJECT_SOURCE_DIR}/src/core/phist_operator.cpp
                        ${PROJECT_SOURCE_DIR}/src/core/phist_orthogrr.cpp
                        ${PROJECT_SOURCE_DIR}/src/core/phist_orthogrrfused.cpp
                        ${PROJECT_SOURCE_DIR}/src/core/phist_svrr.cpp
+                       ${PROJECT_SOURCE_DIR}/src/core/phist_schur_decomp.cpp
+                       ${PROJECT_SOURCE_DIR}/src/core/phist_transform_searchspace.cpp
                        ${PROJECT_SOURCE_DIR}/src/core/phist_kpm.cpp
                        )
 
@@ -873,16 +893,10 @@ if(PHIST_USE_CRAFT)
 endif()
 set (PHIST_JADA_SOURCE   ${PROJECT_SOURCE_DIR}/src/jada/phist_jadaOp.cpp
                          ${PROJECT_SOURCE_DIR}/src/jada/phist_jadaOpts.cpp
-                         ${PROJECT_SOURCE_DIR}/src/jada/phist_schur_decomp.cpp
                          ${PROJECT_SOURCE_DIR}/src/jada/phist_subspacejadaS.cpp
                          ${PROJECT_SOURCE_DIR}/src/jada/phist_subspacejadaC.cpp
                          ${PROJECT_SOURCE_DIR}/src/jada/phist_subspacejadaD.cpp
                          ${PROJECT_SOURCE_DIR}/src/jada/phist_subspacejadaZ.cpp
-                         ${PROJECT_SOURCE_DIR}/src/jada/phist_harmonicjadaS.cpp
-                         ${PROJECT_SOURCE_DIR}/src/jada/phist_harmonicjadaC.cpp
-                         ${PROJECT_SOURCE_DIR}/src/jada/phist_harmonicjadaD.cpp
-                         ${PROJECT_SOURCE_DIR}/src/jada/phist_harmonicjadaZ.cpp
-                         ${PROJECT_SOURCE_DIR}/src/jada/phist_transform_searchspace.cpp
                          ${PROJECT_SOURCE_DIR}/src/jada/phist_jadaCorrectionSolver.cpp
                          )
 set(PHIST_PRECON_SOURCE ${PROJECT_SOURCE_DIR}/src/precon/phist_preconS.cpp
@@ -920,27 +934,12 @@ if(PHIST_KERNEL_LIB STREQUAL "petsc")
   list(APPEND PHIST_PKG_CONFIG_REQUIRE PETSc)
 endif()
 
-if(PHIST_KERNEL_LIB STREQUAL "Eigen")
+if(PHIST_KERNEL_LIB STREQUAL "eigen")
   find_package (Eigen3 3.3 REQUIRED NO_MODULE)
-  include_directories(${EIGEN3_INCLUDE_DIRS})
+include_directories(${EIGEN3_INCLUDE_DIRS})
   add_definitions(-DEIGEN_NO_AUTOMATIC_RESIZING)
   add_definitions(-DEIGEN_INITIALIZE_MATRICES_BY_ZERO)
 endif()
-
-if (PHIST_USE_CRAFT)
-        find_package(CRAFT REQUIRED)
-        if(CRAFT_FOUND)
-                message (STATUS "CRAFT package is found ${CRAFT_INCLUDE_PATH}")
-                include_directories(${CRAFT_INCLUDE_PATH})
-                link_libraries(${CRAFT_LIBRARIES})
-                set (CMAKE_C_FLAGS        "${CMAKE_C_FLAGS}      ${CRAFT_FLAGS}")
-    set (CMAKE_CXX_FLAGS      "${CMAKE_CXX_FLAGS}    ${CRAFT_FLAGS}")
-
-        else()
-                message (STATUS "CRAFT package is NOT found")
-        endif()
-endif()
-
 
 add_library(phist_tools ${PHIST_TOOLS_SOURCE})
 add_library(phist_core ${PHIST_CORE_SOURCE})
@@ -953,18 +952,16 @@ LIST(APPEND library_list phist_solvers)
 LIST(APPEND library_list phist_precon)
 LIST(APPEND library_list phist_core)
 LIST(APPEND library_list phist_kernels_${PHIST_KERNEL_LIB})
+LIST(APPEND library_list scamac)
 LIST(APPEND library_list phist_tools)
 
-target_link_libraries(phist_kernels_${PHIST_KERNEL_LIB}                                                     phist_tools)
+target_link_libraries(phist_kernels_${PHIST_KERNEL_LIB}                                                     phist_tools scamac)
 target_link_libraries(phist_core                                          phist_kernels_${PHIST_KERNEL_LIB} phist_tools)
 target_link_libraries(phist_precon                             phist_core phist_kernels_${PHIST_KERNEL_LIB} phist_tools)
 target_link_libraries(phist_solvers               phist_precon phist_core phist_kernels_${PHIST_KERNEL_LIB} phist_tools)
-
-if (MPACK_FOUND)
-      target_link_libraries(phist_core ${MPACK_LIBRARIES})
-endif()
-if (ESSEX-PHYSICS_FOUND)
-  target_link_libraries(phist_kernels_${PHIST_KERNEL_LIB} ${ESSEX-PHYSICS_LIBRARIES})
+if(PHIST_USE_CRAFT)
+  LIST(APPEND library_list craft)
+  target_link_libraries(phist_kernels_${PHIST_KERNEL_LIB}                                                     craft)
 endif()
 
 if(PHIST_KERNEL_LIB STREQUAL "ghost")
@@ -990,6 +987,7 @@ endif()
 if (PHIST_USE_MPACK)
   find_package (MPACK QUIET)
   if (MPACK_FOUND)
+    target_link_libraries(phist_core ${MPACK_LIBRARIES})
     include_directories(${MPACK_INCLUDE_DIRS})
     link_directories(${MPACK_LIBRARY_DIRS})
     message(STATUS "mpack found, enabled high precision lapack!")
@@ -1113,6 +1111,15 @@ foreach(PKG ${OPTIONAL_TRILI_PKG})
   message(STATUS ${TPL_REPORT})
 endforeach()
 
+if (PHIST_HAVE_ANASAZI)
+  set(PHIST_ANASAZI_THEIR_ORTHO_MANAGER OFF CACHE LOGICAL "In the Anasazi interface, rely on the Trilinos orthogonalization routines rather than our own.")
+  mark_as_advanced(PHIST_ANASAZI_THEIR_ORTHO_MANAGER)
+endif()
+if (PHIST_HAVE_BELOS)
+  set(PHIST_BELOS_THEIR_ORTHO_MANAGER OFF CACHE LOGICAL "In the Belos interface, rely on the Trilinos orthogonalization routines rather than our own.")
+  mark_as_advanced(PHIST_BELOS_THEIR_ORTHO_MANAGER)
+endif()
+
 if (PHIST_KERNEL_LIB STREQUAL "tpetra")
   if ("CUDA" IN_LIST Tpetra_TPL_LIST)
     # compiling tpetra/kokkos with CUDA is tricky and requires special flags
@@ -1142,8 +1149,8 @@ if( PHIST_PERFCHECK )
   option(PHIST_PERFCHECK_REALISTIC "Switch from ideal performance predictions to more realistic ones (e.g. for views)!" OFF)
 endif()
 
-set(PHIST_PEAK_FLOPS_CPU 884e9 CACHE STRING "Peak GFlop/s rate of the CPU component (for PERFCHECK only)")
-set(PHIST_PEAK_FLOPS_GPU 1.43e12 CACHE STRING "Peak GFlop/s rate of the GPU component (for PERFCHECK only)")
+set(PHIST_PEAK_FLOPS_CPU -1 CACHE STRING "Peak GFlop/s rate of the CPU component (for the roofline model in PERFCHECK only. If you don't know this value, just leave it at -1 and it will be ignored)")
+set(PHIST_PEAK_FLOPS_GPU -1 CACHE STRING "Peak GFlop/s rate of the GPU component (for the roofline model in PERFCHECK only. If you don't know this value, just leave it at -1 and it will be ignored)")
 
 set(INCLUDE_FLAGS "")
 get_property(dirs DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY INCLUDE_DIRECTORIES)
@@ -1234,6 +1241,8 @@ target_link_libraries(phist_tools ${external_libs})
 file(GLOB TG_C_Drivers ${CMAKE_CURRENT_SOURCE_DIR}/drivers/*.c.in )
 file(GLOB TG_CXX_Drivers ${CMAKE_CURRENT_SOURCE_DIR}/drivers/*.cpp.in )
 
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/drivers)
+
 foreach (infile ${TG_C_Drivers})
   get_filename_component(filebase ${infile} NAME_WE)
   foreach (tc ${TG_Types})
@@ -1244,7 +1253,6 @@ foreach (infile ${TG_C_Drivers})
     set_property(SOURCE ${tc}${filebase}.c APPEND PROPERTY OBJECT_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/src/tools/phist_gen_${tcl}.h)
     target_link_libraries(phist_${tc}${filebase} ${library_list})
     install(TARGETS phist_${tc}${filebase} RUNTIME DESTINATION bin OPTIONAL)
-    # added
     LIST(APPEND driver_list phist_${tc}${filebase})
   endforeach()
 endforeach()
@@ -1314,12 +1322,20 @@ if (${BUILD_SHARED_LIBS})
   install(TARGETS phist_core EXPORT phistLibraries LIBRARY DESTINATION ${LIBRARY_INSTALL_DIR})
   install(TARGETS phist_precon EXPORT phistLibraries LIBRARY DESTINATION ${LIBRARY_INSTALL_DIR})
   install(TARGETS phist_solvers EXPORT phistLibraries LIBRARY DESTINATION ${LIBRARY_INSTALL_DIR})
+  if(PHIST_USE_CRAFT)
+    install(TARGETS craft EXPORT phistLibraries LIBRARY DESTINATION ${LIBRARY_INSTALL_DIR})
+  endif()
+
 else()
   install(TARGETS phist_kernels_${PHIST_KERNEL_LIB} EXPORT phistLibraries ARCHIVE DESTINATION ${LIBRARY_INSTALL_DIR})
   install(TARGETS phist_tools EXPORT phistLibraries ARCHIVE DESTINATION ${LIBRARY_INSTALL_DIR})
   install(TARGETS phist_core EXPORT phistLibraries ARCHIVE DESTINATION ${LIBRARY_INSTALL_DIR})
   install(TARGETS phist_precon EXPORT phistLibraries ARCHIVE DESTINATION ${LIBRARY_INSTALL_DIR})
   install(TARGETS phist_solvers EXPORT phistLibraries ARCHIVE DESTINATION ${LIBRARY_INSTALL_DIR})
+  if(PHIST_USE_CRAFT)
+     install(TARGETS craft EXPORT phistLibraries ARCHIVE DESTINATION ${LIBRARY_INSTALL_DIR})
+  endif()
+
 endif()
 install(FILES ${PROJECT_BINARY_DIR}/phistConfig.cmake        DESTINATION ${LIBRARY_INSTALL_DIR}/cmake/phist)
 #export(EXPORT phistLibraries FILE "${PROJECT_BINARY_DIR}/phistLibraries.cmake")
@@ -1331,6 +1347,7 @@ install(FILES ${PROJECT_BINARY_DIR}/phist_config.h DESTINATION ${INCLUDE_INSTALL
 file(GLOB PHIST_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/src/*/*.h 
                         ${CMAKE_CURRENT_SOURCE_DIR}/src/kernels/${PHIST_KERNEL_LIB}/phist_typedefs.h 
                         ${CMAKE_CURRENT_SOURCE_DIR}/src/tools/*.hpp
+                        ${CMAKE_CURRENT_SOURCE_DIR}/drivers/phist_driver_utils_decl.h
                         )
 install(FILES ${PHIST_HEADERS} DESTINATION ${INCLUDE_INSTALL_DIR})
 
@@ -1369,6 +1386,8 @@ else()
                   tools)
 endif()
 
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR})
+
 foreach(label ${PHIST_TESTS})
   string(TOUPPER ${label} label_uc)
 
@@ -1402,6 +1421,8 @@ endforeach()
 # some example drivers which haven't made their way into the drivers/ directory
 file(GLOB C_Examples ${CMAKE_CURRENT_SOURCE_DIR}/examples/*/*.c )
 file(GLOB CXX_Examples ${CMAKE_CURRENT_SOURCE_DIR}/examples/*/*.cpp )
+
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/examples)
 
 foreach (infile ${C_Examples})
   get_filename_component(filebase ${infile} NAME_WE)
@@ -1591,6 +1612,7 @@ add_dependencies(phist_kernels_${PHIST_KERNEL_LIB} cxx_headers)
 find_package(Doxygen 1.7.0 QUIET)
 if (DOXYGEN_FOUND)
     add_custom_target(doc ${DOXYGEN_EXECUTABLE} ${CMAKE_BINARY_DIR}/phist.doxyfile WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+    add_dependencies(doc cxx_headers)
 endif()
 
 # Add optional target "coverage" to genereate code coverage report (console / XML)

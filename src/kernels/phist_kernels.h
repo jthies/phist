@@ -10,11 +10,11 @@
 #define PHIST_KERNELS_H
 
 #include "phist_config.h"
-#include "phist_mpi_kernels.h"
-#include "phist_kernel_flags.h"
 
 #ifndef DOXYGEN
 
+#include "phist_mpi_kernels.h"
+#include "phist_kernel_flags.h"
 #include "phist_tools.h"
 
 // note: the phist_typedefs.h file is provided in the subdirectory
@@ -24,8 +24,8 @@
 #ifdef PHIST_HAVE_GHOST
 #include <ghost/types.h>
 #include <ghost/sparsemat.h>
-# if defined(PHIST_FORCE_INT_GIDX)&&defined(GHOST_IDX64_GLOBAL)
-# error "ghost installation uses 64 bit global indices, but Epetra installation requires 32! You shoudl disable GHOST or recompile either library."
+# if defined(PHIST_FORCE_32BIT_GIDX)&&defined(GHOST_IDX64_GLOBAL)
+# error "ghost installation uses 64 bit global indices, but you set the option PHIST_FORCE_32BIT_GIDX. You should disable/rebuild GHOST or reconfigure without that option."
 # endif
 #else
 typedef phist_lidx ghost_lidx;
@@ -34,9 +34,9 @@ typedef phist_gidx ghost_gidx;
 
 #endif
 
-//! \defgroup kernels Kernel function interface
-//@{
-
+//! \defgroup kernels kernels: Kernel function interface
+//!@{
+//!
 //! @file phist_kernels.h
 //! @brief Definition of an abstract interface for basic operations needed by iterative solvers.
 //!
@@ -73,28 +73,36 @@ extern "C" {
 //! \name data-type independent kernel functions
 //!@{
 
-//! initialize kernel library. Should at least call MPI_Init if it has not been called
-//! but is required.
+//! \brief initialize kernel library. 
+//!
+//! Should at least call MPI_Init if it has not been called but is required.
 void phist_kernels_init(int *argc, char*** argv, int* iflag);
 
-//! finalize kernel library. Should at least call MPI_Finalize if MPI_Init was called
-//! by phist_kernels_init.
+//! \brief finalize kernel library. 
+//!
+//! Should at least call MPI_Finalize if MPI_Init was called by phist_kernels_init.
 void phist_kernels_finalize(int* iflag);
 
 //! creates a global comm object
 void phist_comm_create(phist_comm_ptr* comm, int* iflag);
-//! delete a comm object. Only do this for comms obtained by phist_comm_create.
+//! delete a comm object.
+//!
+//! Only do this for comms obtained by phist_comm_create.
 void phist_comm_delete(phist_comm_ptr comm, int* iflag);
 //! get the rank of the calling node
 void phist_comm_get_rank(phist_const_comm_ptr comm, int* rank, int* iflag);
 //! get the number of MPI asks
 void phist_comm_get_size(phist_const_comm_ptr comm, int* size, int* iflag);
-//! get MPI comm. If the kernel lib does not use MPI, NULL is returned.
+//! get MPI comm.
+//!
+//! If the kernel lib does not use MPI, NULL is returned.
 void phist_comm_get_mpi_comm(phist_const_comm_ptr comm, MPI_Comm* mpiComm,int* iflag);
 
 //! creates a map with default distribution of points
 void phist_map_create(phist_map_ptr* map, phist_const_comm_ptr comm, phist_gidx nglob, int *iflag);
-//! delete a map object. Note that you should not do this if you got the map from
+//! delete a map object.
+//!
+//! \note you should not do this if you got the map from
 //! anything else than phist_map_create.
 void phist_map_delete(phist_map_ptr map, int *iflag);
 //! returns the comm object used by a map
@@ -103,12 +111,14 @@ void phist_map_get_comm(phist_const_map_ptr map, phist_const_comm_ptr* comm, int
 void phist_map_get_local_length(phist_const_map_ptr map, phist_lidx* nloc, int* iflag);
 //! returns the global number of elements in the map.
 void phist_map_get_global_length(phist_const_map_ptr map, phist_gidx* nglob, int* iflag);
-//! returns the smallest global index in the map appearing on my partition. iflag is set to 1
-//! in case the map is not contiguous, because in that case it may be that the
+//! \brief returns the smallest global index in the map appearing on my partition.
+//! 
+//! iflag is set to 1 in case the map is not contiguous, because in that case it may be that the
 //! caller falsely assumes global elements [ilower ... iupper] are actually on this partition.
 void phist_map_get_ilower(phist_const_map_ptr map, phist_gidx* ilower, int* iflag);
-//! returns the largest global index in the map appearing on my partition. iflag is set to 1
-//! in case the map is not contiguous, because in that case it may be that the
+//! returns the largest global index in the map appearing on my partition.
+//! 
+//! iflag is set to 1 in case the map is not contiguous, because in that case it may be that the
 //! caller falsely assumes global elements [ilower ... iupper] are actually on this partition.
 void phist_map_get_iupper(phist_const_map_ptr map, phist_gidx* iupper, int* iflag);
 //! set *iflag= 0 if the two maps represent the same distribution and permutation, 
@@ -136,7 +146,7 @@ void phist_maps_compatible(phist_const_map_ptr map1, phist_const_map_ptr map2, i
 //! shape of the sparse matrices created with this context. If either of these maps is NULL, the row map is     
 //! used. The most common use of prescribing the domain_map is to define a non-square matrix.                   
 //!                                                                                                             
-//! Note that it is typically not necessary to create a                                                         
+//! \note it is typically not necessary to create a                                                         
 //! context a priori, the more common case is creating a sparseMat, obtaining its context and using it to create
 //! another ("compatible") sparseMat. This gives the kernel library the freedom to apply permutations and load- 
 //! balancing when creating a new matrix.                                                                       
@@ -153,7 +163,8 @@ void phist_context_delete(phist_context_ptr vctx, int* iflag);
 
 //!@}
 
-//! \name STREAM benchmarks for measuring main memory bandwidth. These are implemented in the common/
+//! \name STREAM benchmarks for measuring main memory bandwidth.
+//! These are implemented in the common/
 //! subdirectory for those kernel libraries that use only MPI+threads
 //!@{
 
@@ -179,14 +190,16 @@ void phist_kernels_common_finalize(int* iflag);
 //!@{
 #ifdef PHIST_HAVE_GHOST
 typedef ghost_sparsemat_rowfunc phist_sparseMat_rowFunc;
+typedef ghost_sparsemat_rowfunc_constructor phist_sparseMat_rowFuncConstructor;
 #else
 typedef int (*phist_sparseMat_rowFunc)(ghost_gidx, ghost_lidx *,
         ghost_gidx *, void *, void *);
-#endif        
+typedef int (*phist_sparseMat_rowFuncConstructor) (void *arg, void **work);
+#endif
 
 typedef int (*phist_mvec_elemFunc)(ghost_gidx, ghost_lidx, void *, void *);
 
-//@}
+//!@}
 
 /* this allows to use only the type-independent part of the header for 
    interface and doc generation
@@ -276,7 +289,7 @@ void phist_Zmvec_combine(phist_Zmvec_ptr V, phist_Dconst_mvec_ptr reV, phist_Dco
 #include "phist_gen_clean.h"
 #endif /* DOXYGEN_NO_TG */
 
-//@}
+//!@}
 
 #endif 
 

@@ -27,6 +27,11 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+//! \defgroup minres MinRes solver for symmetric indefinite matrices
+//! \ingroup linear_solvers
+//!@{
+
 #ifdef PHIST_HAVE_SP
 #include "phist_gen_s.h"
 #include "phist_blockedminres_decl.h"
@@ -39,7 +44,7 @@ extern "C" {
 #include "phist_blockedminres_decl.h"
 
 #include "phist_gen_clean.h"
-
+//!@}
 #ifdef __cplusplus
 }
 #endif

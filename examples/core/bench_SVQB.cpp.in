@@ -1,0 +1,130 @@
+/*******************************************************************************************/
+/* This file is part of the PHIST software available at https://bitbucket.org/essex/phist/ */
+/* You may redistribute it and/or modify it under the terms of the BSD-style licence       */
+/* included in this software.                                                              */
+/*                                                                                         */
+/* Contact: Jonas Thies (Jonas.Thies@DLR.de)                                               */
+/*                                                                                         */
+/*******************************************************************************************/
+#include "phist_config.h"
+
+#ifdef PHIST_HAVE_MPI
+#include <mpi.h>
+#endif
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdbool.h>
+#ifdef PHIST_HAVE_LIKWID
+#include "likwid.h"
+#endif
+
+#include "phist_macros.h"
+#include "phist_enums.h"
+#include "phist_kernels.h"
+#include "phist_svqb.h"
+
+#include "phist_ScalarTraits.hpp"
+
+#include ${PHIST_TG_HFILE}
+#include "phist_driver_utils_decl.h"
+
+typedef phist::ScalarTraits<ST> st;
+typedef phist::ScalarTraits<MT> mt;
+
+//! benchmark the function mvec_QR, given k, n, m
+//! do k times: randomize an n x m mvec and orthogonalize
+//! it using mvec_QR.
+int main(int argc, char** argv)
+{
+  int ierr;
+
+  phist_comm_ptr comm = NULL;
+  phist_map_ptr map = NULL;
+  mvec_ptr X = NULL, Q=NULL;
+  sdMat_ptr B = NULL, QtQ=NULL;
+  
+  PHIST_ICHK_IERR(phist_kernels_init(&argc,&argv,&ierr),ierr);
+
+PHIST_MAIN_TASK_BEGIN
+
+  PHIST_ICHK_IERR(phist_comm_create(&comm,&ierr),ierr);
+
+  if (argc!=4)
+  {
+    PHIST_SOUT(PHIST_ERROR,"Usage: %s n m k\n"
+                           "       perform k times: \n"
+                           "       randomize an n x m mvec\n"
+                           "       orthogonalize its columns by SVQB\n"
+                           "       compute Q'Q-I to check the ortho-error, \n",
+                           argv[0]);
+    return 1;
+  }
+
+  phist_gidx n;
+  int m,k;
+  if (sizeof(phist_gidx)==4)
+  {
+    n=atoi(argv[1]);
+  }
+  else
+  {
+    n=atol(argv[1]);
+  }
+  
+  m=atoi(argv[2]);
+  k=atoi(argv[3]);
+
+  PHIST_ICHK_IERR(phist_map_create(&map,comm,n,&ierr),ierr);
+  PHIST_ICHK_IERR(SUBR(mvec_create)(&X,map,m,&ierr),ierr);
+  PHIST_ICHK_IERR(SUBR(mvec_create)(&Q,map,m,&ierr),ierr);
+  PHIST_ICHK_IERR(SUBR(sdMat_create)(&B,m,m,comm,&ierr),ierr);
+  PHIST_ICHK_IERR(SUBR(sdMat_create)(&QtQ,m,m,comm,&ierr),ierr);
+
+  MT max_ortho_error=mt::zero();
+  MT max_norm_error=mt::zero();
+  for (int it=0; it<k; it++)
+  {
+    // use a perturbation of a rank-1 matrix as input (nicely ill-conditioned)
+    PHIST_ICHK_IERR(SUBR(mvec_random)(X,&ierr),ierr);
+    PHIST_ICHK_IERR(SUBR(mvec_put_value)(Q,st::one(),&ierr),ierr);
+    ST pert=(ST)1.0e-3;
+    PHIST_ICHK_IERR(SUBR(mvec_add_mvec)(pert,X,st::one(),Q,&ierr),ierr);
+    // this is what we really want to benchmark
+    MT nrms_svqb[m], nrms_direct[m];
+    PHIST_ICHK_IERR(SUBR(mvec_norm2)(Q,nrms_direct,&ierr),ierr);
+    PHIST_ICHK_IERR(SUBR(svqb)(Q,B,nrms_svqb,&ierr),ierr);
+    
+    // check accuracy of norm calculations in the kernel lib
+    for (int i=0;i<m;i++) max_norm_error=std::max(max_norm_error,
+        std::abs(nrms_svqb[i]-nrms_direct[i]));
+
+    // check orthonormality of the result
+    PHIST_ICHK_IERR(SUBR(mvecT_times_mvec)(st::one(),Q,Q,st::zero(),QtQ,&ierr),ierr);
+    ST* q=NULL;
+    phist_lidx ldq;
+    PHIST_ICHK_IERR(SUBR(sdMat_extract_view)(QtQ,&q,&ldq,&ierr),ierr);
+    MT err=mt::zero();
+    for (int i=0;i<m;i++)
+      for (int j=0;j<m;j++)
+      {
+        MT val=(i==j)? mt::one() : mt::zero();
+        err=std::max(err, std::abs(q[i*ldq+j] - val));
+      }
+    max_ortho_error=std::max(err,max_ortho_error);
+  }
+  PHIST_SOUT(PHIST_INFO,"Total maximum ortho-error encountered: %8.4e\n",max_ortho_error);
+  PHIST_SOUT(PHIST_INFO,"Max deviation in norm calculations: %8.4e\n",max_norm_error);
+  
+  PHIST_ICHK_IERR(SUBR(mvec_delete)(X,&ierr),ierr);
+  PHIST_ICHK_IERR(SUBR(mvec_delete)(Q,&ierr),ierr);
+  PHIST_ICHK_IERR(SUBR(sdMat_delete)(B,&ierr),ierr);
+  PHIST_ICHK_IERR(SUBR(sdMat_delete)(QtQ,&ierr),ierr);
+  PHIST_ICHK_IERR(phist_map_delete(map,&ierr),ierr);
+
+PHIST_MAIN_TASK_END
+
+  PHIST_ICHK_IERR(phist_kernels_finalize(&ierr),ierr);
+
+  return ierr;
+}

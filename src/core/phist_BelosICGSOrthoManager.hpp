@@ -6,16 +6,20 @@
 /* Contact: Jonas Thies (Jonas.Thies@DLR.de)                                               */
 /*                                                                                         */
 /*******************************************************************************************/
+//! \file phist_BelosICGSOrthoManager.hpp
+//! \brief orthogonalization routine in Belos
 
 #include "phist_config.h"
 
 #ifdef PHIST_HAVE_BELOS
 
 #ifndef _ST_
-#error "you must to include a 'phist_gen_X' header before this filee!"
+#error "you must to include a 'phist_gen_X' header before this file!"
 #endif
 
+#ifndef DOXYGEN
 #include "phist_trilinos_type_config.h"
+#endif //DOXYGEN
 
 #ifdef PHIST_TRILINOS_TYPE_AVAIL
 
@@ -104,7 +108,7 @@ namespace Belos {
       _MT_ orthoEps=_MT_(blk_tol_);
       int numSweeps=max_ortho_steps_;
       try {
-      iflag=PHIST_ORTHOG_TRIANGULAR_R1;
+      iflag|=PHIST_ORTHOG_TRIANGULAR_R1;
       phist::core< _ST_ >::orthog_impl
           (Q[i]->get(),X.get(),_Op.get(),X_or_MX->get(),
           XtMX,Bphist,Cphist,

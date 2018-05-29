@@ -6,6 +6,7 @@
 /* Contact: Jonas Thies (Jonas.Thies@DLR.de)                                               */
 /*                                                                                         */
 /*******************************************************************************************/
+
 #ifndef PHIST_KPM_H
 #define PHIST_KPM_H
 
@@ -13,10 +14,6 @@
 
 #ifndef DOXYGEN
 
-/* needs to be included before system headers for some intel compilers+mpi */
-#ifdef PHIST_HAVE_MPI
-#include <mpi.h>
-#endif
 #include "phist_void_aliases.h"
 #include "phist_core_flags.h"
 
@@ -25,6 +22,11 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+//! \defgroup poly poly: Evaluating matrix polynomials
+//! \ingroup core
+//!@{
+
 #ifdef PHIST_HAVE_SP
 #include "phist_gen_s.h"
 #include "phist_kpm_decl.h"
@@ -37,6 +39,8 @@ extern "C" {
 #include "phist_kpm_decl.h"
 
 #include "phist_gen_clean.h"
+
+//!@}
 
 #ifdef __cplusplus
 }

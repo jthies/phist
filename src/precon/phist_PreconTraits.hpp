@@ -6,19 +6,26 @@
 /* Contact: Jonas Thies (Jonas.Thies@DLR.de)                                               */
 /*                                                                                         */
 /*******************************************************************************************/
+//! \file phist_PreconTraits.hpp
+//! \brief making preconditioners usable in phist programs
+
 #ifndef PHIST_PRECON_TRAITS_HPP
 #define PHIST_PRECON_TRAITS_HPP
+
+#ifndef DOXYGEN
 
 #include "phist_config.h"
 #include "phist_enums.h"
 #include "phist_operator.h"
 #include "phist_ScalarTraits.hpp"
 
+#endif //DOXYGEN
+
 namespace phist {
 
-//! traits class for making preconditioners usable in phist programs. The user
+//! \brief traits class for making preconditioners usable in phist programs. The user
 //! should not use this class directly but the C wrapper defined in phist_precon.h
-
+//!
 //! default implementation of the traits class that allows us to interface
 //! with our own and third-party preconditioners. The default implementation
 //! just gives error messages about missing template specialization.
@@ -96,7 +103,7 @@ public:
 };
 
 
-// specialization for phist_NO_PRECON: P=identity operator
+//! specialization for phist_NO_PRECON: P=identity operator
 template<typename ST>
 class PreconTraits<ST,phist_NO_PRECON>
 {
@@ -160,9 +167,9 @@ public:
   }
 };
 
-// specialization for phist_USER_PRECON: assume that the user has wrapped
-// his preconditioner as a phist_XlinearOp and dispatch to the function  
-// pointers here.
+//! \brief specialization for phist_USER_PRECON: assume that the user has wrapped
+//! his preconditioner as a phist_XlinearOp and dispatch to the function  
+//! pointers here.
 template<typename ST>
 class PreconTraits<ST,phist_USER_PRECON>
 {

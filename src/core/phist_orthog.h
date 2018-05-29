@@ -13,19 +13,21 @@
 
 #ifndef DOXYGEN
 
-/* needs to be included before system headers for some intel compilers+mpi */
-#ifdef PHIST_HAVE_MPI
-#include <mpi.h>
-#endif
 #include "phist_void_aliases.h"
 #include "phist_core_flags.h"
 #include "phist_operator.h"
 
 #endif //DOXYGEN
 
+
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+//! \defgroup orthog orthog: orthogonalization routines
+//! \ingroup core
+//!@{
+
 #ifdef PHIST_HAVE_SP
 #include "phist_gen_s.h"
 #include "phist_orthog_decl.h"
@@ -38,7 +40,7 @@ extern "C" {
 #include "phist_orthog_decl.h"
 
 #include "phist_gen_clean.h"
-
+//!@}
 #ifdef __cplusplus
 }
 #endif

@@ -8,7 +8,7 @@
 /*******************************************************************************************/
 #ifndef PHIST_TOOLS_H
 #define PHIST_TOOLS_H
-
+//! \file phist_tools.h 
 #include "phist_config.h"
 
 #ifndef DOXYGEN
@@ -39,14 +39,18 @@
 
 #endif //DOXYGEN
 
+//! \defgroup tools tools: Utility functions and macros
+//!@{
+
 # include "phist_macros.h"
 
 #ifdef __cplusplus
 
-// get the size of a cache line on the current MPI process,
-// or 1 if the architecture doesn't have a cache. The unit is
-// sizeof(T), so on a typical CPU with 64 bit cache lines
-// phist_cacheline_size<double>()==8 and phist_cacheline_size<char>()==64.
+//! \brief get the size of a cache line on the current MPI process,
+//! or 1 if the architecture doesn't have a cache.
+//!
+//! The unit is sizeof(T), so on a typical CPU with 64 bit cache lines
+//! phist_cacheline_size<double>()==8 and phist_cacheline_size<char>()==64.
 template<typename T>
 unsigned int phist_cacheline_size()
 {
@@ -68,7 +72,7 @@ unsigned int phist_cacheline_size()
   return clsize;
 }
 
-  //! redirect all subsequent output in phist to this output stream
+  //! \brief redirect all subsequent output in phist to this output stream
   //! (if this function is not called, the default stream is std:cout)
   //!
   //! Any subsequent call to phist_set_CXX_output_stream or phist_set_C_output_stream
@@ -77,7 +81,8 @@ unsigned int phist_cacheline_size()
   //! All output can be suppressed by calling this function with a nullptr argument.
   void phist_set_CXX_output_stream(std::ostream& ostr);
 
-  //! retrieve the C++ stream to which phistj is printing.
+  //! \brief retrieve the C++ stream to which phistj is printing.
+  //!
   //! May be nullptr if a C output stream was set using phist_set_C_output_stream.
   std::ostream* phist_get_CXX_output_stream();
 
@@ -85,10 +90,10 @@ extern "C" {
 #endif
 
 #ifdef PHIST_HAVE_MPI
-  //! set the standard MPI communicator used to create all subsequent objects
+  //! \brief set the standard MPI communicator used to create all subsequent objects
   //! (the one wrapped and returned by phist_comm_create)
   //!
-  //! CAVEAT: for many kernel libaries (e.g. builtin, ghost, tpetra) we implement 
+  //! \warning for many kernel libaries (e.g. builtin, ghost, tpetra) we implement 
   //!         a pinning strategy (i.e. bind MPI processes and threads to physical 
   //!         cores of the machine). This is typically done in phist_kernels_init,
   //!         so we recommend setting the communicator *before* that function. If 
@@ -104,12 +109,14 @@ extern "C" {
   //! analogously to phist_set_default_comm.
   void phist_set_default_comm_f(MPI_Fint f_comm);
 
-  //! this function should be called from Fortran to get a valid MPI communicator
-  //! analogously to phist_get_default_comm. For a fortran binding of this       
+  //! \brief this function should be called from Fortran to get a valid MPI communicator
+  //! analogously to phist_get_default_comm.
+  //!
+  //! For a fortran binding of this       
   //! function, see src/kernels/builtin/env_module.f90.
   MPI_Fint phist_get_default_comm_f();
 #endif
-  //! redirect all subsequent output in phist to this C output stream
+  //! \brief redirect all subsequent output in phist to this C output stream
   //! (if this function is not called, the default stream is stdout)
   //!
   //! Any subsequent call to phist_set_CXX_output_stream or phist_set_C_output_stream
@@ -122,15 +129,16 @@ extern "C" {
   const char* phist_version();
   //! return the exact git revision of the phist installation
   const char* phist_git_revision();
-  //! return some other useful information on the phist installation as a multi-line 
+  //! \brief return some other useful information on the phist installation as a multi-line 
   //! string, e.g. compilers, compile flags etc.
   const char* phist_install_info();
 
-  //! Get the default output stream (C-style) to which phist is printing.
+  //! \brief Get the default output stream (C-style) to which phist is printing.
+  //!
   //! May be NULL if a C++ stream was provided using phist_set_CXX_output_stream().
   FILE* phist_get_C_output_stream();
 
-  //! return the name of the library that provides the kernels for this phist installation as a string,
+  //! \brief return the name of the library that provides the kernels for this phist installation as a string,
   //! e.g. "builtin","ghost","tpetra".
   const char* phist_kernel_lib();
 
@@ -146,11 +154,15 @@ const char* phist_ghost_error2str(ghost_error code);
 
 # ifdef PHIST_HAVE_MPI
 
-//! pretty-print process-local strings in order. This function should
+//! \brief pretty-print process-local strings in order.
+//!
+//! This function should
 //! not be used directly but via the wrapper macro PHIST_ORDERED_OUT(...)
 int phist_ordered_fprintf(MPI_Comm comm, const char* fmt, ...);
 
 # endif
+
+//!@}
 
 #ifdef __cplusplus
 }

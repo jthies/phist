@@ -24,7 +24,7 @@
 #include "phist_kernels.h"
 #include "phist_operator.h"
 #include ${PHIST_TG_HFILE}
-#include "phist_driver_utils.h"
+#include "phist_driver_utils_decl.h"
 #include "phist_ScalarTraits.hpp"
 
 #ifdef PHIST_KERNEL_LIB_GHOST  
@@ -105,7 +105,7 @@ PHIST_MAIN_TASK_BEGIN
   else        spmv_flag=PHIST_SPMVM_VECTOR;
   
 
-  // matrix generation routine from the driver_utils.h header
+  // matrix generation routine from the driver_utils_decl.h header
   iflag=sparseMat_flag;
   PHIST_ICHK_IERR(SUBR(create_matrix)(&A,comm,matname,&iflag),iflag);
   PHIST_ICHK_IERR(SUBR(sparseMat_get_domain_map)(A, &map,&iflag),iflag);

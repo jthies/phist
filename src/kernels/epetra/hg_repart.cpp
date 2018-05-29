@@ -141,7 +141,7 @@ namespace phist
       {
         PHIST_SOUT(PHIST_WARNING,"WARNING: You are not using 32-bit integers as gids, Isorropia may run \n"
                                  "         into trouble and cause an obscure exception in Epetra.\n"
-                                 "         To use 32-bit gids, pass -DPHIST_FORCE_INT_GIDX=ON to cmake.");
+                                 "         To use 32-bit gids, pass -DPHIST_FORCE_32BIT_GIDX=ON to cmake.");
       }
 #endif
 

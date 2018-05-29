@@ -2,6 +2,9 @@
 #define PHIST_KRYLOV_H
 
 #include "phist_config.h"
+//! \file phist_krylov.h include all of PHIST's krylov functonality as a single header
+//! \defgroup krylov krylov: Krylov subspace methods
+//!@{
 
 /* blocked Krylov solvers used as correction solvers in jada */
 #include "phist_blockedbicgstab.h"
@@ -27,5 +30,5 @@
 #include "phist_simple_lanczos.h"
 
 #include "phist_iter_op.h"
-
+//!@}
 #endif

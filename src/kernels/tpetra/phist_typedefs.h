@@ -40,7 +40,7 @@ using phist_gidx = std::ptrdiff_t;
 typedef float complex phist_s_complex;
 typedef double complex phist_d_complex;
 //! type of global indices
-#ifdef PHIST_FORCE_INT_GIDX
+#ifdef PHIST_FORCE_32BIT_GIDX
 typedef int phist_gidx;
 #define PRgidx "d"
 #else
@@ -57,6 +57,8 @@ typedef ptrdiff_t phist_gidx;
 typedef int phist_lidx;
 #define PRlidx "d"
 
+#ifndef DOXYGEN
 #include "phist_void_aliases.h"
+#endif //DOXYGEN
 
 #endif

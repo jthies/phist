@@ -6,6 +6,10 @@
 /* Contact: Jonas Thies (Jonas.Thies@DLR.de)                                               */
 /*                                                                                         */
 /*******************************************************************************************/
+
+//! \addtogroup void_alias
+//!@{
+    
 //! opaque multi-vector object
 typedef void TYPE(mvec);
 
@@ -33,3 +37,4 @@ typedef void* TYPE(sparseMat_ptr);
 //! opaque pointer to const CRS matrix objects
 typedef const void* TYPE(const_sparseMat_ptr);
 
+//!@}

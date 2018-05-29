@@ -247,6 +247,17 @@ extern "C" const char* precon2str(phist_Eprecon s)
                 "INVALID";
 }
 
+extern "C" const char* projection2str(phist_Eprojection s)
+{
+  return   s==phist_PROJ_NONE?"NONE":
+           s==phist_PROJ_PRE?"PRE":
+           s==phist_PROJ_POST?"POST":
+           s==phist_PROJ_PRE_POST?"PRE_POST":
+           s==phist_PROJ_SKEW?"SKEW":
+           s==phist_PROJ_ALL?"ALL":
+                "INVALID";
+}
+
 extern "C" phist_EeigSort str2eigSort(const char* c_str)
 {
   std::string str(c_str);
@@ -325,50 +336,43 @@ extern "C" phist_Eprecon str2precon(const char* c_str)
   return s;
 }
 
-std::istream& operator>>(std::istream& is, phist_EeigSort& s)
+extern "C" phist_Eprojection str2projection(const char* c_str)
 {
-  std::string tmp;
-  is>>tmp;
-  PHIST_SOUT(PHIST_DEBUG,"try to parse phist_EeigSort '%s'\n",tmp.c_str());
-  s=str2eigSort(tmp.c_str());
-  return is;
+  std::string str(c_str);
+  str=phist_str2upper(str);
+  phist_Eprojection s=phist_INVALID_PROJ;
+  if (str=="NONE") s=phist_PROJ_NONE;
+  else if (str=="PRE") s=phist_PROJ_PRE;
+  else if (str=="POST") s=phist_PROJ_POST;
+  else if (str=="PRE_POST") s=phist_PROJ_PRE_POST;
+  else if (str=="SKEW") s=phist_PROJ_SKEW;
+  else if (str=="ALL") s=phist_PROJ_ALL;
+  return s;
 }
 
-std::istream& operator>>(std::istream& is, phist_EeigExtr& s)
-{
-  std::string tmp;
-  is>>tmp;
-  PHIST_SOUT(PHIST_DEBUG,"try to parse phist_EeigExtr '%s'\n",tmp.c_str());
-  s=str2eigExtr(tmp.c_str());
-  return is;
+#define INST_IO_OP(EWHAT,WHAT2STR,STR2WHAT) \
+std::istream& operator>>(std::istream& is, EWHAT& e) \
+{ \
+  std::string tmp; \
+  is>>tmp; \
+  PHIST_SOUT(PHIST_DEBUG,"try to parse %s '%s'\n",#EWHAT,tmp.c_str()); \
+  e=STR2WHAT(tmp.c_str()); \
+  return is; \
+} \
+\
+std::ostream& operator<< (std::ostream& os, const EWHAT& e) \
+{ \
+  os << WHAT2STR(e); \
+  return os; \
 }
 
-std::istream& operator>>(std::istream& is, phist_ElinSolv& s)
-{
-  std::string tmp;
-  is>>tmp;
-  PHIST_SOUT(PHIST_DEBUG,"try to parse phist_ElinSolv '%s'\n",tmp.c_str());
-  s=str2linSolv(tmp.c_str());
-  return is;
-}
+INST_IO_OP(phist_EeigSort,eigSort2str,str2eigSort)
+INST_IO_OP(phist_EeigExtr,eigExtr2str,str2eigExtr)
+INST_IO_OP(phist_ElinSolv,linSolv2str,str2linSolv)
+INST_IO_OP(phist_EmatSym,matSym2str,str2matSym)
+INST_IO_OP(phist_Eprecon,precon2str,str2precon)
+INST_IO_OP(phist_Eprojection,projection2str,str2projection)
 
-std::istream& operator>>(std::istream& is, phist_EmatSym& s)
-{
-  std::string tmp;
-  is>>tmp;
-  PHIST_SOUT(PHIST_DEBUG,"try to parse phist_EmatSym '%s'\n",tmp.c_str());
-  s=str2matSym(tmp.c_str());
-  return is;
-}
-
-std::istream& operator>>(std::istream& is, phist_Eprecon& s)
-{
-  std::string tmp;
-  is>>tmp;
-  PHIST_SOUT(PHIST_DEBUG,"try to parse phist_Eprecon '%s'\n",tmp.c_str());
-  s=str2precon(tmp.c_str());
-  return is;
-}
 
 #ifdef PHIST_TIMINGS_FULL_TRACE
 std::vector<const char*> phist_FcnTrace::fcnTrace_;
@@ -389,7 +393,7 @@ extern "C" const char* phist_kernel_lib()
 #elif defined(PHIST_KERNEL_LIB_PETSC)
   return "petsc";
 #elif defined(PHIST_KERNEL_LIB_EIGEN)
-  return "Eigen";
+  return "eigen";
 #else
 #error "No appropriate PHIST_KERNEL_LIB_... defined!"
 #endif

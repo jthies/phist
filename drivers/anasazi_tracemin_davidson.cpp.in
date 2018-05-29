@@ -25,7 +25,7 @@
 #include "phist_iter_op.h"
 
 #include ${PHIST_TG_HFILE}
-#include "phist_driver_utils.h"
+#include "phist_driver_utils_decl.h"
 
 void SUBR(print_usage)(char* argv[],int pos)
 {
@@ -108,7 +108,7 @@ PHIST_MAIN_TASK_BEGIN
   bool haveB=(matnameB!=nullptr);
   if (haveB) haveB=(strcmp(matnameB,"I")!=0);
 
-  if (~haveB)
+  if (!haveB)
   {
     // if B is read/created, it must be partitioned along with A,
     // which we can't do right now.

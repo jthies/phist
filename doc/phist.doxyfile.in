@@ -5,16 +5,24 @@ PROJECT_BRIEF          = "Pipelined Hybrid-parallel Iterative Solver Toolkit"
 OUTPUT_DIRECTORY       = doc
 OPTIMIZE_OUTPUT_FOR_C  = YES
 HIDE_UNDOC_MEMBERS     = YES
-INPUT                  = ./src/ README.md
-FILE_PATTERNS          = "*.h" "*.md"
+LAYOUT_FILE            = ${PROJECT_SOURCE_DIR}/doc/DoxygenLayout.xml
+INPUT                  = ./src/ README.md ${CMAKE_BINARY_DIR}/cxx_bindings/ ./doc/related_pages.txt
+FILE_PATTERNS          = "*.h" "*.md" "*.hpp"
 RECURSIVE              = YES
-EXCLUDE_PATTERNS       = "*/src/craft/*" \
+EXCLUDE_PATTERNS       = "*/src/kernels/*/*" \
+                         "*/src/craft/*" \
                          "*_def.*" \
-                         "*_decl*"
-FILTER_PATTERNS        = "*.h=\"cpp -C -DDOXYGEN ${INCLUDE_FLAGS} -I.\""
+                         "*/src/tools/phist_gen_*.h" \
+                         "*/src/tools/phist_macros.h"
+FILTER_PATTERNS        = "*.h=\"c++ -E -Wp,-C -DDOXYGEN ${INCLUDE_FLAGS} -I.\""
+FILTER_PATTERNS        = "*.hpp=\"c++ -E -Wp,-C -DDOXYGEN ${INCLUDE_FLAGS} -I.\""
 USE_MDFILE_AS_MAINPAGE = README.md
 REFERENCES_RELATION    = YES
 HTML_TIMESTAMP         = YES
 MATHJAX_RELPATH        = http://www.mathjax.org/mathjax
 GENERATE_LATEX         = NO
+ENABLE_PREPROCESSING   = YES
 MACRO_EXPANSION        = YES
+EXPAND_ONLY_PREDEF     = YES
+PREDEFINED             = "SUBR(x) = phist_X ## x" \
+                         "TYPE(x) = phist_X ## x"

@@ -6,10 +6,14 @@
 /* Contact: Jonas Thies (Jonas.Thies@DLR.de)                                               */
 /*                                                                                         */
 /*******************************************************************************************/
+//! \file phist_orthogrrfused_decl.h
+//! \brief internal orthog functions
 
-//! internal implementation of the orthog function, the regular orthog should be used as a frontend in actual algorithms.
+//! \brief internal implementation of the orthog function, the regular orthog should be used as a frontend in actual algorithms. \ingroup orthog
 
-//! Does not randomize the null space (if any). Note that the arguments are renamed and reordered, this should 
+//! Does not randomize the null space (if any). 
+//!
+//! \note the arguments are renamed and reordered, this should 
 //! eventually be adjusted to avoid confusion. Here, W is the orthogonal space, V is orthogonalized against W, and the
 //! relation that holds after the subroutine (with Q=V on output) is Q*R1 = V-W*R2, Q'Q=I.
 //!

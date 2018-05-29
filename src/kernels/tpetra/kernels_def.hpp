@@ -197,6 +197,21 @@ extern "C" void SUBR(sparseMat_create_fromRowFunc)(TYPE(sparseMat_ptr) *A,
                  *iflag);
 }
 
+extern "C" void SUBR(sparseMat_local_nnz)(TYPE(const_sparseMat_ptr) A,
+                                            int64_t* local_nnz, int* iflag)
+{
+  PHIST_CAST_PTR_FROM_VOID(const Traits<_ST_>::sparseMat_t, mat, A, *iflag);
+  *local_nnz=(int64_t)(mat->getGraph()->getNodeNumEntries());
+  *iflag=0;
+}                                            
+
+extern "C" void SUBR(sparseMat_global_nnz)(TYPE(const_sparseMat_ptr) A, int64_t* global_nnz, int* iflag)
+{
+  PHIST_CAST_PTR_FROM_VOID(const Traits<_ST_>::sparseMat_t, mat, A, *iflag);
+  *global_nnz=(int64_t)(mat->getGraph()->getGlobalNumEntries());
+  *iflag=0;
+}
+
 extern "C" void SUBR(sparseMat_get_row_map)(TYPE(const_sparseMat_ptr) A, 
                                             phist_const_map_ptr* map, 
                                             int* iflag)
@@ -818,6 +833,7 @@ extern "C" void SUBR(sparseMat_times_mvec)(_ST_ alpha, TYPE(const_sparseMat_ptr)
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
 
   PHIST_COUNT_MATVECS(x);
+  PHIST_PERFCHECK_VERIFY_SPMV(alpha,A,_ST_(0),x,beta,y,_ST_(0),_ST_(0),false,iflag);
 
   PHIST_CAST_PTR_FROM_VOID(const Traits<_ST_>::sparseMat_t, matrix, A, *iflag);
   PHIST_CAST_PTR_FROM_VOID(const Traits<_ST_>::mvec_t, mvecIn, x, *iflag);

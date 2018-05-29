@@ -91,6 +91,66 @@ int PHIST_TG_PREFIX(idfunc)(ghost_gidx row, ghost_lidx *len, ghost_gidx* cols, v
   cols[0]=row;
   return 0;
 }
+
+  // some row function that uses a workspace. Will only create the identity matrix if
+  // initialized using idfunc_init_workspace is called. Requires arg to be a struct with
+  // a pointer to idfunc_with_workspace_arg.
+  int PHIST_TG_PREFIX(idfunc_with_workspace)(ghost_gidx row, ghost_lidx *len, ghost_gidx* cols, void* vval, void *v_arg)
+  {
+    PHIST_TG_PREFIX(idfunc_workspace)* wsp = 
+        (PHIST_TG_PREFIX(idfunc_workspace)*)v_arg;
+    PHIST_TG_PREFIX(idfunc_with_workspace_arg)* arg = wsp->arg;
+    _ST_* val = (_ST_*)vval;
+    if (row<0 || row>=arg->gnrows || row>=arg->gncols)
+    {
+      return -1; // array out of bounds
+    }
+    else if (wsp->data == NULL)
+    {
+      return -2; // not initialized
+    }
+    *len=1;
+    cols[0] = row;
+    val[0] = wsp->data[0] * arg->scale;
+    return 0;
+  }
+
+  // 'constructor'
+  int PHIST_TG_PREFIX(idfunc_init_workspace)(void *v_arg, void** work)
+  {
+    PHIST_TG_PREFIX(idfunc_with_workspace_arg)* arg =
+        (PHIST_TG_PREFIX(idfunc_with_workspace_arg)*)v_arg;
+    if (!arg) return -1;
+    if (*work!=nullptr)
+    {
+      PHIST_TG_PREFIX(idfunc_workspace)* wsp =(PHIST_TG_PREFIX(idfunc_workspace)*)(*work);
+      if (wsp->arg == arg)
+      {
+        // second call (destroy)
+        delete [] wsp->data;
+        delete wsp;
+        *work=NULL;
+      }
+      else
+      {
+        //probably first call, but *work not set to NULL
+        return PHIST_INVALID_INPUT;
+      }
+    }
+    else
+    {
+      // first call (create)
+      PHIST_TG_PREFIX(idfunc_workspace)* my_work=new PHIST_TG_PREFIX(idfunc_workspace);
+      my_work->data=new _ST_[1];
+      my_work->data[0]=_ST_(1.0);
+      my_work->arg=arg;
+      *work=(void*)my_work;
+    }
+    return 0;
+  }
+
+
+
 /*
 int PHIST_TG_PREFIX(some_rowFunc)(ghost_gidx row, ghost_lidx *len, ghost_gidx* cols, void* vval, void *arg)
 {

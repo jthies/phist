@@ -9,6 +9,11 @@
 #ifndef PHIST_CORE_H
 #define PHIST_CORE_H
 
+//! \file phist_core.h include all of PHIST's core functionality as a single header.
+
+//! \defgroup core core: Common functionality for iterative solvers
+//!@{
+
 #include "phist_core_flags.h"
 #include "phist_operator.h"
 #include "phist_sdFact.h"
@@ -20,5 +25,7 @@
 #include "phist_chol_QR.h"
 #include "phist_orthogrrfused.h"
 #include "phist_kpm.h"
-
+#include "phist_schur_decomp.h"
+#include "phist_transform_searchspace.h"
+//!@}
 #endif

@@ -24,7 +24,7 @@
 #include "phist_kernels.h"
 #include "phist_operator.h"
 #include "phist_gen_d.h"
-#include "phist_driver_utils.h"
+#include "phist_driver_utils_decl.h"
 #include "phist_ScalarTraits.hpp"
 
 typedef phist::ScalarTraits<_ST_> st;

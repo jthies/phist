@@ -12,6 +12,7 @@
 //! quickly incorporate new developments in their code.
 
 #ifdef HAVE_TRILINOS_ORTHO_MANAGER
+#ifndef DOXYGEN
 
 # include "phist_rcp_helpers.hpp"
 # include "phist_operator.h"
@@ -42,6 +43,7 @@
 # include "BelosICGSOrthoManager.hpp"
 # include "BelosIMGSOrthoManager.hpp"
 
+#endif //DOXYGEN
 #endif /* HAVE_TRILINOS_ORTHO_MANAGER */
 
 

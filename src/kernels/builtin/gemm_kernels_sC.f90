@@ -6,12 +6,13 @@
 /* Contact: Jonas Thies (Jonas.Thies@DLR.de)                                               */
 /*                                                                                         */
 /*******************************************************************************************/
+
 !> \file gemm_kernels_sC.f90
 !! Fast parallel BLAS-gemm like subroutines for different blocksizes for mvecT_times_mvec in mvec_module
 !! \author "Melven Roehrig-Zoellner <Melven.Roehrig-Zoellner@DLR.de>
 !!
 
-#include "phist_config.h"
+#include "phist_config_fortran.h"
 
 subroutine dgemm_sC_1_1(nrows,v,w,M)
   implicit none

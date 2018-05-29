@@ -6,30 +6,8 @@
 /* Contact: Jonas Thies (Jonas.Thies@DLR.de)                                               */
 /*                                                                                         */
 /*******************************************************************************************/
-#include "phist_config.h"
-#ifdef PHIST_HAVE_GHOST
-#include "ghost/config.h"
-#endif
 
-#ifndef PHIST_HAVE_GHOST
-#define G_LIDX_T C_INT32_T
-# ifndef PHIST_FORCE_INT_GIDX
-# define G_GIDX_T C_INT64_T
-# else
-# define G_GIDX_T C_INT32_T
-# endif
-#else
-#ifdef GHOST_IDX64_LOCAL
-#define G_LIDX_T C_INT64_T
-#else
-#define G_LIDX_T C_INT32_T
-#endif
-#ifdef GHOST_IDX64_GLOBAL
-#define G_GIDX_T C_INT64_T
-#else
-#define G_GIDX_T C_INT32_T
-#endif
-#endif
+#include "phist_config_fortran.h"
 
 ! Generalization of MATPDE to 3D                                                        
 ! (from the NEP matrix collection in the matrix market MATPDE matrix generator)         
@@ -319,7 +297,7 @@ contains
   ! at some point
   !
   ! The problem is chosen by providing
-  ! a hex number like e.g. 0xA3 or 0xB1 to select problem A1 or B3, respectively
+  ! a hex number like e.g. 0xA3 or 0xB1 to select problem A3 or B1, respectively
   subroutine MATPDE3D_selectProblem(prob,iflag) bind(C,name='MATPDE3D_selectProblem')
   use, intrinsic :: iso_c_binding
   integer(kind=C_INT), value :: prob

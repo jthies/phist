@@ -6,7 +6,7 @@
 /* Contact: Jonas Thies (Jonas.Thies@DLR.de)                                               */
 /*                                                                                         */
 /*******************************************************************************************/
-/*! \file phist_chol_def.hpp
+/*! \file phist_sdFact_kernels_def.hpp
  * Implementation of some serial LAPaCK like functions with standard precision
  * \author "Melven Roehrig-Zoellner" <Melven.Roehrig-Zoellner@DLR.de>
  * \author "Jonas Thies" <Jonas.Thies@DLR.de>

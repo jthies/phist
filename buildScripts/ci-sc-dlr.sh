@@ -25,7 +25,7 @@ SANITIZER="address"
 
 
 ## parse command line arguments
-usage() { echo "Usage: $0 [-k <builtin|ghost|epetra|tpetra|petsc|Eigen>] [-e <PrgEnv/module-string>] [-f <optional-libs>]"; \
+usage() { echo "Usage: $0 [-k <builtin|ghost|epetra|tpetra|petsc|eigen>] [-e <PrgEnv/module-string>] [-f <optional-libs>]"; \
           echo "       [-c <cmake flags to be added>] [-v <SSE|AVX|AVX2|CUDA>] [-t <trilinos version>] [-w <workspace-dir>]" 1>&2; exit 1; }
 
 function update_error { 
@@ -38,7 +38,7 @@ while getopts "k:e:f:c:v:w:t:h" o; do
     case "${o}" in
         k)
             KERNELS=${OPTARG}
-            ((KERNELS == "builtin" || KERNELS == "ghost" || KERNELS == "tpetra" || KERNELS == "epetra" || KERNELS == "petsc" || KERNELS == "Eigen")) || usage
+            ((KERNELS == "builtin" || KERNELS == "ghost" || KERNELS == "tpetra" || KERNELS == "epetra" || KERNELS == "petsc" || KERNELS == "eigen")) || usage
             ;;
         e)
             PRGENV=${OPTARG}
@@ -72,20 +72,20 @@ shift $((OPTIND-1))
 declare -A MODULES_KERNELS
 MODULES_KERNELS=( 
   ["builtin"]=""
-  ["ghost"]="gsl"
-  ["epetra"]="lapack trilinos/trilinos-${TRILINOS_VERSION}"
-  ["tpetra"]="lapack trilinos/trilinos-${TRILINOS_VERSION}" 
+  ["ghost"]=""
+  ["epetra"]="trilinos/trilinos-${TRILINOS_VERSION}"
+  ["tpetra"]="trilinos/trilinos-${TRILINOS_VERSION}" 
   ["petsc"]="petsc" 
-  ["Eigen"]="Eigen" )
+  ["eigen"]="Eigen" )
 
 declare -A MODULES_KERNELS_OPTIONAL
 MODULES_KERNELS_OPTIONAL=(
   ["builtin"]="ColPack parmetis trilinos"
-  ["ghost"]="ColPack trilinos/trilinos-11.12.1"
+  ["ghost"]="ColPack trilinos"
   ["epetra"]=""
   ["tpetra"]=""
-  ["petsc"]="" 
-  ["Eigen"]="" )
+  ["petsc"]="trilinos" 
+  ["eigen"]="trilinos" )
 
 
 ## prepare system for compilation
