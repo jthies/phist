@@ -74,7 +74,7 @@ class PhistDriversTest(unittest.TestCase):
     def test_subspacejada_spinSZ14(self):
 
         test_name='Dsubspacejada'    
-        test_cmd = './phist_Dsubspacejada  spinSZ14 I 1 10 SR 1e-8 28 4 16 32 4 8 0.0 0 1 1'
+        test_cmd = './drivers/phist_Dsubspacejada  spinSZ14 I 1 10 SR 1e-8 28 4 16 32 4 8 0.0 0 1 1'
 
         result=RunTest(test_name,test_cmd)
         assert result==0
@@ -82,7 +82,7 @@ class PhistDriversTest(unittest.TestCase):
     def test_restarted_blockedGMRES1(self):
 
         test_name='Dblockedgmres1'    
-        test_cmd = './phist_Dblockedgmres DjadaTestMat512.mm 150 1e-6 1 30'
+        test_cmd = './drivers/phist_Dblockedgmres DjadaTestMat512.mm 150 1e-6 1 30'
 
         result=RunTest(test_name,test_cmd)
         assert result==0
@@ -96,7 +96,7 @@ class PhistDriversTest(unittest.TestCase):
             shutil.copyfile('${CMAKE_SOURCE_DIR}/exampleRuns/precon/ifpack_options.xml', '${CMAKE_CURRENT_BINARY_DIR}/ifpack_options.xml')
 # note that we're rather generous here because ifpack2 does (>60 sequentially) does worse than ifpack (42 iterations)
 # and the test should also work with more threads
-            test_cmd = './phist_Dblockedgmres DjadaTestMat512.mm 100 1e-10 1 10 ifpack ifpack_options.xml'
+            test_cmd = './drivers/phist_Dblockedgmres DjadaTestMat512.mm 100 1e-10 1 10 ifpack ifpack_options.xml'
             result=RunTest(test_name,test_cmd)
             assert result==0
 
@@ -111,7 +111,7 @@ class PhistDriversTest(unittest.TestCase):
 
 # note that we're rather generous here because the way the KACZ/CARP kernel is implemented has some influence on the convergence speed.
 # and the test should also work with more MPI processes and different variants.
-        test_cmd = './phist_carp_cg graphene128x64.mm none 1 1 1e-12 350 1.0'
+        test_cmd = './drivers/phist_carp_cg graphene128x64.mm none 1 1 1e-12 350 1.0'
         result=RunTest(test_name,test_cmd)
         assert result==0
 
@@ -128,7 +128,7 @@ class PhistDriversTest(unittest.TestCase):
             file.write("1\n")
             file.write("3.1415926       0.1234567")
         
-        test_cmd = './phist_carp_cg spinSZ14 test_zshift.txt 1 1 1e-6 350 1.2'
+        test_cmd = './drivers/phist_carp_cg spinSZ14 test_zshift.txt 1 1 1e-6 350 1.2'
         result=RunTest(test_name,test_cmd)
         assert result==0
 
