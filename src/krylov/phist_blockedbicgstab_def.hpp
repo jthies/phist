@@ -64,7 +64,7 @@ extern "C" void SUBR(blockedBiCGStab_iterate)(TYPE(const_linearOp_ptr) Aop, TYPE
 
   // set x=0, p=r=r0=b
   PHIST_CHK_IERR(SUBR(mvec_put_value)(sol,st::zero(),iflag),*iflag);
-  PHIST_CHK_IERR(SUBR(mvec_add_mvec)(st::one(),rhs,st::zero(),r,iflag),*iflag);
+  PHIST_CHK_IERR(SUBR(mvec_get_block)(rhs,r,0,numSys-1,iflag),*iflag);
   PHIST_CHK_IERR(SUBR(mvec_add_mvec)(st::one(),r,st::zero(),p,iflag),*iflag);
   PHIST_CHK_IERR(SUBR(mvec_add_mvec)(st::one(),r,st::zero(),r0,iflag),*iflag);
 
