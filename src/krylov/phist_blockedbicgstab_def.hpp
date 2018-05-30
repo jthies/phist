@@ -80,18 +80,24 @@ extern "C" void SUBR(blockedBiCGStab_iterate)(TYPE(const_linearOp_ptr) Aop, TYPE
     PHIST_SOUT(PHIST_VERBOSE,"BICGSTAB ITER %d:",*nIter);
     for(int j = 0; j < numSys; j++)
     {
-	  // we can look at diffrent criterias for convergence
-	  // this two here get similar results in most cases
-	  // in cases when BiCGStab needs very many iteration steps to decrease the residuum,
-	  // the first criteria stops early but with a bigger residuum than the given toleranz
-	  
-	  // this criteria yields to early termination with a bigger residuum
-      // MT rnrm=std::sqrt(std::abs(rho[j]/rho0[j]));
-
-	  // this criteria yields to termination if the residuum is smal enough relative to rhs
-	  // (can take many iteration steps)
-	  PHIST_CHK_IERR(SUBR(mvec_dot_mvec)(r,r,&rr[0],iflag),*iflag);
-	  MT rnrm=std::sqrt(std::abs(rr[j]/rho0[j]));
+      // we can look at diffrent criterias for convergence
+      // this two here get similar results in most cases
+      // in cases when BiCGStab needs very many iteration steps to decrease the residuum,
+      // the first criteria stops early but with a bigger residuum than the given toleranz
+      
+      MT rnrm;
+      if( maxIter < 40 )
+      {
+        // this criteria yields to early termination with a bigger residuum
+        rnrm=std::sqrt(std::abs(rho[j]/rho0[j]));
+      }
+      else
+      {
+        // this criteria yields to termination if the residuum is smal enough relative to rhs
+        // (can take many iteration steps)
+        PHIST_CHK_IERR(SUBR(mvec_dot_mvec)(r,r,&rr[0],iflag),*iflag);
+        rnrm=std::sqrt(std::abs(rr[j]/rho0[j]));
+      }
 	  
       PHIST_SOUT(PHIST_VERBOSE,"\t%e",rnrm);
       firstConverged = firstConverged || (rnrm < tol[j]);
