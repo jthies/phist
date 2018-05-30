@@ -35,6 +35,7 @@ extern "C" void SUBR(sdMat_cholesky)(TYPE(sdMat_ptr) M, int* perm, int* rank, _M
   SUBR(sdMat_extract_error)(M,&Merr,iflag);
   if (Merr!=NULL)
   {
+    *rank = 0;
     PHIST_CHK_IERR(SUBR(prec_cholesky)(Mval,Merr,m,ldM,perm,rank,rankTol,iflag),*iflag);
   }
   else
