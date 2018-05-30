@@ -12,4 +12,6 @@ export MPIFLAGS="-np 1 --bind-to none"
 #export MPIFLAGS="-np 4 --bind-to numa"
 #export ENV="env OMP_PROC_BIND=false"
 
-
+#with Epetra
+#export MPIFLAGS="-np 56 --bind-to core"
+#export ENV="OMP_NUM_THREADS=1"

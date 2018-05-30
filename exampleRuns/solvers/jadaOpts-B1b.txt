@@ -5,9 +5,9 @@ which           SR
 convTol         1.0e-6
 
 blockSize       2
-maxIters        400
-minBas          40
-maxBas          80
+maxIters        1000
+minBas          20
+maxBas          40
 
 innerSolvBlockSize      2
 innerSolvType           GMRES
