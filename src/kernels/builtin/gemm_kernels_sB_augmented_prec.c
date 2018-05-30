@@ -754,7 +754,7 @@ void dgemm_sb_augmented_prec_strided_k_2_nt(int nrows, int k, double alpha, cons
     for(int j = 0; j < 2; j++)
     {
       __m128d ds2, dc2;
-      MM256TO128_4SUM(ds_[j][0],dc_[j][0],ds2,dc2);
+      MM256TO128_4SUM(ds[j],dc[j],ds2,dc2);
       _mm_storeu_pd(&d[j*2],  ds2);
       _mm_storeu_pd(&dC[j*2], dc2);
     }
