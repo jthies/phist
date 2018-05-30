@@ -259,6 +259,17 @@ static inline void phist_wait_ghost_task(ghost_task** task, int* iflag)
 #define PHIST_TASK_WAIT_STEP(taskName,task_ierr) {\
   sem_wait(taskName->progressSem);}
 
+/* define the main task as asynchronuous task, such that it is at least pinned to the correct socket */
+#define PHIST_MAIN_TASK_BEGIN {\
+  int mainTask_ierr = 0;\
+  ghost_task* mainTask = NULL;\
+  phist_execute_lambda_as_ghost_task(&mainTask, false, [&]()->int {
+
+#define PHIST_MAIN_TASK_END \
+      return 0;}, &mainTask_ierr, true);\
+  PHIST_ICHK_IERR((void)mainTask_ierr,mainTask_ierr);\
+  PHIST_ICHK_IERR(phist_wait_ghost_task(&mainTask,&mainTask_ierr),mainTask_ierr);}
+
 #else
 
 #define PHIST_TASK_DECLARE(taskName)
@@ -271,19 +282,18 @@ static inline void phist_wait_ghost_task(ghost_task** task, int* iflag)
 #define PHIST_TASK_POST_STEP(task_ierr)
 #define PHIST_TASK_WAIT_STEP(taskName,task_ierr)
 
-
-#endif /* PHIST_USE_GHOST_TASKS */
-
-/* define the main task as asynchronuous task, such that it is at least pinned to the correct socket */
+/* define one main task, so that ghost can handle things correctly */
 #define PHIST_MAIN_TASK_BEGIN {\
   int mainTask_ierr = 0;\
   ghost_task* mainTask = NULL;\
   phist_execute_lambda_as_ghost_task(&mainTask, false, [&]()->int {
 
 #define PHIST_MAIN_TASK_END \
-      return 0;}, &mainTask_ierr, true);\
-  PHIST_ICHK_IERR((void)mainTask_ierr,mainTask_ierr);\
-  PHIST_ICHK_IERR(phist_wait_ghost_task(&mainTask,&mainTask_ierr),mainTask_ierr);}
+      return 0;}, &mainTask_ierr, false);\
+  PHIST_ICHK_IERR((void)mainTask_ierr,mainTask_ierr);}
+
+
+#endif /* PHIST_USE_GHOST_TASKS */
 
 #else /* __cplusplus && PHIST_HAVE_GHOST && PHIST_HAVE_CXX11_LAMBDAS */
 
