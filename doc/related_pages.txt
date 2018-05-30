@@ -2,7 +2,7 @@
  * \page docu About this documentation
  * 
  * This documentation tries to group the functions available in PHIST. A good starting point when looking for
- * specific functionality is the "Function Groups" tab in the top bar. The C++ interface is documented in a separate
+ * specific functionality is the "Grouped Functions" tab in the top bar. The C++ interface is documented in a separate
  * group. It is based on C++ traits classes for each function group to make it easier to call functions from templated C++ code.
  * There is currently no documention for the Fortran 2003 bindings, in order to generate the bindings you have to download and 
  * build the phist_fort tool available [ here ](https://bitbucket.org/essex/ghost).
