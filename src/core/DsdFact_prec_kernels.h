@@ -37,6 +37,9 @@ extern "C" {
 //! \brief calculates a possibly low rank approximation of a lower cholesky factor of an spd matrix
 //!
 //! higher-precision + pivoting + stable low rank approximation
+//!
+//! \param[in,out] rank rank of the cholesky factor on output, size of the locked part of a previous calculation on input (set it to zero when you don't need this!)
+//!
 void phist_Dprec_cholesky(double *__restrict__ a, double *__restrict__ aC, phist_lidx n, phist_lidx lda, phist_lidx *perm, int *rank, int* iflag);
 
 //! apply backward substitution with permuted upper triangular matrix to k vectors in col-major storage
