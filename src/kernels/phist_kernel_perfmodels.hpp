@@ -96,7 +96,7 @@ PHIST_PERFCHECK_BENCHMARK(STREAM_STORE, phist_bench_stream_store);
   PHIST_CHK_IERR(SUBR(mvec_num_vectors)(X,&_nV,iflag),*iflag); \
   PHIST_CHK_IERR(PHIST_PERFCHECK_MVEC_LENGTH(X,&_n,iflag),*iflag); \
   PHIST_CHK_IERR(PHIST_PERFCHECK_SPARSEMAT_NNZ(A,&_nnz,iflag),*iflag); \
-  double flops = (a!=0)*double(2*_nnz*_nV + (shift!=_ST_(0)*_n*_nV)) + (b!=_ST_(0))*double((1+(b!=_ST_(1)))*_n*_nV) + PHIST_PERFCHECK_AXPBY_FLOPS(_n*_nV,g,d) + double(2*num_dots*_nV*_n); \
+  double flops = (a!=0)*double(2*_nnz*_nV + (shift!=_ST_(0))*_n*_nV) + (b!=_ST_(0))*double((1+(b!=_ST_(1)))*_n*_nV) + PHIST_PERFCHECK_AXPBY_FLOPS(_n*_nV,g,d) + double(2*num_dots*_nV*_n); \
 PHIST_PERFCHECK_NOT_IMPLEMENTED(flops);
 
 //! checks performance of mvec_create
