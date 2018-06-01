@@ -70,7 +70,9 @@ PHIST_MAIN_TASK_BEGIN
   iflag = repart;
   PHIST_ICHK_IERR(SUBR(create_matrix)(&A, comm, matname, &iflag),iflag);
   PHIST_ICHK_IERR(SUBR(sparseMat_get_domain_map)(A, &map,&iflag),iflag);
+  iflag=PHIST_MVEC_REPLICATE_DEVICE_MEM;
   PHIST_ICHK_IERR(SUBR(mvec_create)(&x,map,nvecs,&iflag),iflag);
+  iflag=PHIST_MVEC_REPLICATE_DEVICE_MEM;
   PHIST_ICHK_IERR(SUBR(mvec_create)(&xExact,map,nvecs,&iflag),iflag);
   PHIST_ICHK_IERR(SUBR(mvec_create)(&b,map,nvecs,&iflag),iflag);
   PHIST_ICHK_IERR(SUBR(mvec_create)(&r,map,nvecs,&iflag),iflag);
@@ -99,6 +101,7 @@ PHIST_MAIN_TASK_BEGIN
       }
     }
   }
+  PHIST_ICHK_IERR(SUBR(mvec_to_device)(xExact,&iflag),iflag);
   PHIST_ICHK_IERR(SUBR(sparseMat_times_mvec)(st::one(),A,xExact,st::zero(),b,&iflag),iflag);
 
   PHIST_ICHK_IERR(SUBR(mvec_add_mvec)(st::one(),b,st::zero(),r,&iflag),iflag);
