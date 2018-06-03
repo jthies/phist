@@ -1,0 +1,5 @@
+/* no non-phist headers */
+#define DOXYGEN
+#include "${TG_HFILE}"
+#include "phist_driver_utils_decl.h"
+#include "phist_gen_clean.h"

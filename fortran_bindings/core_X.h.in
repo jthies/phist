@@ -1,0 +1,10 @@
+/* no non-phist headers */
+#define DOXYGEN
+#include "${TG_HFILE}"
+#include "phist_operator_decl.h"
+#include "phist_svqb_decl.h"
+#include "phist_svrr_decl.h"
+#include "phist_orthog_decl.h"
+#include "phist_orthogrr_decl.h"
+#include "phist_orthogrrfused_decl.h"
+#include "phist_gen_clean.h"

@@ -1,0 +1,9 @@
+/* no non-phist headers */
+#define DOXYGEN
+#include "phist_typedefs.h"
+typedef gidx_t ghost_gidx_t;
+typedef lidx_t ghost_lidx_t;
+#include "phist_void_aliases.h"
+#include "${TG_HFILE}"
+#include "phist_kernels_decl.h"
+#include "phist_gen_clean.h"

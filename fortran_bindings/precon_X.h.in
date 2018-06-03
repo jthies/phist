@@ -1,0 +1,4 @@
+/* no non-phist headers */
+#define DOXYGEN
+#include "${TG_HFILE}"
+#include "phist_precon_decl.h"

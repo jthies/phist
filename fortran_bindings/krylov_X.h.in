@@ -1,0 +1,24 @@
+#include "phist_config.h"
+
+/* no non-phist headers */
+#define DOXYGEN
+#include "${TG_HFILE}"
+
+#include "phist_blockedgmres_decl.h"
+#include "phist_blockedminres_decl.h"
+#include "phist_blockedpcg_decl.h"
+#include "phist_blockedqmr_decl.h"
+#include "phist_blockedbicgstab_decl.h"
+
+/* do not build carp_cg into the fortran interface for now, 
+   it would require some more work because of its use of
+   x_* types
+*/
+/*#include "phist_carp_cg_decl.h"*/
+#include "phist_simple_arnoldi_decl.h"
+#include "phist_simple_lanczos_decl.h"
+
+#include "phist_anasazi_decl.h"  
+#include "phist_belos_decl.h"
+
+#include "phist_gen_clean.h"

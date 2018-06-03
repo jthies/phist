@@ -1,0 +1,6 @@
+/* no non-phist includes */
+#define DOXYGEN
+/* no type-generic includes */
+#define DOXYGEN_NO_TG
+
+#include "phist_kernels.h"

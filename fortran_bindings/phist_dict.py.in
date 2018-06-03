@@ -1,0 +1,124 @@
+''' This module should contain everything which is phist-specific
+    and can be replaced for another project
+'''
+from collections import OrderedDict
+
+# Libraries paths and resulting Fortran files *.F.
+# The order of the entries may matter because of type/enum
+# dependencies:
+PATH_DICT = OrderedDict([
+                  ("tools", "phist_tools.@F_EXT@"),
+                  ("tools_s", "phist_tools_s.@F_EXT@"),
+                  ("tools_d", "phist_tools_d.@F_EXT@"),
+                  ("tools_c", "phist_tools_c.@F_EXT@"),
+                  ("tools_z", "phist_tools_z.@F_EXT@"),
+                  ("kernels", "phist_kernels.@F_EXT@"),
+                  ("kernels_s","phist_kernels_s.@F_EXT@"),
+                  ("kernels_d","phist_kernels_d.@F_EXT@"),
+                  ("kernels_c","phist_kernels_c.@F_EXT@"),
+                  ("kernels_z","phist_kernels_z.@F_EXT@"),
+                  ("core_s","phist_core_s.@F_EXT@"),
+                  ("core_d","phist_core_d.@F_EXT@"),
+                  ("core_c","phist_core_c.@F_EXT@"),
+                  ("core_z","phist_core_z.@F_EXT@"),
+                  ("krylov_s","phist_krylov_s.@F_EXT@"),
+                  ("krylov_d","phist_krylov_d.@F_EXT@"),
+                  ("krylov_c","phist_krylov_c.@F_EXT@"),
+                  ("krylov_z","phist_krylov_z.@F_EXT@"),
+                  ("jada","phist_jada.@F_EXT@"),
+                  ("jada_s","phist_jada_s.@F_EXT@"),
+                  ("jada_d","phist_jada_d.@F_EXT@"),
+                  ("jada_c","phist_jada_c.@F_EXT@"),
+                  ("jada_z","phist_jada_z.@F_EXT@"),
+                  ("precon_s","phist_precon_s.@F_EXT@"),
+                  ("precon_d","phist_precon_d.@F_EXT@"),
+                  ("precon_c","phist_precon_c.@F_EXT@"),
+                  ("precon_z","phist_precon_z.@F_EXT@"),
+                  ])
+
+# -------------------------------------------------------------------------
+# These dictionaries give the Fortran type and its KIND for each GTK+ type:
+# -------------------------------------------------------------------------
+# One word types:
+TYPES_DICT = { 
+    "int":("integer(c_int)","c_int"),
+    "phist_lidx":("integer(lidx)",""),
+    "phist_gidx":("integer(gidx)",""),
+    # For gchar & guchar, see https://github.com/jerryd/gtk-fortran/issues/41#issuecomment-7337877
+    "float":("real(c_float)","c_float"),
+    "double": ("real(c_double)","c_double"),
+    "phist_s_complex":  ("complex(c_float_complex)","c_float_complex"),    
+    "phist_d_complex":  ("complex(c_double_complex)","c_double_complex"),    
+    "size_t":  ("integer(c_size_t)","c_size_t"),
+    "va_list":("type(c_ptr)","c_ptr"),
+# all objects are passed as void pointers
+# I think adding them here currently doesn't do anything, but we might
+# get a nicer look-and-feel if we declare them in the fortran modules
+# to look similar as in C
+# sparseMats
+    "phist_SsparseMat_ptr":("type(SsparseMat_ptr)","c_ptr"),
+    "phist_Sconst_sparseMat_ptr":("type(Sconst_sparseMat_ptr)","c_ptr"),
+    "phist_DsparseMat_ptr":("type(DsparseMat_ptr)","c_ptr"),
+    "phist_Dconst_sparseMat_ptr":("type(Dconst_sparseMat_ptr)","c_ptr"),
+    "phist_CsparseMat_ptr":("type(CsparseMat_ptr)","c_ptr"),
+    "phist_Cconst_sparseMat_ptr":("type(Cconst_sparseMat_ptr)","c_ptr"),
+    "phist_ZsparseMat_ptr":("type(ZsparseMat_ptr)","c_ptr"),
+    "phist_Zconst_sparseMat_ptr":("type(Zconst_sparseMat_ptr)","c_ptr"),
+# mvecs
+    "phist_Smvec_ptr":("type(Smvec_ptr)","c_ptr"),
+    "phist_Sconst_mvec_ptr":("type(Sconst_mvec_ptr)","c_ptr"),
+    "phist_Dmvec_ptr":("type(Dmvec_ptr)","c_ptr"),
+    "phist_Dconst_mvec_ptr":("type(Dconst_mvec_ptr)","c_ptr"),
+    "phist_Cmvec_ptr":("type(c_ptr)","Cmvec_ptr"),
+    "phist_Cconst_mvec_ptr":("type(Cconst_mvec_ptr)","c_ptr"),
+    "phist_Zmvec_ptr":("type(Zmvec_ptr)","c_ptr"),
+    "phist_Zconst_mvec_ptr":("type(Zconst_mvec_ptr)","c_ptr"),
+# sdMats
+    "phist_SsdMat_ptr":("type(SsdMat_ptr)","c_ptr"),
+    "phist_Sconst_sdMat_ptr":("type(Sconst_sdMat_ptr)","c_ptr"),
+    "phist_DsdMat_ptr":("type(DsdMat_ptr)","c_ptr"),
+    "phist_Dconst_sdMat_ptr":("type(Dconst_sdMat_ptr)","c_ptr"),
+    "phist_CsdMat_ptr":("type(CsdMat_ptr)","c_ptr"),
+    "phist_Cconst_sdMat_ptr":("type(Cconst_sdMat_ptr)","c_ptr"),
+    "phist_ZsdMat_ptr":("type(ZsdMat_ptr)","c_ptr"),
+    "phist_Zconst_sdMat_ptr":("type(Zconst_sdMat_ptr)","c_ptr"),
+    #linearOp type
+    "phist_SlinearOp_ptr":("type(SlinearOp)-pass-by-ref",""),
+    "phist_Sconst_linearOp_ptr":("type(SlinearOp)-pass-by-ref",""),
+    "phist_DlinearOp_ptr":("type(DlinearOp)-pass-by-ref",""),
+    "phist_Dconst_linearOp_ptr":("type(DlinearOp)-pass-by-ref",""),
+    "phist_ClinearOp_ptr":("type(ClinearOp)-pass-by-ref",""),
+    "phist_Cconst_linearOp_ptr":("type(ClinearOp)-pass-by-ref",""),
+    "phist_ZlinearOp_ptr":("type(ZlinearOp)-pass-by-ref",""),
+    "phist_Zconst_linearOp_ptr":("type(ZlinearOp)-pass-by-ref",""),
+# blockedGMRES_state
+    "phist_SblockedGMRESstate_ptr":("type(SblockedGMRESstate)-pass-by-ref",""),
+    "phist_DblockedGMRESstate_ptr":("type(DblockedGMRESstate)-pass-by-ref",""),
+    "phist_CblockedGMRESstate_ptr":("type(CblockedGMRESstate)-pass-by-ref",""),
+    "phist_ZblockedGMRESstate_ptr":("type(ZblockedGMRESstate)-pass-by-ref",""),
+# carp_cgState
+    "phist_Scarp_cgState_ptr":("type(Scarp_cgState)-pass-by-ref",""),
+    "phist_Dcarp_cgState_ptr":("type(Dcarp_cgState)-pass-by-ref",""),
+    "phist_Ccarp_cgState_ptr":("type(Ccarp_cgState)-pass-by-ref",""),
+    "phist_Zcarp_cgState_ptr":("type(Zcarp_cgState)-pass-by-ref",""),
+# various
+    "phist_jadaOpts":("type(jadaOpts)",""),
+    "phist_comm_ptr":("type(comm_ptr)","c_ptr"),
+    "phist_const_comm_ptr":("type(const_comm_ptr)","c_ptr"),
+    "phist_map_ptr":("type(map_ptr)","c_ptr"),
+    "phist_const_map_ptr":("type(const_map_ptr)","c_ptr"),
+    "phist_sparseMat_rowFunc":("type(c_funptr)","c_funptr")
+     }
+
+# Two words types:
+TYPES2_DICT = {
+    "long double": ("real(c_long_double)","c_long_double"),
+    "unsigned long":("integer(c_long)","c_long"),
+    "unsigned short":("integer(c_short)","c_short"),
+    "unsigned int":("integer(c_int)","c_int"),
+    "const float":("real(c_float), intent(in)","c_float"),
+    "const double":("real(c_double), intent(in)","c_double"),
+    "const phist_s_complex":("complex(c_float), intent(in)","c_double"),
+    "const phist_d_complex":("complex(c_double), intent(in)","c_double"),
+    }
+

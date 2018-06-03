@@ -1,0 +1,11 @@
+/* no non-phist headers */
+#define DOXYGEN
+#include "${TG_HFILE}"
+
+/*#include "phist_jadaOp_decl.h"*/
+/*#include "phist_jadaCorrectionSolver_decl.h"*/
+/*#include "phist_schur_decomp_decl.h"*/
+#include "phist_subspacejada_decl.h"  
+/*#include "phist_transform_searchspace_decl.h"*/
+
+#include "phist_gen_clean.h"

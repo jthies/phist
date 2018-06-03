@@ -1,0 +1,692 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+# This is an adaptation of a script to generate the GTK fortran bindings, see below.
+# It was adapted to generate the PHIST fortran bindings by Jonas Thies (Jonas.Thies@DLR.de)
+# 2015/2016
+
+# Copyright (C) 2011
+# Free Software Foundation, Inc.
+#
+# This file is part of the gtk-fortran gtk+ Fortran Interface library.
+#
+# This is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3, or (at your option)
+# any later version.
+#
+# This software is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# Under Section 7 of GPL version 3, you are granted additional
+# permissions described in the GCC Runtime Library Exception, version
+# 3.1, as published by the Free Software Foundation.
+#
+# You should have received a copy of the GNU General Public License along with
+# this program; see the files COPYING3 and COPYING.RUNTIME respectively.
+# If not, see <http://www.gnu.org/licenses/>.
+#
+# Contributed by Vincent Magnin, 01.28.2011
+# Last modification:  18th April 2015 (Python 3.4.3, Linux Ubuntu 15.04)
+# Pylint score: 7.79/10
+
+""" Generates the *.F files from the C header files of phist.
+    Command line:         python3 cfwrapper.py
+    """
+
+import re       # Regular expression library
+import os
+import time
+import csv      # To write .csv files
+import sys      # To use command line arguments
+import platform  # To obtain platform informations
+from collections import OrderedDict
+
+from @DICT@ import *
+
+def iso_c_binding(declaration, returned):
+    """ Returns the Fortran type corresponding to a C type in the 
+        ISO_C_BINDING module (limited to C types used in PHIST),
+        and the KIND type """
+    global phist_enums
+    global phist_funptr
+    global RGX_TYPE
+    global TYPES_DICT
+    try:
+        c_type = RGX_TYPE.search(declaration).group(1)
+    except AttributeError:
+        return "?", "?"    # error
+    # Is it an array ?
+    if re.findall("\[[0-9]+\]",declaration):
+        dim=declaration[declaration.find("[")+1:declaration.find("]")];
+        array = ", dimension("+dim+")"
+    elif declaration.find("[]") != -1:
+        array = ", dimension(*)"
+    else:
+        array = ""
+    # treat 'char name[]' and char name[<N>] (which may appear as struct member)
+    if array and (c_type.find("char") != -1):
+            if declaration.find("*") != -1:
+                return "type(c_ptr), dimension(*)", "c_ptr"
+            else:
+                return "character(kind=c_char)"+array, "c_char"
+
+    # Is it a "typedef enum" ?
+    for each in phist_enums:
+        if c_type.find(each) != -1:
+            return "integer(c_int)", "c_int"
+
+    # Is it a pointer toward a function ?
+    for each in phist_funptr:
+        if c_type.find(each) != -1:
+            return "type(c_funptr)", "c_funptr"
+
+    # Is it a pointer ?
+    if declaration.find("*") != -1:
+        # Is it a string (char or gchar array) ?
+        # TODO: what about "unsigned char"   "guchar" gunichar ?
+        if ((c_type.find("char") != -1) or (c_type.find("char*") != -1)) and (not returned):
+            if declaration.find("**") != -1:
+                return "type(c_ptr), dimension(*)", "c_ptr"
+            else:
+                return "character(kind=c_char), dimension(*)", "c_char"
+        else:
+            if declaration.find("**") != -1:
+                return "type(c_ptr)-pass-by-ref", "c_ptr"
+            else:
+                # try to find it in our type dictionary and return it by reference
+                for each in TYPES_DICT:
+                    if each in c_type.split():
+                        return TYPES_DICT[each][0] + "-pass-by-ref", TYPES_DICT[each][1]
+                return "type(c_ptr)", "c_ptr"
+    # Other cases:
+    if len(declaration.split()) >= 3:   # Two words type
+        for each in TYPES2_DICT:
+            if set(each.split()).issubset(set(declaration.split())):
+                return TYPES2_DICT[each][0] + array, TYPES2_DICT[each][1]
+    else:  # It is a one word type
+        for each in TYPES_DICT:
+            if each in c_type.split():
+                return TYPES_DICT[each][0] + array, TYPES_DICT[each][1]
+
+    # It is finally an unknown type:
+    print("unknown type in '"+declaration+"'")
+    print("with array='"+array+"'")
+    return "?", "?"
+
+
+def write_error(errorsfile, direc, filename, message, proto, type_error): 
+    """ Write errors in the file cfwrapper-errors.txt and increments
+    the counters """
+    global nb_errors
+    global nb_type_errors
+    
+    errorsfile.write(direc + "/" + filename + "\n")
+    errorsfile.write(message + "\n")
+    errorsfile.write(proto + "\n\n")
+    if type_error:
+        nb_type_errors += 1
+    else:
+        nb_errors += 1
+
+
+def multiline(line, maxlength): 
+    """Split a long line in a multiline, following Fortran syntax."""
+    result = ""
+    while len(line) > maxlength-1:
+        result += line[0:maxlength-1] + "&\n"
+        line = "&"+ line[maxlength-1:]
+    result += line
+    return result
+
+
+def set_bit_field(match):
+    """ Returns the Fortran bitfield from a C enum flag"""
+    b = int(match.group(1))
+    return "ISHFTC(1, " + str(b) + ")"
+
+
+def translate_enums(errorsfile, enum_list):
+    """Receive a C enum and returns a Fortran enum"""
+    global nb_enumerators
+    f_enum = ""
+    BIT_FIELDS = re.compile("1 *<< *(\d+)")
+    
+    for each in enum_list:
+        enum = each[0]
+        name = each[1]
+        
+        # These enums are excluded for some problems...
+        # For example GDBusInterfaceSkeletonFlags contains an item with a too long name
+        if name in ["GSocketFamily", "GSocketMsgFlags", "GdkPixdataType",
+                    "GIOCondition", "GDBusInterfaceSkeletonFlags"]:
+            continue    # Go to next enum
+            
+        parameters = re.findall("(?ms){(.*)}", enum)
+        
+        # Remove lines beginning by #:
+        parameters[0] = re.sub("(?m)^#.*$", "", parameters[0])
+        # Remove TABs and overnumerous spaces:
+        parameters[0] = parameters[0].replace("\t", " ")
+        parameters[0] = re.sub("[ ]{2,}", " ", parameters[0])
+        # Delete characters (   ) and , if they are not between quotes:
+        parameters[0] = re.sub("(?<!')(\()(?!')", "", parameters[0])
+        parameters[0] = re.sub("(?<!')(\))(?!')", "", parameters[0])
+        parameters[0] = re.sub("(?<!')(,)(?!')", "", parameters[0])
+        parameters[0] = re.sub("(?m),$", "", parameters[0])
+        # Remove the u for unsigned numbers (rare)
+        parameters[0] = re.sub("1u[ ]<<", "1 <<", parameters[0])
+        
+        # Is it a char ?
+        parameters[0] = re.sub("('.?')", "iachar(\\1)", parameters[0])
+        # Is it in hexadecimal ?
+        parameters[0] = re.sub("0x([0-9A-Fa-f]+)", "INT(z'\\1')", 
+                               parameters[0])
+        # Is it a bit field ?
+        parameters[0] = BIT_FIELDS.sub(set_bit_field, parameters[0])
+
+        # complement
+        parameters[0] = re.sub("~(\w+)", "not(\\1)", parameters[0])
+        # logical or
+        parameters[0] = re.sub("([\w\(\)]+)\s*\|\s*([\w\(\), \d]+)", 
+                               "ior(\\1 , \\2)", parameters[0])
+
+        parameters[0] = re.sub("(?m)^\s*(\w+)", "    enumerator :: \\1", 
+                               parameters[0])
+
+        # Resulting Fortran enumerator:
+        f_enum += "enum, bind(c)    !" + name + "\n"
+        f_enum += parameters[0]
+        f_enum += "end enum\n \n"
+        nb_enumerators += 1
+
+    # Remove empty lines:
+    f_enum = re.sub("(?m)^ *\n$", "", f_enum)
+    
+    return f_enum
+    
+    
+# **********************************************
+# Main program
+# **********************************************
+print()
+print("Current directory:", os.getcwd())
+print()
+
+T0 = time.time()     # To calculate computing time
+
+#---------------------------------------------------------------------------
+# Regular expressions used to identify the different parts of a C prototype:
+#---------------------------------------------------------------------------
+RGX_RETURNED_TYPE = re.compile( "^ *([_0-9a-zA-Z ]+ *\**)" )
+RGX_FUNCTION_NAME = re.compile( "([0-9a-zA-Z_]+) *\(" )
+RGX_ARGUMENTS = re.compile( "\(([0-9a-zA-Z_ ,\*\[\]]*)\).*;$" )
+RGX_ARGS = re.compile( " *([0-9a-zA-Z_ \*\[\]]+),?" )
+RGX_VAR_TYPE = re.compile( " *([_0-9a-zA-Z]+)[ |\*]" )
+RGX_TYPE = re.compile( "^ *((const )?\w+)[ \*]?" )
+RGX_VAR_NAME = re.compile( "[ |\*]([_0-9a-zA-Z]+)(?:\[\])?$" )
+# Function name beginning by an underscore:
+RGX_UNDERSCORE = re.compile( "^_\w+$" )
+
+# Errors will be written in that file:
+ERRORS_FILE = open("cfwrapper-errors.txt", "w")
+
+# A tabulation:
+TAB = "  "
+
+# Statistics initialization:
+nb_lines = 0
+nb_generated_interfaces = 0
+nb_generated_fortran_types = 0
+nb_errors = 0
+nb_type_errors = 0
+nb_variadic = 0
+nb_files = 0
+nb_enumerators = 0
+type_errors_list = []
+
+#*************************************************************************
+# Pass 1: scan all header files to find all enum types, all pointers to 
+# functions (funptr) and structs
+#*************************************************************************
+print("Pass 1: looking for enumerators, funptr and derived types...")
+
+phist_enums = []
+phist_funptr = []
+phist_types = []
+
+for library_path in PATH_DICT:
+    for directory in os.walk(library_path):
+        for c_file_name in directory[2]:
+            if (c_file_name.find(".CFWRAPPER_SKIP.") != -1):
+                continue
+            whole_file = open(directory[0] + "/" + c_file_name, 'rU', 
+                              errors='replace').read()
+            enum_types = re.findall("(?ms)^typedef enum.*?}\s?(\w+);", whole_file)
+            phist_enums += enum_types
+            funptr = re.findall("(?m)^typedef[ \t]*(?:const)?[ \t]*\w+[ \t]*\*?\s*\(\* ?([\w]*?)\)", whole_file)
+            phist_funptr += funptr
+            types = re.findall("(?m)^typedef *?(?:const)? *?(\w+) *\*? *([\w]+);", whole_file)
+            phist_types += types
+
+# Add derived types:
+for each in phist_types:
+    if each[1] not in TYPES_DICT:
+        if each[0] in TYPES_DICT:
+            TYPES_DICT[each[1]] = TYPES_DICT[each[0]]
+        elif each[0] in phist_funptr:
+            TYPES_DICT[each[1]] = ("type(c_funptr)", "c_funptr")
+
+# Sorting (useful only for printing):
+phist_enums.sort()
+phist_funptr.sort()
+
+#**************************************************************************
+# Pass 2: Scan of all header files in the directories and subdirectories to
+# generate interfaces
+#**************************************************************************
+print("Pass 2: looking for C functions...")
+
+FILE_HEADER = """! Automatically generated by cfwrapper.py on """ + time.asctime(time.localtime()) + """
+! Please do not modify.
+! This file is part of the phist_fort PHIST Fortran Interface library.
+! GNU General Public License version 3
+"""
+
+# All enums are written in this file.
+# TODO: split enums in their respective files ?
+enums_file = open("phist_enums.@F_EXT@", "w")
+enums_file.write(FILE_HEADER)
+
+index = []
+opened_files = []
+used_types = []
+
+TYPE_MODULE_DICT = OrderedDict()
+
+for library_path in PATH_DICT:  
+    F_FILE_NAME = PATH_DICT[library_path]   # Fortran *.F file
+    print(library_path + "\t => \t" + F_FILE_NAME)
+
+    # Create the *.F file with its module declaration:
+    if not (F_FILE_NAME in opened_files):
+        f_file = open(F_FILE_NAME, "w")
+        opened_files.append(F_FILE_NAME)
+        
+        # The module name is derived from the Fortran file name:
+        module_name = re.search("^(.+)\.@F_EXT@", F_FILE_NAME).group(1)
+        module_name = module_name.replace("-", "_")
+        
+                
+        f_file.write(FILE_HEADER+"\nmodule " + module_name + 
+                "\n#include \"phist_fort.h\""+
+                "\nuse, intrinsic :: iso_c_binding"+
+                "\nimplicit none\n\n")
+
+    # Each header file in each subdirectory of the library is analyzed:
+    for directory in os.walk(library_path):
+        for c_file_name in directory[2]:
+            if (c_file_name.find(".CFWRAPPER_SKIP.") != -1):
+                continue
+            # Those files cause problems so we exclude them:
+            if c_file_name in ["gstdio.h", "giochannel.h"]:
+                continue    # Go to next file
+
+            whole_file_original = open(directory[0] + "/" + c_file_name, 'rU', 
+                                       errors='replace').read()
+            whole_file = whole_file_original
+            nb_files += 1
+            
+            # ----------------------------------------------------------------
+            # Preprocessing and cleaning of the header file. Do not change the
+            # order of the regex !
+            # ----------------------------------------------------------------
+
+            # Remove C commentaries:
+            whole_file = re.sub("(?s)/\*.*?\*/", "", whole_file)
+            
+            # Translating C enumerators to Fortran enumerators:
+            enum_types = re.findall("(?ms)^(typedef enum\s*?(?:\w+)?\s*?{.*?})\s*?(\w+);", whole_file)
+            enums_file.write(translate_enums(ERRORS_FILE, enum_types))
+
+            # extract typedef'd structs, we'll turn them into Fortran TYPEs
+            struct_types=re.findall(r'struct.*?{.*?}',whole_file,re.DOTALL)
+            
+            # remove them from the input file
+            whole_file=re.sub(r'typedef[ \t]+struct.*?{.*?}.*?;',"",whole_file,0,re.DOTALL)
+            
+            # in order to later on define interfaces to functions that use these types,
+            # they will have to import them from the module as they themselves appear in
+            # the "interface" section of the module and do not see the types otherwise.
+            module_types = []
+
+            # Removing multilines typedef:
+            whole_file = re.sub("(?m)^[ \t]*typedef([^;]*?\n)+?[^;]*?;$", 
+                                "", whole_file)
+            whole_file = re.sub("^[ \t]*typedef struct.*?\{.*?\}.*?;$",
+                                "",whole_file,0,re.DOTALL)
+            # Remove C directives (multilines then monoline):
+            # Note that in a python regular expression \\\\=\\=\
+            whole_file = re.sub("(?m)^#(.*[\\\\][\\n])+.*?$", "", whole_file)
+            whole_file = re.sub("(?m)^#.*$", "", whole_file)
+            # Remove TABs and overnumerous spaces:
+            whole_file = whole_file.replace("\t", " ")
+            whole_file = re.sub("[ ]{2,}", " ", whole_file)          
+            # Remove two levels of { } structures:
+            whole_file = re.sub("(?ms){[^{]*?}$", "", whole_file)
+            whole_file = re.sub("(?ms){[^{]*?}$", "", whole_file)
+            # Remove structures like: { } a_name;
+            whole_file = re.sub("(?ms){[^{]*?}[ \w]*?;", "", whole_file)
+            # Remove "available_in" and "deprecated" directives:
+            whole_file = re.sub("(?m)^.*(_AVAILABLE_IN_|_DEPRECATED).*$", 
+                                "", whole_file)
+
+            # Remove different kind of declarations:
+            whole_file = re.sub("(?m)^(enum).*$", "", whole_file)
+            whole_file = re.sub("(?m)^(typedef|union|struct).*$", 
+                                "", whole_file)
+            whole_file = re.sub("(?m)^.*extern ", "", whole_file)
+
+            # Remove empty lines:
+            whole_file = re.sub("(?m)^\n$", "", whole_file)
+
+            # translate structs to types
+            interface = ''
+            for struct in struct_types:
+                type=struct
+                # what is this type called?
+                type_name=re.findall("struct[\s]+\w+[\s]*\{", type)[0]
+                # we remove the phist_ prefix from the types so we can write
+                # TYPE(DlinearOp) etc., since we're using modules we don't need
+                # these prefixes really, and the syntax becomes more phisty.
+                type_name=re.sub("phist_","",type_name)
+                type_name=re.sub("struct","",type_name)
+                type_name=str.strip(re.sub("\{","",type_name))
+                module_types.append(type_name)
+                TYPE_MODULE_DICT.update([(type_name,module_name)])
+                # turn function pointers into TYPE(C_FUNPTR)
+                funptrs=re.findall("(?m)^[ \t]*(?:const)?[ \t]*\w+[ \t]*\*?\s*\(\* ?([\w]*?)\)", type)
+                # replace them in advance
+                struct_docs={}
+                for fname in funptrs:
+                        string1="(?m)^[ \t]*void[ \t]*\(\*"+fname+"\)\(.*?\);$"
+                        string2="CFWRAPPER_TYPE(c_funptr) :: "+fname
+                        fun_doc=re.search(string1,type,re.DOTALL)
+                        if (fun_doc!=None):
+                                struct_docs[fname]=re.sub('^','! ',fun_doc.group(0),0,re.MULTILINE)+"\n"
+                        else:
+                                struct_docs[fname]="! could not be documented by cfwrapper\n"
+                        type=re.sub(string1,string2,type,1,re.DOTALL)
+                        # prevent the function pointer to reappear as a stand-alone subroutine in the module
+                        whole_file=re.sub(string1,"",whole_file,1,re.DOTALL)
+
+                # put TYPE and END TYPE around the contents
+                type=re.sub(r'struct.*?{','CFWRAPPER_TYPE, bind(C) :: '+type_name,type,1,re.DOTALL)
+                type=re.sub(r'}','end CFWRAPPER_TYPE '+type_name+'\n',type)
+                type_lines=type.splitlines(True)
+                for member in type_lines:
+                        # skip empty lines
+                        if member in ['\n', '\r\n']:
+                                continue
+                        # simply print the lines we already replaced:
+                        if (member.find("CFWRAPPER_TYPE")!=-1):
+                                # look for documentation generated from C prototype
+                                for fname in funptrs:
+                                        if (member.find(fname)!=-1):
+                                                interface += struct_docs[fname];
+                                        
+                                interface += re.sub("CFWRAPPER_TYPE","type",member)
+                                continue
+                        interface += "! "+re.sub("\n","",member)+"\n"
+                        member_split=member.split()
+                        if (len(member_split)<2):
+                                continue
+                        # this will fail if the line being parsed is empty, so skip it.
+                        member_name=re.sub("\[[0-9]*\];","",member_split[len(member_split)-1])
+                        member_name=re.sub(";","",member_name)
+                        member_name=re.sub("\*","",member_name)
+                        f_member_type, iso_c = iso_c_binding(re.sub(";","",member),True)
+                        f_member_type=re.sub("-pass-by-ref",", dimension(*)",f_member_type)
+                        # cannot have dimension(*) in a struct => replace it by TYPE(C_PTR)
+                        if (f_member_type.find("dimension(*)") != -1):
+                                f_member_type="type(c_ptr)"
+                        interface += f_member_type+" :: "+member_name+"\n"
+                interface += '\n'
+                f_file.write(interface)
+                nb_generated_fortran_types += 1
+
+            # after writing all TYPEs, start an INTERFACE block
+            f_file.write("\ninterface\n\n")
+
+            # Now each line will be treated separately:
+            lines_list = whole_file.splitlines(True)
+            corrected_lines_list = []
+            try:
+                corrected_lines_list.append(lines_list[0])
+            except IndexError:
+                write_error(ERRORS_FILE, directory[0], c_file_name, 
+                            "No function to implement in this file", "", False)
+                continue    # Go to next file
+
+            #------------------------------------
+            # Preprocessing of each C prototype:
+            #------------------------------------
+            i = 0
+            for prototype in lines_list:
+                nb_lines += 1
+                # remove leading and trailing spaces:
+                prototype2 = str.strip(prototype)
+
+                if corrected_lines_list[i].find(";") == -1:
+                    # Remove line feeds inside a prototype:
+                    corrected_lines_list[i] = corrected_lines_list[i].replace("\n", "")
+                    corrected_lines_list[i] += " "+prototype2
+                else:
+                    corrected_lines_list.append(prototype2)
+                    i = i + 1
+
+            #------------------------------------
+            # Each prototype is now analyzed:
+            #------------------------------------
+            for prototype in corrected_lines_list:
+                error_flag = False
+
+                type_returned = RGX_RETURNED_TYPE.search(prototype)
+                try:
+                    function_type = type_returned.group(1)
+                except AttributeError:
+                    write_error(ERRORS_FILE, directory[0], c_file_name, 
+                                "Returned type not found", prototype, False)
+                    continue    # Next prototype
+
+                # Will it be a Fortran function or a subroutine ?
+                if (function_type.find("void") != -1) and (function_type.find("*") == -1):
+                    f_procedure = "subroutine "
+                    f_the_end   = "end subroutine"
+                    isfunction  = False
+                    f_use       = ""
+                    f_use_own   = ""
+                    f_import    = ""
+                else:
+                    f_procedure = "function "
+                    f_the_end   = "end function"
+                    isfunction  = True
+                    returned_type, iso_c = iso_c_binding(type_returned.group(1), True)
+                    f_use = iso_c
+                    f_use_own = ""
+                    f_import = ""
+                    if returned_type.find("?") != -1:
+                        error_flag = True
+                        write_error(ERRORS_FILE, directory[0], c_file_name, 
+                            "Unknown data type:    " + type_returned.group(1), 
+                            prototype, True)
+                        type_errors_list.append(type_returned.group(1))
+                
+                # f_name is the name of the function in phist_fort:
+                function_name = RGX_FUNCTION_NAME.search(prototype)
+                try:
+                    f_name = function_name.group(1)
+                except AttributeError:
+                    write_error(ERRORS_FILE, directory[0], c_file_name, 
+                                "Function name not found", prototype, False)
+                    continue    # Next prototype
+                                    
+                # Functions beginning by an underscore will be excluded:
+                if RGX_UNDERSCORE.match(f_name) != None:
+                    continue    # Next prototype
+
+                arguments = RGX_ARGUMENTS.search(prototype)
+                try:
+                    args = RGX_ARGS.findall(arguments.group(1))
+                except AttributeError:
+                    write_error(ERRORS_FILE, directory[0], c_file_name, 
+                                "Arguments not found", prototype, False)
+                    if prototype.find("...") != -1:
+                        nb_variadic += 1    # Optional arguments are not managed !
+                    continue    # Next prototype
+            
+                # Each argument of the function is analyzed:
+                declarations = ""
+                args_list = ""
+                for arg in args:
+                    if arg != "void":
+                        try:
+                            var_type = RGX_VAR_TYPE.search(arg).group(1)
+                        except AttributeError:
+                            write_error(ERRORS_FILE, directory[0], c_file_name, 
+                                        "Variable type not found", prototype, True)
+                            continue    # Next argument
+
+                        f_type, iso_c = iso_c_binding(arg, False)
+                        
+                        if iso_c not in used_types:
+                            used_types.append(iso_c)
+                                    
+                        if f_type.find("type")!=-1:
+                                type_name=str.strip(f_type[f_type.find("(")+1:f_type.find(")")])
+                                own_type=False
+                                if type_name in module_types:
+                                        own_type=True
+                                        if f_import == "":
+                                                f_import = type_name
+                                        else:
+                                                f_import += ", "+type_name
+                                
+                                elif type_name in TYPE_MODULE_DICT:
+                                        own_type=True
+                                        # a previously generated module contains the type
+                                        mod_name = TYPE_MODULE_DICT[type_name]
+                                        if (f_use_own.find(mod_name)==-1):
+                                                f_use_own += "use "+mod_name + ", only : "+type_name + "\n"
+                                        else:
+                                                f_use_own=re.sub(mod_name+", only:",mod_name+", only: "+type_name+", ",f_use_own)
+
+                                if own_type and f_type.find("-pass-by-ref")!=-1:
+                                        # pass translated types (C structs) as C_PTR if
+                                        # they should be passed by reference, e.g. c_struct* arguments
+                                        # should be passed as c_loc(f_struct). This allows passing in 
+                                        # C_NULL_PTR, which is important for many phist functions.
+                                        f_type="type(c_ptr)"
+                                        iso_c="c_ptr"
+                        
+                        elif f_type.find("?") != -1:
+                            error_flag = True
+                            write_error(ERRORS_FILE, directory[0], c_file_name, 
+                                        "Unknown data type:    " + arg, 
+                                        prototype, True)
+                            type_errors_list.append(arg)
+
+                        if f_type.find("c_") != -1:
+                            if f_use == "":
+                                f_use = iso_c
+                            else:
+                                # each iso_c must appear only once:
+                                RGX_ISO_C = re.compile( "("+iso_c+")"+"([^\w]|$)" )
+                                if RGX_ISO_C.search(f_use) == None:
+                                    f_use += ", " + iso_c 
+                        
+                        try:
+                            var_name = RGX_VAR_NAME.search(arg).group(1)
+                        except AttributeError:
+                            write_error(ERRORS_FILE, directory[0], c_file_name, 
+                                        "Variable name not found", prototype, False)
+                            continue    # Next argument
+            
+                        # Array with unknown dimension are passed by adress,
+                        # Some have been marked to be passed by reference, remove that marker
+                        # the others are passed by value:
+                        if f_type.find("(*)") != -1:
+                            passvar = ""
+                        else:
+                            passvar = ", value"
+                        if f_type.find("-pass-by-ref") != -1:
+                            f_type=re.sub("-pass-by-ref","",f_type)
+                            passvar = ""
+                            
+                        declarations += 1*TAB + f_type + passvar + " :: " + var_name + "\n"
+                        if args_list == "":
+                            args_list = var_name
+                        else:
+                            args_list += ", " + var_name
+                
+                # Write the Fortran interface in the .F file:
+                if (error_flag == False):
+                    interface = 0*TAB + "! " + prototype + "\n"
+                    first_line = 0*TAB + f_procedure + f_name + "(" + args_list + ") bind(C, name='"+f_name+"')"
+                    interface += multiline(first_line, @MAX_LINE_LEN@) + " \n"
+                    # we may need to import types defined in this module.
+                    interface += 1*TAB + "use iso_c_binding, only: " + f_use + "\n"
+                    interface += 1*TAB + "use phist_types" + "\n"
+                    if f_use_own != "":
+                        interface += 1*TAB + f_use_own+"\n"
+                    if f_import:
+                        interface += 1*TAB + "import "+f_import+"\n"
+                    if isfunction:
+                        interface += 1*TAB + returned_type + " :: " + f_name + "\n"
+                    interface += declarations
+                    interface += 0*TAB + f_the_end + "\n\n" 
+                    
+                    f_file.write(interface)
+                    index.append([module_name, f_name, F_FILE_NAME, 
+                                 directory[0]+"/"+c_file_name, prototype])
+                    nb_generated_interfaces += 1
+            
+    f_file.write("end interface\nend module "+module_name+"\n")
+    f_file.close()
+          
+# **********************************
+# End of the header files processing
+# **********************************
+index.sort()
+index_file = csv.writer(open("phist-fortran-index.csv", "w"), delimiter=";")
+index_file.writerows(index)
+
+# Save remaining error types:
+type_errors_list.sort()
+TYPE_ERRORS_FILE = open("cfwrapper-type_errors.txt", "w")
+for a_type in type_errors_list:
+    TYPE_ERRORS_FILE.write(a_type+"\n")
+
+# Close global files:
+TYPE_ERRORS_FILE.close()
+ERRORS_FILE.close()
+enums_file.close()
+
+print()
+print("=== Statistics (ready to paste in the Status wiki page) ===")
+print()
+
+print("* nb_files scanned =", nb_files)
+print("* nb_generated_interfaces =", nb_generated_interfaces)
+print("* nb_generated_fortran_types =", nb_generated_fortran_types)
+print("* nb_type_errors =", nb_type_errors)
+print("* nb_errors (others) =", nb_errors)
+print("* nb_lines treated =", nb_lines)
+print("* nb_variadic functions =", nb_variadic)
+print("* nb_enumerators =", nb_enumerators)
+print("* Number of types =", len(TYPES_DICT) + len(TYPES2_DICT))
+print("* Computing time: {0:.2f} s".format(time.time()-T0))
+print()
+#print(used_types)

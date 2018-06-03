@@ -1,0 +1,11 @@
+/* this file contains all other headers that should be interfaceable
+   and are not yet part of the other phist modules, in particular all
+   enums and the driver_utils
+*/
+
+/* no non-phist includes */
+#define DOXYGEN
+/* no type-generic includes */
+#define DOXYGEN_NO_TG
+
+#include "phist_enums.h"
