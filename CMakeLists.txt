@@ -1599,8 +1599,17 @@ add_custom_target(test_install COMMAND ${PROJECT_SOURCE_DIR}/buildScripts/test_i
 #######################################################################################
 add_subdirectory(cxx_bindings)
 
+#######################################################################################
+# Fortran 2003 BINDINGS                                                               #
+#######################################################################################
+
+add_subdirectory(fortran_bindings)
+
 # add the C++ headers as a dependency of phist_solvers so that the 'install' target works also with 'make libs'
 add_dependencies(phist_kernels_${PHIST_KERNEL_LIB} cxx_headers)
+
+# add the F'03 modules as a dependency of phist_solvers so that the 'install' target works also with 'make libs'
+add_dependencies(phist_kernels_${PHIST_KERNEL_LIB} fortran_modules)
 
 
 #######################################################################
