@@ -105,6 +105,8 @@ TYPES_DICT = {
     "phist_jadaOpts":("type(jadaOpts)",""),
     "phist_comm_ptr":("type(comm_ptr)","c_ptr"),
     "phist_const_comm_ptr":("type(const_comm_ptr)","c_ptr"),
+    "phist_context_ptr":("type(context_ptr)","c_ptr"),
+    "phist_const_context_ptr":("type(const_context_ptr)","c_ptr"),
     "phist_map_ptr":("type(map_ptr)","c_ptr"),
     "phist_const_map_ptr":("type(const_map_ptr)","c_ptr"),
     "phist_sparseMat_rowFunc":("type(c_funptr)","c_funptr")

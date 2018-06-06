@@ -1603,6 +1603,7 @@ add_subdirectory(cxx_bindings)
 # Fortran 2003 BINDINGS                                                               #
 #######################################################################################
 
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/fortran_bindings)
 add_subdirectory(fortran_bindings)
 
 # add the C++ headers as a dependency of phist_solvers so that the 'install' target works also with 'make libs'

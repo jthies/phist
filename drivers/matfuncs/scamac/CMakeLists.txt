@@ -241,14 +241,14 @@ include(CTest)
 
 # silly tests
 
-add_test (TestRuns scamact)
+add_test (scamac_TestRuns scamact)
 
-add_test (TestSimple scamact list) 
-set_tests_properties(TestSimple PROPERTIES PASS_REGULAR_EXPRESSION "Hubbard")
+add_test (scamac_TestSimple scamact list)
+set_tests_properties(scamac_TestSimple PROPERTIES PASS_REGULAR_EXPRESSION "Hubbard")
 
 
-add_executable(TestRandom scamac_test_random.c)
-target_link_libraries(TestRandom scamac m)
-add_test(TestRandom TestRandom)
+add_executable(scamac_TestRandom scamac_test_random.c)
+target_link_libraries(scamac_TestRandom scamac m)
+add_test(scamac_TestRandom scamac_TestRandom)
 
 

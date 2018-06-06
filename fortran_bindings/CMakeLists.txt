@@ -1,7 +1,7 @@
 #cmake_minimum_required(VERSION 3.8.0)
 project(phist_fort Fortran)
 
-#enable_testing()
+enable_testing()
 
 set(PHIST_SRC ${PROJECT_SOURCE_DIR}/../src)
 set(INC_FLAGS "-I${PHIST_SRC}/kernels/"
@@ -43,7 +43,7 @@ set(FFILES "")
 # static source file we need for index types
 set(FSTATIC "${CMAKE_BINARY_DIR}/phist_types.F90"
             "${PROJECT_SOURCE_DIR}/phist_testing.F90")
-            
+
 set(CMAKE_Fortran_FLAGS "-I${PROJECT_SOURCE_DIR} ${CMAKE_Fortran_FLAGS}")
 
 ############################
@@ -136,21 +136,21 @@ add_custom_target(pp DEPENDS ${HFILES} COMMAND ${CMAKE_COMMAND} -E remove */*.CF
 add_custom_target(pp_keep DEPENDS ${HFILES})
 
 # run the cfwrapper.py script to create all fortran source files
-add_custom_target(cf DEPENDS pp COMMAND ${CMAKE_CURRENT_BINARY_DIR}/cfwrapper.py)
+add_custom_target(cf DEPENDS pp_keep COMMAND ${CMAKE_CURRENT_BINARY_DIR}/cfwrapper.py)
 
-include_directories(${PHIST_INCLUDE_DIRS})
+include_directories(${CMAKE_CURRENT_BINARY_DIR})
 add_library(phist_fort ${FFILES} ${FSTATIC})
 
 
 foreach(TESTNAME ${TEST_DRIVERS})
-        add_executable(test_${TESTNAME} test/${TESTNAME}.F90)
+        add_executable(test_fortran_${TESTNAME} test/${TESTNAME}.F90)
 
-        target_link_libraries(test_${TESTNAME} phist_fort ${PHIST_LIBRARIES})
+        target_link_libraries(test_fortran_${TESTNAME} phist_fort ${library_list})
 
-        add_test(NAME ${TESTNAME} COMMAND ./test_${TESTNAME})
-        set_tests_properties(${TESTNAME} PROPERTIES PASS_REGULAR_EXPRESSION "[. \n]*ALL TESTS PASSED[. \n]*")
-        set_tests_properties(${TESTNAME} PROPERTIES FAIL_REGULAR_EXPRESSION "[. \n]*FAILED[. \n]*")
-        set_tests_properties(${TESTNAME} PROPERTIES TIMEOUT 500)
+        add_test(NAME fortran_${TESTNAME} COMMAND ./test_fortran_${TESTNAME})
+        set_tests_properties(fortran_${TESTNAME} PROPERTIES PASS_REGULAR_EXPRESSION "[. \n]*ALL TESTS PASSED[. \n]*")
+        set_tests_properties(fortran_${TESTNAME} PROPERTIES FAIL_REGULAR_EXPRESSION "[. \n]*FAILED[. \n]*")
+        set_tests_properties(fortran_${TESTNAME} PROPERTIES TIMEOUT 500)
 endforeach()
 
 # top-level target for PHIST
