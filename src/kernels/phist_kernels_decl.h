@@ -6,6 +6,7 @@
 /* Contact: Jonas Thies (Jonas.Thies@DLR.de)                                               */
 /*                                                                                         */
 /*******************************************************************************************/
+#ifndef DOXYGEN
 #include "phist_macros.h"
 
 #ifdef __cplusplus
@@ -13,6 +14,7 @@
 #else
 #include <inttypes.h>
 #endif
+#endif /* DOXYGEN */
 
 //! \addtogroup kernels
 //!@{
