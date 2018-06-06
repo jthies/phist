@@ -156,3 +156,12 @@ endforeach()
 # top-level target for PHIST
 add_custom_target(fortran_modules DEPENDS cf phist_fort)
 
+# install all generated Fortran files
+foreach (f_file ${FFILES})
+    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/${f_file} DESTINATION include/)
+endforeach()
+
+foreach (f_file ${FSTATIC})
+    install(FILES ${f_file} DESTINATION include/)
+endforeach()
+
