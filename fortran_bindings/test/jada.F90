@@ -4,7 +4,9 @@
 program phist_fort_jada_test
 
 use, intrinsic :: iso_c_binding
+#ifdef PHIST_HAVE_MPI
 use mpi
+#endif
 use phist_types
 use phist_tools_d
 use phist_kernels
@@ -58,9 +60,9 @@ logical :: verbose
 
 argc=0
 argv=C_NULL_PTR
-
+#ifdef PHIST_HAVE_MPI
 call MPI_Init(iflag)
-
+#endif
 ! initialize test framework
 call tests_init('jada')
 
@@ -148,6 +150,8 @@ call tests_finalize(verbose)
 
 call phist_kernels_finalize(iflag)
 
+#ifdef PHIST_HAVE_MPI
 call MPI_Finalize(iflag)
+#endif
 
 end program phist_fort_jada_test

@@ -30,7 +30,7 @@ SET(CMAKE_SKIP_INSTALL_ALL_DEPENDENCY TRUE)
 # the function claims to do, depending on the status of the repository.
 set(PHIST_VERSION_MAJOR 1)
 set(PHIST_VERSION_MINOR 7)
-set(PHIST_VERSION_PATCH 0)
+set(PHIST_VERSION_PATCH 1)
 set(PHIST_VERSION ${PHIST_VERSION_MAJOR}.${PHIST_VERSION_MINOR}.${PHIST_VERSION_PATCH})
 math(EXPR PHIST_VERSION_INT "( ( ${PHIST_VERSION_MAJOR} * 100 ) + ${PHIST_VERSION_MINOR} ) * 100 + ${PHIST_VERSION_PATCH}")
 
@@ -146,7 +146,7 @@ endif()
 # xSDK options
 ########################################################################
 
-option(USE_XSDK_DEFAULTS "implement the default behavior suggested for xSDK packages (see https://xsdk.info)")
+option(USE_XSDK_DEFAULTS "implement the default behavior suggested for xSDK packages (see https://xsdk.info)" OFF)
 
 option(XSDK_ENABLE_CXX
         "generate C++ bindings for PHIST"
@@ -154,13 +154,7 @@ option(XSDK_ENABLE_CXX
 
 option(XSDK_ENABLE_Fortran
         "generate Fortran 2003 bindings for PHIST"
-        OFF)
-
-if (XSDK_ENABLE_Fortran)
-    message(WARNING "Due to a licensing issue you have to generate the Fortran 2003 bindings for PHIST "
-                        "after installing phist using the phist_fort tool available at "
-                        "https://bitbucket.org/essex/phist_fort/")
-endif()
+        ON)
 
 if (USE_XSDK_DEFAULTS)
   set (XSDK_INDEX_SIZE 64 CACHE INTEGER "data type for global indices (32/64), default 64.")
@@ -1599,19 +1593,21 @@ add_custom_target(test_install COMMAND ${PROJECT_SOURCE_DIR}/buildScripts/test_i
 #######################################################################################
 add_subdirectory(cxx_bindings)
 
-#######################################################################################
-# Fortran 2003 BINDINGS                                                               #
-#######################################################################################
-
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/fortran_bindings)
-add_subdirectory(fortran_bindings)
-
 # add the C++ headers as a dependency of phist_solvers so that the 'install' target works also with 'make libs'
 add_dependencies(phist_kernels_${PHIST_KERNEL_LIB} cxx_headers)
 
-# add the F'03 modules as a dependency of phist_solvers so that the 'install' target works also with 'make libs'
-add_dependencies(phist_kernels_${PHIST_KERNEL_LIB} fortran_modules)
+if (XSDK_ENABLE_Fortran)
 
+  #######################################################################################
+  # Fortran 2003 BINDINGS                                                               #
+  #######################################################################################
+
+  set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/fortran_bindings)
+  add_subdirectory(fortran_bindings)
+
+  # add the F'03 modules as a dependency of phist_solvers so that the 'install' target works also with 'make libs'
+  add_dependencies(phist_kernels_${PHIST_KERNEL_LIB} fortran_modules)
+endif()
 
 #######################################################################
 # DOCUMENTATION AND OTHER EXTRA TARGETS
