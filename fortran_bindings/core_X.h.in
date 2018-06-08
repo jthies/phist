@@ -1,4 +1,4 @@
-/* no non-phist headers */
+/* no non-phist includes */
 #define DOXYGEN
 #include "${TG_HFILE}"
 #include "phist_operator_decl.h"

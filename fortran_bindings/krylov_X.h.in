@@ -1,7 +1,6 @@
-#include "phist_config.h"
-
-/* no non-phist headers */
+/* no non-phist includes */
 #define DOXYGEN
+#include "phist_config.h"
 #include "${TG_HFILE}"
 
 #include "phist_blockedgmres_decl.h"

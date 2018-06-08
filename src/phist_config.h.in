@@ -176,6 +176,7 @@ kernel libs) ?
 
 #cmakedefine PHIST_TRY_TO_PIN_THREADS
 
+#ifndef DOXYGEN
 # ifdef PHIST_HAVE_GHOST
 # include "ghost/config.h"
 #  if defined(GHOST_HAVE_MPI)&&(!defined(PHIST_HAVE_MPI))
@@ -185,5 +186,5 @@ kernel libs) ?
 #  error "ghost was compiled without MPI, conflict with phist installation with MPI."
 #  endif
 # endif
-
+#endif
 #endif
