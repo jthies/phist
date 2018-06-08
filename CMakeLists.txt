@@ -154,7 +154,7 @@ option(XSDK_ENABLE_CXX
 
 option(XSDK_ENABLE_Fortran
         "generate Fortran 2003 bindings for PHIST"
-        ON)
+        OFF)
 
 if (USE_XSDK_DEFAULTS)
   set (XSDK_INDEX_SIZE 64 CACHE INTEGER "data type for global indices (32/64), default 64.")
