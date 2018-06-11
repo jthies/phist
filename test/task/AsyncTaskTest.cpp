@@ -90,7 +90,7 @@ PHIST_TASK_WAIT(Task1,&iflag_)
 
 
 // check that tasks are executed asynchronously
-#ifdef PHIST_KERNEL_LIB_GHOST
+#ifdef PHIST_USE_GHOST_TASKS
 TEST_F(AsyncTaskTest, is_async)
 #else
 TEST_F(AsyncTaskTest, DISABLED_is_async)
@@ -174,7 +174,7 @@ PHIST_TASK_WAIT(Task2,&iflag_)
 
 
 // check if the task semaphore works
-#ifdef PHIST_KERNEL_LIB_GHOST
+#ifdef PHIST_USE_GHOST_TASKS
 TEST_F(AsyncTaskTest, task_post_wait_step)
 #else
 TEST_F(AsyncTaskTest, DISABLED_task_post_wait_step)
@@ -219,7 +219,7 @@ PHIST_TASK_WAIT(Task1,&iflag_)
 
 
 // check ordering of async and compute tasks with the task semaphore
-#ifdef PHIST_KERNEL_LIB_GHOST
+#ifdef PHIST_USE_GHOST_TASKS
 TEST_F(AsyncTaskTest, simulate_communication_hiding)
 #else
 TEST_F(AsyncTaskTest, DISABLED_simulate_communication_hiding)
