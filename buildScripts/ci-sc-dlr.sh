@@ -13,7 +13,10 @@ fi
 KERNELS="builtin" # ghost epetra tpetra
 PRGENV="gcc-5.1.0-openmpi" # intel-13.0.1-mpich gcc-4.9.2-openmpi
 FLAGS="default" # optional-libs
-ADD_CMAKE_FLAGS="-DPHIST_BENCH_LARGE_N=-1" #optional CMake flags # -1 disables benchmarks to speed up build jobs!
+#optional CMake flags 
+# BENCH_LARGE_N=-1 disables benchmarks to speed up build jobs!
+# XSDK_eNABLE_Fortran makes sure the Fortran interfaces are generated and tested
+ADD_CMAKE_FLAGS="-DPHIST_BENCH_LARGE_N=-1 -DXSDK_ENABLE_Fortran=ON" 
 WORKSPACE="$PWD/.."
 VECT_EXT="native"
 TRILINOS_VERSION="git"
