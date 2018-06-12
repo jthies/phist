@@ -145,7 +145,7 @@ add_library(phist_fort ${FFILES} ${FSTATIC})
 foreach(TESTNAME ${TEST_DRIVERS})
         add_executable(test_fortran_${TESTNAME} test/${TESTNAME}.F90)
 
-        target_link_libraries(test_fortran_${TESTNAME} phist_fort ${library_list})
+        target_link_libraries(test_fortran_${TESTNAME} phist_fort ${library_list} ${MPI_Fortran_LIBRARIES})
 
         add_test(NAME fortran_${TESTNAME} COMMAND ./test_fortran_${TESTNAME})
         set_tests_properties(fortran_${TESTNAME} PROPERTIES PASS_REGULAR_EXPRESSION "[. \n]*ALL TESTS PASSED[. \n]*")
