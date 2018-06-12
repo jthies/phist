@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!${PYTHON_EXECUTABLE}
 import re       # Regular expression library
 import os
 import time
