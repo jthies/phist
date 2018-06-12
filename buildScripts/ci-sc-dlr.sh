@@ -77,7 +77,7 @@ MODULES_KERNELS=(
   ["builtin"]=""
   ["ghost"]=""
   ["epetra"]="trilinos/trilinos-${TRILINOS_VERSION}"
-  ["tpetra"]="trilinos/trilinos-${TRILINOS_VERSION}" 
+  ["tpetra"]="lapack trilinos/trilinos-${TRILINOS_VERSION}" 
   ["petsc"]="petsc" 
   ["eigen"]="Eigen" )
 
