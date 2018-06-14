@@ -285,8 +285,7 @@ endif()
 ########################################################################
 # We need Python e.g. for generating the Fortran and C++ bindings      #
 ########################################################################
-set(Python_ADDITIONAL_VERSIONS 3)
-find_package(PythonInterp REQUIRED VERSION 3)
+find_package(PythonInterp 3 REQUIRED)
 ########################################################################
 
 # output behavior
