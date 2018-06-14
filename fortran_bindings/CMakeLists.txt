@@ -41,7 +41,7 @@ set(TEST_DRIVERS "kernels"
 # dynamically generated Fortran source files
 set(FFILES "")
 # static source file we need for index types
-set(FSTATIC "${CMAKE_BINARY_DIR}/phist_types.F90"
+set(FSTATIC "${PROJECT_SOURCE_DIR}/phist_types.F90"
             "${PROJECT_SOURCE_DIR}/phist_testing.F90")
 
 set(CMAKE_Fortran_FLAGS "-I${PROJECT_SOURCE_DIR} ${CMAKE_Fortran_FLAGS}")
