@@ -172,11 +172,13 @@ kernel libs) ?
   src/kernels/phist_kernel_flags.h
 */
 #define PHIST_DEFAULT_SPMV_MODE ${PHIST_DEFAULT_SPMV_MODE}
-#endif
 
+/* Is the kernel library allowed to pin threads and processes? */
 #cmakedefine PHIST_TRY_TO_PIN_THREADS
 
-#ifndef DOXYGEN
+/* Should the kernel library try to do "first touch" allocation of mvecs? */
+#cmakedefine PHIST_TRY_TO_RESPECT_NUMA
+
 # ifdef PHIST_HAVE_GHOST
 # include "ghost/config.h"
 #  if defined(GHOST_HAVE_MPI)&&(!defined(PHIST_HAVE_MPI))

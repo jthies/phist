@@ -21,6 +21,7 @@ project(phist C CXX Fortran)
 
 option(PHIST_USE_CCACHE "Enable/disable using ccache to speed up repeated builds if you use the GNU compiler and ccache is found." ON)
 option(PHIST_TRY_TO_PIN_THREADS "Try to pin the threads to cores, the exact implementation depends on the kernel library, hence the 'TRY'. A kernel library may or may not bind the threads without further warnings." On)
+option(PHIST_TRY_TO_RESPECT_NUMA "Try to first-touch multi-vector data after allocation, makes the code run better on NUMA systems but temporary vectors become more expensive." On)
 
 SET(CMAKE_SKIP_INSTALL_ALL_DEPENDENCY TRUE)
 # here an odd version minor (e.g. 1.1.x, 1.3.x etc.) indicates a development version
