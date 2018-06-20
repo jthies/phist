@@ -6,6 +6,7 @@
 /* Contact: Jonas Thies (Jonas.Thies@DLR.de)                                               */
 /*                                                                                         */
 /*******************************************************************************************/
+
 //! create a jadaCorrectionSolver object
 void SUBR(jadaCorrectionSolver_create)(TYPE(jadaCorrectionSolver_ptr) *me, phist_jadaOpts opts,
         phist_const_map_ptr map, int *iflag)
@@ -201,7 +202,11 @@ void SUBR(jadaCorrectionSolver_run)(TYPE(jadaCorrectionSolver_ptr) me,
   // uses the projection space q,Bq.
   if (me->preconSkewProject!=0 || preconUpdate)
   {
-    q=(TYPE(mvec_ptr))Qtil; Bq=(TYPE(mvec_ptr))BQtil;
+    int imax=numProj-1;
+    int imin=std::max(0,imax-totalNumSys);
+    PHIST_CHK_IERR(SUBR(mvec_view_block)((TYPE(mvec_ptr))Qtil,&q,imin,imax,iflag),*iflag);
+    if (BQtil!=NULL) {PHIST_CHK_IERR(SUBR(mvec_view_block)((TYPE(mvec_ptr))BQtil,&Bq,imin,imax,iflag),*iflag);}
+    else             Bq=q;
   }
 
 /*  if (me->rightPrecon && me->preconSkewProject)
