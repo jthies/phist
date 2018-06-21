@@ -286,7 +286,13 @@ endif()
 ########################################################################
 # We need Python e.g. for generating the Fortran and C++ bindings      #
 ########################################################################
-find_package(PythonInterp 3 REQUIRED)
+find_package(PythonInterp 3)
+if (NOT PythonInterp_FOUND)
+  message(WARNING "Did not find a Python3 interpreter, will disable Fortran, C++ and Python bindings and skip some tests.")
+  set(XSDK_ENABLE_Fortran OFF)
+  set(XSDK_ENABLE_CXX OFF)
+  set(DISABLE_PYTHON_TESTS 1)
+endif()
 ########################################################################
 
 # output behavior
@@ -915,8 +921,9 @@ include_directories(${PROJECT_SOURCE_DIR}/src/krylov)
 include_directories(${PROJECT_SOURCE_DIR}/src/jada)
 include_directories(${PROJECT_SOURCE_DIR}/src/precon)
 include_directories(${PROJECT_SOURCE_DIR}/drivers)
-include_directories(${PROJECT_BINARY_DIR}/cxx_bindings)
-
+if (XSDK_ENABLE_CXX)
+  include_directories(${PROJECT_BINARY_DIR}/cxx_bindings)
+endif()
 if(PHIST_KERNEL_LIB STREQUAL "magma")
   find_package(MAGMA REQUIRED)
   include_directories(${MAGMA_INCLUDE_DIRS})
@@ -1596,20 +1603,20 @@ add_custom_target(test_install COMMAND ${PROJECT_SOURCE_DIR}/buildScripts/test_i
 #######################################################################################
 # C++ BINDINGS                                                                        #
 #######################################################################################
-add_subdirectory(cxx_bindings)
 
-# add the C++ headers as a dependency of phist_solvers so that the 'install' target works also with 'make libs'
-add_dependencies(phist_kernels_${PHIST_KERNEL_LIB} cxx_headers)
+if (XSDK_ENABLE_CXX)
+  add_subdirectory(cxx_bindings)
+  # add the C++ headers as a dependency of phist_solvers so that the 'install' target works also with 'make libs'
+  add_dependencies(phist_kernels_${PHIST_KERNEL_LIB} cxx_headers)
+endif()
+
+#######################################################################################
+# Fortran 2003 BINDINGS                                                               #
+#######################################################################################
 
 if (XSDK_ENABLE_Fortran)
-
-  #######################################################################################
-  # Fortran 2003 BINDINGS                                                               #
-  #######################################################################################
-
   set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/fortran_bindings)
   add_subdirectory(fortran_bindings)
-
   # add the F'03 modules as a dependency of phist_solvers so that the 'install' target works also with 'make libs'
   add_dependencies(phist_kernels_${PHIST_KERNEL_LIB} fortran_modules)
 endif()
@@ -1623,7 +1630,9 @@ endif()
 find_package(Doxygen 1.7.0 QUIET)
 if (DOXYGEN_FOUND)
     add_custom_target(doc ${DOXYGEN_EXECUTABLE} ${CMAKE_BINARY_DIR}/phist.doxyfile WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
-    add_dependencies(doc cxx_headers)
+    if (XSDK_ENABLE_CXX)
+      add_dependencies(doc cxx_headers)
+    endif()
 endif()
 
 # Add optional target "coverage" to genereate code coverage report (console / XML)
