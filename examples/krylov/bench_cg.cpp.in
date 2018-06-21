@@ -136,9 +136,15 @@ PHIST_MAIN_TASK_BEGIN
     // TODO: should be one vadd-operation -> requires more general mvec_vadd_mvec interface!
     //std::vector<ST> one(nvecs,st::one());
     //PHIST_ICHK_IERR(SUBR(mvec_vadd_mvec)(&one[0],r,beta,p,&iflag),iflag);
-    PHIST_ICHK_IERR(SUBR(mvec_vscale)(p,&beta[0],&iflag),iflag);
-    PHIST_ICHK_IERR(SUBR(mvec_add_mvec)(st::one(),r,st::one(),p,&iflag),iflag);
-
+    if (nvecs>1)
+    {
+      PHIST_ICHK_IERR(SUBR(mvec_vscale)(p,&beta[0],&iflag),iflag);
+      PHIST_ICHK_IERR(SUBR(mvec_add_mvec)(st::one(),r,st::one(),p,&iflag),iflag);
+    }
+    else
+    {
+      PHIST_ICHK_IERR(SUBR(mvec_add_mvec)(st::one(),r,beta[0],p,&iflag),iflag);
+    }
     // q_(i+1) = A*p_(i+1)
     PHIST_ICHK_IERR(SUBR(sparseMat_times_mvec)(st::one(),A,p,st::zero(),q,&iflag),iflag);
 
