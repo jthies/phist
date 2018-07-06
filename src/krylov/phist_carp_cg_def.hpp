@@ -327,7 +327,7 @@ void SUBR(carp_cgState_iterate)(
   int itprint=1; 
   int itcheck=10;
 #else
-  int itprint=-1; 
+  int itprint=1; 
   int itcheck=10; // how often to check the actual expl. res norms. We
                   // only stop iterating if *all* expl. res norms for
                   // a given shift are below the tolerance. The impl.

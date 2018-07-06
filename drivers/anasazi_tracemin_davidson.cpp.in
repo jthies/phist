@@ -65,7 +65,7 @@ int main(int argc, char** argv)
   phist_EeigSort which=phist_LM;
   ST target_value=ST(0.0);
 
-  const char *prec_type,*prec_opts;
+  const char *prec_type=nullptr,*prec_opts=nullptr;
   
   int sym=1; /* TraceMin-Davidson and LOBPCG only work for symmetric matrices */
   int how_many=10;
@@ -107,8 +107,16 @@ PHIST_MAIN_TASK_BEGIN
     num_blocks=(how_many+10)/block_size;
   }
 
-  if (p<argc) prec_type=argv[p++];
-  if (p<argc) prec_opts=argv[p++];
+  if (p<argc) 
+  {
+    prec_type=argv[p++];
+    PHIST_SOUT(PHIST_VERBOSE,"prec_type = '%s'\n",prec_type);
+  }
+  if (p<argc) 
+  {
+    prec_opts=argv[p++];
+    PHIST_SOUT(PHIST_VERBOSE,"prec_opts = '%s'\n",prec_opts);
+  }
 
   bool haveB=(matnameB!=nullptr);
   if (haveB) haveB=(strcmp(matnameB,"I")!=0);
@@ -172,8 +180,6 @@ PHIST_MAIN_TASK_BEGIN
   ST eigs[how_many];
   MT resid[how_many];
   int num_iters=max_iters;
-
-  P_op=nullptr; //TODO
 
   SUBR(anasazi)(A_op,P_op,B_op,variant,nullptr,which,tol,&how_many,
         &num_iters,block_size,num_blocks,
