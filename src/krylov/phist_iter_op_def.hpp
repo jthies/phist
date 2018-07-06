@@ -24,11 +24,28 @@ extern "C" void SUBR(private_iter_op_apply)
     return;
   }
   PHIST_CAST_PTR_FROM_VOID(TYPE(iter_solver_op),op,arg,*iflag);
-  
-  // note: the feastCorrectionSolver has bean relocated from phist to beast,
-  // in this file we should use the high-level krylov solver interfaces (e.g. restartedGMRES_iterate)
-  // found in src/krylov/. For now we inform the user that the functionality is not (yet) available.
-  PHIST_CHK_IERR(*iflag=PHIST_NOT_IMPLEMENTED,*iflag);
+
+  *iflag=0;  
+  if (op->method==phist_MINRES)
+  {
+    PHIST_CHK_IERR(*iflag=PHIST_NOT_IMPLEMENTED,*iflag);
+  }
+  else if (op->method==phist_GMRES)
+  {
+    PHIST_CHK_IERR(*iflag=PHIST_NOT_IMPLEMENTED,*iflag);
+  }
+  else if (op->method==phist_BICGSTAB)
+  {
+    PHIST_CHK_IERR(*iflag=PHIST_NOT_IMPLEMENTED,*iflag);
+  }
+  else if (op->method==phist_CARP_CG)
+  {
+    PHIST_CHK_IERR(*iflag=PHIST_NOT_IMPLEMENTED,*iflag);
+  }
+  else
+  {
+    PHIST_CHK_IERR(*iflag=PHIST_INVALID_INPUT,*iflag);
+  }
   return;
 }
 
