@@ -47,6 +47,7 @@
 #include "AnasaziSolverManager.hpp"
 #include "AnasaziBlockKrylovSchurSolMgr.hpp"
 #include "AnasaziTraceMinDavidsonSolMgr.hpp"
+#include "AnasaziLOBPCGSolMgr.hpp"
 #endif
 
 #include "phist_gen_c.h"

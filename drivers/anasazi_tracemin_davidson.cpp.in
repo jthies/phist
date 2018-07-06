@@ -18,6 +18,7 @@
 #include "phist_get_arg.hpp"
 #include "phist_kernels.h"
 #include "phist_operator.h"
+#include "phist_precon.h"
 #include "phist_anasazi.h"
 #include "phist_ScalarTraits.hpp"
 
@@ -34,8 +35,8 @@ void SUBR(print_usage)(char* argv[],int pos)
     {
     PHIST_SOUT(PHIST_ERROR,"argument %d had an invalid value (%s)\n",pos,argv[pos]);
     }
-    PHIST_SOUT(PHIST_ERROR,"Usage: %s <matrix A> <matrix B> <symmetric/hermitian> <how many> <which> <tol>\n"
-                           "          <max iters> <block size> <num blocks>\n"
+    PHIST_SOUT(PHIST_ERROR,"Usage: %s <matrix A> <matrix B> <how many> <which> <tol>\n"
+                           "          <max iters> <block size> <num blocks> <prec_type> <prec_opts>\n"
                            "(all but the first argument get default values if omitted)\n"
                            "'matrix B' may be set to \"I\" for standard EVPs.\n",
                            argv[0]);
@@ -62,15 +63,17 @@ int main(int argc, char** argv)
   // default input parameters:
   MT tol=1.0e-6;
   phist_EeigSort which=phist_LM;
-  ST target_value;
+  ST target_value=ST(0.0);
+
+  const char *prec_type,*prec_opts;
   
-  int sym=0;
+  int sym=1; /* TraceMin-Davidson and LOBPCG only work for symmetric matrices */
   int how_many=10;
   int max_iters=300;
   int block_size=1;
   int num_blocks=20;
 
-  int variant=(int)TMD; // only TraceMin-Davidson accessible via this driver
+  int variant=(int)LOBPCG; // only TraceMin-Davidson (TMD) or LOBPCG accessible via this driver
   
   PHIST_ICHK_IERR(phist_kernels_init(&argc,&argv,&iflag),iflag);
 
@@ -88,14 +91,13 @@ PHIST_MAIN_TASK_BEGIN
   matnameB = argv[2];
   
   int p=3;
-  GET_ARG(sym,p++,sym==0||sym==1);
   GET_ARG(how_many,p++,how_many>0);
   GET_ARG(which,p++,true);
   if (which==phist_TARGET)
   {
     GET_ARG(target_value,p++,true);
   }
-  GET_ARG(tol,p++,tol>mt::eps());
+  GET_ARG(tol,p++,tol>0&&tol<1);
   GET_ARG(max_iters,p++,max_iters>0);
   GET_ARG(block_size,p++,block_size>0);
   GET_ARG(num_blocks,p++,num_blocks>0);
@@ -104,6 +106,9 @@ PHIST_MAIN_TASK_BEGIN
   {
     num_blocks=(how_many+10)/block_size;
   }
+
+  if (p<argc) prec_type=argv[p++];
+  if (p<argc) prec_opts=argv[p++];
 
   bool haveB=(matnameB!=nullptr);
   if (haveB) haveB=(strcmp(matnameB,"I")!=0);
@@ -144,7 +149,26 @@ PHIST_MAIN_TASK_BEGIN
     B_op = new TYPE(linearOp);
     PHIST_ICHK_IERR(SUBR(linearOp_wrap_sparseMat)(B_op,B,&iflag),iflag);
   }
- 
+
+  /* create the preconditioner */
+  if (strcasecmp(prec_type,"None")!=0)
+  {
+    P_op = (linearOp_ptr)malloc(sizeof(TYPE(linearOp)));
+    if (strcasecmp(prec_type,"CARP-CG")==0)
+    {
+      // TODO: document this variant and get settings from string
+      MT linTol=0.1;
+      ST shift=-target_value;
+      int linIter=25;
+      phist_ElinSolv method=phist_CARP_CG;
+      PHIST_ICHK_IERR(SUBR(linearOp_wrap_solver)(P_op,A,shift,
+                method,block_size,linTol,linIter,&iflag),iflag);
+    }
+    else
+    {
+      PHIST_ICHK_IERR(SUBR(precon_create)(P_op,A,target_value,B,NULL,NULL,prec_type,prec_opts,NULL,&iflag),iflag);
+    }
+  }
   ST eigs[how_many];
   MT resid[how_many];
   int num_iters=max_iters;
