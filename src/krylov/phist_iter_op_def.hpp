@@ -24,11 +24,34 @@ extern "C" void SUBR(private_iter_op_apply)
     return;
   }
   PHIST_CAST_PTR_FROM_VOID(TYPE(iter_solver_op),op,arg,*iflag);
+/*  
+  void SUBR(BiCGStab)(TYPE(const_linearOp_ptr) Op,
+                                TYPE(const_linearOp_ptr) rightPreconOp,
+                                TYPE(const_mvec_ptr) rhs, TYPE(mvec_ptr) sol,
+                                int* nIter, _MT_ const tol, int* iflag);
+
+  void SUBR(PCG)(TYPE(const_linearOp_ptr) Op,
+                                TYPE(const_linearOp_ptr) preconOp,
+                                TYPE(const_mvec_ptr) rhs, TYPE(mvec_ptr) sol,
+                                int* nIter, _MT_ const tol, int* iflag);
+
+  void SUBR(restartedBlockedGMRES)(TYPE(const_linearOp_ptr) Aop, TYPE(const_linearOp_ptr) Pop,
+        TYPE(mvec_ptr) rhs, TYPE(mvec_ptr) sol_in, int numSys,
+        int* nIter, _MT_ const tol[], int block_size, int max_blocks, int* iflag);
+
+  void SUBR(restartedGMRES)( TYPE(const_linearOp_ptr) Aop, TYPE(const_linearOp_ptr) Pop,
+        TYPE(mvec_ptr) rhs, TYPE(mvec_ptr) sol,
+        int *nIter, _MT_ tol, int m, int* iflag);
+
+void SUBR(carp_cg)( TYPE(const_linearOp_ptr) Aop,
+        TYPE(mvec_ptr) rhs, TYPE(mvec_ptr) sol,
+        int *nIter, _MT_ tol, int* iflag);
+
+*/
+
+
+
   
-  // note: the feastCorrectionSolver has bean relocated from phist to beast,
-  // in this file we should use the high-level krylov solver interfaces (e.g. restartedGMRES_iterate)
-  // found in src/krylov/. For now we inform the user that the functionality is not (yet) available.
-  PHIST_CHK_IERR(*iflag=PHIST_NOT_IMPLEMENTED,*iflag);
   return;
 }
 

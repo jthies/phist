@@ -44,5 +44,13 @@ void SUBR(restartedGMRES)( TYPE(const_linearOp_ptr) Aop, TYPE(const_linearOp_ptr
         TYPE(mvec_ptr) rhs, TYPE(mvec_ptr) sol,
         int *nIter, _MT_ tol, int m, int* iflag);
 
+//! \brief run the CARP-CG solver for general systems with small diagonal elements
+
+//! CARP-CG (Gordon & Gordon 2010) is a block parallel variant of the CGMN algorithm 
+//! (SOR on AA^T, accelerated by CG)
+void SUBR(carp_cg)( TYPE(const_linearOp_ptr) Aop,
+        TYPE(mvec_ptr) rhs, TYPE(mvec_ptr) sol,
+        int *nIter, _MT_ tol, int* iflag);
+
 
 //!@}
