@@ -6,6 +6,7 @@
 /* Contact: Jonas Thies (Jonas.Thies@DLR.de)                                               */
 /*                                                                                         */
 /*******************************************************************************************/
+
 //! \file phist_blockedpcg_decl.h 
 //! \brief blocked PCG solver for symmetric or general linear systems
 
@@ -31,7 +32,7 @@
 //!  0 if anyone converged and there was no error, <br>
 //!  1 if the number of iterations was exceeded without any system converging.
 //!
-void SUBR( blockedPCG_iterate ) (TYPE(const_linearOp_ptr) Aop, 
+void SUBR( blockedPCG ) (TYPE(const_linearOp_ptr) Aop, 
                 TYPE(const_linearOp_ptr) preconOp,
                 TYPE(const_mvec_ptr) rhs, TYPE(mvec_ptr) sol,
                 int numSys, int *nIter, _MT_ const tol[], int* iflag);

@@ -816,7 +816,7 @@ void SUBR(my_printResid)(int it, int nvec, _ST_ const* normR,
 
 
 extern "C" void SUBR(carp_cg)( TYPE(const_sparseMat_ptr) A,
-        TYPE(mvec_ptr) rhs, TYPE(mvec_ptr) sol,
+        TYPE(const_mvec_ptr) rhs, TYPE(mvec_ptr) sol,
         int *nIter, _MT_ tol, _MT_ omega, int* iflag)
 {
 #include "phist_std_typedefs.hpp"

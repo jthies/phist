@@ -42,9 +42,9 @@ void SUBR(PCG)(TYPE(const_linearOp_ptr) Op,
 //! \param max_blocks the maximum number of iterations before a restart
 //!
 //!
-extern "C" void SUBR( restartedBlockedGMRES ) ( TYPE(const_linearOp_ptr) Aop, TYPE(const_linearOp_ptr) Pop,
-        TYPE(mvec_ptr) rhs, TYPE(mvec_ptr) sol_in, int num_sys,
-        int nIter[], _MT_ const tol[], int block_size, int max_blocks, int* iflag)
+void SUBR( restartedBlockedGMRES ) ( TYPE(const_linearOp_ptr) Aop, TYPE(const_linearOp_ptr) Pop,
+        TYPE(const_mvec_ptr) rhs, TYPE(mvec_ptr) sol_in, int num_sys,
+        int nIter[], _MT_ const tol[], int block_size, int max_blocks, int* iflag);
 
 //! \brief restarted GMRES (GMRES(m)) for num_sys non-Hermitian linear systems.
 
@@ -52,15 +52,15 @@ extern "C" void SUBR( restartedBlockedGMRES ) ( TYPE(const_linearOp_ptr) Aop, TY
 //! tol is applied for each system. The number of systems num_sys is determined by the number of vectors
 //! in sol and rhs.
 void SUBR(restartedGMRES)( TYPE(const_linearOp_ptr) Aop, TYPE(const_linearOp_ptr) Pop,
-        TYPE(mvec_ptr) rhs, TYPE(mvec_ptr) sol,
+        TYPE(const_mvec_ptr) rhs, TYPE(mvec_ptr) sol,
         int *nIter, _MT_ tol, int m, int* iflag);
 
 //! \brief run the CARP-CG solver for general systems with small diagonal elements
 
 //! CARP-CG (Gordon & Gordon 2010) is a block parallel variant of the CGMN algorithm 
 //! (SOR on AA^T, accelerated by CG)
-void SUBR(carp_cg)( TYPE(const_linearOp_ptr) Aop,
-        TYPE(mvec_ptr) rhs, TYPE(mvec_ptr) sol,
+void SUBR(carp_cg)( TYPE(const_sparseMat_ptr) A,
+        TYPE(const_mvec_ptr) rhs, TYPE(mvec_ptr) sol,
         int *nIter, _MT_ tol, int* iflag);
 
 
