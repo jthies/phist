@@ -1079,7 +1079,7 @@ extern "C" void SUBR( restartedBlockedGMRES ) ( TYPE(const_linearOp_ptr) Aop, TY
       // system i needs to be worked on, and states[num_active] is free to do it
       status[i]=1;
 
-      PHIST_CHK_IERR(SUBR(mvec_view_block)(rhs,&b_i,i,i,iflag),*iflag);
+      PHIST_CHK_IERR(SUBR(mvec_view_block)((TYPE(mvec_ptr))rhs,&b_i,i,i,iflag),*iflag);
       // reset selected state object with 0 initial guess
       PHIST_CHK_IERR(SUBR(blockedGMRESstate_reset)(states[pos], b_i, NULL, iflag), *iflag);
       active_cols[pos]=i;

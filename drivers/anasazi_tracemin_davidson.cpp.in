@@ -169,8 +169,8 @@ PHIST_MAIN_TASK_BEGIN
       ST shift=-target_value;
       int linIter=25;
       phist_ElinSolv method=phist_CARP_CG;
-      PHIST_ICHK_IERR(SUBR(linearOp_wrap_solver)(P_op,A,shift,
-                method,block_size,linTol,linIter,&iflag),iflag);
+      PHIST_ICHK_IERR(SUBR(linearOp_wrap_solver)(P_op,A,shift, NULL, NULL,
+                method,linTol,linIter,&iflag),iflag);
     }
     else
     {

@@ -129,7 +129,7 @@ extern "C" void SUBR( PCG ) (TYPE(const_linearOp_ptr) Aop, TYPE(const_linearOp_p
   PHIST_CHK_IERR(num_sol==num_rhs?0: PHIST_INVALID_INPUT, *iflag);
   _MT_ vtol[num_rhs];
   for (int i=0; i<num_rhs; i++) vtol[i]=tol;
-  PHIST_CHK_IERR(SUBR(blockedPCG_iterate)(Aop, Pop, rhs, sol_in, 1, nIter, &tol, iflag),*iflag);
+  PHIST_CHK_IERR(SUBR(blockedPCG)(Aop, Pop, rhs, sol_in, 1, nIter, &tol, iflag),*iflag);
 
 }
 

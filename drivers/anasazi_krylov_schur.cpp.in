@@ -143,8 +143,8 @@ PHIST_MAIN_TASK_BEGIN
     MT linTol=std::max(tol/10,2*mt::eps());
     int linIter=1000;
     phist_ElinSolv method=phist_CARP_CG;
-    PHIST_ICHK_IERR(SUBR(linearOp_wrap_solver)(Ainv_op,A,shift,
-        method,block_size,linTol,linIter,&iflag),iflag);
+    PHIST_ICHK_IERR(SUBR(linearOp_wrap_solver)(Ainv_op,A,shift,NULL,NULL,
+        method,linTol,linIter,&iflag),iflag);
   }
 
   ST eigs[how_many];
