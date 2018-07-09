@@ -1213,5 +1213,11 @@ extern "C" void SUBR( restartedGMRES ) ( TYPE(const_linearOp_ptr) Aop, TYPE(cons
         TYPE(mvec_ptr) rhs, TYPE(mvec_ptr) sol,
         int *nIter, _MT_ tol, int m, int* iflag)
 {
-  SUBR( restartedBlockedGMRES ) ( Aop, Pop, rhs, sol, 1, nIter, &tol, 1, m, iflag);
+  int num_sol,num_rhs;
+  PHIST_CHK_IERR(SUBR(mvec_num_vectors)(sol,&num_sol,iflag),*iflag);
+  PHIST_CHK_IERR(SUBR(mvec_num_vectors)(rhs,&num_rhs,iflag),*iflag);
+  PHIST_CHK_IERR(num_sol==num_rhs? 0: PHIST_INVALID_INPUT, *iflag);
+  _MT_ vtol[num_sol];
+  for (int i=0; i<num_sol; i++) vtol[i]=tol;
+  SUBR( restartedBlockedGMRES ) ( Aop, Pop, rhs, sol, num_sol, nIter, vtol, num_sol, m, iflag);
 }
