@@ -16,13 +16,13 @@
 void SUBR(BiCGStab)(TYPE(const_linearOp_ptr) Op,
                                 TYPE(const_linearOp_ptr) rightPreconOp,
                                 TYPE(const_mvec_ptr) rhs, TYPE(mvec_ptr) sol,
-                                int* nIter, _MT_ const tol, int* iflag);
+                                int* nIter, _MT_ tol, int* iflag);
 
 //! \brief Conjugate Gradient method for a single Hermitian and positive definite (hpd) linear systems
 void SUBR(PCG)(TYPE(const_linearOp_ptr) Op,
                                 TYPE(const_linearOp_ptr) preconOp,
                                 TYPE(const_mvec_ptr) rhs, TYPE(mvec_ptr) sol,
-                                int* nIter, _MT_ const tol, int* iflag);
+                                int* nIter, _MT_ tol, int* iflag);
 
 //! \brief restarted GMRES implementation that may work on block_size vectors simultaneously,
 //! building a separate Krylov subspace for each of them. The total number of systems to be solved
