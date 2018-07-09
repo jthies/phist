@@ -1096,7 +1096,7 @@ extern "C" void SUBR( restartedBlockedGMRES ) ( TYPE(const_linearOp_ptr) Aop, TY
       if (states[i]->status==2)
       {
         int id=active_cols[i];
-        PHIST_SOUT(PHIST_VERBOSE,"restart system %d (state %d)\n",id,i);
+        PHIST_SOUT(PHIST_EXTREME,"restart system %d (state %d)\n",id,i);
         PHIST_CHK_IERR(SUBR(mvec_view_block)(sol_in,&x_i,id,id,iflag),*iflag);
 #if 0
         TYPE(mvec_ptr) resid=NULL;
@@ -1105,7 +1105,7 @@ extern "C" void SUBR( restartedBlockedGMRES ) ( TYPE(const_linearOp_ptr) Aop, TY
                 PHIST_CHK_IERR(Aop->apply(st::one(), Aop->A, x_i, -st::one(), resid, iflag), *iflag);
         MT rnorm;
         PHIST_CHK_IERR(SUBR(mvec_norm2)(resid,&rnorm,iflag),*iflag);
-        PHIST_SOUT(PHIST_VERBOSE,"res norm of restart vector: %e\n",rnorm);
+        PHIST_SOUT(PHIST_EXTREME,"res norm of restart vector: %e\n",rnorm);
 #endif
         PHIST_CHK_IERR(SUBR(blockedGMRESstate_reset)(states[i], NULL, x_i, iflag), *iflag);
       }
@@ -1113,9 +1113,9 @@ extern "C" void SUBR( restartedBlockedGMRES ) ( TYPE(const_linearOp_ptr) Aop, TY
 
     if (num_active>0)
     {
-      PHIST_SOUT(PHIST_VERBOSE," working on %d systems: ",num_active);
-      for (int i=0;i<num_active;i++) PHIST_SOUT(PHIST_VERBOSE,"%d ",active_cols[i]);
-      PHIST_SOUT(PHIST_VERBOSE,"\n");
+      PHIST_SOUT(PHIST_EXTREME," working on %d systems: ",num_active);
+      for (int i=0;i<num_active;i++) PHIST_SOUT(PHIST_EXTREME,"%d ",active_cols[i]);
+      PHIST_SOUT(PHIST_EXTREME,"\n");
     }
 
     int _nIter=nIter[0];
@@ -1152,9 +1152,9 @@ extern "C" void SUBR( restartedBlockedGMRES ) ( TYPE(const_linearOp_ptr) Aop, TY
     }
     if (num_updates>0)
     {
-      PHIST_SOUT(PHIST_VERBOSE,"update systems: ");
-      for (int i=0; i<num_updates; i++) PHIST_SOUT(PHIST_VERBOSE," %d",update_cols[i]);
-      PHIST_SOUT(PHIST_VERBOSE,"\n");
+      PHIST_SOUT(PHIST_EXTREME,"update systems: ");
+      for (int i=0; i<num_updates; i++) PHIST_SOUT(PHIST_EXTREME," %d",update_cols[i]);
+      PHIST_SOUT(PHIST_EXTREME,"\n");
       // if we're updating a contiguous block of columns, use a view.
       // Otherwise copy the columns to make them continuguous
       bool contig=true;
@@ -1190,7 +1190,7 @@ extern "C" void SUBR( restartedBlockedGMRES ) ( TYPE(const_linearOp_ptr) Aop, TY
       if (status[active_cols[i]]!=1&&status[active_cols[i]]!=2)
       {
         // state object is free again
-        PHIST_SOUT(PHIST_VERBOSE,"state[%d] free to use again after working on system %d\n",i,active_cols[i]);
+        PHIST_SOUT(PHIST_EXTREME,"state[%d] free to use again after working on system %d\n",i,active_cols[i]);
         PHIST_CHK_IERR(SUBR(blockedGMRESstate_reset)(states[i],NULL,NULL,iflag),*iflag);
       }
     }
