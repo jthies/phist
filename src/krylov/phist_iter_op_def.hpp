@@ -9,11 +9,11 @@
 
 
 typedef struct {
-  TYPE(linearOp_ptr) A_op, // the operator
-  TYPE(linearOp_ptr) P_op, // optional right preconditioner (only for certain iterative schemes)
+  TYPE(const_linearOp_ptr) A_op; // the operator
+  TYPE(const_linearOp_ptr) P_op; // optional right preconditioner (only for certain iterative schemes)
   phist_ElinSolv method; // selects the iterative scheme to be used
   int maxIters; // number of iterations to perform
-  _MT_ tol, // required residual
+  _MT_ tol; // required residual
 } TYPE(iter_solver_op);
 
 extern "C" void SUBR(private_iter_op_apply)

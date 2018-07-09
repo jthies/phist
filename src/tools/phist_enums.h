@@ -50,6 +50,7 @@ typedef enum phist_ElinSolv
   phist_QMR=3, //!< QMR for general matrices
   phist_BICGSTAB=4, //!< BiCGStab for general matrices
   phist_CARP_CG=5, //!< CG on the normal equations, preconditioned by CARP (parallel SSOR)
+  phist_PCG=6, //!< preconditioned Conjugate Gradients for Hermitian systems
   phist_USER_LINSOLV=98,//!< user wants to provide custom solver
   phist_INVALID_LINSOLV //!< returned if str2linSolv gets an invalid string
 } phist_ElinSolv;
