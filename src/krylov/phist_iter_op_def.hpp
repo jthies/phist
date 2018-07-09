@@ -6,10 +6,14 @@
 /* Contact: Jonas Thies (Jonas.Thies@DLR.de)                                               */
 /*                                                                                         */
 /*******************************************************************************************/
+
+
 typedef struct {
-  phist_ElinSolv method;
-  int maxIters;
-  _MT_ tol;
+  TYPE(linearOp_ptr) A_op, // the operator
+  TYPE(linearOp_ptr) P_op, // optional right preconditioner (only for certain iterative schemes)
+  phist_ElinSolv method; // selects the iterative scheme to be used
+  int maxIters; // number of iterations to perform
+  _MT_ tol, // required residual
 } TYPE(iter_solver_op);
 
 extern "C" void SUBR(private_iter_op_apply)
@@ -25,22 +29,33 @@ extern "C" void SUBR(private_iter_op_apply)
   }
   PHIST_CAST_PTR_FROM_VOID(TYPE(iter_solver_op),op,arg,*iflag);
 
-  *iflag=0;  
-  if (op->method==phist_MINRES)
+  *iflag=0;
+  int nIter=op->maxIters;
+  _MT_ tol=_MT_(0);
+
+  if (op->method==phist_PCG)
   {
-    PHIST_CHK_IERR(*iflag=PHIST_NOT_IMPLEMENTED,*iflag);
+    PHIST_CHK_NEG_IERR(SUBR(PCG)(op->A_op, op->P_op, X, Y,
+                                nIter, tol, iflag), *iflag);
   }
   else if (op->method==phist_GMRES)
   {
-    PHIST_CHK_IERR(*iflag=PHIST_NOT_IMPLEMENTED,*iflag);
+    *iflag=PHIST_NOT_IMPLEMENTED;
+  /*
+    PHIST_CHK_NEG_IERR(SUBR(restartedBlockedGMRES)(op->A_op, op->P_op, X, Y,
+        int numSys,
+        int* nIter, _MT_ const tol[], int block_size, int max_blocks, int* iflag);
+  */
   }
   else if (op->method==phist_BICGSTAB)
   {
-    PHIST_CHK_IERR(*iflag=PHIST_NOT_IMPLEMENTED,*iflag);
+    PHIST_CHK_NEG_IERR(SUBR(BiCGStab)(op->A_op, op->P_op,
+                                X, Y, &nIter, tol, iflag), *iflag);
   }
   else if (op->method==phist_CARP_CG)
   {
-    PHIST_CHK_IERR(*iflag=PHIST_NOT_IMPLEMENTED,*iflag);
+    PHIST_CHK_NEG_IERR(SUBR(carp_cg)( op->A_op->A, X, Y,
+        &nIter, tol, iflag), *iflag);
   }
   else
   {
@@ -54,7 +69,7 @@ extern "C" void SUBR(private_iter_op_apply)
 //! approximate Y=(A-sigma*I)\X. alpha and beta are
 //! not used, resp. must be alpha=1, beta=0. 
 void SUBR(linearOp_wrap_solver)(TYPE(linearOp_ptr) Ainv_op,TYPE(const_sparseMat_ptr) A, _ST_ shift,
-        phist_ElinSolv method,int block_size, _MT_ tol,int maxIter,int* iflag)
+        phist_ElinSolv method,int block_size, _MT_ tol, int numIter,int* iflag)
 {
 #include "phist_std_typedefs.hpp"
   PHIST_ENTER_FCN(__FUNCTION__);
