@@ -170,8 +170,13 @@ extern "C" void SUBR( BiCGStab ) (TYPE(const_linearOp_ptr) Aop, TYPE(const_linea
 #include "phist_std_typedefs.hpp"
   *iflag = 0;
   PHIST_ENTER_FCN(__FUNCTION__);
-  
-  PHIST_CHK_IERR(SUBR(blockedBiCGStab_iterate)(Aop, Pop, rhs, sol_in, NULL, 1, nIter, &tol, iflag),*iflag);
+  int num_sol,num_rhs;
+  PHIST_CHK_IERR(SUBR(mvec_num_vectors)(rhs,&num_rhs,iflag),*iflag);
+  PHIST_CHK_IERR(SUBR(mvec_num_vectors)(sol_in,&num_sol,iflag),*iflag);
+  PHIST_CHK_IERR(num_sol==num_rhs?0: PHIST_INVALID_INPUT, *iflag);
+  _MT_ vtol[num_rhs];
+  for (int i=0; i<num_rhs; i++) vtol[i]=tol;
+  PHIST_CHK_IERR(SUBR(blockedBiCGStab_iterate)(Aop, Pop, rhs, sol_in, NULL, num_rhs, nIter, vtol, iflag),*iflag);
 
 }		
 

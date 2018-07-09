@@ -823,7 +823,9 @@ extern "C" void SUBR(carp_cg)( TYPE(const_sparseMat_ptr) A,
   // for each shift one by one create the state, iterate and delete the state again
   TYPE(carp_cgState_ptr) carp_cgState;
 
-  const int block_size=1, nshifts=1;
+  const int nshifts=1;
+  int block_size;
+  PHIST_CHK_IERR(SUBR(mvec_num_vectors)(sol,&block_size,iflag),*iflag);
   
   for (int i=0; i<nshifts; i++)
   {
