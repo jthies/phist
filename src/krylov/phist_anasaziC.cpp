@@ -18,14 +18,15 @@
 #endif
 
 #include "phist_tools.h"
-#include "phist_types.hpp"
-#include "phist_kernels.hpp"
-#include "phist_core.hpp"
 #include "phist_ScalarTraits.hpp"
 #include "phist_MemOwner.hpp"
 #include "phist_anasazi.h"
 
 #ifdef PHIST_HAVE_ANASAZI
+
+#include "phist_types.hpp"
+#include "phist_kernels.hpp"
+#include "phist_core.hpp"
 
 #include "phist_AnasaziOperatorTraits.hpp"
 
