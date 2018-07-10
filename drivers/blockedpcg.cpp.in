@@ -133,7 +133,7 @@ int main(int argc, char** argv)
   int nIter=maxIter;
   _MT_ _tol[num_rhs];
   for(int i=0; i<num_rhs; i++) _tol[i]=tol;
-  PHIST_ICHK_IERR(SUBR(blockedPCG_iterate)(A_op,P_op,B,X,num_rhs,&nIter,_tol,&iflag),iflag);
+  PHIST_ICHK_IERR(SUBR(blockedPCG)(A_op,P_op,B,X,num_rhs,&nIter,_tol,&iflag),iflag);
 
   /* compute residual norms */
   PHIST_ICHK_IERR(SUBR(sparseMat_times_mvec)(st::one(),A,X,st::zero(),R,&iflag),iflag);

@@ -6,11 +6,35 @@
 /* Contact: Jonas Thies (Jonas.Thies@DLR.de)                                               */
 /*                                                                                         */
 /*******************************************************************************************/
+
 //! \file phist_blockedgmres_decl.h 
 //! \brief blocked GMRES solver for general linear systems
 
 //! \addtogroup blockedGMRES
 //!@{
+
+//! \brief restarted GMRES implementation that may work on block_size vectors simultaneously,
+//! building a separate Krylov subspace for each of them. The total number of systems to be solved
+//! (num_sys) may be larger than block_size.
+//!
+//! High-level user interface that does not require knowledge of the state object. This interface
+//! should be used if you only want run a restarted GMRES solver on several systems.
+//!
+//! \param [in] Aop linear operator for which to solve Aop*sol=rhs
+//! \param [in] Pop  (right) preconditioner (optional)
+//! \param [in] rhs right-hand side(s)
+//! \param [in] sol starting guess
+//! \param [out] sol solution vector(s)
+//! \param [in] *nIter indicates the total max number of iterations allowed, maxIter, for any system.
+//! \param [out] *nIter indicates the number of GMRES iterations.
+//! \param [in] tol[] (dimension equal to number of vectors in sol and rhs), the desired tolerance for each system
+//! \param max_blocks the maximum number of iterations before a restart
+//!
+//!
+void SUBR( restartedBlockedGMRES ) ( TYPE(const_linearOp_ptr) Aop, TYPE(const_linearOp_ptr) Pop,
+        TYPE(const_mvec_ptr) rhs, TYPE(mvec_ptr) sol_in, int num_sys,
+        int nIter[], _MT_ const tol[], int block_size, int max_blocks, int* iflag);
+
 
 //! \brief gmres state object
 //!

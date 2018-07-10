@@ -22,7 +22,7 @@
 #include "phist_macros.h"
 #include "phist_kernels.h"
 #include "phist_operator.h"
-#include "phist_linear_solvers.h"
+#include "phist_blockedgmres.h"
 #include "phist_precon.h"
 #include "phist_belos.h"
 

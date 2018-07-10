@@ -68,7 +68,7 @@ extern "C" void SUBR(anasazi)(      TYPE(const_linearOp_ptr) A_op, TYPE(const_li
      B = Teuchos::rcp((const OP*)B_op, false);
   }
 
-  // this can be used to provide e.g. the operation (A-sigma*B)^{-1}
+  // this can be used to provide e.g. the operation (A-sigma*B)^{-1} or a preconditioner for LOBPCG or TraceMin-Davidson
   Teuchos::RCP<const OP> Op=Teuchos::null;
 
   if (Ainv_op!=NULL)
@@ -132,10 +132,12 @@ if (Op!=Teuchos::null)
 {
   if (variant==(int)BKS)
   {
+    // Op should be some spectral transformation of [A,B], e.g. (A-sigma*B)^{-1}
     eigenProblem->setOperator(Op);
   }
-  else if (variant==(int)TMD)
+  else if (variant==(int)TMD || variant==(int)LOBPCG)
   {
+    // Op is a preconditioner
     eigenProblem->setPrec(Op);
   }
 }
@@ -149,6 +151,14 @@ Teuchos::RCP<Anasazi::SolverManager<ST,AnasaziMV, OP> > anasazi;
 if ((phist_anasaziType)variant==BKS)
   {
     anasazi = Teuchos::rcp(new Anasazi::BlockKrylovSchurSolMgr<ST,AnasaziMV, OP>
+        (eigenProblem, *anasaziList));
+  }
+  else if ((phist_anasaziType)variant==LOBPCG)
+  {
+    anasaziList->set("Full Ortho",true);
+    anasaziList->set("Recover",true);
+    anasaziList->set("Use Locking",true);
+    anasazi = Teuchos::rcp(new Anasazi::LOBPCGSolMgr<ST,AnasaziMV, OP>
         (eigenProblem, *anasaziList));
   }
 #ifdef PHIST_HAVE_ANASAZI_TRACEMIN_DAVIDSON

@@ -74,15 +74,6 @@ option(PHIST_ENABLE_OPENMP "Enable OpenMP within PHIST" ON)
 option(PHIST_USE_LIKWID "Enable instrumentation for likwid-perfctr" OFF)
 option(PHIST_BUILD_MIC "Build for Intel MIC" OFF)
 
-option(PHIST_HAVE_SSE  "enable SSE SIMD intrinsics in PHIST code" ON)
-option(PHIST_HAVE_AVX  "enable AVX SIMD intrinsics in PHIST code" ON)
-option(PHIST_HAVE_AVX2 "enable AVX2 SIMD intrinsics in PHIST code" OFF)
-option(PHIST_HAVE_AVX512 "enable AVX512 SIMD intrinsics in PHIST code" ${PHIST_BUILD_MIC})
-
-if (PHIST_BUILD_MIC)
-  set(PHIST_HAVE_SSE OFF)
-endif()
-
 # reproducible random number generator?
 # TODO - this is not quite working yet, once it is, make it the default
 option(PHIST_BUILTIN_RNG
@@ -322,23 +313,6 @@ if (CMAKE_C_COMPILER_ID STREQUAL "GNU")
     endif ()
   endif()
 
-  # phist may use some SIMD instructions for e.g. the stream benchmark or double-double operations  
-  if (PHIST_HAVE_SSE)
-    set (CMAKE_C_FLAGS  "${CMAKE_C_FLAGS} -msse")
-  endif()
-  if (PHIST_HAVE_AVX)
-    set (CMAKE_C_FLAGS  "${CMAKE_C_FLAGS} -mavx")
-  endif()
-  if (PHIST_HAVE_AVX2)
-    set (CMAKE_C_FLAGS  "${CMAKE_C_FLAGS} -mavx2 -mfma")
-  endif()
-  if (PHIST_HAVE_AVX512)
-    set (CMAKE_C_FLAGS  "${CMAKE_C_FLAGS} -mavx512f")
-  endif()
-  if (PHIST_HAVE_AVX512)
-    set (CMAKE_C_FLAGS  "${CMAKE_C_FLAGS} -mavx512f")
-  endif()
-
   if(PHIST_HAVE_MKL)
     set (CMAKE_C_FLAGS        "${CMAKE_C_FLAGS}       -DMKL_LP64")
     set (CMAKE_CXX_FLAGS      "${CMAKE_CXX_FLAGS}     -DMKL_LP64")
@@ -536,9 +510,11 @@ CHECK_CXX_SOURCE_COMPILES("
     C<int> c;
   }
 " PHIST_HAVE_CXX11_MOVEDEFAULT)
+
 if(PHIST_HAVE_CXX11_LAMBDAS OR PHIST_HAVE_CXX11_THREADLOCAL)
   set(PHIST_PKG_CONFIG_CFLAGS "${PHIST_PKG_CONFIG_CFLAGS} -std=c++11")
 endif()
+
 CHECK_Fortran_SOURCE_COMPILES("
   program test
     implicit none
@@ -551,6 +527,9 @@ CHECK_Fortran_SOURCE_COMPILES("
   end program test
 " PHIST_HAVE_OPENMP_SIMD
 )
+
+# check for SSE, AVX, AVX2 and AVX512
+include(cmake/CheckIntrinsics.cmake)
 
 if (${PHIST_ENABLE_MPI})
   set(PHIST_HAVE_MPI 1)
