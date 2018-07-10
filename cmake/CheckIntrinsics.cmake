@@ -5,8 +5,8 @@
 
 include(CheckCSourceRuns)
 
-set (CMAKE_C_FLAGS        "-march=native")
-  
+set (CMAKE_C_FLAGS        "-O0 -march=native")
+
 CHECK_C_SOURCE_RUNS("
 #include \"emmintrin.h\"
 #include \"immintrin.h\"
