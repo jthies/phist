@@ -438,7 +438,7 @@ void SUBR(linearOp_apply)(_ST_ alpha, TYPE(const_linearOp_ptr) A_op,
       }
       else
       {
-        PHIST_SOUT(PHIST_VERBOSE, "linearOp_apply_respective uses linearOp_apply_shifted \n",
+        PHIST_SOUT(PHIST_DEBUG, "linearOp_apply_respective uses linearOp_apply_shifted \n",
                               "(file %s, line %d)\n",__FUNCTION__,__FILE__,__LINE__);
         PHIST_CHK_IERR(SUBR(linearOp_apply_shifted)(alpha,A_op,A_op->shifts,X,beta,Y,iflag),*iflag);
       }
@@ -446,14 +446,14 @@ void SUBR(linearOp_apply)(_ST_ alpha, TYPE(const_linearOp_ptr) A_op,
 
     else if(A_op->use_transpose)
     {
-        PHIST_SOUT(PHIST_VERBOSE, "linearOp_apply_respective uses linearOp_applyT \n",
+        PHIST_SOUT(PHIST_DEBUG, "linearOp_apply_respective uses linearOp_applyT \n",
                               "(file %s, line %d)\n",__FUNCTION__,__FILE__,__LINE__);
         PHIST_CHK_IERR(SUBR(linearOp_applyT)(alpha,A_op,X,beta,Y,iflag),*iflag);
     }
 
     else
     {
-        PHIST_SOUT(PHIST_VERBOSE, "linearOp_apply_respective uses linearOp_apply \n",
+        PHIST_SOUT(PHIST_DEBUG, "linearOp_apply_respective uses linearOp_apply \n",
                               "(file %s, line %d)\n",__FUNCTION__,__FILE__,__LINE__);
         PHIST_CHK_IERR(SUBR(linearOp_apply)(alpha,A_op,X,beta,Y,iflag),*iflag);
     }
