@@ -3197,9 +3197,10 @@ contains
     call allocate_aligned( int((/nvec,mvec%paddedN/),kind=C_SIZE_T), mvec%val, ierr)
     if ( ierr /= 0 ) return
 
+#ifdef PHIST_TRY_TO_RESPECT_NUMA
     ! that should hopefully help in cases of NUMA
     call dset_1(size(mvec%val), mvec%val, 0._8)
-
+#endif
     mvec_ptr = c_loc(mvec)
     ierr = 0
 

@@ -21,6 +21,7 @@ project(phist C CXX Fortran)
 
 option(PHIST_USE_CCACHE "Enable/disable using ccache to speed up repeated builds if you use the GNU compiler and ccache is found." ON)
 option(PHIST_TRY_TO_PIN_THREADS "Try to pin the threads to cores, the exact implementation depends on the kernel library, hence the 'TRY'. A kernel library may or may not bind the threads without further warnings." On)
+option(PHIST_TRY_TO_RESPECT_NUMA "Try to first-touch multi-vector data after allocation, makes the code run better on NUMA systems but temporary vectors become more expensive." On)
 
 SET(CMAKE_SKIP_INSTALL_ALL_DEPENDENCY TRUE)
 # here an odd version minor (e.g. 1.1.x, 1.3.x etc.) indicates a development version
@@ -642,8 +643,7 @@ elseif (PHIST_KERNEL_LIB STREQUAL "builtin")
   set(PHIST_KERNEL_LIB_BUILTIN 1)
   set(PHIST_MVECS_ROW_MAJOR 1)
   if(PHIST_HAVE_AVX2)
-    message(STATUS "Activated experimental high-precision builtin kernel routines!")
-    set(PHIST_HIGH_PRECISION_KERNELS 1)
+    option(PHIST_HIGH_PRECISION_KERNELS "Activate experimental high-precision builtin kernel routines" Off)
     option(PHIST_HIGH_PRECISION_KERNELS_FORCE "Always force the usage of high precision reductions even if this requires copying data and is slow!" Off)
     set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -mavx -mavx2 -mfma")
     set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mavx -mavx2 -mfma")
