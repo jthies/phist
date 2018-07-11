@@ -226,17 +226,17 @@ if (CMAKE_C_COMPILER_ID STREQUAL "GNU")
 elseif (CMAKE_C_COMPILER_ID STREQUAL "Intel")
 
   message(STATUS "using INTEL compiler flags")
-  input(SetCompilerFlagsINTEL.cmake)
+  include(SetCompilerFlagsINTEL.cmake)
 
 elseif (CMAKE_C_COMPILER_ID STREQUAL "PGI")
 
   message(STATUS "using PGI compiler flags")
-  input(SetCompilerFlagsPGI.cmake)
+  include(SetCompilerFlagsPGI.cmake)
 
 elseif (CMAKE_C_COMPILER_ID STREQUAL "Clang")
 
   message(STATUS "using Clang (LLVM) compiler flags")
-  input(SetCompilerFlagsCLANG.cmake)
+  include(SetCompilerFlagsCLANG.cmake)
 
 else()
 
