@@ -67,13 +67,17 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(PHIST_KERNEL_LIB "builtin" CACHE STRING "Select underlying kernel libraries for phist (builtin|ghost|epetra|tpetra|magma|petsc|eigen)")
 message(STATUS "PHIST kernel library: " ${PHIST_KERNEL_LIB})
 
-include(cmake/PhistOptions.cmake)
+include(cmake/PHIST_Options.cmake)
 
 ########################################################################
 # XSDK OPTIONS
 ########################################################################
 
-include(cmake/XsdkOptions.cmake)
+# The xSDK is a collection of open source HPC libraries that can work together.
+# It requires some special CMake behavior that is built ontop of PHIST's by this include file.
+# It checks the XSDK_* options and sets corresponding PHIST_* options to be used below.
+
+include(cmake/xSDK_Options.cmake)
 
 ########################################################################
 # try to enable CCache as a 'compiler launcher'
