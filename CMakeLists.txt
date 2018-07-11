@@ -7,23 +7,19 @@ cmake_minimum_required(VERSION 3.8.0)
 #
 # - anything prefixed by PHIST_ENABLE or PHIST_USE will enter the CMake Cache but not the config file,
 #   so it won't be directly visible in the source code
-# - anything prefixed by PHIST_HAVE can be seen int he phist_config.h file
+# - anything prefixed by PHIST_HAVE can be seen in the phist_config.h file
 # - other things should *not* go into the cache unless they come from another library via find_package.
 #
 # - try to mark things that are very detailed (like details on the timing behavior etc.) as ADVANCED so that
 #   the CMake cache seen when first using ccmake stays reasonable
 
-list (APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/")
-#list (APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/Trilinos")
+#######################################################################
+# PROJECT SETTINGS
+#######################################################################
 
 # Define some custom variables
 project(phist C CXX Fortran)
 
-option(PHIST_USE_CCACHE "Enable/disable using ccache to speed up repeated builds if you use the GNU compiler and ccache is found." ON)
-option(PHIST_TRY_TO_PIN_THREADS "Try to pin the threads to cores, the exact implementation depends on the kernel library, hence the 'TRY'. A kernel library may or may not bind the threads without further warnings." On)
-option(PHIST_TRY_TO_RESPECT_NUMA "Try to first-touch multi-vector data after allocation, makes the code run better on NUMA systems but temporary vectors become more expensive." On)
-
-SET(CMAKE_SKIP_INSTALL_ALL_DEPENDENCY TRUE)
 # here an odd version minor (e.g. 1.1.x, 1.3.x etc.) indicates a development version
 # with unstable functionality, an even version minor (1.0.x, 1.2.x etc.) a stable version.
 # Stable versions will return *iflag=-99 (not implemented) if a function is called that is
@@ -44,6 +40,15 @@ else()
     SET(PHIST_GIT_REVISION "\"${PHIST_VERSION}\"")
 endif()
 
+##########################################################################################
+# GENERAL CMAKE SETTINGS
+##########################################################################################
+
+list (APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/")
+
+# install target should not depend on 'make all': you can do e.g. 'make libs; make install'
+SET(CMAKE_SKIP_INSTALL_ALL_DEPENDENCY TRUE)
+
 if("${CMAKE_BUILD_TYPE}" STREQUAL "")
   set(CMAKE_BUILD_TYPE "Release" CACHE STRING "Choose the type of build, options are: Release, RelWithDebug, Debug" FORCE)
 else()
@@ -58,68 +63,20 @@ endif()
 set(CMAKE_C_STANDARD 99)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 
-if (PHIST_KERNEL_LIB STREQUAL "tpetra")
-  set(CMAKE_CXX_STANDARD 11)
-else()
-  set(CMAKE_CXX_STANDARD 11)
-endif()
+set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-if (PHIST_KERNEL_LIB STREQUAL "eigen")
-  option(PHIST_ENABLE_MPI "Enable MPI within PHIST" OFF)
-else()
-  option(PHIST_ENABLE_MPI "Enable MPI within PHIST" ON)
-endif()
-option(PHIST_ENABLE_OPENMP "Enable OpenMP within PHIST" ON)
-option(PHIST_USE_LIKWID "Enable instrumentation for likwid-perfctr" OFF)
-option(PHIST_BUILD_MIC "Build for Intel MIC" OFF)
+##########################################################################################
+# OPTIONS FOR COMPILE AND RUN TIME
+##########################################################################################
 
-# reproducible random number generator?
-# TODO - this is not quite working yet, once it is, make it the default
-option(PHIST_BUILTIN_RNG
-        "use random number generator provided by PHIST, which may be solower than the one implemented by the kernel lib. On the other hand, it gives reproducible results across runs, independent of the exact runtime setup."
-        ON)
+include(cmake/PhistOptions.cmake)
 
-# use GHOST if found (must be ON if ghost is the kernel lib)
-option(PHIST_USE_GHOST
-        "try to find the GHOST library even if it is not the kernel lib" 
-        OFF)
+########################################################################
+# XSDK OPTIONS
+########################################################################
 
-# try to find MPACK for high precision lapack routines
-option(PHIST_USE_MPACK
-        "try to find the MPACK library" 
-        ON)
-
-# try to find third-party solver packages (depending on kernel lib),
-# for instance for epetra/tpetra and GHOST we have an interface to
-# Anasazi and Belos.
-option(PHIST_USE_SOLVER_TPLS
-        "try to find supported third-party libraries that implement iterative methods for the kernel library used."
-        ON)
-
-# try to find third-party preconditioning packages (depending on kernel lib),
-# for instance if the kernel lib is epetra, look for Ifpack and ML.
-option(PHIST_USE_PRECON_TPLS
-        "try to find supported third-party libraries that implement preconditioners for the kernel library used."
-        ON)
-
-# try to find third-party partitioning packages (depending on kernel lib),
-# for instance if the kernel lib is epetra, look for Isorropia, builtin supports ParMETIS 
-# and ColPack etc.
-option(PHIST_USE_GRAPH_TPLS
-        "try to find supported third-party libraries that implement graph partitioning and reordering for the kernel library used."
-        ON)
-
-# this option allows to disable all Trilinos libraries at once, overriding
-# any of the choices PHIST_USE_*_TPLS
-option(PHIST_USE_TRILINOS_TPLS
-        "enable/disable using any optional Trilinos libraries like Zoltan, Belos, Kokkos etc."
-        ON)
-
-# option for using checkpoint/restart + automatic fault-tolerance features
-option(PHIST_USE_CRAFT
-                "enables/desables the use of checkpoint/restart and auto FT features using CRAFT"
-                OFF)
+include(cmake/XsdkOptions.cmake)
 
 ########################################################################
 # try to enable CCache as a 'compiler launcher'
@@ -132,31 +89,6 @@ if (CMAKE_C_COMPILER_ID STREQUAL "GNU")
     set_property(GLOBAL PROPERTY RULE_LAUNCH_COMPILE ccache)
     set_property(GLOBAL PROPERTY RULE_LAUNCH_LINK ccache)
   endif()
-endif()
-
-########################################################################
-# xSDK options
-########################################################################
-
-option(USE_XSDK_DEFAULTS "implement the default behavior suggested for xSDK packages (see https://xsdk.info)" OFF)
-
-option(XSDK_ENABLE_CXX
-        "generate C++ bindings for PHIST"
-        ON)
-
-option(XSDK_ENABLE_Fortran
-        "generate Fortran 2003 bindings for PHIST"
-        OFF)
-
-if (USE_XSDK_DEFAULTS)
-  set (XSDK_INDEX_SIZE 64 CACHE INTEGER "data type for global indices (32/64), default 64.")
-  #otherwise, leave it to the kernel library to decide.
-endif()
-
-if (XSDK_INDEX_SIZE EQUAL 32)
-  set(PHIST_FORCE_32BIT_GIDX_DEFAULT ON)
-elseif (XSDK_INDEX_SIZE EQUAL 64)
-  set(PHIST_FORCE_32BIT_GIDX_DEFAULT OFF)
 endif()
 
 ########################################################################
@@ -304,177 +236,22 @@ endif()
 if (CMAKE_C_COMPILER_ID STREQUAL "GNU")
 
   message(STATUS "using GNU compiler flags")
-
-  set (CMAKE_Fortran_FLAGS  "-cpp -ffree-line-length-none")
-  if( PHIST_ENABLE_OPENMP )
-    set(PHIST_HAVE_OPENMP 1)
-    if (CMAKE_C_COMPILER_VERSION VERSION_LESS 4.9)
-      set (CMAKE_C_FLAGS        "${CMAKE_C_FLAGS}       -fopenmp")
-      set (CMAKE_CXX_FLAGS      "${CMAKE_CXX_FLAGS}     -fopenmp")
-      set (CMAKE_Fortran_FLAGS  "${CMAKE_Fortran_FLAGS} -fopenmp")
-    else ()
-      set (CMAKE_C_FLAGS        "${CMAKE_C_FLAGS}       -fopenmp -fopenmp-simd")
-      set (CMAKE_CXX_FLAGS      "${CMAKE_CXX_FLAGS}     -fopenmp -fopenmp-simd")
-      set (CMAKE_Fortran_FLAGS  "${CMAKE_Fortran_FLAGS} -fopenmp -fopenmp-simd")
-    endif ()
-  endif()
-
-  if(PHIST_HAVE_MKL)
-    set (CMAKE_C_FLAGS        "${CMAKE_C_FLAGS}       -DMKL_LP64")
-    set (CMAKE_CXX_FLAGS      "${CMAKE_CXX_FLAGS}     -DMKL_LP64")
-  endif()
-
-  # -ffast-math kills high precision stuff!
-  set(FAST_MATH "-fno-math-errno -ffinite-math-only -fno-signed-zeros -fno-trapping-math")
-  set (CMAKE_C_FLAGS_RELEASE        "-O3 ${FAST_MATH} -march=native")
-  set (CMAKE_CXX_FLAGS_RELEASE      "-O2")
-  set (CMAKE_Fortran_FLAGS_RELEASE  "-march=native -O3 ${FAST_MATH}")
-
-  set (CMAKE_C_FLAGS_RELWITHDEBINFO       "${CMAKE_C_FLAGS_RELEASE}       -g")
-  set (CMAKE_CXX_FLAGS_RELWITHDEBINFO     "${CMAKE_CXX_FLAGS_RELEASE}     -g")
-  set (CMAKE_Fortran_FLAGS_RELWITHDEBINFO "${CMAKE_Fortran_FLAGS_RELEASE} -g")
-
-  if (CMAKE_C_COMPILER_VERSION VERSION_LESS 4.8)
-    set (CMAKE_C_FLAGS_DEBUG       "-O0 -g -Wall -Wextra -Wno-format -Wno-sign-compare -Wno-unused-variable -Wno-unused-parameter")
-    set (CMAKE_CXX_FLAGS_DEBUG     "-O0 -g -Wall -Wextra -Wno-format -Wno-sign-compare -Wno-unused-variable -Wno-unused-parameter")
-    set (CMAKE_Fortran_FLAGS_DEBUG "-O0 -g -Wall -fcheck=all -fstack-protector-all")
-  else ()
-    set (CMAKE_C_FLAGS_DEBUG       "-O0 -g -fstack-protector-all -Wall -Wextra -Wno-format -Wno-sign-compare -Wno-unused-variable -Wno-unused-parameter -Wno-unused-local-typedefs")
-    set (CMAKE_CXX_FLAGS_DEBUG     "-O0 -g -fstack-protector-all -Wall -Wextra -Wno-format -Wno-sign-compare -Wno-unused-variable -Wno-unused-parameter -Wno-unused-local-typedefs")
-    set (CMAKE_Fortran_FLAGS_DEBUG "-O0 -g -Wall -fcheck=all -fstack-protector-all")
-  endif ()
-
-  if (NOT CMAKE_C_COMPILER_VERSION VERSION_LESS 4.8)
-    set(GCC_SANITIZE "" CACHE STRING "What should be sanitized by GCC for a Debug build? (address, thread, undefined, leak or leave empty)")
-    if (GCC_SANITIZE)
-      message(STATUS "Enabled ${GCC_SANITIZE}-sanitizer")
-      if(GCC_SANITIZE STREQUAL "thread")
-        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fsanitize=${GCC_SANITIZE} -fPIC -pie")
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=${GCC_SANITIZE} -fPIC -pie")
-        set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -fsanitize=${GCC_SANITIZE} -fPIC -pie")
-      else()
-        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fsanitize=${GCC_SANITIZE}")
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=${GCC_SANITIZE}")
-        set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -fsanitize=${GCC_SANITIZE}")
-      endif()
-    endif()
-  endif()
-
-
+  input(SetCompilerFlagsGNU.cmake)
+  
 elseif (CMAKE_C_COMPILER_ID STREQUAL "Intel")
 
   message(STATUS "using INTEL compiler flags")
-
-  set (CMAKE_C_FLAGS        "-align -Wno-unused-variable ${MKL_FLAG}")
-  set (CMAKE_CXX_FLAGS      "-align -Wno-unused-variable ${MKL_FLAG}")
-  set (CMAKE_Fortran_FLAGS  "-fpp ${MKL_FLAG} -align array64byte")
-
-  if( PHIST_ENABLE_OPENMP )
-    set(PHIST_HAVE_OPENMP 1)
-    set (CMAKE_C_FLAGS        "${CMAKE_C_FLAGS}       -qopenmp")
-    set (CMAKE_CXX_FLAGS      "${CMAKE_CXX_FLAGS}     -qopenmp")
-    set (CMAKE_Fortran_FLAGS  "${CMAKE_Fortran_FLAGS} -qopenmp")
-  endif()
-
-  if (PHIST_BUILD_MIC)
-      set (CMAKE_C_FLAGS_RELEASE        "-O3 -no-prec-div -xmic-avx512")
-      set (CMAKE_CXX_FLAGS_RELEASE      "-O3 -no-prec-div -xmic-avx512")
-      set (CMAKE_Fortran_FLAGS_RELEASE  "-O3 -no-prec-div -xmic-avx512")
-  else()
-      set (CMAKE_C_FLAGS_RELEASE        "-O3 -no-prec-div -xHOST")
-      set (CMAKE_CXX_FLAGS_RELEASE      "-O3 -no-prec-div -xHOST")
-      set (CMAKE_Fortran_FLAGS_RELEASE  "-O3 -no-prec-div -xHOST")
-  endif()
-
-  set (CMAKE_C_FLAGS_RELWITHDEBINFO       "${CMAKE_C_FLAGS_RELEASE}       -debug")
-  set (CMAKE_CXX_FLAGS_RELWITHDEBINFO     "${CMAKE_CXX_FLAGS_RELEASE}     -debug")
-  set (CMAKE_Fortran_FLAGS_RELWITHDEBINFO "${CMAKE_Fortran_FLAGS_RELEASE} -debug")
-
-#  set (CMAKE_C_FLAGS_DEBUG        "-check-pointers=rw -fstack-protector -w2 -debug -traceback")
-#  set (CMAKE_CXX_FLAGS_DEBUG      "-check-pointers=rw -w2 -fstack-protector -debug -traceback")
-  set (CMAKE_C_FLAGS_DEBUG        "-fstack-protector -w2 -debug -traceback")
-  set (CMAKE_CXX_FLAGS_DEBUG      "-fstack-protector -w2 -debug -traceback")
-  set (CMAKE_Fortran_FLAGS_DEBUG  "-check all -check noarg_temp_created -debug -traceback")
-  if (PHIST_BUILD_MIC)
-      set (CMAKE_C_FLAGS_DEBUG        "-xmic-avx512 -check-pointers=rw -check=uninit,stack -fstack-protector -w2 -debug -traceback")
-      set (CMAKE_CXX_FLAGS_DEBUG      "-xmic-avx512 -check-pointers=rw -check=uninit,stack -fstack-protector -w2 -debug -traceback")
-      set (CMAKE_Fortran_FLAGS_DEBUG  "-xmic-avx512 -check all -debug -traceback")
-  endif()
-  # this is for some reason required with Intel 15 on Emmy:
-  set (CMAKE_EXE_LINKER_FLAGS_DEBUG "-lifcore -lifport")
-
-  # for ipo
-  # melven: probably not useful or even dangerous?
-  #  kernel routines should probably best optimized individually;
-  #  for builtin kernels: I'm passing arrays as scalars in builtin kernels (call by reference),
-  #               because the kernel routines would be too complex otherwise
-  #               (and they should be fast and not complex!).
-  #               The compiler best shouldn't be able to know about this...
-  #set_property(DIRECTORY . PROPERTY INTERPROCEDURAL_OPTIMIZATION 1)
+  input(SetCompilerFlagsINTEL.cmake)
 
 elseif (CMAKE_C_COMPILER_ID STREQUAL "PGI")
 
   message(STATUS "using PGI compiler flags")
-
-  set (CMAKE_Fortran_FLAGS  "-Mpreprocess")
-  if( PHIST_ENABLE_OPENMP )
-    set(PHIST_HAVE_OPENMP 1)
-    set (CMAKE_C_FLAGS        "${CMAKE_C_FLAGS}       -mp=align")
-    set (CMAKE_CXX_FLAGS      "${CMAKE_CXX_FLAGS}     -mp=align")
-    set (CMAKE_Fortran_FLAGS  "${CMAKE_Fortran_FLAGS} -mp=align")
-  endif()
-
-  if(PHIST_HAVE_MKL)
-    set (CMAKE_C_FLAGS        "${CMAKE_C_FLAGS}       -DMKL_LP64")
-    set (CMAKE_CXX_FLAGS      "${CMAKE_CXX_FLAGS}     -DMKL_LP64")
-  endif()
-
-  # -ffast kills high precision stuff!
-  set (CMAKE_C_FLAGS_RELEASE        "-O4 -fast -Mvect=levels:10")
-  set (CMAKE_CXX_FLAGS_RELEASE      "-O2")
-  set (CMAKE_Fortran_FLAGS_RELEASE  "-O4 -fast -Mvect=levels:10")
-
-  set (CMAKE_C_FLAGS_RELWITHDEBINFO       "${CMAKE_C_FLAGS_RELEASE}       -g")
-  set (CMAKE_CXX_FLAGS_RELWITHDEBINFO     "${CMAKE_CXX_FLAGS_RELEASE}     -g")
-  set (CMAKE_Fortran_FLAGS_RELWITHDEBINFO "${CMAKE_Fortran_FLAGS_RELEASE} -g")
-
-  set (CMAKE_C_FLAGS_DEBUG       "-O0 -g")#-O0 -g -Mbounds -Mdwarf3")
-  set (CMAKE_CXX_FLAGS_DEBUG     "-O0")#-O0 -g -Mbounds -Mdwarf3")
-  set (CMAKE_Fortran_FLAGS_DEBUG "-O0 -g")#-O0 -g -Mbounds -Mdwarf3")
+  input(SetCompilerFlagsPGI.cmake)
 
 elseif (CMAKE_C_COMPILER_ID STREQUAL "Clang")
 
   message(STATUS "using Clang (LLVM) compiler flags")
-
-  set (CMAKE_C_FLAGS        "-std=c99")
-  set (CMAKE_CXX_FLAGS      "-std=c++11")
-  # assume we are using the LLVM Flang compiler (PGI flavour)
-  set (CMAKE_Fortran_FLAGS  "-Mpreprocess -DFLANG")
-  if( PHIST_ENABLE_OPENMP )
-    set(PHIST_HAVE_OPENMP 1)
-    set (CMAKE_C_FLAGS        "${CMAKE_C_FLAGS}       -fopenmp")
-    set (CMAKE_CXX_FLAGS      "${CMAKE_CXX_FLAGS}     -fopenmp")
-    set (CMAKE_Fortran_FLAGS  "${CMAKE_Fortran_FLAGS} -fopenmp")
-  endif()
-
-  if(PHIST_HAVE_MKL)
-    set (CMAKE_C_FLAGS        "${CMAKE_C_FLAGS}       -DMKL_LP64")
-    set (CMAKE_CXX_FLAGS      "${CMAKE_CXX_FLAGS}     -DMKL_LP64")
-  endif()
-
-  # -ffast-math kills high precision stuff!
-  set(FAST_MATH "-fno-math-errno -ffinite-math-only -fno-signed-zeros -fno-trapping-math")
-  set (CMAKE_C_FLAGS_RELEASE        "-O3 ${FAST_MATH} -march=native")
-  set (CMAKE_CXX_FLAGS_RELEASE      "-O2")
-  set (CMAKE_Fortran_FLAGS_RELEASE  "-march=native -O3 ${FAST_MATH}")
-
-  set (CMAKE_C_FLAGS_RELWITHDEBINFO       "${CMAKE_C_FLAGS_RELEASE}       -g")
-  set (CMAKE_CXX_FLAGS_RELWITHDEBINFO     "${CMAKE_CXX_FLAGS_RELEASE}     -g")
-  set (CMAKE_Fortran_FLAGS_RELWITHDEBINFO "${CMAKE_Fortran_FLAGS_RELEASE} -g")
-
-  set (CMAKE_C_FLAGS_DEBUG       "-O0 -g -Wall")
-  set (CMAKE_CXX_FLAGS_DEBUG     "-O0 -g -Wall")
-  set (CMAKE_Fortran_FLAGS_DEBUG "-O0 -g -Mbounds")
+  input(SetCompilerFlagsCLANG.cmake)
 
 else()
 
