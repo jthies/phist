@@ -49,16 +49,9 @@ list (APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/")
 # install target should not depend on 'make all': you can do e.g. 'make libs; make install'
 SET(CMAKE_SKIP_INSTALL_ALL_DEPENDENCY TRUE)
 
-if("${CMAKE_BUILD_TYPE}" STREQUAL "")
-  set(CMAKE_BUILD_TYPE "Release" CACHE STRING "Choose the type of build, options are: Release, RelWithDebug, Debug" FORCE)
-else()
-  set(CMAKE_BUILD_TYPE "${CMAKE_BUILD_TYPE}" CACHE STRING "Choose the type of build, options are: Release, RelWithDebug, Debug" FORCE)
-endif()
+set(CMAKE_BUILD_TYPE "Release" CACHE STRING "Choose the type of build, options are: Release, RelWithDebug, Debug" FORCE)
 
-if (NOT BUILD_SHARED_LIBS)
-    message(STATUS "No library type specified. Setting it to shared.")
-    set(BUILD_SHARED_LIBS ON CACHE BOOL "Set to ON/OFF for shared/static library build.")
-endif()
+set(BUILD_SHARED_LIBS ON CACHE BOOL "Set to ON/OFF for shared/static library build.")
 
 set(CMAKE_C_STANDARD 99)
 set(CMAKE_C_STANDARD_REQUIRED ON)
@@ -69,6 +62,10 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 ##########################################################################################
 # OPTIONS FOR COMPILE AND RUN TIME
 ##########################################################################################
+
+# setup which kernel library is being used.
+set(PHIST_KERNEL_LIB "builtin" CACHE STRING "Select underlying kernel libraries for phist (builtin|ghost|epetra|tpetra|magma|petsc|eigen)")
+message(STATUS "PHIST kernel library: " ${PHIST_KERNEL_LIB})
 
 include(cmake/PhistOptions.cmake)
 
@@ -216,18 +213,6 @@ if (NOT PythonInterp_FOUND)
   set(XSDK_ENABLE_CXX OFF)
   set(DISABLE_PYTHON_TESTS 1)
 endif()
-########################################################################
-
-# output behavior
-if(CMAKE_BUILD_TYPE MATCHES "Release")
-        set(PHIST_OUTLEV 2 CACHE STRING "PHIST verbosity (release 2, 'INFO')")
-else()
-        set(PHIST_OUTLEV 4 CACHE STRING "PHIST verbosity (debug 4, 'EXTREME')")
-endif()
-
-if(CMAKE_BUILD_TYPE MATCHES "Debug")
-  set(PHIST_TESTING ON CACHE STRING "Enable potentially expensive checks in the code")
-endif()
 
 ##############################################################################
 # compiler-dependent flags 
@@ -236,7 +221,7 @@ endif()
 if (CMAKE_C_COMPILER_ID STREQUAL "GNU")
 
   message(STATUS "using GNU compiler flags")
-  input(SetCompilerFlagsGNU.cmake)
+  include(cmake/SetCompilerFlagsGNU.cmake)
   
 elseif (CMAKE_C_COMPILER_ID STREQUAL "Intel")
 
@@ -296,13 +281,6 @@ if (${PHIST_ENABLE_MPI})
 else()
   set(PHIST_HAVE_MPI 0)
 endif()
-
-##############################################################################
-# setup which kernel library is being used.
-##############################################################################
-
-set(PHIST_KERNEL_LIB "builtin" CACHE STRING "Select underlying kernel libraries for phist (builtin|ghost|epetra|tpetra|magma|petsc|eigen|tpetra12)")
-message(STATUS "kernel lib " ${PHIST_KERNEL_LIB} " ...")
 
 set(REQUIRE_TRILI_PKG,"")
 set(OPTIONAL_TRILI_PKG,"")
@@ -850,24 +828,6 @@ if (PHIST_KERNEL_LIB STREQUAL "tpetra")
   endif()
 endif()
 
-option(PHIST_TIMEMONITOR "Gather detailed function-level timings" On)
-if( PHIST_TIMEMONITOR )
-  message(STATUS "activated TimeMonitor timing monitoring")
-endif()
-option(PHIST_TIMEMONITOR_PERLINE "Gather timing information for each line with a PHIST_CHK_* macro!" Off)
-option(PHIST_PERFCHECK "Check performance of operations (which have a performance model specification)" Off)
-if( PHIST_PERFCHECK )
-  message(STATUS "activated PerfCheck timing monitoring")
-  if( PHIST_PERFCHECK AND PHIST_TIMEMONITOR )
-    message(WARNING "You cannot use PHIST_PERFCHECK and PHIST_TIMEMONITOR at once, disabling timing!")
-    set(PHIST_TIMEMONITOR Off)
-  endif()
-  option(PHIST_PERFCHECK_SEPARATE_OUTPUT "write perfcheck output to separate files for each MPI rank (useful for analysing heterogenous runs)" OFF)
-  option(PHIST_PERFCHECK_REALISTIC "Switch from ideal performance predictions to more realistic ones (e.g. for views)!" OFF)
-endif()
-
-set(PHIST_PEAK_FLOPS_CPU -1 CACHE STRING "Peak GFlop/s rate of the CPU component (for the roofline model in PERFCHECK only. If you don't know this value, just leave it at -1 and it will be ignored)")
-set(PHIST_PEAK_FLOPS_GPU -1 CACHE STRING "Peak GFlop/s rate of the GPU component (for the roofline model in PERFCHECK only. If you don't know this value, just leave it at -1 and it will be ignored)")
 
 set(INCLUDE_FLAGS "")
 get_property(dirs DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY INCLUDE_DIRECTORIES)
