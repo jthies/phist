@@ -483,59 +483,15 @@ else()
 
 endif ()
 
-# try to detect if we can use C++11 Lambdas
-include(CheckCXXSourceCompiles)
-include(CheckFortranSourceCompiles)
-
-set(CMAKE_REQUIRED_FLAGS "-std=c++11")
-
-CHECK_CXX_SOURCE_COMPILES("
-  int main(int argc, char** argv)
-  {
-    auto lfunc = [&](){ int _argc = argc; };
-    return 0;
-  }
-" PHIST_HAVE_CXX11_LAMBDAS
-)
-CHECK_CXX_SOURCE_COMPILES("
-  int main(int argc, char** argv)
-  {
-    thread_local int x;
-    return 0;
-  }
-" PHIST_HAVE_CXX11_THREADLOCAL)
-CHECK_CXX_SOURCE_COMPILES("
-  template<typename T>
-  class C {
-  public:
-  C(){}
-  C(C&&)=default;
-  };
-  int main(int argc, char** argv)
-  {
-    C<int> c;
-  }
-" PHIST_HAVE_CXX11_MOVEDEFAULT)
+# detect if certain C++ and Fortran features are supported
+include(cmake/CheckLanguageFeatures.cmake)
 
 if(PHIST_HAVE_CXX11_LAMBDAS OR PHIST_HAVE_CXX11_THREADLOCAL)
   set(PHIST_PKG_CONFIG_CFLAGS "${PHIST_PKG_CONFIG_CFLAGS} -std=c++11")
 endif()
 
-CHECK_Fortran_SOURCE_COMPILES("
-  program test
-    implicit none
-    integer :: i
-    real :: x(8)
-    !$omp simd
-    do i = 1, 8
-      x(i) = 0.
-    end do
-  end program test
-" PHIST_HAVE_OPENMP_SIMD
-)
-
 # check for SSE, AVX, AVX2 and AVX512
-include(cmake/CheckIntrinsics.cmake)
+include(cmake/CheckCPUFeatures.cmake)
 
 if (${PHIST_ENABLE_MPI})
   set(PHIST_HAVE_MPI 1)
