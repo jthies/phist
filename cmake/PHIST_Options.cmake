@@ -25,7 +25,6 @@ else()
 endif()
 option(PHIST_ENABLE_OPENMP "Enable OpenMP within PHIST" ON)
 option(PHIST_USE_LIKWID "Enable instrumentation for likwid-perfctr" OFF)
-option(PHIST_BUILD_MIC "Build for Intel MIC" OFF)
 
 # reproducible random number generator?
 # TODO - this is not quite working yet, once it is, make it the default
