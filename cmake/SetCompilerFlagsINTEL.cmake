@@ -2,13 +2,6 @@
   set (CMAKE_CXX_FLAGS      "-align -Wno-unused-variable ${MKL_FLAG}")
   set (CMAKE_Fortran_FLAGS  "-fpp ${MKL_FLAG} -align array64byte")
 
-  if( PHIST_ENABLE_OPENMP )
-    set(PHIST_HAVE_OPENMP 1)
-    set (CMAKE_C_FLAGS        "${CMAKE_C_FLAGS}       -qopenmp")
-    set (CMAKE_CXX_FLAGS      "${CMAKE_CXX_FLAGS}     -qopenmp")
-    set (CMAKE_Fortran_FLAGS  "${CMAKE_Fortran_FLAGS} -qopenmp")
-  endif()
-
   set (CMAKE_C_FLAGS_RELEASE        "-O3 -no-prec-div -xHOST")
   set (CMAKE_CXX_FLAGS_RELEASE      "-O3 -no-prec-div -xHOST")
   set (CMAKE_Fortran_FLAGS_RELEASE  "-O3 -no-prec-div -xHOST")

@@ -2,12 +2,6 @@
   set (CMAKE_CXX_FLAGS      "-std=c++11")
   # assume we are using the LLVM Flang compiler (PGI flavour)
   set (CMAKE_Fortran_FLAGS  "-Mpreprocess -DFLANG")
-  if( PHIST_ENABLE_OPENMP )
-    set(PHIST_HAVE_OPENMP 1)
-    set (CMAKE_C_FLAGS        "${CMAKE_C_FLAGS}       -fopenmp")
-    set (CMAKE_CXX_FLAGS      "${CMAKE_CXX_FLAGS}     -fopenmp")
-    set (CMAKE_Fortran_FLAGS  "${CMAKE_Fortran_FLAGS} -fopenmp")
-  endif()
 
   if(PHIST_HAVE_MKL)
     set (CMAKE_C_FLAGS        "${CMAKE_C_FLAGS}       -DMKL_LP64")

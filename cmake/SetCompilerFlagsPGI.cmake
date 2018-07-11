@@ -1,10 +1,4 @@
 set (CMAKE_Fortran_FLAGS  "-Mpreprocess")
-if( PHIST_ENABLE_OPENMP )
-set(PHIST_HAVE_OPENMP 1)
-set (CMAKE_C_FLAGS        "${CMAKE_C_FLAGS}       -mp=align")
-set (CMAKE_CXX_FLAGS      "${CMAKE_CXX_FLAGS}     -mp=align")
-set (CMAKE_Fortran_FLAGS  "${CMAKE_Fortran_FLAGS} -mp=align")
-endif()
 
 if(PHIST_HAVE_MKL)
   set (CMAKE_C_FLAGS        "${CMAKE_C_FLAGS}       -DMKL_LP64")
