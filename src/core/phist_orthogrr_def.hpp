@@ -25,7 +25,7 @@ static void SUBR(orthogrr_cholrr)(TYPE(sdMat_ptr) RR, TYPE(sdMat_ptr) R_1, int* 
 }
 
 
-static void SUBR(orthogrr_svqb)(TYPE(sdMat_ptr) RR, TYPE(sdMat_ptr) R_1, int* rank, int* iflag)
+static void SUBR(orthogrr_svqb)(TYPE(sdMat_ptr) RR, TYPE(sdMat_ptr) R_1, int* rank, _MT_ rankTol, int* iflag)
 {
   PHIST_ENTER_FCN(__FUNCTION__);
 #include "phist_std_typedefs.hpp"
@@ -34,7 +34,6 @@ static void SUBR(orthogrr_svqb)(TYPE(sdMat_ptr) RR, TYPE(sdMat_ptr) R_1, int* ra
   
   // we first copy the input matrix because B and B_1 are exchanged in the definition of
   // the kernel routine sdMat_qb:
-  _MT_ rankTol=mt::zero();
   PHIST_CHK_IERR(SUBR(sdMat_add_sdMat)(st::one(),RR,st::zero(),R_1,iflag),*iflag);
   PHIST_CHK_IERR(SUBR(sdMat_qb)(R_1,RR,rank,rankTol,iflag),*iflag);
   

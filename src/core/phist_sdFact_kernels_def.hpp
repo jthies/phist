@@ -211,6 +211,79 @@ extern "C" void SUBR(qb)(_ST_ *__restrict__ a,
                     _ST_ *__restrict__ bi,
                     phist_lidx n, phist_lidx lda, int *rank, _MT_ rankTol, int* iflag)
 {
-  *iflag=-99;
+#include "phist_std_typedefs.hpp"
+  // compute sqrt(diag(A)) and its inverse
+  _ST_ d[n], di[n];
+  for (int i=0; i<n; i++)
+  {
+    // prevent nans
+    if( st::real(a[i*lda+i]) <= rankTol )
+    {
+      d[i] = 0.;
+      di[i] = 0.;
+    }
+    else
+    {
+      d[i]=std::sqrt(a[i*lda+i]);
+      di[i]=_ST_(1)/d[i];
+    }
+  }
+  
+  // scale input matrix from left and right => diagonal elements 1
+  for (int j=0; j<n; j++)
+  {
+    for (int i=0; i<n; i++)
+    {
+      a[j*lda+i]*=di[i]*di[j];
+    }
+  }
+
+  // compute eigenpairs of the scaled matrix A^
+  _MT_ w[n];
+  #ifdef IS_COMPLEX
+    PHIST_CHK_IERR(*iflag=PHIST_LAPACKE(heevd)
+        (SDMAT_FLAG, 'V' , 'U', n, (mt::blas_cmplx_t*)a, lda, w),*iflag);
+#else
+    PHIST_CHK_IERR(*iflag=PHIST_LAPACKE(syevd)
+        (SDMAT_FLAG, 'V' , 'U', n, a, lda, w),*iflag);
+#endif
+
+
+  // determine rank of input matrix and 1/sqrt(w)
+  _MT_ wi[n];
+  *rank=(int)n;
+  
+  // set w=sqrt(w) and wi=1/sqrt(w)
+  for(int i=0; i<n; i++)
+  {
+    if (w[i]<rankTol)
+    {
+      (*rank)--;
+      w[i]=_MT_(0);
+      wi[i]=_MT_(0);
+      PHIST_SOUT(PHIST_DEBUG,"<-0\n");
+    }
+    else
+    {
+      w[i] = std::sqrt(w[i]);
+      wi[i]= _MT_(1)/w[i];
+    }
+  }
+
+  // scale the eigenvector matrix, B^ <- Dinv * B * Einv
+  // As B is orthonormal, the inverse of B^ is given by
+  // E*B'*D (returned in bi, biC)
+  for(int i=0; i<n; i++)
+  {
+    for(int j=0;j<n;j++)
+    {
+      if (bi!=NULL)
+      {
+        bi[i*lda+j]=a[j*lda+i]*d[i]*w[j];
+      }
+      a[j*lda+i]*=di[i]*wi[j];
+    }
+  }
+  *iflag=0;
 }
 

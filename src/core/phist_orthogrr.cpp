@@ -15,5 +15,8 @@
 #include "phist_sdFact.h"
 #include "phist_MemOwner.hpp"
 
+#ifndef PHIST_HIGH_PRECISION_KERNELS
+#define ORTHOGRR_USE_SVQB 1
+#endif
 #define PHIST_CLASSFILE_DEF "phist_orthogrr_def.hpp"
 #include "phist_gen_all.h"
