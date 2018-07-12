@@ -36,7 +36,6 @@ static void SUBR(orthogrr_svqb)(TYPE(sdMat_ptr) RR, TYPE(sdMat_ptr) R_1, int* ra
   // the kernel routine sdMat_qb:
   PHIST_CHK_IERR(SUBR(sdMat_add_sdMat)(st::one(),RR,st::zero(),R_1,iflag),*iflag);
   PHIST_CHK_IERR(SUBR(sdMat_qb)(R_1,RR,rank,rankTol,iflag),*iflag);
-  
 }
 
 

@@ -256,12 +256,13 @@ extern "C" void SUBR(qb)(_ST_ *__restrict__ a,
   // set w=sqrt(w) and wi=1/sqrt(w)
   for(int i=0; i<n; i++)
   {
+    PHIST_SOUT(PHIST_INFO,"w[%d]=%e\n",i,w[i]);
     if (w[i]<rankTol)
     {
       (*rank)--;
       w[i]=_MT_(0);
       wi[i]=_MT_(0);
-      PHIST_SOUT(PHIST_DEBUG,"<-0\n");
+      PHIST_SOUT(PHIST_INFO,"<-0\n");
     }
     else
     {
@@ -284,6 +285,25 @@ extern "C" void SUBR(qb)(_ST_ *__restrict__ a,
       a[j*lda+i]*=di[i]*wi[j];
     }
   }
+  
+  // finally we reverse the order of the scaled eigenvectors because
+  // this way those associated with 0 eigenvalues will appear last instead
+  // of first. This is important for our orthogonalization schemes, which
+  // may randomize the last few columns in case of (near) singularity (see
+  // flag PHIST_ORTHOG_RANDOMIZE_NULLSPACE)
+  for (int i=0; i<n; i++)
+  {
+    for (int j=0; j<n/2; j++)
+    {
+      int k=n-j-1;
+      std::swap(a[j*lda+i],a[k*lda+i]);
+      if (bi!=NULL)
+      {
+        std::swap(bi[i*lda+j],bi[i*lda+k]);
+      }
+    }
+  }
+  
   *iflag=0;
 }
 
