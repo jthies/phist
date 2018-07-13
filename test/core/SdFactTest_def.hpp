@@ -461,7 +461,7 @@ PrintSdMat(PHIST_DEBUG,"reconstructed X",mat2_vp_,m_lda_,1,mpi_comm_);
       // -- check with full rank=m
       for (int i=0; i<nrows_; i++)
       {
-        mat1_vp_[i*m_lda_+i]=ST(mt::prand());
+        mat1_vp_[i*m_lda_+i]=st::abs(ST(mt::prand()));
         for (int j=i+1; j<ncols_; j++)
         {
           mat1_vp_[MIDX(i,j,m_lda_)] = st::prand();
@@ -503,7 +503,7 @@ ASSERT_EQ(0,iflag_);
       // check that the squareroots of the diagonal elements are correctly returned
       for(int i = 0; i < nrows_; i++)
       {
-        ASSERT_REAL_EQ(nrmsV[i]*nrmsV[i],st::abs(mat1_vp_[MIDX(i,i,m_lda_)]));
+        ASSERT_REAL_EQ(nrmsV[i]*nrmsV[i],st::abs(mat2_vp_[MIDX(i,i,m_lda_)]));
       }
 
       // check that the inverse is correctly returned
