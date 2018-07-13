@@ -241,7 +241,7 @@ extern "C" void SUBR(qb)(_ST_ *__restrict__ a,
   }
 
   // compute eigenpairs of the scaled matrix A^
-  _MT_ w[n];
+  MT w[n],wi[n];
   #ifdef IS_COMPLEX
     PHIST_CHK_IERR(*iflag=PHIST_LAPACKE(heevd)
         (SDMAT_FLAG, 'V' , 'U', n, (mt::blas_cmplx_t*)a, lda, w),*iflag);
@@ -252,27 +252,39 @@ extern "C" void SUBR(qb)(_ST_ *__restrict__ a,
 
 
   // determine rank of input matrix and 1/sqrt(w)
-  _MT_ wi[n];
   *rank=(int)n;
-  
-  // set w=sqrt(w) and wi=1/sqrt(w)
-  for(int i=0; i<n; i++)
+  MT emax=mt::abs(w[n-1]);
+    
+  if (emax<=rankTol)
   {
-    PHIST_SOUT(PHIST_INFO,"w[%d]=%e\n",i,w[i]);
-    if (w[i]<rankTol)
+    rank=0;
+    for(int i = 0; i < n; i++)
     {
-      (*rank)--;
-      w[i]=_MT_(0);
-      wi[i]=_MT_(0);
-      PHIST_SOUT(PHIST_INFO,"<-0\n");
+      w[i] = mt::zero();
+      wi[i] = mt::zero();
     }
-    else
+    *rank=0;
+  }
+  else
+  {
+    // set w=sqrt(w) and wi=1/sqrt(w)
+    for(int i=0; i<n; i++)
     {
-      w[i] = std::sqrt(w[i]);
-      wi[i]= _MT_(1)/w[i];
+      PHIST_SOUT(PHIST_INFO,"w[%d]=%e\n",i,w[i]);
+      if (w[i]<rankTol*emax)
+      {
+        (*rank)--;
+        w[i]=_MT_(0);
+        wi[i]=_MT_(0);
+      PHIST_SOUT(PHIST_INFO,"<-0\n");
+      }
+      else
+      {
+        w[i] = std::sqrt(w[i]);
+        wi[i]= _MT_(1)/w[i];
+      }
     }
   }
-
   // scale the eigenvector matrix, B^ <- Dinv * B * Einv
   // As B is orthonormal, the inverse of B^ is given by
   // E*B'*D (returned in bi, biC)
