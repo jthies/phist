@@ -209,6 +209,7 @@ extern "C" void SUBR(forwardSubst)(const _ST_ *__restrict__ r, phist_lidx n, phi
 
 extern "C" void SUBR(qb)(_ST_ *__restrict__ a,
                     _ST_ *__restrict__ bi,
+                    _MT_ *D,
                     phist_lidx n, phist_lidx lda, int *rank, _MT_ rankTol, int* iflag)
 {
 #include "phist_std_typedefs.hpp"
@@ -227,6 +228,7 @@ extern "C" void SUBR(qb)(_ST_ *__restrict__ a,
       d[i]=std::sqrt(a[i*lda+i]);
       di[i]=_ST_(1)/d[i];
     }
+    if (D!=NULL) D[i]=st::real(d[i]);
   }
   
   // scale input matrix from left and right => diagonal elements 1

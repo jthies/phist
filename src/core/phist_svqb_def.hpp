@@ -23,15 +23,12 @@ void SUBR(svqb)(TYPE(mvec_ptr) V, TYPE(sdMat_ptr) B, _MT_* D, int* iflag)
   *iflag=0;
   int m, rank;
   _MT_ rankTol=mt::rankTol(robust);
-  phist_lidx ldb;
-  _ST_*  B_raw;
-  PHIST_CHK_IERR(SUBR(mvec_num_vectors)(V,&m,iflag),*iflag);
 
   // S=V'V
   if( robust ) *iflag = PHIST_ROBUST_REDUCTIONS;
   PHIST_CHK_IERR(SUBR(mvecT_times_mvec)(st::one(),V,V,st::zero(),B,iflag),*iflag);
 
-  PHIST_CHK_IERR(SUBR(sdMat_qb)(B,NULL,&rank,rankTol,iflag),*iflag);
+  PHIST_CHK_IERR(SUBR(sdMat_qb)(B,NULL,D,&rank,rankTol,iflag),*iflag);
 
   PHIST_CHK_IERR(SUBR(sdMat_to_device)(B,iflag),*iflag);
   if (robust) *iflag = PHIST_ROBUST_REDUCTIONS;

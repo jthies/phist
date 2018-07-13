@@ -454,6 +454,70 @@ PrintSdMat(PHIST_DEBUG,"reconstructed X",mat2_vp_,m_lda_,1,mpi_comm_);
 #endif
   }
 
+  TEST_F(CLASSNAME, qb)
+  {
+    if( typeImplemented_ && nrows_ == ncols_ )
+    {
+      // -- check with full rank=m
+      for (int i=0; i<nrows_; i++)
+      {
+        mat1_vp_[i*m_lda_+i]=ST(mt::prand());
+        for (int j=i+1; j<ncols_; j++)
+        {
+          mat1_vp_[MIDX(i,j,m_lda_)] = st::prand();
+          mat1_vp_[MIDX(j,i,m_lda_)] = mat1_vp_[MIDX(i,j,m_lda_)];
+        }
+      }
+      std::cout << "nrows="<<nrows_<<", mat1_vp_[0]="<<mat1_vp_[0]<<std::endl;
+      SUBR(sdMat_to_device)(mat1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      
+      // copy to mat2_
+      SUBR(sdMat_add_sdMat)(st::one(), mat1_, st::zero(), mat2_, &iflag_);
+      ASSERT_EQ(0,iflag_);
+
+      SUBR(sdMat_from_device)(mat2_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+
+      // qb factorize: A=B^*B^{-1} such that B^ would normalize the original V
+      int rank = 0;
+      int iflag_in=0;
+#ifdef HIGH_PRECISION_KERNELS
+      iflag_in=PHIST_ROBUST_REDUCTIONS;
+#endif
+
+SUBR(sdMat_print)(mat1_,&iflag_);
+ASSERT_EQ(0,iflag_);
+
+      iflag_=iflag_in;
+      _MT_ rankTol=mt::rankTol(iflag_in==PHIST_ROBUST_REDUCTIONS);
+      _MT_ nrmsV[nrows_];
+      SUBR(sdMat_qb)(mat1_,mat3_,nrmsV,&rank,rankTol,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(sdMat_to_device)(mat1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+
+SUBR(sdMat_print)(mat1_,&iflag_);
+ASSERT_EQ(0,iflag_);
+      ASSERT_EQ(nrows_,rank);
+      // check that the squareroots of the diagonal elements are correctly returned
+      for(int i = 0; i < nrows_; i++)
+      {
+        ASSERT_REAL_EQ(nrmsV[i]*nrmsV[i],st::abs(mat1_vp_[MIDX(i,i,m_lda_)]));
+      }
+
+      // check that the inverse is correctly returned
+      iflag_=iflag_in;
+      SUBR(sdMat_times_sdMat)(st::one(),mat1_,mat3_,-st::one(),mat2_, &iflag_);
+      ASSERT_EQ(0,iflag_);
+#ifdef PHIST_HIGH_PRECISION_KERNELS
+      ASSERT_REAL_EQ(mt::one(),SdMatEqual(mat2_,st::zero()));
+#else
+      ASSERT_NEAR(mt::one(),SdMatEqual(mat2_,st::zero()),10*mt::eps());
+#endif
+    }
+  }
+
 #endif /* _N_==_M_ */
 
   TEST_F(CLASSNAME, svd)
