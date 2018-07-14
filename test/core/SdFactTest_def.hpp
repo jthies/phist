@@ -63,15 +63,24 @@ ASSERT_EQ(0,iflag_);
       }
 
       // check that the inverse is correctly returned
-      SUBR(sdMat_identity)(mat2_,&iflag_);
+      SUBR(sdMat_put_value)(mat2_,ST(0),&iflag_);
       ASSERT_EQ(0,iflag_);
+      for (int i=0; i<rank; i++) mat2_vp_[i*m_lda_+i]=ST(1);
+      SUBR(sdMat_to_device)(mat2_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(sdMat_print)(mat2_,&iflag_);
       iflag_=iflag_in;
-      SUBR(sdMat_times_sdMat)(st::one(),mat1_,mat3_,-st::one(),mat2_, &iflag_);
+      SUBR(sdMat_times_sdMat)(-st::one(),mat1_,mat3_,st::one(),mat2_, &iflag_);
       ASSERT_EQ(0,iflag_);
+      SUBR(sdMat_print)(mat1_,&iflag_);
+      SUBR(sdMat_print)(mat3_,&iflag_);
+      SUBR(sdMat_print)(mat2_,&iflag_);
+      // note that we will get some zeros on the diagonal if the matrix doesn't have full rank,
+      // hence the non-standard test for equality below.
 #ifdef PHIST_HIGH_PRECISION_KERNELS
-      ASSERT_REAL_EQ(mt::one(),SdMatEqual(mat2_,st::zero()));
+      ASSERT_REAL_EQ(MT(1),SdMatEqual(mat2_,st::zero()));
 #else
-      ASSERT_NEAR(mt::one(),SdMatEqual(mat2_,st::zero()),10*mt::eps());
+      ASSERT_NEAR(MT(1),SdMatEqual(mat2_,st::zero()),10*mt::eps());
 #endif
   }
 

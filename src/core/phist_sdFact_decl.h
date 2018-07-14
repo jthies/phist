@@ -30,11 +30,11 @@ void SUBR(sdMat_backwardSubst_sdMat)(const TYPE(sdMat_ptr) R, int* perm, int ran
 //! forward substitution for pivoted conj. transposed upper triangular cholesky factor
 void SUBR(sdMat_forwardSubst_sdMat)(const TYPE(sdMat_ptr) R, int* perm, int rank, TYPE(sdMat_ptr) X, int* iflag);
 
-//! \brief given the m x m sdMat B=V'V, compute (in place) B^ s.t. V*B^ is orthonormal.
+//! \brief given the m x m sdMat B=V'V, compute (in place) B^ s.t. Q=V*B^ is orthonormal.
 //!
-//! The inverse of B^ is returned in B_1 (if it is not NULL), the 
-//! rank of V in *rank.
-//! If V does not have full rank, the last n-*rank columns of B and B_1
+//! The inverse of B^ is returned in B_1 (if it is not NULL), s.t. Q*B_1=V
+//! the rank of V in *rank.
+//! If V does not have full rank, the last n-*rank columns of B and rows of B_1
 //! will be zero.
 //! If nrmsV is not NULL it must have at least m elements. On exit it will contain the 2-norms of the original columns of V
 //! (the squareroots of the diagonal elements of B on input)
