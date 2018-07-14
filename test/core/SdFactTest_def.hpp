@@ -20,6 +20,61 @@ class CLASSNAME: public KernelTestWithSdMats<_ST_,_NROWS_,_NCOLS_,_USE_VIEWS_>
 public:
 
   typedef KernelTestWithSdMats<_ST_,_NROWS_,_NCOLS_,_USE_VIEWS_> MTest;
+  
+  //! given mat2_, with expected rank, run some tests for the qb transofrmation
+  //! (core of the SVQB algorithm by Stathopoulos)
+  void run_qb_test(int expected_rank)
+  {
+      // create A as a product B'B to make sure it is spd
+      SUBR(sdMatT_times_sdMat)(st::one(),mat2_,mat2_,st::zero(),mat1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      
+      SUBR(sdMat_from_device)(mat1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+
+      MT nrms_ref[nrows_];
+      for (int i=0; i<nrows_; i++) nrms_ref[i]=std::sqrt(st::abs(mat1_vp_[i*m_lda_+i]));
+
+      // qb transform: A->B^ such that Q=V*B^ would normalize the original V
+      int rank = -42;
+      int iflag_in=0;
+#ifdef HIGH_PRECISION_KERNELS
+      iflag_in=PHIST_ROBUST_REDUCTIONS;
+#endif
+
+SUBR(sdMat_print)(mat1_,&iflag_);
+ASSERT_EQ(0,iflag_);
+
+      iflag_=iflag_in;
+      _MT_ rankTol=mt::rankTol(iflag_in==PHIST_ROBUST_REDUCTIONS);
+      _MT_ nrmsV[nrows_];
+      SUBR(sdMat_qb)(mat1_,mat3_,nrmsV,&rank,rankTol,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(sdMat_to_device)(mat1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+
+SUBR(sdMat_print)(mat1_,&iflag_);
+ASSERT_EQ(0,iflag_);
+      ASSERT_EQ(expected_rank,rank);
+      // check that the squareroots of the diagonal elements are correctly returned
+      for(int i = 0; i < nrows_; i++)
+      {
+        ASSERT_REAL_EQ(nrmsV[i],nrms_ref[i]);
+      }
+
+      // check that the inverse is correctly returned
+      SUBR(sdMat_identity)(mat2_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      iflag_=iflag_in;
+      SUBR(sdMat_times_sdMat)(st::one(),mat1_,mat3_,-st::one(),mat2_, &iflag_);
+      ASSERT_EQ(0,iflag_);
+#ifdef PHIST_HIGH_PRECISION_KERNELS
+      ASSERT_REAL_EQ(mt::one(),SdMatEqual(mat2_,st::zero()));
+#else
+      ASSERT_NEAR(mt::one(),SdMatEqual(mat2_,st::zero()),10*mt::eps());
+#endif
+  }
+
 
   /*! Set up routine.
    */
@@ -454,60 +509,33 @@ PrintSdMat(PHIST_DEBUG,"reconstructed X",mat2_vp_,m_lda_,1,mpi_comm_);
 #endif
   }
 
-  TEST_F(CLASSNAME, qb)
+  TEST_F(CLASSNAME, qb_random_matrix)
   {
     if( typeImplemented_ && nrows_ == ncols_ )
     {
       // -- check with full rank=m
+      SUBR(sdMat_random)(mat2_,&iflag_);
+      run_qb_test(nrows_);
+    }
+  }
 
-      // create A as a product B'B to make sure it is spd
-      SUBR(sdMatT_times_sdMat)(st::one(),mat2_,mat2_,st::zero(),mat1_,&iflag_);
-      ASSERT_EQ(0,iflag_);
-      
-      SUBR(sdMat_from_device)(mat1_,&iflag_);
-      ASSERT_EQ(0,iflag_);
+  // -- check with rank=1
+  TEST_F(CLASSNAME, qb_constant_matrix)
+  {
+    if( typeImplemented_ && nrows_ == ncols_ )
+    {
+      SUBR(sdMat_put_value)(mat2_,ST(1),&iflag_);
+      run_qb_test(1);
+    }
+  }
 
-      MT nrms_ref[nrows_];
-      for (int i=0; i<nrows_; i++) nrms_ref[i]=std::sqrt(st::abs(mat1_vp_[i*m_lda_+i]));
-
-      // qb factorize: A=B^*B^{-1} such that Q=V*B^ would normalize the original V
-      int rank = 0;
-      int iflag_in=0;
-#ifdef HIGH_PRECISION_KERNELS
-      iflag_in=PHIST_ROBUST_REDUCTIONS;
-#endif
-
-SUBR(sdMat_print)(mat1_,&iflag_);
-ASSERT_EQ(0,iflag_);
-
-      iflag_=iflag_in;
-      _MT_ rankTol=mt::rankTol(iflag_in==PHIST_ROBUST_REDUCTIONS);
-      _MT_ nrmsV[nrows_];
-      SUBR(sdMat_qb)(mat1_,mat3_,nrmsV,&rank,rankTol,&iflag_);
-      ASSERT_EQ(0,iflag_);
-      SUBR(sdMat_to_device)(mat1_,&iflag_);
-      ASSERT_EQ(0,iflag_);
-
-SUBR(sdMat_print)(mat1_,&iflag_);
-ASSERT_EQ(0,iflag_);
-      ASSERT_EQ(nrows_,rank);
-      // check that the squareroots of the diagonal elements are correctly returned
-      for(int i = 0; i < nrows_; i++)
-      {
-        ASSERT_REAL_EQ(nrmsV[i],nrms_ref[i]);
-      }
-
-      // check that the inverse is correctly returned
-      SUBR(sdMat_identity)(mat2_,&iflag_);
-      ASSERT_EQ(0,iflag_);
-      iflag_=iflag_in;
-      SUBR(sdMat_times_sdMat)(st::one(),mat1_,mat3_,-st::one(),mat2_, &iflag_);
-      ASSERT_EQ(0,iflag_);
-#ifdef PHIST_HIGH_PRECISION_KERNELS
-      ASSERT_REAL_EQ(mt::one(),SdMatEqual(mat2_,st::zero()));
-#else
-      ASSERT_NEAR(mt::one(),SdMatEqual(mat2_,st::zero()),10*mt::eps());
-#endif
+  // -- check with rank=1
+  TEST_F(CLASSNAME, qb_zero_matrix)
+  {
+    if( typeImplemented_ && nrows_ == ncols_ )
+    {
+      SUBR(sdMat_put_value)(mat2_,ST(0),&iflag_);
+      run_qb_test(0);
     }
   }
 
