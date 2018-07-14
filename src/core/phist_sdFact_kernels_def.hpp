@@ -257,7 +257,6 @@ extern "C" void SUBR(qb)(_ST_ *__restrict__ a,
     
   if (emax<=rankTol)
   {
-    rank=0;
     for(int i = 0; i < n; i++)
     {
       w[i] = mt::zero();

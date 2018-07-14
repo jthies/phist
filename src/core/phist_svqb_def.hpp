@@ -22,6 +22,7 @@ void SUBR(svqb)(TYPE(mvec_ptr) V, TYPE(sdMat_ptr) B, _MT_* D, int* iflag)
   bool robust = *iflag & PHIST_ROBUST_REDUCTIONS;
   *iflag=0;
   int m, rank;
+  PHIST_CHK_IERR(SUBr(mvec_num_vectors)(V,&m,iflag),*iflag);
   _MT_ rankTol=mt::rankTol(robust);
 
   // S=V'V
