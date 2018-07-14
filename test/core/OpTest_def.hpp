@@ -56,7 +56,7 @@ public:
     if (typeImplemented_ && !problemTooSmall_)
     {
       nq_ = std::min(3*nvec_+1,(int)nglob_-4);
-#ifdef HAVE_MPI
+#ifdef PHIST_HAVE_MPI
       // note: TSQR does not work if nvec>nloc (that wouldn't really be a 'tall skinny
       // matrix' but a 'short fat and sliced matrix')
       nq_ = std::min((int)nloc_,nq_);
