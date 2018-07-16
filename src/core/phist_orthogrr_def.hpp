@@ -42,12 +42,12 @@ static void SUBR(orthogrr_cholrr)(TYPE(sdMat_ptr) RR, TYPE(sdMat_ptr) R_1, int* 
 // given the Gramian M=V'Vv in RR, returns B s.t. Q=V*B is orthonormal (up to rank deficiency).
 // M will be overwritten with the right pseudo-inverse of B s.t. M*B on exit is a 'rank r identity matrix'.
 // Note that we cannot reproduce V as a product of Q and the pinv of B in the rank-deficient case.
-static void SUBR(orthogrr_svqb)(TYPE(sdMat_ptr) M, TYPE(sdMat_ptr) B, int* rank, _MT_ rankTol, int* iflag)
+static void SUBR(orthogrr_svqb)(TYPE(sdMat_ptr) RR, TYPE(sdMat_ptr) R_1, int* rank, _MT_ rankTol, int* iflag)
 {
   PHIST_ENTER_FCN(__FUNCTION__);
 #include "phist_std_typedefs.hpp"
   // compute B s.t. V*B=Q is orthogonal, with RR=V'V on input
-  // and inv(B) on output, and R_1=B on output.
+  // and pinv(B) on output, and R_1=B on output.
   
   // we first copy the input matrix because B and B_1 are exchanged in the definition of
   // the kernel routine sdMat_qb:
