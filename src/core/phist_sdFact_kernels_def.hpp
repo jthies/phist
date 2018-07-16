@@ -6,6 +6,7 @@
 /* Contact: Jonas Thies (Jonas.Thies@DLR.de)                                               */
 /*                                                                                         */
 /*******************************************************************************************/
+
 /*! \file phist_sdFact_kernels_def.hpp
  * Implementation of some serial LAPaCK like functions with standard precision
  * \author "Melven Roehrig-Zoellner" <Melven.Roehrig-Zoellner@DLR.de>
@@ -231,7 +232,7 @@ extern "C" void SUBR(qb)(_ST_ *__restrict__ a,
     if (D!=NULL) D[i]=st::real(d[i]);
   }
   
-  // scale input matrix from left and right => diagonal elements 1
+  // scale input matrix from left and right => A^=di*A*di with diagonal elements 1
   for (int j=0; j<n; j++)
   {
     for (int i=0; i<n; i++)
@@ -240,7 +241,7 @@ extern "C" void SUBR(qb)(_ST_ *__restrict__ a,
     }
   }
 
-  // compute eigenpairs of the scaled matrix A^
+  // compute eigenpairs of the scaled matrix: A^*B^ B^*W
   MT w[n],wi[n];
   #ifdef IS_COMPLEX
     PHIST_CHK_IERR(*iflag=PHIST_LAPACKE(heevd)
@@ -251,7 +252,7 @@ extern "C" void SUBR(qb)(_ST_ *__restrict__ a,
 #endif
 
 
-  // determine rank of input matrix and 1/sqrt(w)
+  // determine rank of input matrix and set w=sqrt(W), wi=1/sqrt(W)
   *rank=(int)n;
   MT emax=mt::abs(w[n-1]);
     
@@ -269,13 +270,11 @@ extern "C" void SUBR(qb)(_ST_ *__restrict__ a,
     // set w=sqrt(w) and wi=1/sqrt(w)
     for(int i=0; i<n; i++)
     {
-      PHIST_SOUT(PHIST_INFO,"w[%d]=%e\n",i,w[i]);
-      if (w[i]<rankTol*emax)
+      if (w[i]<=rankTol*emax)
       {
         (*rank)--;
         w[i]=_MT_(0);
         wi[i]=_MT_(0);
-      PHIST_SOUT(PHIST_INFO,"<-0\n");
       }
       else
       {
@@ -284,21 +283,31 @@ extern "C" void SUBR(qb)(_ST_ *__restrict__ a,
       }
     }
   }
-  // scale the eigenvector matrix, B^ <- Dinv * B * Einv
-  // As B is orthonormal, the inverse of B^ is given by
-  // E*B'*D (returned in bi, biC)
+
+  // use B^ (in 'a' right now) to first compute the inverse of B (see below).
+  // bi = inv(B) = E*B^T*D so that B*Bi=Bi*B should be a 'rank identity' (I 0; 0 0] if the input matrix does not have full rank.
+  if (bi!=NULL)
+  {
+    for(int i=0; i<n; i++)
+    {
+      for(int j=0;j<n;j++)
+      {
+        bi[i*lda+j]=st::conj(a[j*lda+i])*d[i]*w[j];
+      }
+    }
+  }
+
+  // scale the eigenvector matrix, B <- Dinv * B^ * Einv
+  // As B is orthonormal up to rank, the left pseudo-inverse 
+  // of B^ is given by E*B'*D (returned in bi)
   for(int i=0; i<n; i++)
   {
     for(int j=0;j<n;j++)
     {
-      if (bi!=NULL)
-      {
-        bi[i*lda+j]=a[j*lda+i]*d[i]*w[j];
-      }
       a[j*lda+i]*=di[i]*wi[j];
     }
   }
-  
+
   // finally we reverse the order of the scaled eigenvectors because
   // this way those associated with 0 eigenvalues will appear last instead
   // of first. This is important for our orthogonalization schemes, which

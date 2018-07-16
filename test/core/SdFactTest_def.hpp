@@ -62,7 +62,9 @@ ASSERT_EQ(0,iflag_);
         ASSERT_REAL_EQ(nrmsV[i],nrms_ref[i]);
       }
 
-      // check that the inverse is correctly returned
+      // check that the inverse is correctly returned. In the case of a rank-deficient input
+      // matrix we get that Bi*B is a 'rank identity' matrix [I 0; 0 0] with the last n-r rows
+      // and columns zero.
       SUBR(sdMat_put_value)(mat2_,ST(0),&iflag_);
       ASSERT_EQ(0,iflag_);
       for (int i=0; i<rank; i++) mat2_vp_[i*m_lda_+i]=ST(1);
@@ -70,7 +72,7 @@ ASSERT_EQ(0,iflag_);
       ASSERT_EQ(0,iflag_);
       SUBR(sdMat_print)(mat2_,&iflag_);
       iflag_=iflag_in;
-      SUBR(sdMat_times_sdMat)(-st::one(),mat1_,mat3_,st::one(),mat2_, &iflag_);
+      SUBR(sdMat_times_sdMat)(-st::one(),mat3_,mat1_,st::one(),mat2_, &iflag_);
       ASSERT_EQ(0,iflag_);
       SUBR(sdMat_print)(mat1_,&iflag_);
       SUBR(sdMat_print)(mat3_,&iflag_);

@@ -206,7 +206,7 @@ public:
       SUBR(mvec_from_device)(vec2_,&iflag_);
       ASSERT_EQ(0,iflag_);
 
-      // SVQB will return a block with the first <dim0> columns zero,
+      // SVQB will return a block with the last <dim0> columns zero,
       // and the remaining orthonormal
       int dim0=1;
       _ST_* vec2_col0=NULL;
@@ -215,7 +215,6 @@ public:
 #else
       vec2_col0 = vec2_vp_+dim0*lda_;
 #endif
-      // the factor 2 in releps here is because otherwise fails the test by a fraction of releps
       ASSERT_EQ(mt::one(), ArrayEqual(vec2_col0,nloc_,nvec_-1,lda_,stride_,st::zero(),vflag_));
       if (nvec_>1)
       {

@@ -7,6 +7,21 @@
 /*                                                                                         */
 /*******************************************************************************************/
 
+// we can use either a Cholesky factorization of the Gram matrix V'BV (CholQR) or the SVQB algorithm,
+// the required transformation matrices are defined in the following two helpr functions.
+//
+// Our orthog routines (e.g. orthogrr below) should deliver the relation
+//
+//      Q*R_1 = V - W*R_2 with R_2=W'*V
+//
+// However, we can only construct R_1 as the inverse of the Cholesky factor, so we use CholQR here.
+// The core of the SVQB algorithm delivers a matrix B s.t. Q=V*B, and the left pseudo-inverse B+ s.t.
+// (B+)B=[I 0; 0 0] with zeros if V does not have full rank (a \rank-r identity matrix'), so we can't
+// recover V from Q=VB and B+.
+
+// On input: RR=V'V (the m x m Gramian 'M')
+// returns: RR and R_1 s.t. M=RR'*RR, R_1*RR is a 'rank-r identity matrix', and Q=V*R_1 is orthonormal
+// (up to the last m-r columns, r being the rank of V on input), which are zero.
 static void SUBR(orthogrr_cholrr)(TYPE(sdMat_ptr) RR, TYPE(sdMat_ptr) R_1, int* rank, _MT_ rankTol, int* iflag)
 {
   PHIST_ENTER_FCN(__FUNCTION__);
@@ -24,8 +39,10 @@ static void SUBR(orthogrr_cholrr)(TYPE(sdMat_ptr) RR, TYPE(sdMat_ptr) R_1, int* 
 //PHIST_CHK_IERR(SUBR(sdMat_print)(R_1,iflag),*iflag);
 }
 
-
-static void SUBR(orthogrr_svqb)(TYPE(sdMat_ptr) RR, TYPE(sdMat_ptr) R_1, int* rank, _MT_ rankTol, int* iflag)
+// given the Gramian M=V'Vv in RR, returns B s.t. Q=V*B is orthonormal (up to rank deficiency).
+// M will be overwritten with the right pseudo-inverse of B s.t. M*B on exit is a 'rank r identity matrix'.
+// Note that we cannot reproduce V as a product of Q and the pinv of B in the rank-deficient case.
+static void SUBR(orthogrr_svqb)(TYPE(sdMat_ptr) M, TYPE(sdMat_ptr) B, int* rank, _MT_ rankTol, int* iflag)
 {
   PHIST_ENTER_FCN(__FUNCTION__);
 #include "phist_std_typedefs.hpp"
