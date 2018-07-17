@@ -125,8 +125,8 @@ class PhistDriversTest(unittest.TestCase):
 # note that we're rather generous here because the way the KACZ/CARP kernel is implemented has some influence on the convergence speed.
 # and the test should also work with more MPI processes and different variants.
         with io.FileIO("test_zshift.txt", "w") as file:
-            file.write("1\n")
-            file.write("3.1415926       0.1234567")
+            file.write(bytes('1\n', 'UTF-8'))
+            file.write(bytes('3.1415926       0.1234567','UTF-8'))
         
         test_cmd = './drivers/phist_carp_cg spinSZ14 test_zshift.txt 1 1 1e-6 350 1.2'
         result=RunTest(test_name,test_cmd)
