@@ -42,9 +42,6 @@ public:
       iflag_in=PHIST_ROBUST_REDUCTIONS;
 #endif
 
-SUBR(sdMat_print)(mat1_,&iflag_);
-ASSERT_EQ(0,iflag_);
-
       iflag_=iflag_in;
       _MT_ rankTol=mt::rankTol(iflag_in==PHIST_ROBUST_REDUCTIONS);
       _MT_ nrmsV[nrows_];
@@ -70,19 +67,15 @@ ASSERT_EQ(0,iflag_);
       for (int i=0; i<rank; i++) mat2_vp_[i*m_lda_+i]=ST(1);
       SUBR(sdMat_to_device)(mat2_,&iflag_);
       ASSERT_EQ(0,iflag_);
-      SUBR(sdMat_print)(mat2_,&iflag_);
       iflag_=iflag_in;
       SUBR(sdMat_times_sdMat)(-st::one(),mat3_,mat1_,st::one(),mat2_, &iflag_);
       ASSERT_EQ(0,iflag_);
-      SUBR(sdMat_print)(mat1_,&iflag_);
-      SUBR(sdMat_print)(mat3_,&iflag_);
-      SUBR(sdMat_print)(mat2_,&iflag_);
       // note that we will get some zeros on the diagonal if the matrix doesn't have full rank,
       // hence the non-standard test for equality below.
 #ifdef PHIST_HIGH_PRECISION_KERNELS
       ASSERT_REAL_EQ(MT(1),SdMatEqual(mat2_,st::zero()));
 #else
-      ASSERT_NEAR(MT(1),SdMatEqual(mat2_,st::zero()),10*mt::eps());
+      ASSERT_NEAR(MT(1),SdMatEqual(mat2_,st::zero()),50*mt::eps());
 #endif
   }
 
@@ -685,7 +678,7 @@ PrintSdMat(PHIST_DEBUG,"reconstructed X",mat2_vp_,m_lda_,1,mpi_comm_);
       SUBR(sdMat_times_sdMatT)(st::one(),A,AplusT,st::zero(),mat_tmp,&iflag_);
       ASSERT_EQ(0,iflag_);
 
-      EXPECT_NEAR(mt::one(),mt::one()+MTest::symmetry_check(mat_tmp,&iflag_),5*nrows_*nrows_*mt::eps());
+      EXPECT_NEAR(mt::one(),mt::one()+MTest::symmetry_check(mat_tmp,&iflag_),10*nrows_*nrows_*mt::eps());
       SUBR(sdMat_delete)(mat_tmp,&iflag_);
       ASSERT_EQ(0,iflag_);
       
