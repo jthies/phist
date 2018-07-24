@@ -182,7 +182,7 @@ else
   PHIST_ICHK_IERR(SUBR(create_matrix)(&A,comm,problem,&iflag), iflag);
 #ifdef PHIST_HAVE_OPENMP
   t_create=omp_get_wtime()-t_create;
-  PHIST_SOUT(PHIST_INFO,"Time requireed to create matrix: %8.4es\n",t_create);
+  PHIST_SOUT(PHIST_INFO,"Time required to create matrix: %8.4es\n",t_create);
 #endif  
   // create an operator from A
   linearOp_ptr opA = new TYPE(linearOp);
@@ -322,7 +322,7 @@ else
   PHIST_SOUT(PHIST_INFO, "subspacejada terminated after %d iterations and calculated %d eigenvalues (%s).\n", 
         nIter, nConvergedEig, (nIter<=opts.maxIters && nConvergedEig>=opts.numEigs)?"SUCCESS":"FAILURE");
 #ifdef PHIST_HAVE_OPENMP
-  PHIST_SOUT(PHIST_INFO,"elapsed time: %8.4es\n",t_jada);
+  PHIST_SOUT(PHIST_INFO,"Time: required by subspacejada: %8.4es\n",t_jada);
 #endif
   PHIST_SOUT(PHIST_INFO, "\n deviation from (B-)orthogonality in Q: %8.4e\t(%s)\n",ortho_err,ortho_err<100*mt::eps()?"SUCCESS":"FAILURE");
 
