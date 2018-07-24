@@ -181,7 +181,7 @@ else
 #endif
   PHIST_ICHK_IERR(SUBR(create_matrix)(&A,comm,problem,&iflag), iflag);
 #ifdef PHIST_HAVE_OPENMP
-  omp_get_wtime()-t_create;
+  t_create=omp_get_wtime()-t_create;
   PHIST_SOUT(PHIST_INFO,"Time requireed to create matrix: %8.4es\n",t_create);
 #endif  
   // create an operator from A
