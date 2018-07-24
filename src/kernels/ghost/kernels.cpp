@@ -44,8 +44,8 @@ namespace phist
 //! subsequent calls. The resulting double can be passed as 'weight' parameter to ghost.
 double get_proc_weight(double force_value)
 {
-  static double proc_weight=-1.0;
-//  static double proc_weight=1.0; // variable partition sizes introduce lots of trouble with tests,
+//  static double proc_weight=-1.0;
+  static double proc_weight=1.0; // variable partition sizes introduce lots of trouble with tests,
                                  // so we disable this feature for the moment (cf. issue #204)
   int iflag;
   if (force_value>0.0) proc_weight=force_value;
