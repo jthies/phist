@@ -162,11 +162,11 @@ module matpde3d_module
   real(kind=8), save :: hx,hy,hz,hy2,hz2,ra,rb,raz,rbz
   
   ! for the octree ordering. If set to -1, no octree ordering will be used
-  integer, save :: level
+  integer(KIND=8), save :: level
 
   ! for the 'D' test cases (nonlinear scalar PDEs), we allow setting the local
   ! part of the 3D array U before calls to MATPDE3D_rowFunc
-  integer, save :: imin, imax, jmin, jmax, kmin, kmax
+  integer(kind=8), save :: imin, imax, jmin, jmax, kmin, kmax
   
   ! for D* test cases
   REAL(kind=8), dimension(:,:,:), ALLOCATABLE, SAVE :: Uin
