@@ -193,7 +193,8 @@ int get_perm_flag(int iflag, int outlev)
     // save memory by not duplicating the matrix (otherwise it is stored as a whole and as local/non-local part)
     oflag|=GHOST_SPARSEMAT_NOT_STORE_SPLIT;
   }
-
+//TROET
+oflag|=GHOST_SPARSEMAT_NOT_STORE_SPLIT;
   return oflag;
 }
 
