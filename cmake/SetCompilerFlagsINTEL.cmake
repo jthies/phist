@@ -2,9 +2,9 @@
   set (CMAKE_CXX_FLAGS      "-align -Wno-unused-variable ${MKL_FLAG}")
   set (CMAKE_Fortran_FLAGS  "-fpp ${MKL_FLAG} -align array64byte")
 
-  set (CMAKE_C_FLAGS_RELEASE        "-O3 -no-prec-div -xHOST")
-  set (CMAKE_CXX_FLAGS_RELEASE      "-O3 -no-prec-div -xHOST")
-  set (CMAKE_Fortran_FLAGS_RELEASE  "-O3 -no-prec-div -xHOST")
+  set (CMAKE_C_FLAGS_RELEASE        "-O2 -prec-div -xHOST")
+  set (CMAKE_CXX_FLAGS_RELEASE      "-O2 -prec-div -xHOST")
+  set (CMAKE_Fortran_FLAGS_RELEASE  "-O3 -prec-div -xHOST")
 
   set (CMAKE_C_FLAGS_RELWITHDEBINFO       "${CMAKE_C_FLAGS_RELEASE}       -debug")
   set (CMAKE_CXX_FLAGS_RELWITHDEBINFO     "${CMAKE_CXX_FLAGS_RELEASE}     -debug")
