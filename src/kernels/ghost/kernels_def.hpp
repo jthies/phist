@@ -2247,7 +2247,7 @@ extern "C" void SUBR(sparseMat_create_fromRowFuncWithConstructor)(TYPE(sparseMat
 
   mtraits.flags = (ghost_sparsemat_flags)(mtraits.flags|get_perm_flag(iflag_in,outlev));
 
-  PHIST_SOUT(outlev, "Creating sparseMat with SELL-%d-%d format.\n", mtraits.C, mtraits.sortScope);
+  PHIST_SOUT(outlev, "Creating sparseMat with SELL-%d-%d format and flags=%d.\n", mtraits.C, mtraits.sortScope, mtraits.flags);
 
   mtraits.datatype = st::ghost_dt;
   // passing in context==NULL means: create a new context and maps. This happens
