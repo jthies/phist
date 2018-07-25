@@ -28,8 +28,9 @@ extern "C" {
 
 typedef enum {
 
-  BKS=0, // block Krylov Schur
-  TMD=1  // TraceMin Davidson
+  BKS=0,   // block Krylov Schur
+  TMD=1,   // TraceMin Davidson
+  LOBPCG=2 // locally optimal block preconditioned Conjugate Gradients
 } phist_anasaziType;
 
 #define PHIST_CLASSFILE_DEF "phist_anasazi_decl.h"

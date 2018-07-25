@@ -8,7 +8,7 @@
 /*******************************************************************************************/
 
 // implementation of CG on several systems simultaneously
-extern "C" void SUBR(blockedPCG_iterate)(TYPE(const_linearOp_ptr) Aop, TYPE(const_linearOp_ptr) Pop,
+extern "C" void SUBR(blockedPCG)(TYPE(const_linearOp_ptr) Aop, TYPE(const_linearOp_ptr) Pop,
         TYPE(const_mvec_ptr) rhs, TYPE(mvec_ptr) sol_in, int numSys, int* nIter,
         _MT_ const tol[], int* iflag)
 {
@@ -80,7 +80,7 @@ extern "C" void SUBR(blockedPCG_iterate)(TYPE(const_linearOp_ptr) Aop, TYPE(cons
       MT rnrm=std::sqrt(std::abs(rr[j]/rho0[j]));
       PHIST_SOUT(PHIST_INFO,"\t%e",rnrm);
       firstConverged = firstConverged || (rnrm < tol[j]);
-    }	
+    }
     PHIST_SOUT(PHIST_INFO,"\n");
     if( firstConverged || *nIter == maxIter ) break;
     // rho_i = r_i*z_i
@@ -92,7 +92,7 @@ extern "C" void SUBR(blockedPCG_iterate)(TYPE(const_linearOp_ptr) Aop, TYPE(cons
       beta[j] = rho[j] / rho_prev[j];
   
     // p_(i+1) = z_i + beta_i*p_i
-	PHIST_CHK_IERR(SUBR(mvec_vscale)(p,&beta[0],iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(mvec_vscale)(p,&beta[0],iflag),*iflag);
     PHIST_CHK_IERR(SUBR(mvec_add_mvec)(st::one(),z,st::one(),p,iflag),*iflag);
 
     // q_(i+1) = A*p_(i+1)
@@ -116,15 +116,21 @@ extern "C" void SUBR(blockedPCG_iterate)(TYPE(const_linearOp_ptr) Aop, TYPE(cons
   }
 }
 
-extern "C" void SUBR( PCG_iterate ) (TYPE(const_linearOp_ptr) Aop, TYPE(const_linearOp_ptr) Pop,
-		TYPE(const_mvec_ptr) rhs, TYPE(mvec_ptr) sol_in, int* nIter, _MT_ const tol, int* iflag)
+extern "C" void SUBR( PCG ) (TYPE(const_linearOp_ptr) Aop, TYPE(const_linearOp_ptr) Pop,
+        TYPE(const_mvec_ptr) rhs, TYPE(mvec_ptr) sol_in, int* nIter, _MT_ const tol, int* iflag)
 {
 #include "phist_std_typedefs.hpp"
   *iflag = 0;
   PHIST_ENTER_FCN(__FUNCTION__);
   
-  PHIST_CHK_IERR(SUBR(blockedPCG_iterate)(Aop, Pop, rhs, sol_in, 1, nIter, &tol, iflag),*iflag);
+  int num_sol,num_rhs;
+  PHIST_CHK_IERR(SUBR(mvec_num_vectors)(rhs,&num_rhs,iflag),*iflag);
+  PHIST_CHK_IERR(SUBR(mvec_num_vectors)(sol_in,&num_sol,iflag),*iflag);
+  PHIST_CHK_IERR(num_sol==num_rhs?0: PHIST_INVALID_INPUT, *iflag);
+  _MT_ vtol[num_rhs];
+  for (int i=0; i<num_rhs; i++) vtol[i]=tol;
+  PHIST_CHK_IERR(SUBR(blockedPCG)(Aop, Pop, rhs, sol_in, 1, nIter, &tol, iflag),*iflag);
 
-}		
+}
 
 

@@ -273,6 +273,7 @@ void phist_Dprec_forwardSubst(const double *__restrict__ r, const double *__rest
 // s.t. Q has exactly rank *rank.
 void phist_Dprec_qb(double *__restrict__ a, double *__restrict__ aC, 
                     double *__restrict__ bi, double *__restrict__ biC,
+                    double *__restrict__ D,
                     phist_lidx n, phist_lidx lda, int *rank, double rankTol, int* iflag)
 {
 #ifdef PHIST_HAVE_MPACK_QD
@@ -290,6 +291,7 @@ void phist_Dprec_qb(double *__restrict__ a, double *__restrict__ aC,
     {
       DOUBLE_4SQRT_NEWTONRAPHSON_FMA(a[i*lda+i],aC[i*lda+i],d[i],dC[i],di[i],diC[i]);
     }
+    if (D!=NULL) D[i]=d[i];
   }
   
   // scale input matrix from left and right => diagonal elements 1

@@ -22,6 +22,8 @@
 #include "phist_MemOwner.hpp"
 #include "phist_sdFact.h"
 
+#include "phist_ScalarTraits.hpp"
+
 #ifdef PHIST_HAVE_SP
 #include "phist_gen_s.h"
 #include "phist_sdFact_kernels_def.hpp"

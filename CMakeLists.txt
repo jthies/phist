@@ -7,23 +7,19 @@ cmake_minimum_required(VERSION 3.8.0)
 #
 # - anything prefixed by PHIST_ENABLE or PHIST_USE will enter the CMake Cache but not the config file,
 #   so it won't be directly visible in the source code
-# - anything prefixed by PHIST_HAVE can be seen int he phist_config.h file
+# - anything prefixed by PHIST_HAVE can be seen in the phist_config.h file
 # - other things should *not* go into the cache unless they come from another library via find_package.
 #
 # - try to mark things that are very detailed (like details on the timing behavior etc.) as ADVANCED so that
 #   the CMake cache seen when first using ccmake stays reasonable
 
-list (APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/")
-#list (APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/Trilinos")
+#######################################################################
+# PROJECT SETTINGS
+#######################################################################
 
 # Define some custom variables
 project(phist C CXX Fortran)
 
-option(PHIST_USE_CCACHE "Enable/disable using ccache to speed up repeated builds if you use the GNU compiler and ccache is found." ON)
-option(PHIST_TRY_TO_PIN_THREADS "Try to pin the threads to cores, the exact implementation depends on the kernel library, hence the 'TRY'. A kernel library may or may not bind the threads without further warnings." On)
-option(PHIST_TRY_TO_RESPECT_NUMA "Try to first-touch multi-vector data after allocation, makes the code run better on NUMA systems but temporary vectors become more expensive." On)
-
-SET(CMAKE_SKIP_INSTALL_ALL_DEPENDENCY TRUE)
 # here an odd version minor (e.g. 1.1.x, 1.3.x etc.) indicates a development version
 # with unstable functionality, an even version minor (1.0.x, 1.2.x etc.) a stable version.
 # Stable versions will return *iflag=-99 (not implemented) if a function is called that is
@@ -44,91 +40,44 @@ else()
     SET(PHIST_GIT_REVISION "\"${PHIST_VERSION}\"")
 endif()
 
-if("${CMAKE_BUILD_TYPE}" STREQUAL "")
-  set(CMAKE_BUILD_TYPE "Release" CACHE STRING "Choose the type of build, options are: Release, RelWithDebug, Debug" FORCE)
-else()
-  set(CMAKE_BUILD_TYPE "${CMAKE_BUILD_TYPE}" CACHE STRING "Choose the type of build, options are: Release, RelWithDebug, Debug" FORCE)
-endif()
+##########################################################################################
+# GENERAL CMAKE SETTINGS
+##########################################################################################
 
-if (NOT BUILD_SHARED_LIBS)
-    message(STATUS "No library type specified. Setting it to shared.")
-    set(BUILD_SHARED_LIBS ON CACHE BOOL "Set to ON/OFF for shared/static library build.")
-endif()
+list (APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/")
+
+# install target should not depend on 'make all': you can do e.g. 'make libs; make install'
+SET(CMAKE_SKIP_INSTALL_ALL_DEPENDENCY TRUE)
+
+set(CMAKE_BUILD_TYPE "Release" CACHE STRING "Choose the type of build, options are: Release, RelWithDebug, Debug")
+
+set(BUILD_SHARED_LIBS ON CACHE BOOL "Set to ON/OFF for shared/static library build.")
 
 set(CMAKE_C_STANDARD 99)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 
-if (PHIST_KERNEL_LIB STREQUAL "tpetra")
-  set(CMAKE_CXX_STANDARD 11)
-else()
-  set(CMAKE_CXX_STANDARD 11)
-endif()
+set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-if (PHIST_KERNEL_LIB STREQUAL "eigen")
-  option(PHIST_ENABLE_MPI "Enable MPI within PHIST" OFF)
-else()
-  option(PHIST_ENABLE_MPI "Enable MPI within PHIST" ON)
-endif()
-option(PHIST_ENABLE_OPENMP "Enable OpenMP within PHIST" ON)
-option(PHIST_USE_LIKWID "Enable instrumentation for likwid-perfctr" OFF)
-option(PHIST_BUILD_MIC "Build for Intel MIC" OFF)
+##########################################################################################
+# OPTIONS FOR COMPILE AND RUN TIME
+##########################################################################################
 
-option(PHIST_HAVE_SSE  "enable SSE SIMD intrinsics in PHIST code" ON)
-option(PHIST_HAVE_AVX  "enable AVX SIMD intrinsics in PHIST code" ON)
-option(PHIST_HAVE_AVX2 "enable AVX2 SIMD intrinsics in PHIST code" OFF)
-option(PHIST_HAVE_AVX512 "enable AVX512 SIMD intrinsics in PHIST code" ${PHIST_BUILD_MIC})
+# setup which kernel library is being used.
+set(PHIST_KERNEL_LIB "builtin" CACHE STRING "Select underlying kernel libraries for phist (builtin|ghost|epetra|tpetra|magma|petsc|eigen)")
+message(STATUS "PHIST kernel library: " ${PHIST_KERNEL_LIB})
 
-if (PHIST_BUILD_MIC)
-  set(PHIST_HAVE_SSE OFF)
-endif()
+include(cmake/PHIST_Options.cmake)
 
-# reproducible random number generator?
-# TODO - this is not quite working yet, once it is, make it the default
-option(PHIST_BUILTIN_RNG
-        "use random number generator provided by PHIST, which may be solower than the one implemented by the kernel lib. On the other hand, it gives reproducible results across runs, independent of the exact runtime setup."
-        ON)
+########################################################################
+# XSDK OPTIONS
+########################################################################
 
-# use GHOST if found (must be ON if ghost is the kernel lib)
-option(PHIST_USE_GHOST
-        "try to find the GHOST library even if it is not the kernel lib" 
-        OFF)
+# The xSDK is a collection of open source HPC libraries that can work together.
+# It requires some special CMake behavior that is built ontop of PHIST's by this include file.
+# It checks the XSDK_* options and sets corresponding PHIST_* options to be used below.
 
-# try to find MPACK for high precision lapack routines
-option(PHIST_USE_MPACK
-        "try to find the MPACK library" 
-        ON)
-
-# try to find third-party solver packages (depending on kernel lib),
-# for instance for epetra/tpetra and GHOST we have an interface to
-# Anasazi and Belos.
-option(PHIST_USE_SOLVER_TPLS
-        "try to find supported third-party libraries that implement iterative methods for the kernel library used."
-        ON)
-
-# try to find third-party preconditioning packages (depending on kernel lib),
-# for instance if the kernel lib is epetra, look for Ifpack and ML.
-option(PHIST_USE_PRECON_TPLS
-        "try to find supported third-party libraries that implement preconditioners for the kernel library used."
-        ON)
-
-# try to find third-party partitioning packages (depending on kernel lib),
-# for instance if the kernel lib is epetra, look for Isorropia, builtin supports ParMETIS 
-# and ColPack etc.
-option(PHIST_USE_GRAPH_TPLS
-        "try to find supported third-party libraries that implement graph partitioning and reordering for the kernel library used."
-        ON)
-
-# this option allows to disable all Trilinos libraries at once, overriding
-# any of the choices PHIST_USE_*_TPLS
-option(PHIST_USE_TRILINOS_TPLS
-        "enable/disable using any optional Trilinos libraries like Zoltan, Belos, Kokkos etc."
-        ON)
-
-# option for using checkpoint/restart + automatic fault-tolerance features
-option(PHIST_USE_CRAFT
-                "enables/desables the use of checkpoint/restart and auto FT features using CRAFT"
-                OFF)
+include(cmake/xSDK_Options.cmake)
 
 ########################################################################
 # try to enable CCache as a 'compiler launcher'
@@ -141,31 +90,6 @@ if (CMAKE_C_COMPILER_ID STREQUAL "GNU")
     set_property(GLOBAL PROPERTY RULE_LAUNCH_COMPILE ccache)
     set_property(GLOBAL PROPERTY RULE_LAUNCH_LINK ccache)
   endif()
-endif()
-
-########################################################################
-# xSDK options
-########################################################################
-
-option(USE_XSDK_DEFAULTS "implement the default behavior suggested for xSDK packages (see https://xsdk.info)" OFF)
-
-option(XSDK_ENABLE_CXX
-        "generate C++ bindings for PHIST"
-        ON)
-
-option(XSDK_ENABLE_Fortran
-        "generate Fortran 2003 bindings for PHIST"
-        OFF)
-
-if (USE_XSDK_DEFAULTS)
-  set (XSDK_INDEX_SIZE 64 CACHE INTEGER "data type for global indices (32/64), default 64.")
-  #otherwise, leave it to the kernel library to decide.
-endif()
-
-if (XSDK_INDEX_SIZE EQUAL 32)
-  set(PHIST_FORCE_32BIT_GIDX_DEFAULT ON)
-elseif (XSDK_INDEX_SIZE EQUAL 64)
-  set(PHIST_FORCE_32BIT_GIDX_DEFAULT OFF)
 endif()
 
 ########################################################################
@@ -286,18 +210,12 @@ endif()
 ########################################################################
 # We need Python e.g. for generating the Fortran and C++ bindings      #
 ########################################################################
-find_package(PythonInterp 3 REQUIRED)
-########################################################################
-
-# output behavior
-if(CMAKE_BUILD_TYPE MATCHES "Release")
-        set(PHIST_OUTLEV 2 CACHE STRING "PHIST verbosity (release 2, 'INFO')")
-else()
-        set(PHIST_OUTLEV 4 CACHE STRING "PHIST verbosity (debug 4, 'EXTREME')")
-endif()
-
-if(CMAKE_BUILD_TYPE MATCHES "Debug")
-  set(PHIST_TESTING ON CACHE STRING "Enable potentially expensive checks in the code")
+find_package(PythonInterp 3)
+if (NOT PythonInterp_FOUND)
+  message(WARNING "Did not find a Python3 interpreter, will disable Fortran, C++ and Python bindings and skip some tests.")
+  set(XSDK_ENABLE_Fortran OFF)
+  set(XSDK_ENABLE_CXX OFF)
+  set(DISABLE_PYTHON_TESTS 1)
 endif()
 
 ##############################################################################
@@ -307,194 +225,22 @@ endif()
 if (CMAKE_C_COMPILER_ID STREQUAL "GNU")
 
   message(STATUS "using GNU compiler flags")
-
-  set (CMAKE_Fortran_FLAGS  "-cpp -ffree-line-length-none")
-  if( PHIST_ENABLE_OPENMP )
-    set(PHIST_HAVE_OPENMP 1)
-    if (CMAKE_C_COMPILER_VERSION VERSION_LESS 4.9)
-      set (CMAKE_C_FLAGS        "${CMAKE_C_FLAGS}       -fopenmp")
-      set (CMAKE_CXX_FLAGS      "${CMAKE_CXX_FLAGS}     -fopenmp")
-      set (CMAKE_Fortran_FLAGS  "${CMAKE_Fortran_FLAGS} -fopenmp")
-    else ()
-      set (CMAKE_C_FLAGS        "${CMAKE_C_FLAGS}       -fopenmp -fopenmp-simd")
-      set (CMAKE_CXX_FLAGS      "${CMAKE_CXX_FLAGS}     -fopenmp -fopenmp-simd")
-      set (CMAKE_Fortran_FLAGS  "${CMAKE_Fortran_FLAGS} -fopenmp -fopenmp-simd")
-    endif ()
-  endif()
-
-  # phist may use some SIMD instructions for e.g. the stream benchmark or double-double operations  
-  if (PHIST_HAVE_SSE)
-    set (CMAKE_C_FLAGS  "${CMAKE_C_FLAGS} -msse")
-  endif()
-  if (PHIST_HAVE_AVX)
-    set (CMAKE_C_FLAGS  "${CMAKE_C_FLAGS} -mavx")
-  endif()
-  if (PHIST_HAVE_AVX2)
-    set (CMAKE_C_FLAGS  "${CMAKE_C_FLAGS} -mavx2 -mfma")
-  endif()
-  if (PHIST_HAVE_AVX512)
-    set (CMAKE_C_FLAGS  "${CMAKE_C_FLAGS} -mavx512f")
-  endif()
-  if (PHIST_HAVE_AVX512)
-    set (CMAKE_C_FLAGS  "${CMAKE_C_FLAGS} -mavx512f")
-  endif()
-
-  if(PHIST_HAVE_MKL)
-    set (CMAKE_C_FLAGS        "${CMAKE_C_FLAGS}       -DMKL_LP64")
-    set (CMAKE_CXX_FLAGS      "${CMAKE_CXX_FLAGS}     -DMKL_LP64")
-  endif()
-
-  # -ffast-math kills high precision stuff!
-  set(FAST_MATH "-fno-math-errno -ffinite-math-only -fno-signed-zeros -fno-trapping-math")
-  set (CMAKE_C_FLAGS_RELEASE        "-O3 ${FAST_MATH} -march=native")
-  set (CMAKE_CXX_FLAGS_RELEASE      "-O2")
-  set (CMAKE_Fortran_FLAGS_RELEASE  "-march=native -O3 ${FAST_MATH}")
-
-  set (CMAKE_C_FLAGS_RELWITHDEBINFO       "${CMAKE_C_FLAGS_RELEASE}       -g")
-  set (CMAKE_CXX_FLAGS_RELWITHDEBINFO     "${CMAKE_CXX_FLAGS_RELEASE}     -g")
-  set (CMAKE_Fortran_FLAGS_RELWITHDEBINFO "${CMAKE_Fortran_FLAGS_RELEASE} -g")
-
-  if (CMAKE_C_COMPILER_VERSION VERSION_LESS 4.8)
-    set (CMAKE_C_FLAGS_DEBUG       "-O0 -g -Wall -Wextra -Wno-format -Wno-sign-compare -Wno-unused-variable -Wno-unused-parameter")
-    set (CMAKE_CXX_FLAGS_DEBUG     "-O0 -g -Wall -Wextra -Wno-format -Wno-sign-compare -Wno-unused-variable -Wno-unused-parameter")
-    set (CMAKE_Fortran_FLAGS_DEBUG "-O0 -g -Wall -fcheck=all -fstack-protector-all")
-  else ()
-    set (CMAKE_C_FLAGS_DEBUG       "-O0 -g -fstack-protector-all -Wall -Wextra -Wno-format -Wno-sign-compare -Wno-unused-variable -Wno-unused-parameter -Wno-unused-local-typedefs")
-    set (CMAKE_CXX_FLAGS_DEBUG     "-O0 -g -fstack-protector-all -Wall -Wextra -Wno-format -Wno-sign-compare -Wno-unused-variable -Wno-unused-parameter -Wno-unused-local-typedefs")
-    set (CMAKE_Fortran_FLAGS_DEBUG "-O0 -g -Wall -fcheck=all -fstack-protector-all")
-  endif ()
-
-  if (NOT CMAKE_C_COMPILER_VERSION VERSION_LESS 4.8)
-    set(GCC_SANITIZE "" CACHE STRING "What should be sanitized by GCC for a Debug build? (address, thread, undefined, leak or leave empty)")
-    if (GCC_SANITIZE)
-      message(STATUS "Enabled ${GCC_SANITIZE}-sanitizer")
-      if(GCC_SANITIZE STREQUAL "thread")
-        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fsanitize=${GCC_SANITIZE} -fPIC -pie")
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=${GCC_SANITIZE} -fPIC -pie")
-        set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -fsanitize=${GCC_SANITIZE} -fPIC -pie")
-      else()
-        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fsanitize=${GCC_SANITIZE}")
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=${GCC_SANITIZE}")
-        set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -fsanitize=${GCC_SANITIZE}")
-      endif()
-    endif()
-  endif()
-
-
+  include(cmake/SetCompilerFlagsGNU.cmake)
+  
 elseif (CMAKE_C_COMPILER_ID STREQUAL "Intel")
 
   message(STATUS "using INTEL compiler flags")
-
-  set (CMAKE_C_FLAGS        "-align -Wno-unused-variable ${MKL_FLAG}")
-  set (CMAKE_CXX_FLAGS      "-align -Wno-unused-variable ${MKL_FLAG}")
-  set (CMAKE_Fortran_FLAGS  "-fpp ${MKL_FLAG} -align array64byte")
-
-  if( PHIST_ENABLE_OPENMP )
-    set(PHIST_HAVE_OPENMP 1)
-    set (CMAKE_C_FLAGS        "${CMAKE_C_FLAGS}       -qopenmp")
-    set (CMAKE_CXX_FLAGS      "${CMAKE_CXX_FLAGS}     -qopenmp")
-    set (CMAKE_Fortran_FLAGS  "${CMAKE_Fortran_FLAGS} -qopenmp")
-  endif()
-
-  if (PHIST_BUILD_MIC)
-      set (CMAKE_C_FLAGS_RELEASE        "-O3 -no-prec-div -xmic-avx512")
-      set (CMAKE_CXX_FLAGS_RELEASE      "-O3 -no-prec-div -xmic-avx512")
-      set (CMAKE_Fortran_FLAGS_RELEASE  "-O3 -no-prec-div -xmic-avx512")
-  else()
-      set (CMAKE_C_FLAGS_RELEASE        "-O3 -no-prec-div -xHOST")
-      set (CMAKE_CXX_FLAGS_RELEASE      "-O3 -no-prec-div -xHOST")
-      set (CMAKE_Fortran_FLAGS_RELEASE  "-O3 -no-prec-div -xHOST")
-  endif()
-
-  set (CMAKE_C_FLAGS_RELWITHDEBINFO       "${CMAKE_C_FLAGS_RELEASE}       -debug")
-  set (CMAKE_CXX_FLAGS_RELWITHDEBINFO     "${CMAKE_CXX_FLAGS_RELEASE}     -debug")
-  set (CMAKE_Fortran_FLAGS_RELWITHDEBINFO "${CMAKE_Fortran_FLAGS_RELEASE} -debug")
-
-#  set (CMAKE_C_FLAGS_DEBUG        "-check-pointers=rw -fstack-protector -w2 -debug -traceback")
-#  set (CMAKE_CXX_FLAGS_DEBUG      "-check-pointers=rw -w2 -fstack-protector -debug -traceback")
-  set (CMAKE_C_FLAGS_DEBUG        "-fstack-protector -w2 -debug -traceback")
-  set (CMAKE_CXX_FLAGS_DEBUG      "-fstack-protector -w2 -debug -traceback")
-  set (CMAKE_Fortran_FLAGS_DEBUG  "-check all -check noarg_temp_created -debug -traceback")
-  if (PHIST_BUILD_MIC)
-      set (CMAKE_C_FLAGS_DEBUG        "-xmic-avx512 -check-pointers=rw -check=uninit,stack -fstack-protector -w2 -debug -traceback")
-      set (CMAKE_CXX_FLAGS_DEBUG      "-xmic-avx512 -check-pointers=rw -check=uninit,stack -fstack-protector -w2 -debug -traceback")
-      set (CMAKE_Fortran_FLAGS_DEBUG  "-xmic-avx512 -check all -debug -traceback")
-  endif()
-  # this is for some reason required with Intel 15 on Emmy:
-  set (CMAKE_EXE_LINKER_FLAGS_DEBUG "-lifcore -lifport")
-
-  # for ipo
-  # melven: probably not useful or even dangerous?
-  #  kernel routines should probably best optimized individually;
-  #  for builtin kernels: I'm passing arrays as scalars in builtin kernels (call by reference),
-  #               because the kernel routines would be too complex otherwise
-  #               (and they should be fast and not complex!).
-  #               The compiler best shouldn't be able to know about this...
-  #set_property(DIRECTORY . PROPERTY INTERPROCEDURAL_OPTIMIZATION 1)
+  include(cmake/SetCompilerFlagsINTEL.cmake)
 
 elseif (CMAKE_C_COMPILER_ID STREQUAL "PGI")
 
   message(STATUS "using PGI compiler flags")
-
-  set (CMAKE_Fortran_FLAGS  "-Mpreprocess")
-  if( PHIST_ENABLE_OPENMP )
-    set(PHIST_HAVE_OPENMP 1)
-    set (CMAKE_C_FLAGS        "${CMAKE_C_FLAGS}       -mp=align")
-    set (CMAKE_CXX_FLAGS      "${CMAKE_CXX_FLAGS}     -mp=align")
-    set (CMAKE_Fortran_FLAGS  "${CMAKE_Fortran_FLAGS} -mp=align")
-  endif()
-
-  if(PHIST_HAVE_MKL)
-    set (CMAKE_C_FLAGS        "${CMAKE_C_FLAGS}       -DMKL_LP64")
-    set (CMAKE_CXX_FLAGS      "${CMAKE_CXX_FLAGS}     -DMKL_LP64")
-  endif()
-
-  # -ffast kills high precision stuff!
-  set (CMAKE_C_FLAGS_RELEASE        "-O4 -fast -Mvect=levels:10")
-  set (CMAKE_CXX_FLAGS_RELEASE      "-O2")
-  set (CMAKE_Fortran_FLAGS_RELEASE  "-O4 -fast -Mvect=levels:10")
-
-  set (CMAKE_C_FLAGS_RELWITHDEBINFO       "${CMAKE_C_FLAGS_RELEASE}       -g")
-  set (CMAKE_CXX_FLAGS_RELWITHDEBINFO     "${CMAKE_CXX_FLAGS_RELEASE}     -g")
-  set (CMAKE_Fortran_FLAGS_RELWITHDEBINFO "${CMAKE_Fortran_FLAGS_RELEASE} -g")
-
-  set (CMAKE_C_FLAGS_DEBUG       "-O0 -g")#-O0 -g -Mbounds -Mdwarf3")
-  set (CMAKE_CXX_FLAGS_DEBUG     "-O0")#-O0 -g -Mbounds -Mdwarf3")
-  set (CMAKE_Fortran_FLAGS_DEBUG "-O0 -g")#-O0 -g -Mbounds -Mdwarf3")
+  include(cmake/SetCompilerFlagsPGI.cmake)
 
 elseif (CMAKE_C_COMPILER_ID STREQUAL "Clang")
 
   message(STATUS "using Clang (LLVM) compiler flags")
-
-  set (CMAKE_C_FLAGS        "-std=c99")
-  set (CMAKE_CXX_FLAGS      "-std=c++11")
-  # assume we are using the LLVM Flang compiler (PGI flavour)
-  set (CMAKE_Fortran_FLAGS  "-Mpreprocess -DFLANG")
-  if( PHIST_ENABLE_OPENMP )
-    set(PHIST_HAVE_OPENMP 1)
-    set (CMAKE_C_FLAGS        "${CMAKE_C_FLAGS}       -fopenmp")
-    set (CMAKE_CXX_FLAGS      "${CMAKE_CXX_FLAGS}     -fopenmp")
-    set (CMAKE_Fortran_FLAGS  "${CMAKE_Fortran_FLAGS} -fopenmp")
-  endif()
-
-  if(PHIST_HAVE_MKL)
-    set (CMAKE_C_FLAGS        "${CMAKE_C_FLAGS}       -DMKL_LP64")
-    set (CMAKE_CXX_FLAGS      "${CMAKE_CXX_FLAGS}     -DMKL_LP64")
-  endif()
-
-  # -ffast-math kills high precision stuff!
-  set(FAST_MATH "-fno-math-errno -ffinite-math-only -fno-signed-zeros -fno-trapping-math")
-  set (CMAKE_C_FLAGS_RELEASE        "-O3 ${FAST_MATH} -march=native")
-  set (CMAKE_CXX_FLAGS_RELEASE      "-O2")
-  set (CMAKE_Fortran_FLAGS_RELEASE  "-march=native -O3 ${FAST_MATH}")
-
-  set (CMAKE_C_FLAGS_RELWITHDEBINFO       "${CMAKE_C_FLAGS_RELEASE}       -g")
-  set (CMAKE_CXX_FLAGS_RELWITHDEBINFO     "${CMAKE_CXX_FLAGS_RELEASE}     -g")
-  set (CMAKE_Fortran_FLAGS_RELWITHDEBINFO "${CMAKE_Fortran_FLAGS_RELEASE} -g")
-
-  set (CMAKE_C_FLAGS_DEBUG       "-O0 -g -Wall")
-  set (CMAKE_CXX_FLAGS_DEBUG     "-O0 -g -Wall")
-  set (CMAKE_Fortran_FLAGS_DEBUG "-O0 -g -Mbounds")
+  include(cmake/SetCompilerFlagsCLANG.cmake)
 
 else()
 
@@ -503,54 +249,15 @@ else()
 
 endif ()
 
-# try to detect if we can use C++11 Lambdas
-include(CheckCXXSourceCompiles)
-include(CheckFortranSourceCompiles)
+# detect if certain C++ and Fortran features are supported
+include(cmake/CheckLanguageFeatures.cmake)
 
-set(CMAKE_REQUIRED_FLAGS "-std=c++11")
-
-CHECK_CXX_SOURCE_COMPILES("
-  int main(int argc, char** argv)
-  {
-    auto lfunc = [&](){ int _argc = argc; };
-    return 0;
-  }
-" PHIST_HAVE_CXX11_LAMBDAS
-)
-CHECK_CXX_SOURCE_COMPILES("
-  int main(int argc, char** argv)
-  {
-    thread_local int x;
-    return 0;
-  }
-" PHIST_HAVE_CXX11_THREADLOCAL)
-CHECK_CXX_SOURCE_COMPILES("
-  template<typename T>
-  class C {
-  public:
-  C(){}
-  C(C&&)=default;
-  };
-  int main(int argc, char** argv)
-  {
-    C<int> c;
-  }
-" PHIST_HAVE_CXX11_MOVEDEFAULT)
 if(PHIST_HAVE_CXX11_LAMBDAS OR PHIST_HAVE_CXX11_THREADLOCAL)
   set(PHIST_PKG_CONFIG_CFLAGS "${PHIST_PKG_CONFIG_CFLAGS} -std=c++11")
 endif()
-CHECK_Fortran_SOURCE_COMPILES("
-  program test
-    implicit none
-    integer :: i
-    real :: x(8)
-    !$omp simd
-    do i = 1, 8
-      x(i) = 0.
-    end do
-  end program test
-" PHIST_HAVE_OPENMP_SIMD
-)
+
+# check for SSE, AVX, AVX2 and AVX512
+include(cmake/CheckCPUFeatures.cmake)
 
 if (${PHIST_ENABLE_MPI})
   set(PHIST_HAVE_MPI 1)
@@ -578,14 +285,15 @@ if (${PHIST_ENABLE_MPI})
 else()
   set(PHIST_HAVE_MPI 0)
 endif()
-
-##############################################################################
-# setup which kernel library is being used.
-##############################################################################
-
-set(PHIST_KERNEL_LIB "builtin" CACHE STRING "Select underlying kernel libraries for phist (builtin|ghost|epetra|tpetra|magma|petsc|eigen|tpetra12)")
-message(STATUS "kernel lib " ${PHIST_KERNEL_LIB} " ...")
-
+if (PHIST_ENABLE_OPENMP)
+  find_package(OpenMP QUIET)
+  if (OpenMP_FOUND)
+    set(PHIST_HAVE_OPENMP 1)
+    set(CMAKE_C_FLAGS           "${CMAKE_C_FLAGS}       ${OpenMP_C_FLAGS}")
+    set(CMAKE_CXX_FLAGS         "${CMAKE_CXX_FLAGS}     ${OpenMP_CXX_FLAGS}")
+    set(CMAKE_Fortran_FLAGS     "${CMAKE_Fortran_FLAGS} ${OpenMP_Fortran_FLAGS}")
+  endif()
+endif()
 set(REQUIRE_TRILI_PKG,"")
 set(OPTIONAL_TRILI_PKG,"")
 
@@ -645,9 +353,6 @@ elseif (PHIST_KERNEL_LIB STREQUAL "builtin")
   if(PHIST_HAVE_AVX2)
     option(PHIST_HIGH_PRECISION_KERNELS "Activate experimental high-precision builtin kernel routines" Off)
     option(PHIST_HIGH_PRECISION_KERNELS_FORCE "Always force the usage of high precision reductions even if this requires copying data and is slow!" Off)
-    set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -mavx -mavx2 -mfma")
-    set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mavx -mavx2 -mfma")
-    set (CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -mavx -mavx2 -mfma")
   endif()
 
   if( NOT PHIST_HAVE_MPI )
@@ -914,8 +619,9 @@ include_directories(${PROJECT_SOURCE_DIR}/src/krylov)
 include_directories(${PROJECT_SOURCE_DIR}/src/jada)
 include_directories(${PROJECT_SOURCE_DIR}/src/precon)
 include_directories(${PROJECT_SOURCE_DIR}/drivers)
-include_directories(${PROJECT_BINARY_DIR}/cxx_bindings)
-
+if (XSDK_ENABLE_CXX)
+  include_directories(${PROJECT_BINARY_DIR}/cxx_bindings)
+endif()
 if(PHIST_KERNEL_LIB STREQUAL "magma")
   find_package(MAGMA REQUIRED)
   include_directories(${MAGMA_INCLUDE_DIRS})
@@ -1131,24 +837,6 @@ if (PHIST_KERNEL_LIB STREQUAL "tpetra")
   endif()
 endif()
 
-option(PHIST_TIMEMONITOR "Gather detailed function-level timings" On)
-if( PHIST_TIMEMONITOR )
-  message(STATUS "activated TimeMonitor timing monitoring")
-endif()
-option(PHIST_TIMEMONITOR_PERLINE "Gather timing information for each line with a PHIST_CHK_* macro!" Off)
-option(PHIST_PERFCHECK "Check performance of operations (which have a performance model specification)" Off)
-if( PHIST_PERFCHECK )
-  message(STATUS "activated PerfCheck timing monitoring")
-  if( PHIST_PERFCHECK AND PHIST_TIMEMONITOR )
-    message(WARNING "You cannot use PHIST_PERFCHECK and PHIST_TIMEMONITOR at once, disabling timing!")
-    set(PHIST_TIMEMONITOR Off)
-  endif()
-  option(PHIST_PERFCHECK_SEPARATE_OUTPUT "write perfcheck output to separate files for each MPI rank (useful for analysing heterogenous runs)" OFF)
-  option(PHIST_PERFCHECK_REALISTIC "Switch from ideal performance predictions to more realistic ones (e.g. for views)!" OFF)
-endif()
-
-set(PHIST_PEAK_FLOPS_CPU -1 CACHE STRING "Peak GFlop/s rate of the CPU component (for the roofline model in PERFCHECK only. If you don't know this value, just leave it at -1 and it will be ignored)")
-set(PHIST_PEAK_FLOPS_GPU -1 CACHE STRING "Peak GFlop/s rate of the GPU component (for the roofline model in PERFCHECK only. If you don't know this value, just leave it at -1 and it will be ignored)")
 
 set(INCLUDE_FLAGS "")
 get_property(dirs DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY INCLUDE_DIRECTORIES)
@@ -1575,7 +1263,7 @@ foreach(pyt ${PYTHON_TESTS})
     configure_file(${PROJECT_SOURCE_DIR}/python/test_phist_drivers.py.in ${CMAKE_CURRENT_BINARY_DIR}/test_phist_drivers.py)
     set(TEST_OUTPUT_DIR ${PROJECT_BINARY_DIR}/test_output_np${PHIST_TEST_DRIVERS_NUM_PROCS}/test_phist_drivers)
     file(MAKE_DIRECTORY ${TEST_OUTPUT_DIR})
-    set(TEST_COMMAND ${CMAKE_CURRENT_BINARY_DIR}/py.test --junitxml ${TEST_OUTPUT_DIR}/xunit.xml ./test_phist_drivers.py)
+    set(TEST_COMMAND ${TEST_ENV} ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/py.test --junitxml ${TEST_OUTPUT_DIR}/xunit.xml ./test_phist_drivers.py)
     set(pyt_name "phist_test_drivers_np${PHIST_TEST_DRIVERS_NUM_PROCS}") 
     list(APPEND ALL_PHIST_TESTS ${pyt_name})
     add_test(NAME ${pyt_name} COMMAND ${TEST_COMMAND})
@@ -1595,20 +1283,20 @@ add_custom_target(test_install COMMAND ${PROJECT_SOURCE_DIR}/buildScripts/test_i
 #######################################################################################
 # C++ BINDINGS                                                                        #
 #######################################################################################
-add_subdirectory(cxx_bindings)
 
-# add the C++ headers as a dependency of phist_solvers so that the 'install' target works also with 'make libs'
-add_dependencies(phist_kernels_${PHIST_KERNEL_LIB} cxx_headers)
+if (XSDK_ENABLE_CXX)
+  add_subdirectory(cxx_bindings)
+  # add the C++ headers as a dependency of phist_solvers so that the 'install' target works also with 'make libs'
+  add_dependencies(phist_kernels_${PHIST_KERNEL_LIB} cxx_headers)
+endif()
+
+#######################################################################################
+# Fortran 2003 BINDINGS                                                               #
+#######################################################################################
 
 if (XSDK_ENABLE_Fortran)
-
-  #######################################################################################
-  # Fortran 2003 BINDINGS                                                               #
-  #######################################################################################
-
   set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/fortran_bindings)
   add_subdirectory(fortran_bindings)
-
   # add the F'03 modules as a dependency of phist_solvers so that the 'install' target works also with 'make libs'
   add_dependencies(phist_kernels_${PHIST_KERNEL_LIB} fortran_modules)
 endif()
@@ -1622,7 +1310,9 @@ endif()
 find_package(Doxygen 1.7.0 QUIET)
 if (DOXYGEN_FOUND)
     add_custom_target(doc ${DOXYGEN_EXECUTABLE} ${CMAKE_BINARY_DIR}/phist.doxyfile WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
-    add_dependencies(doc cxx_headers)
+    if (XSDK_ENABLE_CXX)
+      add_dependencies(doc cxx_headers)
+    endif()
 endif()
 
 # Add optional target "coverage" to genereate code coverage report (console / XML)

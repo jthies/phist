@@ -463,7 +463,7 @@ SUBR(sdMat_print)(R2,&iflag_);
       SUBR(linearOp_apply)(st::one(),B_op,V_,st::zero(),BV_,&iflag_);
       int numSweeps=2;
       _MT_ orthoEps=std::sqrt(mt::eps());
-      _MT_ rankTol=mt::eps();
+      _MT_ rankTol=mt::rankTol();
       int rankV;
       TYPE(sdMat_ptr) VtV = nullptr;
       SUBR(sdMat_create)(&VtV,m,m,comm_,&iflag_);

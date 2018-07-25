@@ -9,13 +9,14 @@
 #include "phist_config.h"
 
 #include "phist_tools.h"
-#include "phist_kernels.hpp"
-#include "phist_core.hpp"
-#include "phist_ScalarTraits.hpp"
 #include "phist_belos.h"
 #include "phist_MemOwner.hpp"
 
 #ifdef PHIST_HAVE_BELOS
+
+#include "phist_kernels.hpp"
+#include "phist_core.hpp"
+#include "phist_ScalarTraits.hpp"
 
 // Trilinos stuff
 #include "Teuchos_RCP.hpp"

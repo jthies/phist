@@ -112,7 +112,8 @@ extern "C" void SUBR(sdMat_forwardSubst_sdMat)(const TYPE(sdMat_ptr) R, int* per
 
 // given B=V'V, compute (in place) B^ s.t. V*B^ is orthonormal. The rank of V is returned in *rank.
 extern "C" void SUBR(sdMat_qb)(TYPE(sdMat_ptr) B, 
-                    TYPE(sdMat_ptr) B_1, 
+                    TYPE(sdMat_ptr) B_1,
+                    _MT_ D[],
                     int* rank, _MT_ rankTol, int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
@@ -148,12 +149,12 @@ extern "C" void SUBR(sdMat_qb)(TYPE(sdMat_ptr) B,
 #ifdef PHIST_HIGH_PRECISION_KERNELS
   if ((Berr!=NULL))
   {
-    PHIST_CHK_IERR(SUBR(prec_qb)(Bval,Berr,B_1val,B_1err,n,ldB,rank,rankTol,iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(prec_qb)(Bval,Berr,B_1val,B_1err,D,n,ldB,rank,rankTol,iflag),*iflag);
   }
   else
 #endif
   {
-    PHIST_CHK_IERR(SUBR(qb)(Bval,B_1val,n,ldB,rank,rankTol,iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(qb)(Bval,B_1val,D,n,ldB,rank,rankTol,iflag),*iflag);
   }
 }
 

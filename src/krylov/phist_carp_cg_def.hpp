@@ -327,7 +327,7 @@ void SUBR(carp_cgState_iterate)(
   int itprint=1; 
   int itcheck=10;
 #else
-  int itprint=-1; 
+  int itprint=1; 
   int itcheck=10; // how often to check the actual expl. res norms. We
                   // only stop iterating if *all* expl. res norms for
                   // a given shift are below the tolerance. The impl.
@@ -813,3 +813,44 @@ void SUBR(my_printResid)(int it, int nvec, _ST_ const* normR,
 
 // kernel implementation for this data type
 #include "phist_carp_cg_kernels_def.hpp"
+
+
+extern "C" void SUBR(carp_cg)( TYPE(const_sparseMat_ptr) A,
+        TYPE(const_mvec_ptr) rhs, TYPE(mvec_ptr) sol,
+        int *nIter, _MT_ tol, _MT_ omega, int* iflag)
+{
+#include "phist_std_typedefs.hpp"
+  // for each shift one by one create the state, iterate and delete the state again
+  TYPE(carp_cgState_ptr) carp_cgState;
+
+  const int nshifts=1;
+  int block_size;
+  PHIST_CHK_IERR(SUBR(mvec_num_vectors)(sol,&block_size,iflag),*iflag);
+  
+  for (int i=0; i<nshifts; i++)
+  {
+    MT tmp_sigma_r[block_size], tmp_sigma_i[block_size];
+    for (int j=0; j<block_size; j++) 
+    {
+      tmp_sigma_r[j]=MT(0);
+      tmp_sigma_i[j]=MT(0);
+    }
+    // at this point the carp_cg state will check if there are complex shifts and switch on the "RC" variant
+    // in real arithmetic
+    PHIST_CHK_IERR(SUBR(carp_cgState_create)
+            (&carp_cgState, A, NULL, block_size, tmp_sigma_r, tmp_sigma_i, iflag),*iflag);
+            
+    // relaxation factor
+    for (int j=0;j<block_size;j++) carp_cgState->omega_[j]=omega;
+
+    int iflag1=0,iflag2=0;
+    SUBR(carp_cgState_reset)(carp_cgState,rhs,NULL,&iflag1);
+    if (iflag1==0)
+    {
+      SUBR(carp_cgState_iterate)(carp_cgState,sol, NULL, tol,*nIter,false,&iflag2);
+    }
+    PHIST_CHK_IERR(SUBR(carp_cgState_delete)(carp_cgState,iflag),*iflag);
+    PHIST_CHK_IERR(*iflag=iflag1,*iflag);
+    PHIST_CHK_IERR(*iflag=iflag2,*iflag);
+  }
+}

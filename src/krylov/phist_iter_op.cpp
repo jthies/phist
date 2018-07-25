@@ -13,6 +13,7 @@
 #include "phist_core.h"
 #include "phist_ScalarTraits.hpp"
 
+#include "phist_linear_solvers.h"
 #include "phist_iter_op.h"
 
 #define PHIST_CLASSFILE_DEF "phist_iter_op_def.hpp"

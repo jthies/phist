@@ -6,6 +6,7 @@
 /* Contact: Jonas Thies (Jonas.Thies@DLR.de)                                               */
 /*                                                                                         */
 /*******************************************************************************************/
+
 //! \file phist_sdFact_decl.h
 //! \brief various factorization methods for small dense matrices
 
@@ -30,13 +31,20 @@ void SUBR(sdMat_backwardSubst_sdMat)(const TYPE(sdMat_ptr) R, int* perm, int ran
 //! forward substitution for pivoted conj. transposed upper triangular cholesky factor
 void SUBR(sdMat_forwardSubst_sdMat)(const TYPE(sdMat_ptr) R, int* perm, int rank, TYPE(sdMat_ptr) X, int* iflag);
 
-//! \brief given B=V'V, compute (in place) B^ s.t. V*B^ is orthonormal.
+//! \brief given the m x m sdMat B=V'V, compute (in place) B^ s.t. Q=V*B^ is orthonormal.
 //!
-//! The inverse of B^ is returned in B_1 (if it is not NULL), the 
-//! rank of V in *rank.
-//! If V does not have full rank, the last n-*rank columns of B and B_1
+//! The rank of V is returned in *rank.
+//! If V does not have full rank, the last n-*rank columns of B and rows of B_1
 //! will be zero.
-void SUBR(sdMat_qb)(TYPE(sdMat_ptr) B, TYPE(sdMat_ptr) B_1,int* rank, _MT_ rankTol, int* iflag);
+//!
+//! If B_1 is not NULL):
+//! - if the input matrix has full rank, the inverse of B^ is returned in B_1
+//! - if the input matrix does not have full rank, it will contain the right pseudo-inverse, and
+//! B_1*B will be an identity matrix in the first 'rank' rows and 0 elsewhere.
+//!
+//! If nrmsV is not NULL it must have at least m elements. On exit it will contain the 2-norms of the original columns of V
+//! (the squareroots of the diagonal elements of B on input)
+void SUBR(sdMat_qb)(TYPE(sdMat_ptr) B, TYPE(sdMat_ptr) B_1, _MT_ nrmsV[], int* rank, _MT_ rankTol, int* iflag);
 
 //! \brief computes in-place the inverse of a Hermitian and positive semi-definite matrix using Cholesky factorization.
 //!
