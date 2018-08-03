@@ -97,7 +97,9 @@ PHIST_PERFCHECK_BENCHMARK(STREAM_STORE, phist_bench_stream_store);
   PHIST_CHK_IERR(PHIST_PERFCHECK_MVEC_LENGTH(X,&_n,iflag),*iflag); \
   PHIST_CHK_IERR(PHIST_PERFCHECK_SPARSEMAT_NNZ(A,&_nnz,iflag),*iflag); \
   double flops = (a!=_ST_(0))*double(2*_nnz*_nV + (shift!=_ST_(0))*_n*_nV) + (b!=_ST_(0))*double((1+(b!=_ST_(1)))*_n*_nV) + PHIST_PERFCHECK_AXPBY_FLOPS(_n*_nV,g,d) + double(2*num_dots*_nV*_n); \
-PHIST_PERFCHECK_NOT_IMPLEMENTED(flops);
+  double bytes = (a!=_ST_(0))*double((_n+1)*sizeof(phist_lidx)+(sizeof(phist_lidx)+sizeof(_ST_))*_nnz)+ \
+        double(sizeof(_ST_)*_n*(b!=_ST_(0)?2:1)); \
+  PHIST_PERFCHECK_VERIFY(__FUNCTION__,a,shift,b,g,num_dots,0,0, STREAM_TRIAD(bytes),flops);
 
 //! checks performance of mvec_create
 #define PHIST_PERFCHECK_VERIFY_MVEC_CREATE(map,nvec,iflag) \
