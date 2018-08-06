@@ -13,6 +13,9 @@ cmake_minimum_required(VERSION 3.8.0)
 # - try to mark things that are very detailed (like details on the timing behavior etc.) as ADVANCED so that
 #   the CMake cache seen when first using ccmake stays reasonable
 
+# CMake sets the build type in the 'project command', so we define our preference beforehand:
+set(CMAKE_BUILD_TYPE "Release" CACHE STRING "Choose the type of build. Suggested options are Release, RelWithDebInfo, and Debug.")
+
 #######################################################################
 # PROJECT SETTINGS
 #######################################################################
@@ -47,9 +50,7 @@ endif()
 list (APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/")
 
 # install target should not depend on 'make all': you can do e.g. 'make libs; make install'
-SET(CMAKE_SKIP_INSTALL_ALL_DEPENDENCY TRUE)
-
-set(CMAKE_BUILD_TYPE "Release" CACHE STRING "Choose the type of build, options are: Release, RelWithDebug, Debug")
+set(CMAKE_SKIP_INSTALL_ALL_DEPENDENCY TRUE)
 
 set(BUILD_SHARED_LIBS ON CACHE BOOL "Set to ON/OFF for shared/static library build.")
 
