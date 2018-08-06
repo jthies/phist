@@ -620,7 +620,7 @@ PrintSdMat(PHIST_DEBUG,"reconstructed X",mat2_vp_,m_lda_,1,mpi_comm_);
     ASSERT_EQ(0,iflag_);
     SUBR(sdMatT_times_sdMat)(-st::one(),U,U,st::one(),UtU,&iflag_);
     ASSERT_EQ(0,iflag_);
-    ASSERT_NEAR(mt::one(),SdMatEqual(UtU,mt::zero()),10*mt::eps());
+    ASSERT_NEAR(mt::one(),SdMatEqual(UtU,mt::zero()),15*mt::eps());
 
     SUBR(sdMat_identity)(VtV,&iflag_);
     ASSERT_EQ(0,iflag_);
