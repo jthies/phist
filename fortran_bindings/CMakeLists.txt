@@ -15,6 +15,11 @@ set(INC_FLAGS "-I${PHIST_SRC}/kernels/"
               "-I${CMAKE_CURRENT_BINARY_DIR}/../"
               )
 
+if (PHIST_KERNEL_LIB_GHOST)
+  list(GET GHOST_INCLUDE_DIRS 0 GHOST_INCLUDE_DIR)
+  set(INC_FLAGS "-I${GHOST_INCLUDE_DIR}" ${INC_FLAGS})
+endif()
+
 set(F_EXT "F90" CACHE STRING "file extension to be added to generated Fortran modules (.F90 by default)")
 set(MAX_LINE_LEN "120" CACHE STRING "break lines in Fortran output after a certain number of characters")
 
