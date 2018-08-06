@@ -75,7 +75,7 @@ ASSERT_EQ(0,iflag_);
 #ifdef PHIST_HIGH_PRECISION_KERNELS
       ASSERT_REAL_EQ(MT(1),SdMatEqual(mat2_,st::zero()));
 #else
-      ASSERT_NEAR(MT(1),SdMatEqual(mat2_,st::zero()),50*mt::eps());
+      ASSERT_NEAR(MT(1),SdMatEqual(mat2_,st::zero()),100*mt::eps());
 #endif
   }
 
