@@ -541,7 +541,7 @@ public:
     Prod_op.apply(alpha,Prod_op.A,vec1_,beta,vec2_,&iflag_);
     ASSERT_EQ(0,iflag_);
     
-    ASSERT_NEAR(mt::one(),MvecsEqual(vec2_,vec3_),100*VTest::releps());
+    ASSERT_NEAR(mt::one(),MvecsEqual(vec2_,vec3_),125*VTest::releps());
     
     // now want Prod_op = A_op*A_op
     SUBR(mvec_add_mvec)(st::one(),vec3_,st::zero(),vec2_,&iflag_);
