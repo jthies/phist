@@ -4,9 +4,12 @@ cmake_minimum_required(VERSION 2.8.10)
 project(Djdqr CXX)
 
 # find phist with pkg-config
-include(FindPkgConfig)
+find_package(PkgConfig)
 pkg_check_modules(PHIST REQUIRED phist)
-set(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} ${PHIST_CFLAGS_OTHER})
+# the FindPkgConfig module creates a list rather than a string,
+# for the CFLAGS, I think the must be a more elegant way than this:
+string(REPLACE ";" " " PHIST_CFLAGS_STRING "${PHIST_CFLAGS_OTHER}")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${PHIST_CFLAGS_STRING}") 
 include_directories(${PHIST_INCLUDE_DIRS})
 link_directories(${PHIST_LIBRARY_DIRS})
 link_libraries(${PHIST_LIBRARIES})
