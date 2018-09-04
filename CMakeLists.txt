@@ -106,7 +106,7 @@ set(test_list)
 ########################################################################
 set(external_libs)
 set(PHIST_PKG_CONFIG_REQUIRE)
-set(PHIST_PKG_CONFIG_CFLAGS)
+set(PHIST_PKG_CONFIG_CFLAGS "${OpenMP_CXX_FLAGS}")
 
 ########################################################################
 # Deal with BLAS, LAPACK and LAPACKe
