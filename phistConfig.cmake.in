@@ -7,6 +7,24 @@ set_and_check(PHIST_INCLUDE_DIR "@PACKAGE_INCLUDE_INSTALL_DIR@")
 set(PHIST_INCLUDE_DIRS "${PHIST_INCLUDE_DIR}")
 set(PHIST_LIBRARIES "@library_list@")
 
+# which C compiler was used to compile PHIST?
+set(PHIST_C_COMPILER @CMAKE_C_COMPILER@)
+
+# which C++ compiler was used to compile PHIST?
+set(PHIST_CXX_COMPILER @CMAKE_CXX_COMPILER@)
+
+# which Fortran compiler was used to compile PHIST?
+set(PHIST_Fortran_COMPILER @CMAKE_Fortran_COMPILER@)
+
+# which C flags were used to compile PHIST?
+set(PHIST_C_FLAGS "@CMAKE_C_FLAGS@")
+
+# which C++ flags were used to compile PHIST?
+set(PHIST_CXX_FLAGS "@CMAKE_CXX_FLAGS@")
+
+# which Fortran flags were used to compile PHIST?
+set(PHIST_Fortran_FLAGS "@CMAKE_Fortran_FLAGS@")
+
 if(@PHIST_HAVE_GHOST@)
   find_package(GHOST REQUIRED VERSION @GHOST_VERSION@)
   list(APPEND PHIST_INCLUDE_DIRS ${GHOST_INCLUDE_DIRS})
