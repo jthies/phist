@@ -11,8 +11,8 @@ import phist_tools as _phist_tools
 # load library
 _phist_kernel_lib_str = "libphist_kernels_%s.so" % _phist_tools.phist_kernel_lib().decode('utf8')
 print('Using ', _phist_kernel_lib_str)
+_phist_scamac  = _ct.CDLL(name="drivers/matfuncs/scamac/libscamac.so", mode=_ct.RTLD_GLOBAL)
 _phist_kernels = _ct.CDLL(name=_phist_kernel_lib_str, mode=_ct.RTLD_GLOBAL)
-
 #--------------------------------------------------------------------------------
 # helper functions
 class _DeclareHelper:
