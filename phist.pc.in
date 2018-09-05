@@ -1,11 +1,14 @@
 prefix=@CMAKE_INSTALL_PREFIX@
-includedir=${prefix}/include/
-libdir=${prefix}/lib/
+include_dir=${prefix}/include/
+library_dir=${prefix}/lib/
+cxx=@CMAKE_CXX_COMPILER@
+cc=@CMAKE_C_COMPILER@
+fc=@CMAKE_Fortran_COMPILER@
 
 Name: phist
 Description: Pipelined Hybrid-parallel Iterative Solver Toolkit
 Version: @PHIST_VERSION@
 Requires: @PHIST_PKG_CONFIG_REQUIRE@
-Cflags: @PHIST_PKG_CONFIG_CFLAGS@ -I${includedir}
-LDflags: -L${libdir} @PHIST_PKG_CONFIG_LIBRARIES@
+Cflags: @PHIST_PKG_CONFIG_CFLAGS@ -I${include_dir}
+Libs: -L${library_dir} @PHIST_PKG_CONFIG_LIBRARIES@
 
