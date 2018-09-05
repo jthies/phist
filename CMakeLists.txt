@@ -1279,8 +1279,8 @@ endif()
 add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND} ${CTEST_OPTIONS})
 
 # check the installation with an example project
-add_custom_target(test_install COMMAND ${PROJECT_SOURCE_DIR}/buildScripts/test_install.sh ${CMAKE_INSTALL_PREFIX} ${CMAKE_C_COMPILER} ${CMAKE_CXX_COMPILER} ${CMAKE_Fortran_COMPILER})
-
+add_custom_target(test_install COMMAND ${PROJECT_SOURCE_DIR}/buildScripts/test_install.sh ${CMAKE_INSTALL_PREFIX})
+ 
 #######################################################################################
 # C++ BINDINGS                                                                        #
 #######################################################################################
