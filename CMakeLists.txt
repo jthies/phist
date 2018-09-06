@@ -52,6 +52,9 @@ list (APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/")
 # install target should not depend on 'make all': you can do e.g. 'make libs; make install'
 set(CMAKE_SKIP_INSTALL_ALL_DEPENDENCY TRUE)
 
+# add rpath of installed phist libraries in libraries and executables
+set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
+
 set(BUILD_SHARED_LIBS ON CACHE BOOL "Set to ON/OFF for shared/static library build.")
 
 set(CMAKE_C_STANDARD 99)
