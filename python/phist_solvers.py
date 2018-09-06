@@ -12,7 +12,6 @@ import phist_core as _phist_core
 
 #--------------------------------------------------------------------------------
 # load library
-_phist_precon = _ct.CDLL(name='libphist_precon.so', mode=_ct.RTLD_GLOBAL)
 _phist_solvers = _ct.CDLL(name='libphist_solvers.so', mode=_ct.RTLD_GLOBAL)
 
 
