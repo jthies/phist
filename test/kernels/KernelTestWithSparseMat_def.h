@@ -47,7 +47,6 @@ class KernelTestWithSparseMat<_ST_, _Nglob, _Mglob, _MatName, _multipleDefinitio
 
       if( typeImplemented_ && !problemTooSmall )
       {
-        iflag_=0;
         // read matrix first
         if (_MatName==MATNAME_IDFUNC)
         {
@@ -77,12 +76,12 @@ class KernelTestWithSparseMat<_ST_, _Nglob, _Mglob, _MatName, _multipleDefinitio
           {
             iflag_=-99;
           }
-          ASSERT_EQ(0,iflag_);
+          ASSERT_EQ(sparseMatCreateFlag,iflag_);
           // create B_ as a tridiagonal hpd matrix
           ghost_gidx gnrows=_Nglob;
           // initialize rowFunc
-          iflag_=rowfunc(-1,NULL,&gnrows,NULL,NULL);
-          ASSERT_EQ(0,iflag_);
+          int iflag=rowfunc(-1,NULL,&gnrows,NULL,NULL);
+          ASSERT_EQ(0,iflag);
           if (ctx==NULL)
           {
             SUBR(sparseMat_create_fromRowFunc)(&A_,comm_,_Nglob,_Mglob,3,rowfunc,NULL,&iflag_);
