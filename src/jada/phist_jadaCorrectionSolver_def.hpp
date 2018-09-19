@@ -269,7 +269,14 @@ void SUBR(jadaCorrectionSolver_run)(TYPE(jadaCorrectionSolver_ptr) me,
     // make sure the view gets deleted at the end of the scope
     MvecOwner<_ST_> __res(_res!=res?_res:NULL);
     // wrap the preconditioner so that apply_shifted is called
-      TYPE(linearOp_ptr) jadaPrec=NULL;
+    TYPE(linearOp_ptr) jadaPrec=NULL;
+
+    if (me->leftPrecon!=NULL)
+    {
+      PHIST_SOUT(PHIST_ERROR,"(left) preconditioning only implemented for GMRES and MINRES in jadaCorrectionSolver right now.\n");
+      PHIST_CHK_IERR(*iflag=PHIST_NOT_IMPLEMENTED,*iflag);
+    }
+
 
       if (me->method_==phist_NO_LINSOLV)
       {
