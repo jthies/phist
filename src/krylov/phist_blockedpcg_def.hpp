@@ -51,16 +51,25 @@ extern "C" void SUBR(blockedPCG)(TYPE(const_linearOp_ptr) Aop, TYPE(const_linear
   PHIST_CHK_IERR(SUBR(mvec_create)(&q,Aop->domain_map,numSys,iflag),*iflag);
   PHIST_CHK_IERR(SUBR(mvec_create)(&r,Aop->domain_map,numSys,iflag),*iflag);
   PHIST_CHK_IERR(SUBR(mvec_create)(&r0,Aop->domain_map,numSys,iflag),*iflag);
-  PHIST_CHK_IERR(SUBR(mvec_create)(&z,Aop->domain_map,numSys,iflag),*iflag);
-  
+  if (Pop!=NULL)
+  {
+    PHIST_CHK_IERR(SUBR(mvec_create)(&z,Aop->domain_map,numSys,iflag),*iflag);
+  }
+  else
+  {
+    z=r;
+  }
   TYPE(mvec_ptr) sol=NULL;
   PHIST_CHK_IERR(SUBR(mvec_view_block)(sol_in,&sol,0,numSys-1,iflag),*iflag);
-  MvecOwner<_ST_> _sol(sol), _p(p),_q(q),_r(r),_r0(r0),_z(z);
+  MvecOwner<_ST_> _sol(sol), _p(p),_q(q),_r(r),_r0(r0),_z(z!=r?z:NULL);
 
   // set x=p=0, r=r0=b, z=P*r
   PHIST_CHK_IERR(SUBR(mvec_put_value)(sol,st::zero(),iflag),*iflag);
   PHIST_CHK_IERR(SUBR(mvec_add_mvec)(st::one(),rhs,st::zero(),r,iflag),*iflag);
-  PHIST_CHK_IERR(Pop->apply(st::one(), Pop->A, r, st::zero(), z, iflag), *iflag);
+  if (Pop!=NULL)
+  {
+    PHIST_CHK_IERR(Pop->apply(st::one(), Pop->A, r, st::zero(), z, iflag), *iflag);
+  }
   PHIST_CHK_IERR(SUBR(mvec_put_value)(p,st::zero(),iflag),*iflag);
   PHIST_CHK_IERR(SUBR(mvec_add_mvec)(st::one(),r,st::zero(),r0,iflag),*iflag);
   
@@ -108,11 +117,16 @@ extern "C" void SUBR(blockedPCG)(TYPE(const_linearOp_ptr) Aop, TYPE(const_linear
     PHIST_CHK_IERR(SUBR(mvec_vadd_mvec)(&alpha[0],p,st::one(),sol,iflag),*iflag);
     // r_(i+1) = r_i - alpha*q_(i+1)
     for(int j = 0; j < numSys; j++)
+    {
       alpha[j] = -alpha[j];
-      PHIST_CHK_IERR(SUBR(mvec_vadd_mvec)(&alpha[0],q,st::one(),r,iflag),*iflag);
+    }
+    PHIST_CHK_IERR(SUBR(mvec_vadd_mvec)(&alpha[0],q,st::one(),r,iflag),*iflag);
 
-        // z_(i+1) = P_op*r_(i+1)
-        PHIST_CHK_IERR(Pop->apply(st::one(), Pop->A, r, st::zero(), z, iflag), *iflag);
+    // z_(i+1) = P_op*r_(i+1)
+    if (Pop!=NULL)
+    {
+      PHIST_CHK_IERR(Pop->apply(st::one(), Pop->A, r, st::zero(), z, iflag), *iflag);
+    }
   }
 }
 
