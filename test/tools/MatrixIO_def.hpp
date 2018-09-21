@@ -296,7 +296,7 @@ int PHIST_TG_PREFIX(nhpd_tridiag_ainv)(ghost_gidx row, ghost_lidx *len, ghost_gi
   return 0;
 }
 
-//! creates an approximate inverse of nhid_tridiag (the inverse of the 2x2 block diagonal approximation of A)
+//! creates an approximate inverse of hid_tridiag (the inverse of the 2x2 block diagonal approximation of A)
 int PHIST_TG_PREFIX(hid_tridiag_ainv)(ghost_gidx row, ghost_lidx *len, ghost_gidx* cols, void* vval, void *arg)
 {
 #include "phist_std_typedefs.hpp"
@@ -313,6 +313,11 @@ int PHIST_TG_PREFIX(hid_tridiag_ainv)(ghost_gidx row, ghost_lidx *len, ghost_gid
   _ST_ s=st::one()/(a*a-b*c);
   TRIDIAG(a*s,-c*s,-b*s,true);
   return 0;
+}
+//! creates a non-Hermitian indefinite tridiagonal matrix
+int PHIST_TG_PREFIX(nhid_tridiag)(ghost_gidx row, ghost_lidx *len, ghost_gidx* cols, void* vval, void *arg)
+{
+  return -99; // not implemented
 }
 //! creates an approximate inverse of nhid_tridiag (the inverse of the 2x2 block diagonal approximation of A)
 int PHIST_TG_PREFIX(nhid_tridiag_ainv)(ghost_gidx row, ghost_lidx *len, ghost_gidx* cols, void* vval, void *arg)
