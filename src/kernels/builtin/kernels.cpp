@@ -152,8 +152,9 @@ int mpiInitializedBefore = false;
 extern "C" {
 
 
-/*
-// comment in for glibc/gcc and memory alignment problems...
+#if PHIST_BUILTIN_MEMALIGN
+
+// for glibc/gcc and memory alignment problems...
 
 #include <malloc.h>
 #include <cstring>
@@ -166,7 +167,7 @@ static void * my_malloc_hook (size_t size, const void *caller)
    __malloc_hook = old_malloc_hook;
    // Call recursively
    //result = memalign (32, size);
-   posix_memalign(&result, 32, size);
+   posix_memalign(&result, PHIST_BUILTIN_MEMALIGN, size);
    // Save underlying hooks
    old_malloc_hook = __malloc_hook;
    // printf might call malloc, so protect it too.
@@ -183,7 +184,8 @@ static void my_init_hook (void)
 }
 // Override initializing hook from the C library.
 void (*__malloc_initialize_hook) (void) = my_init_hook;
-*/
+
+#endif /* PHIST_BUILTIN_MEMALIGN*/
 
 
 // initialize

@@ -80,6 +80,11 @@ kernel libs) ?
 #cmakedefine PHIST_HAVE_AVX2
 #cmakedefine PHIST_HAVE_AVX512
 
+/* for the builtin kernels there is a malloc_hook to make all memory allocations aligned,
+   in particular the Fortran ALLOCATE statements.
+ */
+#define PHIST_BUILTIN_MEMALIGN ${PHIST_BUILTIN_MEMALIGN}
+
 /* do we have support for higher precision kernel routines (Kahan-style reductions etc.)?
 */
 #cmakedefine PHIST_HIGH_PRECISION_KERNELS
