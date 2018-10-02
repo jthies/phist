@@ -143,9 +143,9 @@ add_custom_target(pp_keep DEPENDS ${HFILES})
 # run the cfwrapper.py script to create all fortran source files
 add_custom_target(cf DEPENDS pp_keep COMMAND ${CMAKE_CURRENT_BINARY_DIR}/cfwrapper.py)
 
-include_directories(${CMAKE_CURRENT_BINARY_DIR})
 add_library(phist_fort ${FFILES} ${FSTATIC})
-
+set_target_properties(phist_fort PROPERTIES DEPENDS cf)
+set_target_properties(phist_fort PROPERTIES Fortran_MODULE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
 
 foreach(TESTNAME ${TEST_DRIVERS})
         add_executable(test_fortran_${TESTNAME} test/${TESTNAME}.F90)
@@ -158,10 +158,16 @@ foreach(TESTNAME ${TEST_DRIVERS})
         set_tests_properties(fortran_${TESTNAME} PROPERTIES TIMEOUT 500)
 endforeach()
 
+# makes sure headers and module files are found when building the f-files and tests, resp.
+include_directories(${CMAKE_CURRENT_BINARY_DIR})
+
+
 # top-level target for PHIST
 add_custom_target(fortran_modules DEPENDS cf phist_fort)
 
-# install all generated Fortran files
+# install all generated Fortran files. Note that we install the actual source files,
+# not the modules, because I don't know how to get their names here. So when compiling
+# a program using the modules, they will be regenerated.
 foreach (f_file ${FFILES})
     install(FILES ${CMAKE_CURRENT_BINARY_DIR}/${f_file} DESTINATION include/)
 endforeach()
