@@ -27,10 +27,21 @@ option(PHIST_ENABLE_OPENMP "Enable OpenMP within PHIST" ON)
 option(PHIST_USE_LIKWID "Enable instrumentation for likwid-perfctr" OFF)
 
 # reproducible random number generator?
-# TODO - this is not quite working yet, once it is, make it the default
 option(PHIST_BUILTIN_RNG
         "use random number generator provided by PHIST, which may be solower than the one implemented by the kernel lib. On the other hand, it gives reproducible results across runs, independent of the exact runtime setup."
         ON)
+
+# size of array (in doubles) for STREAM benchmarks (mostly relevant for PERFCHECK)
+set(PHIST_BENCH_LARGE_N 134217728 CACHE STRING "Dimension for benchmarking tests (e.g. large enough to make micro benchmarks memory-bound). Should be a multiple of 8.")
+
+# run benchmark on one MPI process only and broadcast (advisable for "MPI only" kernel libraries).
+# Should be OFF for heterogenous systems (e.g. CPU/GPU)
+
+if (PHIST_KERNEL_LIB STREQUAL "epetra" OR PHIST_KERNEL_LIB STREQUAL "petsc")
+  set(PHIST_BENCH_MASTER ON CACHE BOOL "run benchmarks (e.g. for PERFCHECK) only on MPI rank 0 and broadcast the result.")
+else()
+  set(PHIST_BENCH_MASTER OFF CACHE BOOL "run benchmarks (e.g. for PERFCHECK) only on MPI rank 0 and broadcast the result.")
+endif()
 
 # use GHOST if found (must be ON if ghost is the kernel lib)
 option(PHIST_USE_GHOST
@@ -78,14 +89,12 @@ option(PHIST_USE_CRAFT
 #####################################################
 
 option(PHIST_TIMEMONITOR "Gather detailed function-level timings" On)
-if( PHIST_TIMEMONITOR )
-  message(STATUS "activated TimeMonitor timing monitoring")
-endif()
-option(PHIST_TIMEMONITOR_PERLINE "Gather timing information for each line with a PHIST_CHK_* macro!" Off)
 option(PHIST_PERFCHECK "Check performance of operations (which have a performance model specification)" Off)
+option(PHIST_TIMINGS_FULL_TRACE "Try to print full call trace in the TimeMonitor/performance measurements (Warning: may generate *a lot* of output)." Off)
+
 if( PHIST_PERFCHECK )
-  message(STATUS "activated PerfCheck timing monitoring")
-  if( PHIST_PERFCHECK AND PHIST_TIMEMONITOR )
+  message(STATUS "activated PerfCheck instrumentation")
+  if( PHIST_TIMEMONITOR )
     # these currently cannot coexist
     set(PHIST_TIMEMONITOR Off)
   endif()
@@ -95,9 +104,12 @@ if( PHIST_PERFCHECK )
   # these can be used to make the roofline model more accurate for compute-bound operations (not really applicable in 
   # phist right now, if we get such operations for e.g. wider mvecs we should maybe measure the flop rate instead)
   set(PHIST_PEAK_FLOPS_CPU -1 CACHE STRING "Peak GFlop/s rate of the CPU component (for the roofline model in PERFCHECK 
- only. If you don't know this value, just leave it at -1 and it will be ignored)")
+  only. If you don't know this value, just leave it at -1 and it will be ignored)")
   set(PHIST_PEAK_FLOPS_GPU -1 CACHE STRING "Peak GFlop/s rate of the GPU component (for the roofline model in PERFCHECK 
- only. If you don't know this value, just leave it at -1 and it will be ignored)")
-
+  only. If you don't know this value, just leave it at -1 and it will be ignored)")
+elseif ( PHIST_TIMEMONITOR )
+  message(STATUS "activated TimeMonitor instrumentation")
+  option(PHIST_TIMEMONITOR_PERLINE "Gather timing information for each line with a PHIST_CHK_* macro!" Off)
 endif()
+
 

@@ -378,9 +378,6 @@ elseif (PHIST_KERNEL_LIB STREQUAL "eigen")
 else ()
   message( FATAL_ERROR "PHIST_KERNEL_LIB not set or not recognized" )
 endif ()
-set(PHIST_BENCH_LARGE_N 134217728 CACHE STRING "Dimension for benchmarking tests (e.g. large enough to make micro benchmarks memory-bound). Should be a multiple of 8.")
-
-option(PHIST_TIMINGS_FULL_TRACE "Try to print full call trace in the TimeMonitor/performance measurements (Warning: may generate *a lot* of output)." Off)
 
 if (NOT DEFINED PHIST_FORCE_32BIT_GIDX_DEFAULT)
 

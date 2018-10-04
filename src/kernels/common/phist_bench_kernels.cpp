@@ -40,18 +40,32 @@ extern "C" void phist_bench_stream_load(double* mean_bw, double* max_bw, int* if
   PHIST_SOUT(PHIST_VERBOSE, "skipped because PHIST_BENCH_LARGE_N<=0\n");
   return;
 #endif  
-  PHIST_CHK_IERR(dbench_stream_load_create(&data,iflag),*iflag);
-  for(int i = 0; i < NUM_RUNS; i++)
+
+int execute=0;
+#if defined(PHIST_BENCH_MASTER)&&defined(PHIST_HAVE_MPI)
+// execute stream benchmarks only on rank 0 and bcast
+MPI_Comm comm = phist_get_default_comm();
+MPI_Comm_rank(comm,&execute);
+#endif
+  if (execute==0)
   {
-    double bw = 0.;
-    double res;
-    PHIST_CHK_IERR(dbench_stream_load_run(data,&res,&bw,iflag),*iflag);
-    *mean_bw+=bw;
-    if( bw > *max_bw ) *max_bw = bw;
+    PHIST_CHK_IERR(dbench_stream_load_create(&data,iflag),*iflag);
+    for(int i = 0; i < NUM_RUNS; i++)
+    {
+      double bw = 0.;
+      double res;
+      PHIST_CHK_IERR(dbench_stream_load_run(data,&res,&bw,iflag),*iflag);
+      *mean_bw+=bw;
+      if( bw > *max_bw ) *max_bw = bw;
+    }
+    *mean_bw/=NUM_RUNS;
+    PHIST_CHK_IERR(dbench_stream_load_destroy(data,iflag),*iflag);
+    PHIST_SOUT(PHIST_VERBOSE, "measured %8.4g Gb/s (max) and %8.4g Gb/s (mean)\n", *max_bw/1.e9,*mean_bw/1.e9);
   }
-  *mean_bw/=NUM_RUNS;
-  PHIST_CHK_IERR(dbench_stream_load_destroy(data,iflag),*iflag);
-  PHIST_SOUT(PHIST_VERBOSE, "measured %8.4g Gb/s (max) and %8.4g Gb/s (mean)\n", *max_bw/1.e9,*mean_bw/1.e9);
+#if defined(PHIST_BENCH_MASTER)&&defined(PHIST_HAVE_MPI)
+  MPI_Bcast(mean_bw,1,MPI_DOUBLE,0,comm);
+  MPI_Bcast(max_bw,1,MPI_DOUBLE,0,comm);
+#endif
 }
 
 extern "C" void phist_bench_stream_store(double *mean_bw, double* max_bw, int* iflag)
@@ -66,18 +80,32 @@ extern "C" void phist_bench_stream_store(double *mean_bw, double* max_bw, int* i
   PHIST_SOUT(PHIST_VERBOSE, "skipped because PHIST_BENCH_LARGE_N<=0\n");
   return;
 #endif  
-  PHIST_CHK_IERR(dbench_stream_store_create(&data,iflag),*iflag);
-  for(int i = 0; i < NUM_RUNS; i++)
+
+int execute=0;
+#if defined(PHIST_BENCH_MASTER)&&defined(PHIST_HAVE_MPI)
+// execute stream benchmarks only on rank 0 and bcast
+MPI_Comm comm = phist_get_default_comm();
+MPI_Comm_rank(comm,&execute);
+#endif
+  if (execute==0)
   {
-    double bw = 0.;
-    double res = 77.;
-    PHIST_CHK_IERR(dbench_stream_store_run(data,&res,&bw,iflag),*iflag);
-    *mean_bw+=bw;
-    if( bw > *max_bw ) *max_bw = bw;
+    PHIST_CHK_IERR(dbench_stream_store_create(&data,iflag),*iflag);
+    for(int i = 0; i < NUM_RUNS; i++)
+    {
+      double bw = 0.;
+      double res = 77.;
+      PHIST_CHK_IERR(dbench_stream_store_run(data,&res,&bw,iflag),*iflag);
+      *mean_bw+=bw;
+      if( bw > *max_bw ) *max_bw = bw;
+    }
+    *mean_bw/=NUM_RUNS;
+    PHIST_CHK_IERR(dbench_stream_store_destroy(data,iflag),*iflag);
+    PHIST_SOUT(PHIST_VERBOSE, "measured %8.4g Gb/s (max) and %8.4g Gb/s (mean)\n", *max_bw/1.e9,*mean_bw/1.e9);
   }
-  *mean_bw/=NUM_RUNS;
-  PHIST_CHK_IERR(dbench_stream_store_destroy(data,iflag),*iflag);
-  PHIST_SOUT(PHIST_VERBOSE, "measured %8.4g Gb/s (max) and %8.4g Gb/s (mean)\n", *max_bw/1.e9,*mean_bw/1.e9);
+#if defined(PHIST_BENCH_MASTER)&&defined(PHIST_HAVE_MPI)
+  MPI_Bcast(mean_bw,1,MPI_DOUBLE,0,comm);
+  MPI_Bcast(max_bw,1,MPI_DOUBLE,0,comm);
+#endif
 }
 
 extern "C" void phist_bench_stream_triad(double* mean_bw, double* max_bw, int* iflag)
@@ -94,18 +122,32 @@ extern "C" void phist_bench_stream_triad(double* mean_bw, double* max_bw, int* i
   PHIST_SOUT(PHIST_VERBOSE, "skipped because PHIST_BENCH_LARGE_N<=0\n");
   return;
 #endif  
-  PHIST_CHK_IERR(dbench_stream_triad_create(&x,&y,&z,iflag),*iflag);
-  for(int i = 0; i < NUM_RUNS; i++)
+
+int execute=0;
+#if defined(PHIST_BENCH_MASTER)&&defined(PHIST_HAVE_MPI)
+// execute stream benchmarks only on rank 0 and bcast
+MPI_Comm comm = phist_get_default_comm();
+MPI_Comm_rank(comm,&execute);
+#endif
+  if (execute==0)
   {
-    double bw = 0.;
-    double res = -53.;
-    PHIST_CHK_IERR(dbench_stream_triad_run(x,y,z,&res,&bw,iflag),*iflag);
-    *mean_bw+=bw;
-    if( bw > *max_bw ) *max_bw = bw;
+    PHIST_CHK_IERR(dbench_stream_triad_create(&x,&y,&z,iflag),*iflag);
+    for(int i = 0; i < NUM_RUNS; i++)
+    {
+      double bw = 0.;
+      double res = -53.;
+      PHIST_CHK_IERR(dbench_stream_triad_run(x,y,z,&res,&bw,iflag),*iflag);
+      *mean_bw+=bw;
+      if( bw > *max_bw ) *max_bw = bw;
+    }
+    *mean_bw/=NUM_RUNS;
+    PHIST_CHK_IERR(dbench_stream_triad_destroy(x,y,z,iflag),*iflag);
+    PHIST_SOUT(PHIST_VERBOSE, "measured %8.4g Gb/s (max) and %8.4g Gb/s (mean)\n", *max_bw/1.e9,*mean_bw/1.e9);
   }
-  *mean_bw/=NUM_RUNS;
-  PHIST_CHK_IERR(dbench_stream_triad_destroy(x,y,z,iflag),*iflag);
-  PHIST_SOUT(PHIST_VERBOSE, "measured %8.4g Gb/s (max) and %8.4g Gb/s (mean)\n", *max_bw/1.e9,*mean_bw/1.e9);
+#if defined(PHIST_BENCH_MASTER)&&defined(PHIST_HAVE_MPI)
+  MPI_Bcast(mean_bw,1,MPI_DOUBLE,0,comm);
+  MPI_Bcast(max_bw,1,MPI_DOUBLE,0,comm);
+#endif
 }
 
 
