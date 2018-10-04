@@ -162,6 +162,23 @@ kernel libs) ?
 #cmakedefine PHIST_PEAK_FLOPS_CPU ${PHIST_PEAK_FLOPS_CPU}
 #cmakedefine PHIST_PEAK_FLOPS_GPU ${PHIST_PEAK_FLOPS_GPU}
 
+/* Is the kernel library allowed to pin threads and processes? */
+#cmakedefine PHIST_TRY_TO_PIN_THREADS
+
+/* Should the kernel library try to do "first touch" allocation of mvecs? */
+#cmakedefine PHIST_TRY_TO_RESPECT_NUMA
+
+# ifdef PHIST_HAVE_GHOST
+# include "ghost/config.h"
+#  if defined(GHOST_HAVE_MPI)&&(!defined(PHIST_HAVE_MPI))
+#  error "ghost was compiled with MPI, conflict with phist installation without MPI."
+#  endif
+#  if (!defined(GHOST_HAVE_MPI))&&defined(PHIST_HAVE_MPI)
+#  error "ghost was compiled without MPI, conflict with phist installation with MPI."
+#  endif
+# endif
+
+
 /* specific settings to tune the GHOST performance */
 #ifdef PHIST_KERNEL_LIB_GHOST
 /* with GHOST we execute everything in tasks, this can make debugging a bit tedious
@@ -182,20 +199,6 @@ kernel libs) ?
 */
 #define PHIST_DEFAULT_SPMV_MODE ${PHIST_DEFAULT_SPMV_MODE}
 
-/* Is the kernel library allowed to pin threads and processes? */
-#cmakedefine PHIST_TRY_TO_PIN_THREADS
+#endif /* PHIST_KERNEL_LIB_GHOST */
 
-/* Should the kernel library try to do "first touch" allocation of mvecs? */
-#cmakedefine PHIST_TRY_TO_RESPECT_NUMA
-
-# ifdef PHIST_HAVE_GHOST
-# include "ghost/config.h"
-#  if defined(GHOST_HAVE_MPI)&&(!defined(PHIST_HAVE_MPI))
-#  error "ghost was compiled with MPI, conflict with phist installation without MPI."
-#  endif
-#  if (!defined(GHOST_HAVE_MPI))&&defined(PHIST_HAVE_MPI)
-#  error "ghost was compiled without MPI, conflict with phist installation with MPI."
-#  endif
-# endif
-#endif
-#endif
+#endif /* PHIST_CONFIG_H */
