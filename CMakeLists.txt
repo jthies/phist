@@ -435,6 +435,8 @@ include_directories(${PROJECT_SOURCE_DIR}/drivers/matfuncs)
 include_directories(${PROJECT_SOURCE_DIR}/drivers/matfuncs/scamac)
 include_directories(${CMAKE_BINARY_DIR}/drivers/matfuncs/scamac)
 set(SCAMAC_BUILD_MWE OFF CACHE BOOL "")
+set(SCAMAC_USE_OPENMP ${PHIST_ENABLE_OPENMP} CACHE BOOL "")
+
 # to avoid conflicts with e.g. ghost (which also uses cblas), disable blas and lapack in the scamac within phist.
 # they are used for allowing to compute some eigenvalues etc., but we are only interested in the matrix generator
 # itself.
