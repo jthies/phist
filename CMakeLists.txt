@@ -477,10 +477,10 @@ endif ()
 if (PHIST_KERNEL_LIB STREQUAL "builtin")
   set (PHIST_KERNEL_SOURCE ${PROJECT_SOURCE_DIR}/src/kernels/${PHIST_KERNEL_LIB}/kernels.cpp
                           ${PROJECT_SOURCE_DIR}/src/kernels/phist_driver_utils.c
-                          ${PROJECT_SOURCE_DIR}/drivers/matfuncs/matpde.f90
-                          ${PROJECT_SOURCE_DIR}/drivers/matfuncs/matpde3d.f90
-                          ${PROJECT_SOURCE_DIR}/drivers/matfuncs/tritoeplitz.f90
-                          ${PROJECT_SOURCE_DIR}/drivers/matfuncs/brussolator.f90
+                          ${PROJECT_SOURCE_DIR}/drivers/matfuncs/matpde.F90
+                          ${PROJECT_SOURCE_DIR}/drivers/matfuncs/matpde3d.F90
+                          ${PROJECT_SOURCE_DIR}/drivers/matfuncs/tritoeplitz.F90
+                          ${PROJECT_SOURCE_DIR}/drivers/matfuncs/brussolator.F90
                           ${PROJECT_SOURCE_DIR}/src/kernels/phist_mpi_kernels.cpp
                           ${PROJECT_SOURCE_DIR}/src/kernels/builtin/env_module.f90
                           ${PROJECT_SOURCE_DIR}/src/kernels/builtin/map_module.f90
@@ -525,10 +525,10 @@ else()
                            ${PROJECT_SOURCE_DIR}/src/kernels/${PHIST_KERNEL_LIB}/kernelsZ.cpp
                            ${PROJECT_SOURCE_DIR}/src/kernels/${PHIST_KERNEL_LIB}/kernels.cpp
                            ${PROJECT_SOURCE_DIR}/src/kernels/phist_driver_utils.c
-                           ${PROJECT_SOURCE_DIR}/drivers/matfuncs/matpde.f90
-                           ${PROJECT_SOURCE_DIR}/drivers/matfuncs/matpde3d.f90
-                           ${PROJECT_SOURCE_DIR}/drivers/matfuncs/tritoeplitz.f90
-                           ${PROJECT_SOURCE_DIR}/drivers/matfuncs/brussolator.f90
+                           ${PROJECT_SOURCE_DIR}/drivers/matfuncs/matpde.F90
+                           ${PROJECT_SOURCE_DIR}/drivers/matfuncs/matpde3d.F90
+                           ${PROJECT_SOURCE_DIR}/drivers/matfuncs/tritoeplitz.F90
+                           ${PROJECT_SOURCE_DIR}/drivers/matfuncs/brussolator.F90
                            ${PROJECT_SOURCE_DIR}/src/kernels/phist_mpi_kernels.cpp)
 endif()
 
