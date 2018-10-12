@@ -19,7 +19,9 @@
 #include <mpi.h>
 #endif
 #include <immintrin.h>
+#ifdef PHIST_HAVE_OPENMP
 #include <omp.h>
+#endif
 #include <stdlib.h>
 
 #include "stream_bench.h"
