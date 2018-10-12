@@ -416,7 +416,11 @@ void SUBR(sdMat_set_block)(TYPE(sdMat_ptr) M,
 //! put scalar value into all elements of a multi-vector \ingroup mvec
 void SUBR(mvec_put_value)(TYPE(mvec_ptr) V, _ST_ value, int* iflag);
 
-//! set all mvec elements V(i,j) by calling a function for each element \ingroup mvec
+//! set all mvec elements V(i,j) by calling a function for each element. \ingroup mvec
+
+//! On input to the user-provided function, *val will contain the current value of the
+//! vector entry (row,ol), so it is possible to apply a function to the current mvec,
+//! e.g. X <- X.^2, X<-abs(X) etc.
 void SUBR(mvec_put_func)(TYPE(mvec_ptr) V,
         phist_mvec_elemFunc elemFunPtr, void* last_arg, int *iflag);
 

@@ -23,14 +23,23 @@
 #define F_INIT(a,b)  (st::one()/(ST(a)+ST(b)+st::one()) +st::cmplx_I()*(ST(a)-ST(b)))
 
 
-// some function to test mvec_put_func
+// some functions to test mvec_put_func
 int PHIST_TG_PREFIX(mvecInitializer)(ghost_gidx i, ghost_lidx j, void* vval,void* last_arg);
+int PHIST_TG_PREFIX(mvecScaleEntries)(ghost_gidx i, ghost_lidx j, void* vval,void* last_arg);
 #ifdef FIRST_INSTANCE
 int PHIST_TG_PREFIX(mvecInitializer)(ghost_gidx i, ghost_lidx j, void* vval,void* last_arg)
 {
 #include "phist_std_typedefs.hpp"
   _ST_* val = (_ST_*)vval;
   *val = F_INIT(i,j);
+  return 0;
+}
+int PHIST_TG_PREFIX(mvecScaleEntries)(ghost_gidx i, ghost_lidx j, void* vval,void* last_arg)
+{
+#include "phist_std_typedefs.hpp"
+  _ST_* val = (_ST_*)vval;
+  _ST_* scale = (_ST_*)last_arg;
+  *val *= *scale;
   return 0;
 }
 #endif
@@ -1009,6 +1018,20 @@ TEST_F(CLASSNAME,put_func)
   }
   SUBR(mvec_to_device)(vec2_,&iflag_);
   ASSERT_EQ(0,iflag_);
+  ASSERT_REAL_EQ(mt::one(),MvecsEqual(vec1_,vec2_));
+}
+
+TEST_F(CLASSNAME,apply_func_by_put_func)
+{
+  if (!typeImplemented_ || problemTooSmall_)
+    return;
+
+  _ST_ scale_by = st::rand();
+  SUBR(mvec_add_mvec)(scale_by,vec1_,_ST_(0),vec2_,&iflag_);
+  ASSERT_EQ(0,iflag_);
+  SUBR(mvec_put_func)(vec1_,&PHIST_TG_PREFIX(mvecScaleEntries),&scale_by,&iflag_);
+  ASSERT_EQ(0,iflag_);
+  
   ASSERT_REAL_EQ(mt::one(),MvecsEqual(vec1_,vec2_));
 }
 
