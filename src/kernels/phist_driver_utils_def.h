@@ -93,10 +93,12 @@ PHIST_SOUT(PHIST_INFO,"\n\nInstead of a matrix file you can also specify a strin
                       "                    B1 is an inhomogenous PDE problem similar to matpde but in 3D, C1 is the Anderson model problem\n"
                       "                    and the 'A' problems are convection diffusion problems taken from Gordon&Gordon, ParCo'10.\n"
                       "                    The '0' cases are symmetric matrices, A0=Laplace, B0=variable coefficient diffusion.\n"
+# ifdef PHIST_HAVE_SCAMAC
                       "SCAMAC-<string> adds a variety of benchmarks from the ESSEX SCAlable MAtrix Collection, for example\n"
                       "                    'SCAMAC-hubbard,n_sites=10' etc.\n"
                       "                Use the driver 'scamact' to find out more about the options.\n"
                       "                The stand-alone repo of the scamac can be found at https://bitbucket.org/essex/MatrixCollection\n"
+# endif
                       );
 #endif
 
@@ -110,7 +112,9 @@ PHIST_SOUT(PHIST_INFO,"\n\nInstead of a matrix file you can also specify a strin
 #include <ghost.h>
 #endif
 #include "matfuncs.h"
+#ifdef PHIST_HAVE_SCAMAC
 #include "scamac.h"
+#endif
 
 typedef enum {
 FROM_FILE,
@@ -152,6 +156,8 @@ int str_starts_with(const char *s1, const char *s2)
   return 0;
 }
 
+#ifdef PHIST_HAVE_SCAMAC
+
 //////////////////////////////////////////////////////////////////////////
 // helper struct and functions for the scamac (ESSEX matrix collection) //
 // copied from ghost/minimal_scamac example by Andreas Alvermann        //
@@ -191,6 +197,7 @@ static int phist_scamac_funcinit(void *arg, void **work)
   return iflag;
 }
 
+#endif
 
 // TODO: we should do this in C++ with a map where you can easily add new function pointers... (melven)
 void SUBR(create_matrix)(TYPE(sparseMat_ptr)* mat, phist_const_comm_ptr comm,
@@ -215,8 +222,12 @@ void SUBR(create_matrix)(TYPE(sparseMat_ptr)* mat, phist_const_comm_ptr comm,
   int pos=0;
   if( str_starts_with(problem,"SCAMAC-") )
   {
+#ifdef PHIST_HAVE_SCAMAC
     mat_type=FROM_SCAMAC;
     pos=strlen("SCAMAC-");
+#else
+    PHIST_CHK_IERR(*iflag=PHIST_INVALID_INPUT,*iflag);
+#endif
   }
   else if( str_starts_with(problem,"spinSZ") )
   {
@@ -429,6 +440,7 @@ void SUBR(create_matrix)(TYPE(sparseMat_ptr)* mat, phist_const_comm_ptr comm,
   }
   else if (mat_type==FROM_SCAMAC)
   {
+#ifdef PHIST_HAVE_SCAMAC
     int len=strlen(problem+pos);
     // we need to copy the string because bapp_select_model
     // uses strsep, which destroys the string.
@@ -456,7 +468,10 @@ void SUBR(create_matrix)(TYPE(sparseMat_ptr)* mat, phist_const_comm_ptr comm,
     PHIST_CHK_IERR(SUBR(sparseMat_create_fromRowFuncWithConstructor)(mat, comm, 
           gnrows, gnrows, max_nnz, phist_scamac_func, phist_scamac_funcinit, gen, iflag), *iflag);  
     scamac_generator_destroy(gen);  
-}
+#else
+    PHIST_CHK_IERR(*iflag=PHIST_INVALID_INPUT,*iflag);
+#endif
+  }
   else
   {
     PHIST_SOUT(outlev,"read matrix from file '%s'\n",problem);

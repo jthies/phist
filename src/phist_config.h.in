@@ -109,7 +109,7 @@ kernel libs) ?
 
 /* ESSEX libraries: optional */
 #cmakedefine PHIST_HAVE_GHOST
-#cmakedefine PHIST_HAVE_ESSEX_PHYSICS
+#cmakedefine PHIST_HAVE_SCAMAC
 
 /* third party libraries: optional */
 

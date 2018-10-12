@@ -424,31 +424,36 @@ if (PHIST_ENABLE_COMPLEX)
   set(PHIST_HAVE_CMPLX 1)
 endif()
 
-########################################################
-# configure scamac subtree (scalable matrix generator) #
-########################################################
-
-# some matfuncs (for row-wise scalable generation of test matrices) are
-# included in phist. In particular we now have the 'Scalable Matrix Collection' (scamac)
-# as a subtree. The stand-alone repo is at https://bitbucket.org/essex/MatrixCollection.
 include_directories(${PROJECT_SOURCE_DIR}/drivers/matfuncs)
-include_directories(${PROJECT_SOURCE_DIR}/drivers/matfuncs/scamac)
-include_directories(${CMAKE_BINARY_DIR}/drivers/matfuncs/scamac)
-set(SCAMAC_BUILD_MWE OFF CACHE BOOL "")
-set(SCAMAC_USE_OPENMP ${PHIST_ENABLE_OPENMP} CACHE BOOL "")
 
-# to avoid conflicts with e.g. ghost (which also uses cblas), disable blas and lapack in the scamac within phist.
-# they are used for allowing to compute some eigenvalues etc., but we are only interested in the matrix generator
-# itself.
-set(SCAMAC_USE_BLAS OFF CACHE BOOL "")
-set(SCAMAC_USE_LAPACK OFF CACHE BOOL "")
-if (PHIST_FORCE_32BIT_GIDX)
-  set(SCAMAC_USE_64 OFF CACHE BOOL "")
-else()
-  set(SCAMAC_USE_64 ON CACHE BOOL "")
-endif()
-add_subdirectory(drivers/matfuncs/scamac)
+if (PHIST_ENABLE_SCAMAC)
 
+  ########################################################
+  # configure scamac subtree (scalable matrix generator) #
+  ########################################################
+
+  # some matfuncs (for row-wise scalable generation of test matrices) are
+  # included in phist. In particular we now have the 'Scalable Matrix Collection' (scamac)
+  # as a subtree. The stand-alone repo is at https://bitbucket.org/essex/MatrixCollection.
+  include_directories(${PROJECT_SOURCE_DIR}/drivers/matfuncs/scamac)
+  include_directories(${CMAKE_BINARY_DIR}/drivers/matfuncs/scamac)
+  set(SCAMAC_BUILD_MWE OFF CACHE BOOL "")
+  set(SCAMAC_USE_OPENMP ${PHIST_ENABLE_OPENMP} CACHE BOOL "")
+
+  # to avoid conflicts with e.g. ghost (which also uses cblas), disable blas and lapack in the scamac within phist.
+  # they are used for allowing to compute some eigenvalues etc., but we are only interested in the matrix generator
+  # itself.
+  set(SCAMAC_USE_BLAS OFF CACHE BOOL "")
+  set(SCAMAC_USE_LAPACK OFF CACHE BOOL "")
+  if (PHIST_FORCE_32BIT_GIDX)
+    set(SCAMAC_USE_64 OFF CACHE BOOL "")
+  else()
+    set(SCAMAC_USE_64 ON CACHE BOOL "")
+  endif()
+  add_subdirectory(drivers/matfuncs/scamac)
+  set(PHIST_HAVE_SCAMAC ON)
+  set(SCAMACLIB scamac) # for linking/library list
+endif(PHIST_ENABLE_SCAMAC)
 
 ########################################################
 # define source files and libraries                    #
@@ -550,6 +555,7 @@ if (PHIST_USE_CRAFT)
   include(${CRAFT_DIR}/CRAFT_VARS.txt) 
   add_definitions(-DPHIST_CP)
   add_library(craft SHARED ${CRAFT_SOURCE}) 
+  set(CRAFTLIB craft) #for linking/library list
 endif()
 
 set (PHIST_TOOLS_SOURCE ${PROJECT_SOURCE_DIR}/src/tools/phist_tools.cpp
@@ -660,17 +666,14 @@ LIST(APPEND library_list phist_solvers)
 LIST(APPEND library_list phist_precon)
 LIST(APPEND library_list phist_core)
 LIST(APPEND library_list phist_kernels_${PHIST_KERNEL_LIB})
-LIST(APPEND library_list scamac)
+LIST(APPEND library_list ${SCAMACLIB})
+LIST(APPEND library_list ${CRAFTLIB})
 LIST(APPEND library_list phist_tools)
 
-target_link_libraries(phist_kernels_${PHIST_KERNEL_LIB} phist_tools scamac)
+target_link_libraries(phist_kernels_${PHIST_KERNEL_LIB} phist_tools ${SCAMACLIB} ${CRAFTLIB})
 target_link_libraries(phist_core phist_kernels_${PHIST_KERNEL_LIB})
 target_link_libraries(phist_precon phist_core)
 target_link_libraries(phist_solvers phist_precon)
-if(PHIST_USE_CRAFT)
-  LIST(APPEND library_list craft)
-  target_link_libraries(phist_kernels_${PHIST_KERNEL_LIB}                                                     craft)
-endif()
 
 if(PHIST_KERNEL_LIB STREQUAL "ghost")
   find_package(GHOST 1.1.1 REQUIRED CONFIG)

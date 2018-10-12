@@ -26,6 +26,11 @@ endif()
 option(PHIST_ENABLE_OPENMP "Enable OpenMP within PHIST" ON)
 option(PHIST_USE_LIKWID "Enable instrumentation for likwid-perfctr" OFF)
 
+# enable/disable the builtin "SCAlable MAtrix Collection", which may lead to build errors on some systems
+option(PHIST_ENABLE_SCAMAC
+        "Enable/Disable including the 'SCAlable MAtrix Collection' generators as a part of PHIST"
+        ON)
+
 # reproducible random number generator?
 option(PHIST_BUILTIN_RNG
         "use random number generator provided by PHIST, which may be solower than the one implemented by the kernel lib. On the other hand, it gives reproducible results across runs, independent of the exact runtime setup."
