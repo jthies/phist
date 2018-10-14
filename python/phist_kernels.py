@@ -244,14 +244,19 @@ for _varT in ('S', 'D', 'C', 'Z'):
     _declare(None, _prefix+'sdMat_to_device', (_sdMat_ptr, c_int_p), skip_if_missing=True)
     _declare(None, _prefix+'sdMat_from_device', (_sdMat_ptr, c_int_p), skip_if_missing=True)
 
-    #void SUBR(mvec_to_mvec)(TYPE(const_mvec_ptr) v_in, TYPE(mvec_ptr) v_out, int* iflag);
-    #void SUBR(mvec_view_block)(TYPE(mvec_ptr) V,TYPE(mvec_ptr)* Vblock,int jmin, int jmax, int* iflag);
-    #void SUBR(mvec_get_block)(TYPE(const_mvec_ptr) V, TYPE(mvec_ptr) Vblock, int jmin, int jmax, int* iflag);
-    #void SUBR(mvec_set_block)(TYPE(mvec_ptr) V, TYPE(const_mvec_ptr) Vblock, int jmin, int jmax, int* iflag);
+    #void SUBR(mvec_to_mvec)(TYPE(const_mvec_ptr) v_in, TYPE(mvec_ptr) v_out, int* ierr);
+    #void SUBR(mvec_view_block)(TYPE(mvec_ptr) V,TYPE(mvec_ptr)* Vblock,int jmin, int jmax, int* ierr);
+    #void SUBR(mvec_get_block)(TYPE(const_mvec_ptr) V, TYPE(mvec_ptr) Vblock, int jmin, int jmax, int* ierr);
+    #void SUBR(mvec_set_block)(TYPE(mvec_ptr) V, TYPE(const_mvec_ptr) Vblock, int jmin, int jmax, int* ierr);
+    #void SUBR(mvec_get_data)(TYPE(const_mvec_ptr) V, _ST_* data, phist_lidx lda, int output_row_major, int* iflag);
+    #void SUBR(mvec_set_data)(TYPE(mvec_ptr) V, _ST_ const* data, phist_lidx lda, int input_row_major, int* iflag);
     _declare(None, _prefix+'mvec_to_mvec', (_mvec_ptr, _mvec_ptr, c_int_p), skip_if_missing=True)
     _declare(None, _prefix+'mvec_view_block', (_mvec_ptr, _mvec_ptr_p, c_int, c_int, c_int_p), skip_if_missing=True)
     _declare(None, _prefix+'mvec_get_block', (_mvec_ptr, _mvec_ptr, c_int, c_int, c_int_p), skip_if_missing=True)
     _declare(None, _prefix+'mvec_set_block', (_mvec_ptr, _mvec_ptr, c_int, c_int, c_int_p), skip_if_missing=True)
+    _declare(None, _prefix+'mvec_get_data', (_mvec_ptr, _ST_p, lidx, c_int, c_int_p), skip_if_missing=True)
+    _declare(None, _prefix+'mvec_set_data', (_mvec_ptr, _ST_p, lidx, c_int, c_int_p), skip_if_missing=True)
+
 
     #void SUBR(sdMat_view_block)(TYPE(sdMat_ptr) M, TYPE(sdMat_ptr)* Mblock, int imin, int imax, int jmin, int jmax, int* iflag);
     #void SUBR(sdMat_get_block)(TYPE(const_sdMat_ptr) M, TYPE(sdMat_ptr) Mblock, int imin, int imax, int jmin, int jmax, int* iflag);
