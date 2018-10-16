@@ -288,6 +288,7 @@ for _varT in ('S', 'D', 'C', 'Z'):
     #void SUBR(mvec_scale)(TYPE(mvec_ptr) V, _ST_ scalar, int* iflag);
     #void SUBR(mvec_vscale)(TYPE(mvec_ptr) V, const _ST_* scalar, int* iflag);
     #void SUBR(mvec_add_mvec)(_ST_ alpha, TYPE(const_mvec_ptr) X, _ST_ beta,  TYPE(mvec_ptr) Y, int* iflag);
+    #void SUBR(mvec_times_mvec_elemwise)(_ST_ alpha, TYPE(const_mvec_ptr) V, TYPE(mvec_ptr) W,int* iflag);
     #void SUBR(mvec_vadd_mvec)(const _ST_ alpha[], TYPE(const_mvec_ptr) X, const _ST_ beta,  TYPE(mvec_ptr) Y, int* iflag);
     #void SUBR(mvec_dot_mvec)(TYPE(const_mvec_ptr) V, TYPE(const_mvec_ptr) W, _ST_* vw, int* iflag);
     #void SUBR(mvecT_times_mvec)(_ST_ alpha, TYPE(const_mvec_ptr) V, TYPE(const_mvec_ptr) W, _ST_ beta, TYPE(sdMat_ptr) C, int* iflag);
@@ -297,6 +298,7 @@ for _varT in ('S', 'D', 'C', 'Z'):
     _declare(None, _prefix+'mvec_vscale', (_mvec_ptr, _ST_p, c_int_p), skip_if_missing=True)
     _declare(None, _prefix+'mvec_add_mvec', (_ST_, _mvec_ptr, _ST_, _mvec_ptr, c_int_p), skip_if_missing=True)
     _declare(None, _prefix+'mvec_vadd_mvec', (_ST_p, _mvec_ptr, _ST_, _mvec_ptr, c_int_p), skip_if_missing=True)
+    _declare(None, _prefix+'mvec_times_mvec_elemwise', (_ST_, _mvec_ptr, _mvec_ptr, c_int_p), skip_if_missing=True)
     _declare(None, _prefix+'mvec_dot_mvec', (_mvec_ptr, _mvec_ptr, _ST_p, c_int_p), skip_if_missing=True)
     _declare(None, _prefix+'mvecT_times_mvec', (_ST_, _mvec_ptr, _mvec_ptr, _ST_, _sdMat_ptr, c_int_p), skip_if_missing=True)
 
@@ -306,7 +308,7 @@ for _varT in ('S', 'D', 'C', 'Z'):
     #void SUBR(sdMat_times_sdMat)(_ST_ alpha, TYPE(const_sdMat_ptr) V, TYPE(const_sdMat_ptr) W, _ST_ beta, TYPE(sdMat_ptr) C, int* iflag);
     #void SUBR(sdMatT_times_sdMat)(_ST_ alpha, TYPE(const_sdMat_ptr) V, TYPE(const_sdMat_ptr) W, _ST_ beta, TYPE(sdMat_ptr) C, int* iflag);
     _declare(None, _prefix+'mvec_times_sdMat', (_ST_, _mvec_ptr, _sdMat_ptr, _ST_, _mvec_ptr, c_int_p), skip_if_missing=True)
-    _declare(None, _prefix+'mvec_times_sdMat_inplce', (_mvec_ptr, _sdMat_ptr, c_int_p), skip_if_missing=True)
+    _declare(None, _prefix+'mvec_times_sdMat_inplace', (_mvec_ptr, _sdMat_ptr, c_int_p), skip_if_missing=True)
     _declare(None, _prefix+'sdMat_add_sdMat', (_ST_, _sdMat_ptr, _ST_, _sdMat_ptr, c_int_p), skip_if_missing=True)
     _declare(None, _prefix+'sdMat_times_sdMat', (_ST_, _sdMat_ptr, _ST_, _sdMat_ptr, _sdMat_ptr, c_int_p), skip_if_missing=True)
     _declare(None, _prefix+'sdMatT_times_sdMat', (_ST_, _sdMat_ptr, _ST_, _sdMat_ptr, _sdMat_ptr, c_int_p), skip_if_missing=True)
