@@ -206,10 +206,10 @@ for _varT in ('S', 'D', 'C', 'Z'):
     _declare(None, _prefix+'sparseMat_get_domain_map', (_sparseMat_ptr, map_ptr_p, c_int_p), skip_if_missing=True)
 
     #void SUBR(mvec_create)(TYPE(mvec_ptr)* V, const_map_ptr_t map, int nvec, int* iflag);
-    #void SUBR(mvec_create_view)(TYPE(mvec_ptr)* V, const_map_ptr_t map, _ST_* values, lidx_t lda, int nvec, int* iflag);
+    #void SUBR(mvec_clone_shape)(TYPE(mvec_ptr)* V, TYPE(const_mvec_ptr) V_in, int* iflag);
     #void SUBR(sdMat_create)(TYPE(sdMat_ptr)* M, int nrows, int ncols, const_comm_ptr_t comm, int* iflag);
     _declare(None, _prefix+'mvec_create', (_mvec_ptr_p, map_ptr, c_int, c_int_p), skip_if_missing=True)
-    _declare(None, _prefix+'mvec_create_view', (_mvec_ptr_p, map_ptr, _ST_p, lidx, c_int, c_int_p), skip_if_missing=True)
+    _declare(None, _prefix+'mvec_clone_shape', (_mvec_ptr_p, _mvec_ptr, c_int_p), skip_if_missing=True)
     _declare(None, _prefix+'sdMat_create', (_sdMat_ptr_p, c_int, c_int, comm_ptr, c_int_p), skip_if_missing=True)
 
     #void SUBR(sparseMat_delete)(TYPE(sparseMat_ptr) A, int* iflag);
