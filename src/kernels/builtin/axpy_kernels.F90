@@ -70,6 +70,51 @@ subroutine dcopy_general(nvec, nrows, x, ldx, y, ldy)
   end do
 end subroutine dcopy_general
 
+subroutine dmult_1(nrows, alpha, x, y)
+  implicit none
+  integer, intent(in) :: nrows
+  real(kind=8), intent(in) :: alpha
+  real(kind=8), intent(in) :: x(nrows)
+  real(kind=8), intent(out) :: y(nrows)
+  integer :: i
+!dir$ assume_aligned x:64, y:64
+
+  if (alpha==1.0_8) then
+!$omp parallel do schedule(static)
+    do i = 1, nrows, 1
+      y(i) = x(i)*y(i)
+    end do
+  else
+!$omp parallel do schedule(static)
+    do i = 1, nrows, 1
+      y(i) = alpha*x(i)*y(i)
+    end do
+  end if
+end subroutine dmult_1
+
+subroutine dmult_general(nvec, nrows, alpha, x, ldx, y, ldy)
+  implicit none
+  integer, intent(in) :: nvec, nrows, ldx, ldy
+  real(kind=8), intent(in) :: alpha
+  real(kind=8), intent(in) :: x(ldx,*)
+  real(kind=8), intent(out) :: y(ldy,*)
+  integer :: i
+!dir$ assume_aligned x:8, y:8
+
+  if (alpha==1.0_8) then
+!$omp parallel do schedule(static)
+    do i = 1, nrows, 1
+      y(1:nvec,i) = x(1:nvec,i)*y(1:nvec,i)
+    end do
+  else
+!$omp parallel do schedule(static)
+    do i = 1, nrows, 1
+      y(1:nvec,i) = alpha*x(1:nvec,i)*y(1:nvec,i)
+    end do
+    
+  endif
+end subroutine dmult_general
+
 
 subroutine dscal_1(nrows, alpha, x)
   implicit none

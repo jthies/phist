@@ -296,6 +296,13 @@ extern "C" void SUBR(mvec_add_mvec)(_ST_ alpha, TYPE(const_mvec_ptr) X,
   *iflag=PHIST_NOT_IMPLEMENTED;
 }
 
+extern "C" void SUBR(mvec_times_mvec_elemwise)(_ST_ alpha, TYPE(const_mvec_ptr) V, 
+                                                TYPE(mvec_ptr) W,int* iflag)
+{
+  *iflag=PHIST_NOT_IMPLEMENTED;
+}
+
+
 extern "C" void SUBR(mvec_vadd_mvec)(const _ST_ alpha[], TYPE(const_mvec_ptr) X,
     _ST_ beta,  TYPE(mvec_ptr)       Y, 
     int* iflag)

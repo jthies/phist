@@ -34,6 +34,7 @@ extern "C" {
   void SUBR(mvecT_times_mvec_times_sdMat_inplace_f)(_ST_,TYPE(const_mvec_ptr),TYPE(const_mvec_ptr),TYPE(const_sdMat_ptr),_ST_,TYPE(sdMat_ptr),int*);
   void SUBR(mvec_QR_f)(TYPE(mvec_ptr),TYPE(sdMat_ptr),int*);
   void SUBR(mvec_add_mvec_f)(_ST_,TYPE(const_mvec_ptr),_ST_,TYPE(mvec_ptr),int*);
+  void SUBR(mvec_times_mvec_elemwise_f)(_ST_,TYPE(const_mvec_ptr),TYPE(mvec_ptr),int*);
   void SUBR(mvec_create_f)(TYPE(mvec_ptr)*,phist_const_map_ptr,phist_lidx,int*);
   void SUBR(mvec_delete_f)(TYPE(mvec_ptr),int*);
   void SUBR(mvec_dot_mvec_f)(TYPE(const_mvec_ptr),TYPE(const_mvec_ptr),_ST_*,int*);
@@ -534,6 +535,15 @@ extern "C" void SUBR(mvec_add_mvec)(_ST_ alpha, TYPE(const_mvec_ptr) X,
 #include "phist_std_typedefs.hpp"
   PHIST_PERFCHECK_VERIFY_MVEC_ADD_MVEC(alpha,X,beta,Y,iflag);
   PHIST_CHK_IERR(SUBR(mvec_add_mvec_f)(alpha,X,beta,Y,iflag),*iflag);
+}
+
+extern "C" void SUBR(mvec_times_mvec)(_ST_ alpha, TYPE(const_mvec_ptr) X,
+                                                  TYPE(mvec_ptr)       Y, int* iflag)
+{
+  PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
+#include "phist_std_typedefs.hpp"
+  PHIST_PERFCHECK_VERIFY_MVEC_TIMES_MVEC_ELEMWISE(alpha,X,Y,iflag);
+  PHIST_CHK_IERR(SUBR(mvec_times_mvec_elemwise_f)(alpha,X,Y,iflag),*iflag);
 }
 
 extern "C" void SUBR(mvec_vadd_mvec)(const _ST_ alpha[], TYPE(const_mvec_ptr) X,

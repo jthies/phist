@@ -59,6 +59,7 @@ module mvec_module
   !public :: phist_Dmvec_add_mvec
   !public :: phist_Dmvec_vadd_mvec
   public :: mvec_add_mvec
+  public :: mvec_times_mvec_elemwise
   public :: mvec_vadd_mvec
   !public :: phist_Dmvec_dot_mvec
   public :: mvec_dot_mvec
@@ -1521,6 +1522,67 @@ contains
     !--------------------------------------------------------------------------------
   end subroutine mvec_vadd_mvec
 
+  !==================================================================================
+  ! element-wsie multiplication for mvecs, y(i,j) <- alpha*x(i,j)*y(i,j)
+  subroutine mvec_times_mvec_elemwise(alpha,x_ptr,y_ptr,ierr) bind(C,name='phist_Dmvec_times_mvec_elemwise_f')
+    use, intrinsic :: iso_c_binding
+    !--------------------------------------------------------------------------------
+    real(C_DOUBLE),     value         :: alpha
+    type(C_PTR),        value         :: x_ptr, y_ptr
+    integer(C_INT),     intent(out)   :: ierr
+    !--------------------------------------------------------------------------------
+    type(MVec_t), pointer :: x, y
+    logical :: strided, strided_x, strided_y
+    integer(c_int) :: ldx, ldy, nrows, nvec
+    !--------------------------------------------------------------------------------
+
+    if( .not. c_associated(y_ptr) ) then
+      ierr = -88
+      return
+    end if
+    if( .not. c_associated(x_ptr) ) then
+      ierr = -88
+      return
+    end if
+
+    call c_f_pointer(x_ptr, x)
+    call c_f_pointer(y_ptr, y)
+    !--------------------------------------------------------------------------------
+
+    ierr=0
+    if( alpha .eq. 0.0_8 ) then
+      call phist_Dmvec_put_value(y_ptr,alpha,ierr)
+    else
+      ! determine data layout
+      if( .not. x%is_view .or. &
+        & ( x%jmin .eq. lbound(x%val,1) .and. &
+        &   x%jmax .eq. ubound(x%val,1)       ) ) then
+        strided_x = .false.
+      else
+        strided_x = .true.
+      end if
+
+      if( .not. y%is_view .or. &
+        & ( y%jmin .eq. lbound(y%val,1) .and. &
+        &   y%jmax .eq. ubound(y%val,1)       ) ) then
+        strided_y = .false.
+      else
+        strided_y = .true.
+      end if
+
+      strided = strided_x .or. strided_y
+
+      nvec = x%jmax-x%jmin+1
+      nrows = x%map%nlocal(x%map%me)
+      ldx = size(x%val,1)
+      ldy = size(y%val,1)
+      if (strided) then
+        call dmult_general(nrows, alpha, x%val(x%jmin,1), ldx, y%val(y%jmin,1), ldy)
+      else
+        call dmult_1(nrows*nvec, alpha, x%val(x%jmin,1), y%val(y%jmin,1))
+      end if
+    end if
+  end subroutine mvec_times_mvec_elemwise
 
   !==================================================================================
   ! dot product for mvecs
