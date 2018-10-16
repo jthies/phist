@@ -4,6 +4,7 @@
 # imports
 from __future__ import print_function
 import ctypes as _ct
+import numpy
 # we need to load phist_tools before
 import phist_tools as _phist_tools
 
@@ -152,6 +153,8 @@ for _varT in ('S', 'D', 'C', 'Z'):
     _MT_p = _ct.POINTER(_MT_)
     _ST_pp = _ct.POINTER(_ST_p)
     _MT_pp = _ct.POINTER(_MT_p)
+    _ST_1darray         = numpy.ctypeslib.ndpointer(dtype=numpy.float64, ndim=1)
+    _ST_1darray_contig  = numpy.ctypeslib.ndpointer(dtype=numpy.float64, ndim=1, flags='CONTIGUOUS')
 
     # sparseMat
     class _sparseMat_ptr(_ct.c_void_p):
@@ -254,8 +257,10 @@ for _varT in ('S', 'D', 'C', 'Z'):
     _declare(None, _prefix+'mvec_view_block', (_mvec_ptr, _mvec_ptr_p, c_int, c_int, c_int_p), skip_if_missing=True)
     _declare(None, _prefix+'mvec_get_block', (_mvec_ptr, _mvec_ptr, c_int, c_int, c_int_p), skip_if_missing=True)
     _declare(None, _prefix+'mvec_set_block', (_mvec_ptr, _mvec_ptr, c_int, c_int, c_int_p), skip_if_missing=True)
-    _declare(None, _prefix+'mvec_get_data', (_mvec_ptr, _ST_p, lidx, c_int, c_int_p), skip_if_missing=True)
-    _declare(None, _prefix+'mvec_set_data', (_mvec_ptr, _ST_p, lidx, c_int, c_int_p), skip_if_missing=True)
+    _declare(None, _prefix+'mvec_get_data', (_mvec_ptr, _ST_1darray, lidx, c_int, c_int_p), skip_if_missing=True)
+    _declare(None, _prefix+'mvec_set_data', (_mvec_ptr,_ST_1darray, lidx, c_int, c_int_p), skip_if_missing=True)
+    #_declare(None, _prefix+'mvec_get_data', (_mvec_ptr, _ST_p, lidx, c_int, c_int_p), skip_if_missing=True)
+    #_declare(None, _prefix+'mvec_set_data', (_mvec_ptr,_ST_p, lidx, c_int, c_int_p), skip_if_missing=True)
 
 
     #void SUBR(sdMat_view_block)(TYPE(sdMat_ptr) M, TYPE(sdMat_ptr)* Mblock, int imin, int imax, int jmin, int jmax, int* iflag);
