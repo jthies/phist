@@ -1585,7 +1585,7 @@ contains
       ldx = size(x%val,1)
       ldy = size(y%val,1)
       if (strided .or. (.not. aligned)) then
-        call dmult_general(nrows, alpha, x%val(x%jmin,1), ldx, y%val(y%jmin,1), ldy)
+        call dmult_general(nvec, nrows, alpha, x%val(x%jmin,1), ldx, y%val(y%jmin,1), ldy)
       else
         call dmult_1(nrows*nvec, alpha, x%val(x%jmin,1), y%val(y%jmin,1))
       end if
