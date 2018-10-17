@@ -243,7 +243,7 @@ extern "C" void phist_maps_compatible(phist_const_map_ptr vmap1, phist_const_map
 
 #ifdef PHIST_HAVE_SP
 #include "phist_gen_s.h"
-#include "../common/kernels_no_impl.c"
+#include "../common/kernels_no_impl.cpp"
 
 # ifdef PHIST_HAVE_CMPLX
 # include "phist_gen_c.h"
