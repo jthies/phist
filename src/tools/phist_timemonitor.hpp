@@ -18,6 +18,8 @@
 
 #ifdef PHIST_HAVE_OPENMP
 #include <omp.h>
+#else
+#include <sys/time.h>
 #endif
 
 #endif /* DOXYGEN */
@@ -138,7 +140,9 @@ namespace phist_TimeMonitor
 #elif defined(PHIST_HAVE_MPI)
         return MPI_Wtime();
 #else
-#error "phist_TimeMonitor needs OpenMP or MPI"
+       struct timeval timecheck;
+       gettimeofday(&timecheck, NULL);
+       return (double)timecheck.tv_sec + (double)timecheck.tv_usec / 1000.;
 #endif
       }
 

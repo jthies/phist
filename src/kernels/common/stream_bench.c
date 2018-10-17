@@ -21,6 +21,8 @@
 #include <immintrin.h>
 #ifdef PHIST_HAVE_OPENMP
 #include <omp.h>
+#else
+#include <sys/time.h>
 #endif
 #include <stdlib.h>
 
@@ -35,6 +37,18 @@
 // define our own datatype for aligned doubles
 typedef double aligned_double __attribute__((aligned(64)));
 
+      static double stream_bench_get_wtime()
+      {
+#if defined(PHIST_HAVE_OPENMP)
+        return omp_get_wtime();
+#elif defined(PHIST_HAVE_MPI)
+        return MPI_Wtime();
+#else
+       struct timeval timecheck;
+       gettimeofday(&timecheck, NULL);
+       return (double)timecheck.tv_sec + (double)timecheck.tv_usec / 1000.;
+#endif
+      }
 
 //! allocate memory for bench_stream_load_run
 void dbench_stream_load_create(double** x, int* ierr)
@@ -53,7 +67,7 @@ void dbench_stream_load_create(double** x, int* ierr)
 void dbench_stream_load_run(const aligned_double *restrict x, double *restrict res, double *restrict bw, int *restrict ierr)
 {
   // start timing
-  double wtime = omp_get_wtime();
+  double wtime = stream_bench_get_wtime();
 
 #pragma omp parallel 
 {
@@ -74,7 +88,7 @@ void dbench_stream_load_run(const aligned_double *restrict x, double *restrict r
   }
 }
   // end timing
-  wtime = omp_get_wtime() - wtime;
+  wtime = stream_bench_get_wtime() - wtime;
 
   // calculate bandwidth
   *bw = sizeof(double)*PHIST_BENCH_LARGE_N / wtime;
@@ -102,7 +116,7 @@ void dbench_stream_store_create(double** x, int* ierr)
 void dbench_stream_store_run(aligned_double *restrict x, const double* res, double *restrict bw, int *restrict ierr)
 {
   // start timing
-  double wtime = omp_get_wtime();
+  double wtime = stream_bench_get_wtime();
 
 #ifdef PHIST_HAVE_AVX512
   __m512d v0 = _mm512_set_pd(*res,*res,*res,*res,*res,*res,*res,*res);
@@ -132,7 +146,7 @@ void dbench_stream_store_run(aligned_double *restrict x, const double* res, doub
   }
 
   // end timing
-  wtime = omp_get_wtime() - wtime;
+  wtime = stream_bench_get_wtime() - wtime;
 
   // calculate bandwidth
   *bw = sizeof(double)*PHIST_BENCH_LARGE_N / wtime;
@@ -161,7 +175,7 @@ void dbench_stream_triad_create(double** x, double** y, double** z, int* ierr)
 void dbench_stream_triad_run(const aligned_double *restrict x, const aligned_double *restrict y, aligned_double *restrict z, const double *restrict res, double *restrict bw, int *restrict ierr)
 {
   // start timing
-  double wtime = omp_get_wtime();
+  double wtime = stream_bench_get_wtime();
 
 #ifdef PHIST_HAVE_AVX512
   __m512d a = _mm512_set_pd(*res,*res,*res,*res,*res,*res,*res,*res);
@@ -223,7 +237,7 @@ void dbench_stream_triad_run(const aligned_double *restrict x, const aligned_dou
   }
 
   // end timing
-  wtime = omp_get_wtime() - wtime;
+  wtime = stream_bench_get_wtime() - wtime;
 
   // calculate bandwidth
   *bw = 3*sizeof(double)*PHIST_BENCH_LARGE_N / wtime;
