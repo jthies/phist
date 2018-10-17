@@ -537,7 +537,7 @@ extern "C" void SUBR(mvec_add_mvec)(_ST_ alpha, TYPE(const_mvec_ptr) X,
   PHIST_CHK_IERR(SUBR(mvec_add_mvec_f)(alpha,X,beta,Y,iflag),*iflag);
 }
 
-extern "C" void SUBR(mvec_times_mvec)(_ST_ alpha, TYPE(const_mvec_ptr) X,
+extern "C" void SUBR(mvec_times_mvec_elemwise)(_ST_ alpha, TYPE(const_mvec_ptr) X,
                                                   TYPE(mvec_ptr)       Y, int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);

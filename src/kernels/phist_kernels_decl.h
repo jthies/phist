@@ -492,18 +492,18 @@ void SUBR(mvec_add_mvec)(_ST_ alpha, TYPE(const_mvec_ptr) X,
                             _ST_ beta,  TYPE(mvec_ptr)       Y,     
                             int* iflag);
 
+//! y[i]=alpha[i]*x[i]+beta*y[i]. \ingroup mvec
+void SUBR(mvec_vadd_mvec)(const _ST_ alpha[], TYPE(const_mvec_ptr) X,
+                                _ST_ beta,    TYPE(mvec_ptr)       Y,     
+                          int* iflag);
+
+
 //! \brief element-wise multiplication of two mvecs
 //!
 //!
 //! W(i,j) = alpha*V(i,j)*W(i,j) for i=1:nrows, j=1:ncols. V and W must have the same shape nrows x ncols
 void SUBR(mvec_times_mvec_elemwise)(_ST_ alpha, TYPE(const_mvec_ptr) V, 
                                                 TYPE(mvec_ptr) W,int* iflag);
-
-//! y[i]=alpha[i]*x[i]+beta*y[i]. \ingroup mvec
-void SUBR(mvec_vadd_mvec)(const _ST_ alpha[], TYPE(const_mvec_ptr) X,
-                                _ST_ beta,    TYPE(mvec_ptr)       Y,     
-                          int* iflag);
-
 
 //! dot product of vectors v_i and w_i, i=1..numvecs. \ingroup mvec
 void SUBR(mvec_dot_mvec)(TYPE(const_mvec_ptr) V, 

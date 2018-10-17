@@ -709,6 +709,23 @@ public:
     }
   }
 
+
+  // X = Y*diag(a_1,...,a_nvec) + a*X
+  TEST_F(CLASSNAME, times_mvec_elemwise)
+  {
+    if( typeImplemented_ && !problemTooSmall_ )
+    {
+      ST alpha = st::prand();
+      // at startup, v1=random, v2=ones, so this gives v2=alpha*v1
+      SUBR(mvec_times_mvec_elemwise)(alpha,vec1_,vec2_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(mvec_scale)(vec1_,alpha,&iflag_);
+      ASSERT_EQ(0,iflag_);
+
+      ASSERT_NEAR(mt::one(),MvecsEqual(vec1_,vec2_, mt::one()), 1000*mt::eps());
+    }
+  }
+
   // view certain columns, manipulate them and check it changes the
   // correct locations in the original one
   TEST_F(CLASSNAME, view_block)

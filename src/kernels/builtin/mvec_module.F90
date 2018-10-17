@@ -1532,7 +1532,7 @@ contains
     integer(C_INT),     intent(out)   :: ierr
     !--------------------------------------------------------------------------------
     type(MVec_t), pointer :: x, y
-    logical :: strided, strided_x, strided_y
+    logical :: aligned, strided, strided_x, strided_y
     integer(c_int) :: ldx, ldy, nrows, nvec
     !--------------------------------------------------------------------------------
 
@@ -1572,11 +1572,19 @@ contains
 
       strided = strided_x .or. strided_y
 
+    aligned = .true.
+    if( mod(loc(y%val(x%jmin,1)),64) .ne. 0 ) then
+      aligned = .false.
+    end if
+    if( mod(loc(y%val(y%jmin,1)),64) .ne. 0 ) then
+      aligned = .false.
+    end if
+
       nvec = x%jmax-x%jmin+1
       nrows = x%map%nlocal(x%map%me)
       ldx = size(x%val,1)
       ldy = size(y%val,1)
-      if (strided) then
+      if (strided .or. (.not. aligned)) then
         call dmult_general(nrows, alpha, x%val(x%jmin,1), ldx, y%val(y%jmin,1), ldy)
       else
         call dmult_1(nrows*nvec, alpha, x%val(x%jmin,1), y%val(y%jmin,1))
