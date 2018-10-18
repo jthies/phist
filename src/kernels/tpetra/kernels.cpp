@@ -67,6 +67,10 @@ extern "C" void phist_kernels_init(int* argc, char*** argv, int* iflag)
 # warning "phist/tpetra relies on MPI 3 features for pinning threads, update your MPI or use external pinning instead."\
           "I will disable PHIST_TRY_TO_PIN_THREADS internally for now."
 # undef PHIST_TRY_TO_PIN_THREADS`       
+# elif !defined(PHIST_HAVE_OPENMP)
+# warning "phist/tpetra relies on OpenMP for pinning threads, you could use external pinning instead."\
+          "I will disable PHIST_TRY_TO_PIN_THREADS internally for now."
+# undef PHIST_TRY_TO_PIN_THREADS`       
 # endif
 #endif
 
