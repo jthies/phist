@@ -266,9 +266,13 @@ for _varT in ('S', 'D', 'C', 'Z'):
     #void SUBR(sdMat_view_block)(TYPE(sdMat_ptr) M, TYPE(sdMat_ptr)* Mblock, int imin, int imax, int jmin, int jmax, int* iflag);
     #void SUBR(sdMat_get_block)(TYPE(const_sdMat_ptr) M, TYPE(sdMat_ptr) Mblock, int imin, int imax, int jmin, int jmax, int* iflag);
     #void SUBR(sdMat_set_block)(TYPE(sdMat_ptr) M, TYPE(const_sdMat_ptr) Mblock, int imin, int imax, int jmin, int jmax, int* iflag);
+    #void SUBR(sdMat_set_data)(TYPE(sdMat_ptr) M, const _ST_* data_in, phist_lidx lda_in, int input_row_major, int* iflag);
+    #void SUBR(sdMat_get_data)(TYPE(const_sdMat_ptr) M, _ST_* data_out, phist_lidx lda_in, int output_row_major, int* iflag);
     _declare(None, _prefix+'sdMat_view_block', (_sdMat_ptr, _sdMat_ptr_p, c_int, c_int, c_int, c_int, c_int_p), skip_if_missing=True)
     _declare(None, _prefix+'sdMat_get_block', (_sdMat_ptr, _sdMat_ptr, c_int, c_int, c_int, c_int, c_int_p), skip_if_missing=True)
     _declare(None, _prefix+'sdMat_set_block', (_sdMat_ptr, _sdMat_ptr, c_int, c_int, c_int, c_int, c_int_p), skip_if_missing=True)
+    _declare(None, _prefix+'sdMat_get_data', (_sdMat_ptr, _ST_1darray, lidx, c_int, c_int_p), skip_if_missing=True)
+    _declare(None, _prefix+'sdMat_set_data', (_sdMat_ptr, _ST_1darray, lidx, c_int, c_int_p), skip_if_missing=True)
 
     #void SUBR(mvec_put_value)(TYPE(mvec_ptr) V, _ST_ value, int* iflag);
     #void SUBR(sdMat_put_value)(TYPE(sdMat_ptr) V, _ST_ value, int* iflag);
