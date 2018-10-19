@@ -408,6 +408,26 @@ void SUBR(sdMat_set_block)(TYPE(sdMat_ptr) M,
                              TYPE(const_sdMat_ptr) Mblock,
                              int imin, int imax, int jmin, int jmax, int* iflag);
 
+//! \brief fill sdMat from raw data
+//!
+//! Given a 2D raw data array in row- or column-major order, set the sdMat
+//! entries accordingly and upload the result to the device if needed.
+//! data_in must be allocated/filled by the user with at least lda_in*tda_in
+//! elements where tda_in=input_row_major? ncols: nrows of M.
+void SUBR(sdMat_set_data)(TYPE(sdMat_ptr) M,
+                const _ST_* data_in, phist_lidx lda_in, int input_row_major, 
+                int* iflag);
+
+//! \brief copy sdMat data to array
+//!
+//! Given a 2D raw data array in row- or column-major order, copy the sdMat
+//! entries accordingly (after downloading them from the device if needed).
+//! data_out must be allocated by the user with at least lda_out*tda_out   
+//! elements where tda_out=output_row_major? ncols: nrows of M.
+void SUBR(sdMat_get_data)(TYPE(const_sdMat_ptr) M,
+                _ST_* data_out, phist_lidx lda_in, int output_row_major, 
+                int* iflag);
+
 //!@}
 
 //! \name initialize/fill mvecs
