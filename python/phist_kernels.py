@@ -76,6 +76,8 @@ class gidx(_c_integer_type_from_size(_gidx_size)):
 
 lidx_p = _ct.POINTER(lidx)
 gidx_p = _ct.POINTER(gidx)
+lidx_1darray         = numpy.ctypeslib.ndpointer(dtype=lidx, ndim=1)
+gidx_1darray         = numpy.ctypeslib.ndpointer(dtype=gidx, ndim=1)
 
 
 #--------------------------------------------------------------------------------
@@ -143,6 +145,11 @@ S_pp = _ct.POINTER(S_p)
 D_pp = _ct.POINTER(D_p)
 C_pp = _ct.POINTER(C_p)
 Z_pp = _ct.POINTER(Z_p)
+S_1darray = numpy.ctypeslib.ndpointer(dtype=S, ndim=1)
+D_1darray = numpy.ctypeslib.ndpointer(dtype=D, ndim=1)
+C_1darray = numpy.ctypeslib.ndpointer(dtype=C, ndim=1)
+Z_1darray = numpy.ctypeslib.ndpointer(dtype=Z, ndim=1)
+
 for _varT in ('S', 'D', 'C', 'Z'):
     _prefix = 'phist_'+_varT
 
