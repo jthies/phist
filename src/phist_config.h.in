@@ -133,7 +133,6 @@ kernel libs) ?
 /* other TPLs */
 #cmakedefine PHIST_HAVE_MKL
 #cmakedefine PHIST_HAVE_PARMETIS
-#cmakedefine PHIST_HAVE_KAHIP
 #cmakedefine PHIST_HAVE_COLPACK
 #cmakedefine PHIST_HAVE_LIKWID
 /* do we have access to MPACK (multi-precision BLAS/LAPACK and GMP (GNU Multiple Precision library)
