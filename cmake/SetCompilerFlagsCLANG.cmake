@@ -1,7 +1,5 @@
   set (CMAKE_C_FLAGS        "-std=c99")
   set (CMAKE_CXX_FLAGS      "-std=c++11")
-  # assume we are using the LLVM Flang compiler (PGI flavour)
-  set (CMAKE_Fortran_FLAGS  "-Mpreprocess -DFLANG")
 
   if(PHIST_HAVE_MKL)
     set (CMAKE_C_FLAGS        "${CMAKE_C_FLAGS}       -DMKL_LP64")
