@@ -482,28 +482,28 @@ if (PHIST_KERNEL_LIB STREQUAL "builtin")
                           ${PROJECT_SOURCE_DIR}/drivers/matfuncs/tritoeplitz.F90
                           ${PROJECT_SOURCE_DIR}/drivers/matfuncs/brussolator.F90
                           ${PROJECT_SOURCE_DIR}/src/kernels/phist_mpi_kernels.cpp
-                          ${PROJECT_SOURCE_DIR}/src/kernels/builtin/env_module.f90
-                          ${PROJECT_SOURCE_DIR}/src/kernels/builtin/map_module.f90
-                          ${PROJECT_SOURCE_DIR}/src/kernels/builtin/mrgrnk.f90
-                          ${PROJECT_SOURCE_DIR}/src/kernels/builtin/crsmat_module.f90
+                          ${PROJECT_SOURCE_DIR}/src/kernels/builtin/env_module.F90
+                          ${PROJECT_SOURCE_DIR}/src/kernels/builtin/map_module.F90
+                          ${PROJECT_SOURCE_DIR}/src/kernels/builtin/mrgrnk.F90
+                          ${PROJECT_SOURCE_DIR}/src/kernels/builtin/crsmat_module.F90
                           ${PROJECT_SOURCE_DIR}/src/kernels/builtin/parmetis.c
                           ${PROJECT_SOURCE_DIR}/src/kernels/builtin/colpack.cpp
-                          ${PROJECT_SOURCE_DIR}/src/kernels/builtin/mvec_module.f90
-                          ${PROJECT_SOURCE_DIR}/src/kernels/builtin/nrm2_kernels.f90
-                          ${PROJECT_SOURCE_DIR}/src/kernels/builtin/axpy_kernels.f90
+                          ${PROJECT_SOURCE_DIR}/src/kernels/builtin/mvec_module.F90
+                          ${PROJECT_SOURCE_DIR}/src/kernels/builtin/nrm2_kernels.F90
+                          ${PROJECT_SOURCE_DIR}/src/kernels/builtin/axpy_kernels.F90
                           ${PROJECT_SOURCE_DIR}/src/kernels/builtin/axpy_kernels_nt.c
-                          ${PROJECT_SOURCE_DIR}/src/kernels/builtin/gather_scatter_kernels.f90
-                          ${PROJECT_SOURCE_DIR}/src/kernels/builtin/dot_kernels.f90
-                          ${PROJECT_SOURCE_DIR}/src/kernels/builtin/gemm_kernels_sB.f90
-                          ${PROJECT_SOURCE_DIR}/src/kernels/builtin/gemm_kernels_sB_augmented.f90
-                          ${PROJECT_SOURCE_DIR}/src/kernels/builtin/gemm_kernels_sC.f90
-                          ${PROJECT_SOURCE_DIR}/src/kernels/builtin/gemm_kernels_fused_sCD.f90
-                          ${PROJECT_SOURCE_DIR}/src/kernels/builtin/gemm_kernels_sB_add_sD.f90
+                          ${PROJECT_SOURCE_DIR}/src/kernels/builtin/gather_scatter_kernels.F90
+                          ${PROJECT_SOURCE_DIR}/src/kernels/builtin/dot_kernels.F90
+                          ${PROJECT_SOURCE_DIR}/src/kernels/builtin/gemm_kernels_sB.F90
+                          ${PROJECT_SOURCE_DIR}/src/kernels/builtin/gemm_kernels_sB_augmented.F90
+                          ${PROJECT_SOURCE_DIR}/src/kernels/builtin/gemm_kernels_sC.F90
+                          ${PROJECT_SOURCE_DIR}/src/kernels/builtin/gemm_kernels_fused_sCD.F90
+                          ${PROJECT_SOURCE_DIR}/src/kernels/builtin/gemm_kernels_sB_add_sD.F90
                           ${PROJECT_SOURCE_DIR}/src/kernels/builtin/spmvm_kernels_nt.c
-                          ${PROJECT_SOURCE_DIR}/src/kernels/builtin/spmvm_kernels.f90
-                          ${PROJECT_SOURCE_DIR}/src/kernels/builtin/spmv_buff_cpy_kernels.f90
-                          ${PROJECT_SOURCE_DIR}/src/kernels/builtin/kacz_kernels.f90
-                          ${PROJECT_SOURCE_DIR}/src/kernels/builtin/sdmat_module.f90
+                          ${PROJECT_SOURCE_DIR}/src/kernels/builtin/spmvm_kernels.F90
+                          ${PROJECT_SOURCE_DIR}/src/kernels/builtin/spmv_buff_cpy_kernels.F90
+                          ${PROJECT_SOURCE_DIR}/src/kernels/builtin/kacz_kernels.F90
+                          ${PROJECT_SOURCE_DIR}/src/kernels/builtin/sdmat_module.F90
                           )
   if(PHIST_HIGH_PRECISION_KERNELS)
     set (PHIST_KERNEL_SOURCE ${PHIST_KERNEL_SOURCE}
