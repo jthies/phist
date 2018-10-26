@@ -298,6 +298,15 @@ if (PHIST_ENABLE_OPENMP)
     set(CMAKE_Fortran_FLAGS     "${CMAKE_Fortran_FLAGS} ${OpenMP_Fortran_FLAGS}")
   endif()
 endif()
+
+################################################################################
+# xSDK requires certain behavior when it comes to finding third-party libraries,
+# implemented here:
+################################################################################
+
+include(cmake/HandleTPLs.cmake)
+
+
 set(REQUIRE_TRILI_PKG,"")
 set(OPTIONAL_TRILI_PKG,"")
 
@@ -713,9 +722,9 @@ endif()
 
 # load parmetis for reordering builtin
 if(PHIST_KERNEL_LIB STREQUAL "builtin")
-  if (PHIST_USE_GRAPH_TPLS)
+  if (PHIST_USE_GRAPH_TPLS AND TPL_ENABLE_ParMETIS)
     find_package(ParMETIS)
-    if(PARMETIS_FOUND)
+    if (PARMETIS_FOUND)
       set(PHIST_HAVE_PARMETIS On)
       include_directories(${PARMETIS_INCLUDE_DIRS})
       link_directories(${PARMETIS_LIBRARY_DIRS})
@@ -725,24 +734,25 @@ if(PHIST_KERNEL_LIB STREQUAL "builtin")
       message(STATUS "ParMETIS not found.")
     endif()
 
-    find_package(ColPack)
-    if(COLPACK_FOUND)
-      set(PHIST_HAVE_COLPACK 1)
-      include_directories(${COLPACK_INCLUDE_DIRS})
-      link_directories(${COLPACK_LIBRARY_DIRS})
-      target_link_libraries(phist_kernels_${PHIST_KERNEL_LIB} ${COLPACK_LIBRARIES})
-      message(STATUS "ColPack found, enabled matrix coloring!")
-    else()
-      message(STATUS "ColPack not found, no matrix coloring!")
+    if (TPL_ENABLE_ColPack)
+      find_package(ColPack)
+      if(COLPACK_FOUND)
+        set(PHIST_HAVE_COLPACK 1)
+        include_directories(${COLPACK_INCLUDE_DIRS})
+        link_directories(${COLPACK_LIBRARY_DIRS})
+        target_link_libraries(phist_kernels_${PHIST_KERNEL_LIB} ${COLPACK_LIBRARIES})
+        message(STATUS "ColPack found, enabled matrix coloring!")
+      else()
+        message(STATUS "ColPack not found, no matrix coloring!")
+      endif()
     endif()
   endif()
 endif()
 
 if (PHIST_USE_LIKWID)
-        set(LIKWID_INCLUDE_DIR "" CACHE PATH "Location of likwid.h")
-        include_directories(${LIKWID_INCLUDE_DIR})
-        get_filename_component(LIKWID_LIBDIR ${LIKWID_INCLUDE_DIR}/../lib REALPATH)
-        find_library(LIKWID_LIBRARIES likwid ${LIKWID_LIBDIR})
+        set(TPL_LIKWID_DIR "" CACHE PATH "Location of likwid.h")
+        include_directories(${LIKWID_INCLUDE_DIR}/include)
+        find_library(TPL_LIKWID_LIBRARIES likwid ${LIKWID_DIR}/lib)
 
         option(LIKWID_PERFMON "Activate function-level Likwid performance monitoring (to be used with likwid-perfctr -m)" ON)
         if (${LIKWID_PERFMON})
@@ -751,7 +761,7 @@ if (PHIST_USE_LIKWID)
           message(STATUS "disabled function-level Likwid performance monitoring")
         endif ()
         set(PHIST_HAVE_LIKWID 1)
-      target_link_libraries(phist_tools ${LIKWID_LIBRARIES})
+      target_link_libraries(phist_tools ${TPL_LIKWID_LIBRARIES})
 
 endif()
 
