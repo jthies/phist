@@ -1,5 +1,5 @@
 # Module that checks whether ParMETIS is available.
-# 
+#
 # Accepts the following variables:
 #
 # PARMETIS_ROOT: Prefix where ParMETIS is installed.
@@ -14,7 +14,7 @@
 # PARMETIS_LIBRARY: Full path of the ParMETIS library.
 # PARMETIS_FOUND: True if ParMETIS was found.
 # PARMETIS_LIBRARIES: List of all libraries needed for linking with ParMETIS,
-# 
+#
 # Provides the following macros:
 #
 # find_package(ParMETIS)

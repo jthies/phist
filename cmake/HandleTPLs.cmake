@@ -16,7 +16,6 @@ set(PHIST_MODULE_TPL_LIST
 
 set(PHIST_CONFIG_TPL_LIST
   Eigen3
-  GHOST
   Trilinos
   )
 set(TPL_Eigen3_REQUIRED ${PHIST_KERNEL_LIB_EIGEN})
@@ -44,6 +43,17 @@ foreach (PKG in ${PHIST_CONFIG_TPL_LIST})
     else()
       find_package(${PKG} QUIET)
     endif()
+  endif()
+endforeach()
+
+# ParMETIS requires METIS, to avoid linking with incompatible libraries, we force the user to set
+# both TPL_* options if any
+foreach (ITEM in DIR;INCLUDE_DIRS;LIBRARIES)
+  if (TPL_ParMETIS_${ITEM})
+    if (NOT TPL_METIS_${ITEM})
+      message(FATAL_ERROR "If you specify TPL_ParMETIS_${ITEM}, you also have to set TPL_METIS_${ITEM}.")
+    endif()
+    set(METIS_${ITEM} ${TPL_METIS_${ITEM}})
   endif()
 endforeach()
 
