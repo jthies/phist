@@ -46,17 +46,6 @@ foreach (PKG in ${PHIST_CONFIG_TPL_LIST})
   endif()
 endforeach()
 
-# ParMETIS requires METIS, to avoid linking with incompatible libraries, we force the user to set
-# both TPL_* options if any
-foreach (ITEM in DIR;INCLUDE_DIRS;LIBRARIES)
-  if (TPL_ParMETIS_${ITEM})
-    if (NOT TPL_METIS_${ITEM})
-      message(FATAL_ERROR "If you specify TPL_ParMETIS_${ITEM}, you also have to set TPL_METIS_${ITEM}.")
-    endif()
-    set(METIS_${ITEM} ${TPL_METIS_${ITEM}})
-  endif()
-endforeach()
-
 # For these packages we have our own Find<pkg>.cmake module in phist/cmake/.
 # We just need to translate the TPL_ options for them to work.
 foreach (PKG in ${PHIST_MODULE_TPL_LIST})
@@ -69,7 +58,7 @@ foreach (PKG in ${PHIST_MODULE_TPL_LIST})
       set(${PKG_CAPS}_INCLUDE_DIRS "${TPL_${PKG}_INCLUDE_DIRS}")
       set(${PKG}_LIBRARIES ${TPL_${PKG}_LIBRARIES})
       set(${PKG_CAPS}_LIBRARIES ${TPL_${PKG}_LIBRARIES})
-      find_package(${PKG} MODULE NO_DEFAULT_PATH NO_CMAKE_ENVIRONMENT_PATH REQUIRED)
+      find_package(${PKG} MODULE REQUIRED)
     elseif (TPL_${PKG}_DIR)
       set(${PKG}_DIR ${TPL_${PKG}_DIR})
       set(${PKG_CAPS}_DIR ${TPL_${PKG}_DIR})

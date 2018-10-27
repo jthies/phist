@@ -20,12 +20,17 @@
 # find_package(ParMETIS)
 
 find_path(PARMETIS_INCLUDE_DIR parmetis.h
-          PATHS ${PARMETIS_DIR} ${PARMETIS_ROOT}
-          PATH_SUFFIXES include parmetis
+          PATHS ${TPL_ParMETIS_INCLUDE_DIRS}
           NO_DEFAULT_PATH
           DOC "Include directory of ParMETIS")
 find_path(PARMETIS_INCLUDE_DIR parmetis.h
+          PATHS ${TPL_ParMETIS_DIR}
+          PATH_SUFFIXES include parmetis
+          NO_DEFAULT_PATH)
+find_path(PARMETIS_INCLUDE_DIR parmetis.h
           PATH_SUFFIXES include parmetis)
+
+set(PARMETIS_INCLUDE_DIRS ${PARMETIS_INCLUDE_DIR})
 
 set(METIS_LIB_NAME metis
     CACHE STRING "Name of the METIS library (default: metis).")
@@ -41,7 +46,7 @@ set(PARMETIS_LIBRARY ParMETIS_LIBRARY-NOTFOUND
 include(CMakePushCheckState)
 cmake_push_check_state() # Save variables
 include(CheckIncludeFile)
-set(CMAKE_REQUIRED_INCLUDES ${CMAKE_REQUIRED_INCLUDES} ${MPI_DUNE_INCLUDE_PATH} ${PARMETIS_INCLUDE_DIR})
+set(CMAKE_REQUIRED_INCLUDES ${CMAKE_REQUIRED_INCLUDES} ${MPI_INCLUDE_PATH} ${PARMETIS_INCLUDE_DIR})
 set(CMAKE_REQUIRED_FLAGS "${CMAKE_REQUIRED_FLAGS} ${MPI_DUNE_COMPILE_FLAGS}")
 check_include_file(metis.h METIS_FOUND)
 check_include_file(parmetis.h PARMETIS_FOUND)
@@ -50,26 +55,30 @@ if(PARMETIS_FOUND)
   set(ParMETIS_INCLUDE_PATH ${CMAKE_REQUIRED_INCLUDES})
   set(ParMETIS_COMPILE_FLAGS "${CMAKE_REQUIRED_FLAGS} -DENABLE_PARMETIS=1")
 
-  # search METIS library
-  find_library(METIS_LIBRARY metis
-               PATHS ${PARMETIS_DIR} ${PARMETIS_ROOT}
+  if (NOT TPL_ParMETIS_LIBRARIES)
+    # search METIS library
+    find_library(METIS_LIBRARY metis
+               PATHS ${TPL_ParMETIS_DIR} ${PARMETIS_DIR} ${PARMETIS_ROOT}
                PATH_SUFFIXES lib
                NO_DEFAULT_PATH)
-  find_library(METIS_LIBRARY metis)
+    find_library(METIS_LIBRARY metis)
 
-  # search ParMETIS library
-  find_library(PARMETIS_LIBRARY parmetis
-               PATHS ${PARMETIS_DIR} ${PARMETIS_ROOT}
+    # search ParMETIS library
+    find_library(PARMETIS_LIBRARY parmetis
+               PATHS ${TPL_ParMETIS_DIR} ${PARMETIS_DIR} ${PARMETIS_ROOT}
                PATH_SUFFIXES lib
                NO_DEFAULT_PATH)
-  find_library(PARMETIS_LIBRARY parmetis)
-
+    find_library(PARMETIS_LIBRARY parmetis)
+    set(PARMETIS_LIBRARIES ${PARMETIS_LIBRARY} ${METIS_LIBRARY} CACHE FILEPATH "ParMETIS library list.")
+  else()
+    set(PARMETIS_LIBRARIES ${TPL_ParMETIS_LIBRARIES} CACHE FILEPATH "ParMETIS library list.")
+  endif()
   # check ParMETIS library
-  if(PARMETIS_LIBRARY)
-    list(APPEND CMAKE_REQUIRED_LIBRARIES ${PARMETIS_LIBRARY} ${METIS_LIBRARY} ${MPI_DUNE_LIBRARIES})
+  if(PARMETIS_LIBRARIES)
+    list(APPEND CMAKE_REQUIRED_LIBRARIES ${PARMETIS_LIBRARIES})
     include(CheckFunctionExists)
     check_function_exists(parmetis_v3_partkway HAVE_PARMETIS)
-  endif(PARMETIS_LIBRARY)
+  endif(PARMETIS_LIBRARIES)
 endif(PARMETIS_FOUND)
 
 # behave like a CMake module is supposed to behave
@@ -77,8 +86,8 @@ include(FindPackageHandleStandardArgs)
 find_package_handle_standard_args(
   "ParMETIS"
   DEFAULT_MSG
-  PARMETIS_INCLUDE_DIR
-  PARMETIS_LIBRARY
+  PARMETIS_INCLUDE_DIRS
+  PARMETIS_LIBRARIES
   HAVE_PARMETIS
 )
 
@@ -89,12 +98,13 @@ cmake_pop_check_state()
 
 
 if(PARMETIS_FOUND)
-  set(PARMETIS_INCLUDE_DIRS ${PARMETIS_INCLUDE_DIR})
-  set(PARMETIS_LIBRARIES "${PARMETIS_LIBRARY};${METIS_LIBRARY}" 
-      CACHE FILEPATH "ParMETIS libraries needed for linking")
+  if (NOT PARMETIS_LIBRARIES)
+    set(PARMETIS_LIBRARIES "${PARMETIS_LIBRARY};${METIS_LIBRARY}" 
+        CACHE FILEPATH "ParMETIS libraries needed for linking")
+  endif()
   # log result
   file(APPEND ${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/CMakeOutput.log
     "Determing location of ParMETIS succeded:\n"
-    "Include directory: ${PARMETIS_INCLUDE_DIRS}\n"
-    "Library directory: ${PARMETIS_LIBRARIES}\n\n")
+    "Include directory: ${PARMETIS_INCLUDE_DIR}\n"
+    "Libraries: ${PARMETIS_LIBRARIES}\n\n")
 endif(PARMETIS_FOUND)
