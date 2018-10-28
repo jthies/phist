@@ -41,7 +41,7 @@ foreach (PKG in ${PHIST_CONFIG_TPL_LIST})
                           "            is a CMake project and should provide a config file. Either add its location "
                           "            to the CMAKE_PREFIX_PATH or use the variable TPL_${PKG}_DIR instead.")
     elseif (TPL_${PKG}_DIR)
-      find_package(${PKG} PATH ${TPL_${PKG}_DIR} NO_DEFAULT_PATH NO_CMAKE_ENVIRONMENT_PATH REQUIRED)
+      find_package(${PKG} PATHS ${TPL_${PKG}_DIR} NO_DEFAULT_PATH NO_CMAKE_ENVIRONMENT_PATH REQUIRED)
     elseif (TPL_${PKG}_REQUIRED)
       find_package(${PKG} REQUIRED)
     else()
