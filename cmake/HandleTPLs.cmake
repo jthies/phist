@@ -4,7 +4,14 @@
 # policy M1, namely to check the variables
 # TPL_ENABLE_<name>, TPL_<name>_DIR/LIBRARIES/INCLUDE_DIRS and
 # to use the package as specified. We do this by calling find_package
-# repeatedly and makinng sure the given paths are the ones CMake finds, too.
+# with corresponding arguments once for ech TPL before the actual calls
+# in CMakeLists.txt. For TPLs that provide a <pkg>-config.cmake or <pkg>Config.cmake
+# file, we only support setting TPL_<pkg>_DIR because checking wether the given include
+# path and library lists are correct is beyond our capabilities. For other packages (e.g. ParMETIS)
+# we have our own Find<pkg>.cmake modules and do our best to implement the full M1 beavior, namely to
+# honor the coices made via TPL_<pkg>_INCLUDE_DIRS and TPL_<pkg>_LIBRARIES and stop with an error if we
+# find they don't work in some way. We certainly recommend against using this mechanism in favor of
+# CMAKE_PREFIX_PATH, PKG_CONFIG_PATH, etc., supported by TPL_<pkg>_DIR where needed.
 #
 set(PHIST_MODULE_TPL_LIST
   ColPack
@@ -25,19 +32,16 @@ if (PHIST_KERNEL_LIB_EPETRA OR PHIST_KERNEL_LIB_TPETRA)
   set(TPL_Trilinos_REQUIRED ON)
 endif()
 
-# these packages provide a <pkg>-config.cmake file, but mostly
-# those modules will call find_package internally.
+# these packages provide a <pkg>-config.cmake file, and we only support TPL_<pkg>_DIR
 foreach (PKG in ${PHIST_CONFIG_TPL_LIST})
   set(TPL_ENABLE_${PKG} ON CACHE BOOL "Try to find and use ${TPL} (if supported by th kernel library).")
   if (TPL_ENABLE_${PKG})
-    if (TPL_${PKG}_INCLUDE_DIRS)
-      # this is just to make sure the package is actually installed in that location:
-      find_package(${PKG} MODULE HINTS ${TPL_${PKG}_INCLUDE_DIRS} NO_DEFAULT_PATH NO_CMAKE_ENVIRONMENT_PATH REQUIRED)
-      # override whatever cmake found with whatever the user specified, and hope for the best...
-      set(${PKG}_INCLUDE_DIRS "${TPL_${PKG}_INCLUDE_DIRS}")
-      set(${PKG}_LIBRARIES ${TPL_${PKG}_LIBRARIES})
+    if (TPL_${PKG}_INCLUDE_DIRS OR TPL_${PKG}_LIBRARIES)
+      message(FATAL_ERROR "HandleTPLS: you specified TPL_${PKG}_INCLUDE_DIRS and/or TPL_${PKG}_LIBRARIES, but ${PKG}"
+                          "            is a CMake project and should provide a config file. Either add its location "
+                          "            to the CMAKE_PREFIX_PATH or use the variable TPL_${PKG}_DIR instead.")
     elseif (TPL_${PKG}_DIR)
-      find_package(${PKG} HINTS ${TPL_${PKG}_DIR} NO_DEFAULT_PATH NO_CMAKE_ENVIRONMENT_PATH REQUIRED)
+      find_package(${PKG} PATH ${TPL_${PKG}_DIR} NO_DEFAULT_PATH NO_CMAKE_ENVIRONMENT_PATH REQUIRED)
     elseif (TPL_${PKG}_REQUIRED)
       find_package(${PKG} REQUIRED)
     else()
