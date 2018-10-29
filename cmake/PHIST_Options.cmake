@@ -56,7 +56,7 @@ option(PHIST_USE_GHOST
 # try to find MPACK for high precision lapack routines
 option(PHIST_USE_MPACK
         "try to find the MPACK library" 
-        ON)
+        OFF)
 
 # try to find third-party solver packages (depending on kernel lib),
 # for instance for epetra/tpetra and GHOST we have an interface to

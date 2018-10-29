@@ -15,7 +15,6 @@
 #
 set(PHIST_MODULE_TPL_LIST
   ColPack
-  MPACK
   MAGMA
   ParMETIS
   PETSC
