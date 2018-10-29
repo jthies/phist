@@ -1,5 +1,5 @@
 # Module that checks whether ColPack is available.
-# 
+#
 # Accepts the following variables:
 #
 # COLPACK_ROOT: Prefix where ColPack is installed.
@@ -11,19 +11,29 @@
 # COLPACK_LIBRARY: Full path of the ColPack library.
 # COLPACK_FOUND: True if ColPack was found.
 # COLPACK_LIBRARIES: List of all libraries needed for linking with ColPack,
-# 
+#
 # Provides the following macros:
 #
 # find_package(ColPack)
 
-find_path(COLPACK_INCLUDE_DIR ColPackHeaders.h
-          PATHS ${COLPACK_DIR} ${COLPACK_ROOT}
+if (TPL_ColPack_INCLUDE_DIRS)
+  find_path(COLPACK_INCLUDE_DIR ColPackHeaders.h
+            PATHS ${TPL_ColPack_INCLUDE_DIRS}
+            NO_DEFAULT_PATH
+            DOC "Include directory of ColPack")
+elseif (TPL_ColPack_DIR)
+  find_path(COLPACK_INCLUDE_DIR ColPackHeaders.h
+          PATHS ${TPL_ColPack_DIR}
+          PATH_SUFFIXES include ColPack include/ColPack
+          NO_DEFAULT_PATH)
+else()
+  find_path(COLPACK_INCLUDE_DIR ColPackHeaders.h
+          PATHS ${COLPACK_DIR}
           PATH_SUFFIXES include ColPack
-          DOC "Include directory of ColPack")
+          )
+endif()
 
 set(COLPACK_LIB_NAME ColPack
-          PATHS ${COLPACK_DIR} ${COLPACK_ROOT}
-          PATH_SUFFIXES include include/ColPack
           CACHE STRING "Name of the ColPack library (default: ColPack).")
 set(COLPACK_LIBRARY ColPack_LIBRARY-NOTFOUND
     CACHE FILEPATH "Full path of the ColPack library")
@@ -35,24 +45,30 @@ include(CheckIncludeFileCXX)
 set(CMAKE_REQUIRED_INCLUDES ${CMAKE_REQUIRED_INCLUDES} ${COLPACK_INCLUDE_DIR})
 set(CMAKE_REQUIRED_FLAGS "${CMAKE_REQUIRED_FLAGS}")
 check_include_file_cxx(ColPackHeaders.h COLPACK_FOUND)
+
 if(COLPACK_FOUND)
   set(ColPack_INCLUDE_PATH ${CMAKE_REQUIRED_INCLUDES})
   set(ColPack_COMPILE_FLAGS "${CMAKE_REQUIRED_FLAGS}")
 
-  # search ColPack library
-  find_library(COLPACK_LIBRARY ColPack
-               PATHS ${COLPACK_DIR} ${COLPACK_ROOT}
+  if (TPL_ColPack_DIR)
+    # search ColPack library
+    find_library(COLPACK_LIBRARY ColPack
+               PATHS ${TPL_ColPack_DIR} ${COLPACK_DIR}
                PATH_SUFFIXES lib lib64
-               NO_DEFAULT_PATH)
-  find_library(COLPACK_LIBRARY ColPack)
-
+               NO_DEFAULT_PATH REQUIRED)
+  elseif(NOT TPL_ColPack_LIBRARIES)
+    find_library(COLPACK_LIBRARY ColPack)
+  else()
+    set(COLPACK_LIBRARY ${TPL_ColPack_LIBRARIES} CACHE FILEPATH "ColPack library (list)." FORCE)
+  endif()
   # check ColPack library
-#  if(COLPACK_LIBRARY)
-#    list(APPEND CMAKE_REQUIRED_LIBRARIES ${COLPACK_LIBRARY})
-#    include(CheckFunctionExists)
-#    check_function_exists(ColPack_v3_partkway HAVE_COLPACK)
-#  endif(COLPACK_LIBRARY)
-  set(HAVE_COLPACK 1)
+  if(COLPACK_LIBRARY)
+    list(APPEND CMAKE_REQUIRED_LIBRARIES ${COLPACK_LIBRARY})
+    include(CheckCXXSymbolExists)
+    # I'm not getting this to work, just assume we got lucky nd found a working library here.
+    #check_cxx_symbol_exists(ColPack::BipartiteGraphPartialColoring ${COLPACK_LIBRARY} HAVE_COLPACK)
+    set(HAVE_COLPACK 1)
+  endif(COLPACK_LIBRARY)
 endif(COLPACK_FOUND)
 
 # behave like a CMake module is supposed to behave
