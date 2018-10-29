@@ -2,7 +2,9 @@
 #
 # Accepts the following variables:
 #
-# PARMETIS_ROOT: Prefix where ParMETIS is installed.
+# TPL_ParMETIS_DIR: Prefix where ParMETIS is installed.
+# TPL_ParMETIS_INCLUDE_DIRS: list of directories of installed ParMETIS
+# TPL_ParMETIS_LIBRARIES: list of libraries of installed ParMETIS.
 # METIS_LIB_NAME: Name of the METIS library (default: metis).
 # PARMETIS_LIB_NAME: Name of the ParMETIS library (default: parmetis).
 # METIS_LIBRARY: Full path of the METIS library.
@@ -10,8 +12,9 @@
 
 # Sets the following variables:
 #
-# METIS_LIBRARY: Full path of the METIS library.
-# PARMETIS_LIBRARY: Full path of the ParMETIS library.
+# PARMETIS_INCLUDE_DIRS
+# METIS_LIBRARY: Full path of the METIS library (unless the user gave us TPL_ParMETIS_LIBRARIES).
+# PARMETIS_LIBRARY: Full path of the ParMETIS library ( " ).
 # PARMETIS_FOUND: True if ParMETIS was found.
 # PARMETIS_LIBRARIES: List of all libraries needed for linking with ParMETIS,
 #
@@ -19,17 +22,24 @@
 #
 # find_package(ParMETIS)
 
-find_path(PARMETIS_INCLUDE_DIR parmetis.h
+if (TPL_ParMETIS_INCLUDE_DIRS)
+  find_path(PARMETIS_INCLUDE_DIR parmetis.h
           PATHS ${TPL_ParMETIS_INCLUDE_DIRS}
           NO_DEFAULT_PATH
-          DOC "Include directory of ParMETIS")
-find_path(PARMETIS_INCLUDE_DIR parmetis.h
+          DOC "Include directory of ParMETIS"
+          REQUIRED
+          )
+elseif(TPL_ParMETIS_DIR)
+  find_path(PARMETIS_INCLUDE_DIR parmetis.h
           PATHS ${TPL_ParMETIS_DIR}
-          PATH_SUFFIXES include parmetis
-          NO_DEFAULT_PATH)
-find_path(PARMETIS_INCLUDE_DIR parmetis.h
+          PATH_SUFFIXES include parmetis include/parmetis
+          NO_DEFAULT_PATH
+          REQUIRED)
+else()
+  find_path(PARMETIS_INCLUDE_DIR parmetis.h
           PATH_SUFFIXES include parmetis)
 
+endif()
 set(PARMETIS_INCLUDE_DIRS ${PARMETIS_INCLUDE_DIR})
 
 set(METIS_LIB_NAME metis
