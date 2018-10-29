@@ -56,7 +56,6 @@ foreach (PKG in ${PHIST_MODULE_TPL_LIST})
   set(TPL_ENABLE_${PKG} ON CACHE BOOL "Try to find and use ${TPL} (if supported by th kernel library).")
   if (TPL_ENABLE_${PKG})
     if (TPL_${PKG}_INCLUDE_DIRS)
-      # override whatever cmake found with whatever the user specified, and hope for the best...
       set(${PKG}_INCLUDE_DIRS "${TPL_${PKG}_INCLUDE_DIRS}")
       set(${PKG_CAPS}_INCLUDE_DIRS "${TPL_${PKG}_INCLUDE_DIRS}")
       set(${PKG}_LIBRARIES ${TPL_${PKG}_LIBRARIES})
