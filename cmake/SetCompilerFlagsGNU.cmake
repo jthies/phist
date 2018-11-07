@@ -1,4 +1,4 @@
-  set (CMAKE_Fortran_FLAGS  "-ffree-line-length-none")
+  set (CMAKE_Fortran_FLAGS  "${CMAKE_Fortran_FLAGS} -ffree-line-length-none")
 
   if(PHIST_HAVE_MKL)
     set (CMAKE_C_FLAGS        "${CMAKE_C_FLAGS}       -DMKL_LP64")
