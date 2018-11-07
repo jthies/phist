@@ -5,7 +5,7 @@ endif()
 
 # -ffast kills high precision stuff!
 set (CMAKE_C_FLAGS_RELEASE        "-O4 -fast -Mvect=levels:10")
-set (CMAKE_CXX_FLAGS_RELEASE      "-O2")
+set (CMAKE_CXX_FLAGS_RELEASE      "-O4 -fast -Mvect=levels:10")
 set (CMAKE_Fortran_FLAGS_RELEASE  "-O4 -fast -Mvect=levels:10")
 
 set (CMAKE_C_FLAGS_RELWITHDEBINFO       "${CMAKE_C_FLAGS_RELEASE}       -g")

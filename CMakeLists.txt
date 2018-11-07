@@ -586,6 +586,18 @@ set (PHIST_CORE_SOURCE ${PROJECT_SOURCE_DIR}/src/core/phist_operator.cpp
                        ${PROJECT_SOURCE_DIR}/src/core/phist_kpm.cpp
                        )
 
+set(COMPILE_WITH_CARE  ${PROJECT_SOURCE_DIR}/src/core/phist_schur_decomp.cpp
+                       ${PROJECT_SOURCE_DIR}/src/core/phist_sdFact.cpp
+                       ${PROJECT_SOURCE_DIR}/src/core/phist_transform_searchspace.cpp)
+
+foreach (source ${COMPILE_WITH_CARE})
+  if( "${CMAKE_BUILD_TYPE}" MATCHES "Release" )
+    set_source_files_properties(${source} PROPERTIES COMPILE_FLAGS -O2)
+  elseif( "${CMAKE_BUILD_TYPE}" MATCHES "RelWithDebInfo" )
+    set_source_files_properties(${source} PROPERTIES COMPILE_FLAGS "-O2 -g")
+  endif()
+endforeach()
+
 if (PHIST_KERNEL_LIB STREQUAL "epetra")
   list (APPEND PHIST_CORE_SOURCE ${PROJECT_SOURCE_DIR}/src/core/phist_operator_epetra.cpp)
 endif()
