@@ -139,6 +139,10 @@ public:
   }
 };
 
+const int CLASSNAME::k_;
+const int CLASSNAME::m_;
+const int CLASSNAME::n_;
+
   // check ones(n,m)'*ones(n,k)=n*ones(m,k), and columns with 1, 2, 3...
   TEST_F(CLASSNAME, mvecT_times_mvec) 
   {
@@ -1361,6 +1365,3 @@ public:
   }
 #endif
 
-const int CLASSNAME::k_;
-const int CLASSNAME::m_;
-const int CLASSNAME::n_;
