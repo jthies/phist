@@ -1043,7 +1043,7 @@ TEST_F(CLASSNAME,apply_func_by_put_func)
   if (!typeImplemented_ || problemTooSmall_)
     return;
 
-  _ST_ scale_by = st::rand();
+  _ST_ scale_by = st::prand();
   SUBR(mvec_add_mvec)(scale_by,vec1_,_ST_(0),vec2_,&iflag_);
   ASSERT_EQ(0,iflag_);
   SUBR(mvec_put_func)(vec1_,&PHIST_TG_PREFIX(mvecScaleEntries),&scale_by,&iflag_);
