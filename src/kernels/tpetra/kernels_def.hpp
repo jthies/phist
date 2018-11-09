@@ -784,6 +784,23 @@ extern "C" void SUBR(mvec_vadd_mvec)(const _ST_ alpha[], TYPE(const_mvec_ptr) ve
   *iflag = PHIST_SUCCESS;
 }
 
+extern "C" void SUBR(mvec_times_mvec_elemwise)(_ST_ alpha, TYPE(const_mvec_ptr) vX,
+                                                  TYPE(mvec_ptr)       vY, int* iflag)
+{
+  PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
+#include "phist_std_typedefs.hpp"
+  PHIST_PERFCHECK_VERIFY_MVEC_TIMES_MVEC_ELEMWISE(alpha,vX,vY,iflag);
+  PHIST_CAST_PTR_FROM_VOID(const Traits<_ST_>::mvec_t, X, vX, *iflag);
+  PHIST_CAST_PTR_FROM_VOID(Traits<_ST_>::mvec_t, Y, vY, *iflag);
+  // note: Tpetra defines this operation for <multi-vector> times <single vector>,
+  // so we do it col-wise. The future will show which definition is more useful in practice,
+  // I can imagine why they did it this way, though.
+  for (unsigned int idx = 0; idx != Y->getNumVectors(); ++idx)
+  {
+    PHIST_TRY_CATCH(Y->getVectorNonConst(idx)->elementWiseMultiply(alpha,*(X->getVector(idx)),*(Y->getVector(idx)),st::zero()), *iflag);
+  }
+}
+
 // 
 extern "C" void SUBR(sdMat_add_sdMat)(_ST_ alpha, TYPE(const_sdMat_ptr) matIn,
                                       _ST_ beta,  TYPE(sdMat_ptr) matOut, 
