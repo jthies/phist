@@ -733,6 +733,17 @@ extern "C" void SUBR(mvec_vadd_mvec)(const _ST_ alpha[], TYPE(const_mvec_ptr) vX
     }
 }
 
+extern "C" void SUBR(mvec_times_mvec_elemwise)(_ST_ alpha, TYPE(const_mvec_ptr) vX,
+                                                  TYPE(mvec_ptr)       vY, int* iflag)
+{
+  PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
+#include "phist_std_typedefs.hpp"
+  PHIST_CAST_PTR_FROM_VOID(const Epetra_MultiVector,X,vX,*iflag);
+  PHIST_CAST_PTR_FROM_VOID(Epetra_MultiVector,Y,vY,*iflag);
+  PHIST_CHK_IERR(*iflag=Y->Multiply(alpha,*X,*Y,0.0),*iflag);  
+}
+
+
 
 //! B=alpha*A+beta*B
 extern "C" void SUBR(sdMat_add_sdMat)(_ST_ alpha, TYPE(const_sdMat_ptr) vA,
