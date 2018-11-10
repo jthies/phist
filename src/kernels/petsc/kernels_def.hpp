@@ -749,6 +749,29 @@ extern "C" void SUBR(mvec_vadd_mvec)(const _ST_ alpha[], TYPE(const_mvec_ptr) vV
   *iflag = PHIST_SUCCESS;
 }
 
+extern "C" void SUBR(mvec_times_mvec_elemwise)(_ST_ alpha, TYPE(const_mvec_ptr) vV, 
+                                                TYPE(mvec_ptr) vW,int* iflag)
+{
+  PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
+
+  PHIST_CAST_PTR_FROM_VOID(const Traits<_ST_>::mvec_t,V,vV,*iflag);
+  PHIST_CAST_PTR_FROM_VOID(Traits<_ST_>::mvec_t,W,vW,*iflag);
+
+  // no real support for this in petsc, scale columns one by one
+  phist_lidx nvec, nlocal;
+  PHIST_CHK_IERR(SUBR(mvec_num_vectors)(vV, &nvec, iflag), *iflag);
+  PHIST_CHK_IERR(SUBR(mvec_my_length)(vV, &nlocal, iflag), *iflag);
+
+  for(phist_lidx j = 0; j < nvec; j++)
+  {
+    for(phist_lidx i = 0; i < nlocal; i++)
+    {
+      W->rawData[j*nlocal+i] *= alpha*V->rawData[j*nlocal+i];
+    }
+  }
+  *iflag = PHIST_SUCCESS;
+}
+
 extern "C" void SUBR(sdMat_add_sdMat)(_ST_ alpha, TYPE(const_sdMat_ptr) vA,
                                       _ST_ beta,  TYPE(sdMat_ptr)       vB, 
                                       int* iflag)

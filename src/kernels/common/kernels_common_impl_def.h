@@ -110,6 +110,68 @@ namespace {
   }
 } // anonymous namespace
 
+
+// copy sdMat data to a user-provided array.
+extern "C" void SUBR(sdMat_get_data)(TYPE(const_sdMat_ptr) M,
+                _ST_* data_out, phist_lidx lda_out, int output_row_major, 
+                int* iflag)
+{
+  int nrows,ncols;
+  phist_lidx lda;
+  _ST_* M_raw;
+  
+  *iflag=0;
+  PHIST_CHK_IERR(SUBR(sdMat_from_device)((TYPE(sdMat_ptr))M,iflag),*iflag);
+
+  PHIST_CHK_IERR(SUBR(sdMat_get_nrows)(M,&nrows,iflag),*iflag);
+  PHIST_CHK_IERR(SUBR(sdMat_get_ncols)(M,&ncols,iflag),*iflag);
+  PHIST_CHK_IERR(SUBR(sdMat_extract_view)(TYPE(sdMat_ptr)(M),&M_raw,&lda,iflag),*iflag);
+  for (int j=0; j<ncols; j++)
+  {
+    for (int i=0; i<nrows; i++)
+    {
+      if (output_row_major)
+      {
+        data_out[i*lda_out+j]=M_raw[j*lda+i];
+      }
+      else
+      {
+        data_out[j*lda_out+i]=M_raw[j*lda+i];
+      }
+    }
+  }
+}
+
+// "fill" an sdMat from a user-provided array.
+extern "C" void SUBR(sdMat_set_data)(TYPE(sdMat_ptr) M,
+                const _ST_* data_in, phist_lidx lda_in, int input_row_major, 
+                int* iflag)
+{
+  int nrows,ncols;
+  phist_lidx lda;
+  _ST_* M_raw;
+  
+  *iflag=0;
+  PHIST_CHK_IERR(SUBR(sdMat_get_nrows)(M,&nrows,iflag),*iflag);
+  PHIST_CHK_IERR(SUBR(sdMat_get_ncols)(M,&ncols,iflag),*iflag);
+  PHIST_CHK_IERR(SUBR(sdMat_extract_view)(M,&M_raw,&lda,iflag),*iflag);
+  for (int j=0; j<ncols; j++)
+  {
+    for (int i=0; i<nrows; i++)
+    {
+      if (input_row_major)
+      {
+        M_raw[j*lda+i] = data_in[i*lda_in+j];
+      }
+      else
+      {
+        M_raw[j*lda+i] = data_in[j*lda_in+i];
+      }
+    }
+  }
+  PHIST_CHK_IERR(SUBR(sdMat_to_device)(M,iflag),*iflag);
+}
+
 // "fill" an mvec from a user-provided array.
 extern "C" void SUBR(mvec_set_data)(TYPE(mvec_ptr) V, 
                 const _ST_* data_in, phist_lidx lda_in, int input_row_major, 

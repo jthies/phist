@@ -59,6 +59,7 @@ module mvec_module
   !public :: phist_Dmvec_add_mvec
   !public :: phist_Dmvec_vadd_mvec
   public :: mvec_add_mvec
+  public :: mvec_times_mvec_elemwise
   public :: mvec_vadd_mvec
   !public :: phist_Dmvec_dot_mvec
   public :: mvec_dot_mvec
@@ -1521,6 +1522,75 @@ contains
     !--------------------------------------------------------------------------------
   end subroutine mvec_vadd_mvec
 
+  !==================================================================================
+  ! element-wsie multiplication for mvecs, y(i,j) <- alpha*x(i,j)*y(i,j)
+  subroutine mvec_times_mvec_elemwise(alpha,x_ptr,y_ptr,ierr) bind(C,name='phist_Dmvec_times_mvec_elemwise_f')
+    use, intrinsic :: iso_c_binding
+    !--------------------------------------------------------------------------------
+    real(C_DOUBLE),     value         :: alpha
+    type(C_PTR),        value         :: x_ptr, y_ptr
+    integer(C_INT),     intent(out)   :: ierr
+    !--------------------------------------------------------------------------------
+    type(MVec_t), pointer :: x, y
+    logical :: aligned, strided, strided_x, strided_y
+    integer(c_int) :: ldx, ldy, nrows, nvec
+    !--------------------------------------------------------------------------------
+
+    if( .not. c_associated(y_ptr) ) then
+      ierr = PHIST_BAD_CAST
+      return
+    end if
+    if( .not. c_associated(x_ptr) ) then
+      ierr = PHIST_BAD_CAST
+      return
+    end if
+
+    call c_f_pointer(x_ptr, x)
+    call c_f_pointer(y_ptr, y)
+    !--------------------------------------------------------------------------------
+
+    ierr=0
+    if( alpha .eq. 0.0_8 ) then
+      call phist_Dmvec_put_value(y_ptr,alpha,ierr)
+    else
+      ! determine data layout
+      if( .not. x%is_view .or. &
+        & ( x%jmin .eq. lbound(x%val,1) .and. &
+        &   x%jmax .eq. ubound(x%val,1)       ) ) then
+        strided_x = .false.
+      else
+        strided_x = .true.
+      end if
+
+      if( .not. y%is_view .or. &
+        & ( y%jmin .eq. lbound(y%val,1) .and. &
+        &   y%jmax .eq. ubound(y%val,1)       ) ) then
+        strided_y = .false.
+      else
+        strided_y = .true.
+      end if
+
+      strided = strided_x .or. strided_y
+
+    aligned = .true.
+    if( mod(loc(y%val(x%jmin,1)),64) .ne. 0 ) then
+      aligned = .false.
+    end if
+    if( mod(loc(y%val(y%jmin,1)),64) .ne. 0 ) then
+      aligned = .false.
+    end if
+
+      nvec = x%jmax-x%jmin+1
+      nrows = x%map%nlocal(x%map%me)
+      ldx = size(x%val,1)
+      ldy = size(y%val,1)
+      if (strided .or. (.not. aligned)) then
+        call dmult_general(nvec, nrows, alpha, x%val(x%jmin,1), ldx, y%val(y%jmin,1), ldy)
+      else
+        call dmult_1(nrows*nvec, alpha, x%val(x%jmin,1), y%val(y%jmin,1))
+      end if
+    end if
+  end subroutine mvec_times_mvec_elemwise
 
   !==================================================================================
   ! dot product for mvecs
@@ -3260,7 +3330,7 @@ contains
       !stride = size(vec%val,2)
       ierr = 0
     else
-      ierr = -88
+      ierr = PHIST_BAD_CAST
     end if
 
   end subroutine phist_Dmvec_extract_view
@@ -3281,7 +3351,7 @@ contains
       mylen = mvec%map%nlocal(mvec%map%me)
       ierr = 0
     else
-      ierr = -88
+      ierr = PHIST_BAD_CAST
     end if
 
   end subroutine phist_Dmvec_my_length
@@ -3302,7 +3372,7 @@ contains
       map_ptr = c_loc(mvec%map)
       ierr = 0
     else
-      ierr = -88
+      ierr = PHIST_BAD_CAST
     end if
 
   end subroutine phist_Dmvec_get_map
@@ -3323,7 +3393,7 @@ contains
       nvec = mvec%jmax-mvec%jmin+1
       ierr = 0
     else
-      ierr = -88
+      ierr = PHIST_BAD_CAST
     end if
 
   end subroutine phist_Dmvec_num_vectors
@@ -3346,7 +3416,7 @@ contains
     if( jmin .lt. 0 .or. jmax .lt. jmin ) then
       write(*,*) 'Trying to create a view with jmin', jmin, 'and jmax', jmax
       flush(6)
-      ierr = -88
+      ierr = PHIST_BAD_CAST
       return
     end if
 
@@ -3361,7 +3431,7 @@ contains
         if( .not. view%is_view ) then
           write(*,*) 'mvec not a view!'
           flush(6)
-          ierr = -88
+          ierr = PHIST_BAD_CAST
           return
         end if
 !#ifdef F_DEBUG
@@ -3384,7 +3454,7 @@ contains
       view%val=>mvec%val
       ierr = 0
     else
-      ierr = -88
+      ierr = PHIST_BAD_CAST
     end if
 
   end subroutine phist_Dmvec_view_block
@@ -3402,7 +3472,7 @@ contains
     !--------------------------------------------------------------------------------
 
     if( .not. c_associated(mvec_ptr) .or. .not. c_associated(block_ptr) ) then
-      ierr = -88
+      ierr = PHIST_BAD_CAST
       return
     end if
 
@@ -3447,7 +3517,7 @@ contains
     !--------------------------------------------------------------------------------
 
     if( .not. c_associated(mvec_ptr) .or. .not. c_associated(block_ptr) ) then
-      ierr = -88
+      ierr = PHIST_BAD_CAST
       return
     end if
 
@@ -3495,7 +3565,7 @@ contains
     !--------------------------------------------------------------------------------
 
     if( .not. c_associated(mvec_ptr) ) then
-      ierr = -88
+      ierr = PHIST_BAD_CAST
       return
     end if
     call c_f_pointer(mvec_ptr, mvec)
@@ -3503,7 +3573,7 @@ contains
     allocate(block_list(nblocks))
     do i = 1, nblocks, 1
       if( .not. c_associated(block_ptr_list(i)) ) then
-        ierr = -88
+        ierr = PHIST_BAD_CAST
         return
       end if
       call c_f_pointer(block_ptr_list(i),tmp)
@@ -3544,7 +3614,7 @@ contains
     !--------------------------------------------------------------------------------
 
     if( .not. c_associated(mvec_ptr) ) then
-      ierr = -88
+      ierr = PHIST_BAD_CAST
       return
     end if
     call c_f_pointer(mvec_ptr, mvec)
@@ -3552,7 +3622,7 @@ contains
     allocate(block_list(nblocks))
     do i = 1, nblocks, 1
       if( .not. c_associated(block_ptr_list(i)) ) then
-        ierr = -88
+        ierr = PHIST_BAD_CAST
         return
       end if
       call c_f_pointer(block_ptr_list(i),tmp)
@@ -3591,7 +3661,7 @@ contains
     !--------------------------------------------------------------------------------
 
     if( .not. c_associated(mvec_ptr) ) then
-      ierr = -88
+      ierr = PHIST_BAD_CAST
       return
     end if
 
@@ -3633,7 +3703,7 @@ contains
     ierr=0
 
     if( .not. c_associated(V_ptr) ) then
-      ierr = -88
+      ierr = PHIST_BAD_CAST
       return
     end if
 
@@ -3673,7 +3743,7 @@ end subroutine phist_Dmvec_put_func
     !--------------------------------------------------------------------------------
 
     if( .not. c_associated(mvec_ptr) ) then
-      ierr = -88
+      ierr = PHIST_BAD_CAST
       return
     end if
 
@@ -3696,7 +3766,7 @@ end subroutine phist_Dmvec_put_func
     !--------------------------------------------------------------------------------
 
     if( .not. c_associated(mvec_ptr) ) then
-      ierr = -88
+      ierr = PHIST_BAD_CAST
       return
     end if
 
@@ -3734,7 +3804,7 @@ end subroutine phist_Dmvec_put_func
     !--------------------------------------------------------------------------------
 
     if( .not. c_associated(mvec_ptr) ) then
-      iflag = -88
+      iflag = PHIST_BAD_CAST
       return
     end if
 
@@ -3757,7 +3827,7 @@ end subroutine phist_Dmvec_put_func
     !--------------------------------------------------------------------------------
 
     if( .not. c_associated(x_ptr) ) then
-      ierr = -88
+      ierr = PHIST_BAD_CAST
       return
     end if
 
@@ -3781,7 +3851,7 @@ end subroutine phist_Dmvec_put_func
     !--------------------------------------------------------------------------------
 
     if( .not. c_associated(x_ptr) ) then
-      ierr = -88
+      ierr = PHIST_BAD_CAST
       return
     end if
 
@@ -3806,11 +3876,11 @@ end subroutine phist_Dmvec_put_func
     !--------------------------------------------------------------------------------
 
     if( .not. c_associated(y_ptr) ) then
-      ierr = -88
+      ierr = PHIST_BAD_CAST
       return
     end if
     if( .not. c_associated(x_ptr) ) then
-      ierr = -88
+      ierr = PHIST_BAD_CAST
       return
     end if
 
@@ -3857,13 +3927,13 @@ end subroutine phist_Dmvec_put_func
 
     !if( beta .ne. 0 .and. .not. c_associated(y_ptr) ) then
     if( .not. c_associated(y_ptr) ) then
-      ierr = -88
+      ierr = PHIST_BAD_CAST
       return
     end if
 
     !if( any(alpha(1:nvec) .ne. 0) .and. .not. c_associated(x_ptr) ) then
     if( .not. c_associated(x_ptr) ) then
-      ierr = -88
+      ierr = PHIST_BAD_CAST
       return
     end if
 
@@ -3910,7 +3980,7 @@ end subroutine phist_Dmvec_put_func
     !--------------------------------------------------------------------------------
 
     if( .not. c_associated(x_ptr) .or. .not. c_associated(y_ptr) ) then
-      iflag = -88
+      iflag = PHIST_BAD_CAST
       return
     end if
     call c_f_pointer(x_ptr, x)
@@ -3948,7 +4018,7 @@ end subroutine phist_Dmvec_put_func
     if( .not. c_associated(v_ptr) .or. &
       & .not. c_associated(w_ptr) .or. &
       & .not. c_associated(M_ptr)      ) then
-      iflag = -88
+      iflag = PHIST_BAD_CAST
       return
     end if
 
@@ -3990,7 +4060,7 @@ end subroutine phist_Dmvec_put_func
       & .not. c_associated(w_ptr) .or. &
       & .not. c_associated(M_ptr) .or. &
       & .not. c_associated(N_ptr)      ) then
-      iflag = -88
+      iflag = PHIST_BAD_CAST
       return
     end if
 
@@ -4034,7 +4104,7 @@ end subroutine phist_Dmvec_put_func
       & .not. c_associated(w_ptr) .or. &
       & .not. c_associated(M_ptr) .or. &
       & .not. c_associated(N_ptr)      ) then
-      iflag = -88
+      iflag = PHIST_BAD_CAST
       return
     end if
 
@@ -4077,7 +4147,7 @@ end subroutine phist_Dmvec_put_func
 
     if( .not. c_associated(v_ptr) .or. &
       & .not. c_associated(M_ptr)      ) then
-      iflag = -88
+      iflag = PHIST_BAD_CAST
       return
     end if
 
@@ -4109,7 +4179,7 @@ end subroutine phist_Dmvec_put_func
     if( .not. c_associated(v_ptr) .or. &
       & .not. c_associated(w_ptr) .or. &
       & .not. c_associated(M_ptr)      ) then
-      iflag = -88
+      iflag = PHIST_BAD_CAST
       return
     end if
 
@@ -4150,7 +4220,7 @@ end subroutine phist_Dmvec_put_func
       & .not. c_associated(w_ptr) .or. &
       & .not. c_associated(N_ptr) .or. &
       & .not. c_associated(M_ptr)      ) then
-      iflag = -88
+      iflag = PHIST_BAD_CAST
       return
     end if
 
@@ -4197,7 +4267,7 @@ end subroutine phist_Dmvec_put_func
 
     if( .not. c_associated(v_ptr) .or. &
       & .not. c_associated(w_ptr)      ) then
-      ierr = -88
+      ierr = PHIST_BAD_CAST
       return
     end if
 
@@ -4286,7 +4356,7 @@ end subroutine phist_Dmvec_put_func
 
     if( .not. c_associated(v_ptr) .or. &
       & .not. c_associated(R_ptr)      ) then
-      ierr = -88
+      ierr = PHIST_BAD_CAST
       return
     end if
 

@@ -668,6 +668,48 @@ public:
     }
   }
 
+  TEST_F(CLASSNAME, get_set_data_CM)
+  {
+    if (typeImplemented_)
+    {
+      phist_lidx data_lda = nrows_+ncols_+3;
+      _ST_ data_rm[nrows_*data_lda], data_cm[ncols_*data_lda];
+
+      // test get_data from col-major to col-major. mat1_ is random right now
+      SUBR(sdMat_get_data)(mat1_,data_cm,data_lda,0,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      ASSERT_EQ(mt::one(),ArraysEqualWithDifferentLDA(mat1_vp_,data_cm,nrows_,ncols_,m_lda_,data_lda,1,0,mt::eps()));
+
+      SUBR(sdMat_set_data)(mat2_,data_cm,data_lda,0,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      ASSERT_REAL_EQ(mt::one(),SdMatsEqual(mat1_,mat2_));
+    }
+  }
+
+  TEST_F(CLASSNAME, get_set_data_RM)
+  {
+    if (typeImplemented_)
+    {
+      phist_lidx data_lda = nrows_+ncols_+3;
+      _ST_ data_rm[nrows_*data_lda], data_cm[ncols_*data_lda];
+      // test get_data from col-major to row-major. mat1_ is random right now
+      SUBR(sdMat_get_data)(mat1_,data_rm,data_lda,1,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      for (int i=0; i<nrows_; i++)
+      {
+        for (int j=0; j<ncols_; j++)
+        {
+          data_cm[j*data_lda+i]=data_rm[i*data_lda+j];
+        }
+      }
+      ASSERT_EQ(mt::one(),ArraysEqualWithDifferentLDA(mat1_vp_,data_cm,nrows_,ncols_,m_lda_,data_lda,1,0,mt::eps()));
+
+      SUBR(sdMat_set_data)(mat2_,data_rm,data_lda,1,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      ASSERT_REAL_EQ(mt::one(),SdMatsEqual(mat1_,mat2_));
+    }
+  }
+
   TEST_F(CLASSNAME, sdMat_times_sdMat)
   {
     if (typeImplemented_ && nrows_ == ncols_ )

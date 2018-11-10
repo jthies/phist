@@ -408,6 +408,26 @@ void SUBR(sdMat_set_block)(TYPE(sdMat_ptr) M,
                              TYPE(const_sdMat_ptr) Mblock,
                              int imin, int imax, int jmin, int jmax, int* iflag);
 
+//! \brief fill sdMat from raw data
+//!
+//! Given a 2D raw data array in row- or column-major order, set the sdMat
+//! entries accordingly and upload the result to the device if needed.
+//! data_in must be allocated/filled by the user with at least lda_in*tda_in
+//! elements where tda_in=input_row_major? ncols: nrows of M.
+void SUBR(sdMat_set_data)(TYPE(sdMat_ptr) M,
+                const _ST_* data_in, phist_lidx lda_in, int input_row_major, 
+                int* iflag);
+
+//! \brief copy sdMat data to array
+//!
+//! Given a 2D raw data array in row- or column-major order, copy the sdMat
+//! entries accordingly (after downloading them from the device if needed).
+//! data_out must be allocated by the user with at least lda_out*tda_out   
+//! elements where tda_out=output_row_major? ncols: nrows of M.
+void SUBR(sdMat_get_data)(TYPE(const_sdMat_ptr) M,
+                _ST_* data_out, phist_lidx lda_in, int output_row_major, 
+                int* iflag);
+
 //!@}
 
 //! \name initialize/fill mvecs
@@ -416,7 +436,11 @@ void SUBR(sdMat_set_block)(TYPE(sdMat_ptr) M,
 //! put scalar value into all elements of a multi-vector \ingroup mvec
 void SUBR(mvec_put_value)(TYPE(mvec_ptr) V, _ST_ value, int* iflag);
 
-//! set all mvec elements V(i,j) by calling a function for each element \ingroup mvec
+//! set all mvec elements V(i,j) by calling a function for each element. \ingroup mvec
+
+//! On input to the user-provided function, *val will contain the current value of the
+//! vector entry (row,ol), so it is possible to apply a function to the current mvec,
+//! e.g. X <- X.^2, X<-abs(X) etc.
 void SUBR(mvec_put_func)(TYPE(mvec_ptr) V,
         phist_mvec_elemFunc elemFunPtr, void* last_arg, int *iflag);
 
@@ -494,6 +518,13 @@ void SUBR(mvec_vadd_mvec)(const _ST_ alpha[], TYPE(const_mvec_ptr) X,
                           int* iflag);
 
 
+//! \brief element-wise multiplication of two mvecs
+//!
+//!
+//! W(i,j) = alpha*V(i,j)*W(i,j) for i=1:nrows, j=1:ncols. V and W must have the same shape nrows x ncols
+void SUBR(mvec_times_mvec_elemwise)(_ST_ alpha, TYPE(const_mvec_ptr) V, 
+                                                TYPE(mvec_ptr) W,int* iflag);
+
 //! dot product of vectors v_i and w_i, i=1..numvecs. \ingroup mvec
 void SUBR(mvec_dot_mvec)(TYPE(const_mvec_ptr) V, 
                             TYPE(const_mvec_ptr) W, 
@@ -516,7 +547,6 @@ void SUBR(mvec_times_sdMat)(_ST_ alpha, TYPE(const_mvec_ptr) V,
                                        TYPE(const_sdMat_ptr) C,
                            _ST_ beta,  TYPE(mvec_ptr) W, 
                                        int* iflag);
-
 
 //! \brief V <- V*M \ingroup mvec
 //!

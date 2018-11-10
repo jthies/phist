@@ -54,6 +54,7 @@ extern "C" void SUBR(blockedPCG)(TYPE(const_linearOp_ptr) Aop, TYPE(const_linear
   if (Pop!=NULL)
   {
     PHIST_CHK_IERR(SUBR(mvec_create)(&z,Aop->domain_map,numSys,iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(mvec_put_value)(z,_ST_(0),iflag),*iflag);
   }
   else
   {
