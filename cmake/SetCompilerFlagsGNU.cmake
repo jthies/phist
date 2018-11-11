@@ -5,11 +5,15 @@
     set (CMAKE_CXX_FLAGS      "${CMAKE_CXX_FLAGS}     -DMKL_LP64")
   endif()
 
+  if(NOT PHIST_CROSS_COMPILE)
+    set(ARCH_FLAG "-march=native")
+  endif()
+
   # -ffast-math kills high precision stuff!
   set(FAST_MATH "-fno-math-errno -ffinite-math-only -fno-signed-zeros -fno-trapping-math")
-  set (CMAKE_C_FLAGS_RELEASE        "-O3 ${FAST_MATH} -march=native")
-  set (CMAKE_CXX_FLAGS_RELEASE      "-O3 ${FAST_MATH} -march=native")
-  set (CMAKE_Fortran_FLAGS_RELEASE  "-O3 ${FAST_MATH} -march=native")
+  set (CMAKE_C_FLAGS_RELEASE        "-O3 ${FAST_MATH} ${ARCH_FLAG}")
+  set (CMAKE_CXX_FLAGS_RELEASE      "-O3 ${FAST_MATH} ${ARCH_FLAG}")
+  set (CMAKE_Fortran_FLAGS_RELEASE  "-O3 ${FAST_MATH} ${ARCH_FLAG}")
 
   set (CMAKE_C_FLAGS_RELWITHDEBINFO       "${CMAKE_C_FLAGS_RELEASE}       -g")
   set (CMAKE_CXX_FLAGS_RELWITHDEBINFO     "${CMAKE_CXX_FLAGS_RELEASE}     -g")

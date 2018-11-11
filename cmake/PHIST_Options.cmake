@@ -1,5 +1,9 @@
 option(PHIST_USE_CCACHE "Enable/disable using ccache to speed up repeated builds if you use the GNU compiler and ccache is found." ON)
 
+# if OFF, we're compiling for the host on which cmake is invoked and flags like -march=native will be used in Release
+# mode. If ON, such flags are avoided to ensure the resulting build can be run on different CPUs.
+option(PHIST_CROSS_COMPILE "Set this to ON if you are not compiling for the CPU on which the cmake command is invoked." OFF)
+
 # performance-related settings
 option(PHIST_TRY_TO_PIN_THREADS "Try to pin the threads to cores, the exact implementation depends on the kernel library, hence the 'TRY'. A kernel library may or may not bind the threads without further warnings." On)
 option(PHIST_TRY_TO_RESPECT_NUMA "Try to first-touch multi-vector data after allocation, makes the code run better on NUMA systems but temporary vectors become more expensive." On)
