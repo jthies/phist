@@ -33,15 +33,21 @@ set(PHIST_CONFIG_TPL_LIST
   Eigen3
   Trilinos
   )
-set(TPL_Eigen3_REQUIRED ${PHIST_KERNEL_LIB_EIGEN})
-set(TPL_MAGMA_REQUIRED ${PHIST_KERNEL_LIB_MAGMA})
-set(TPL_PETSC_REQUIRED ${PHIST_KERNEL_LIB_PETSC})
-if (PHIST_KERNEL_LIB_EPETRA OR PHIST_KERNEL_LIB_TPETRA)
+if (PHIST_KERNEL_LIB STREQUAL "eigen")
+  set(TPL_Eigen3_REQUIRED ON)
+endif()
+if (PHIST_KERNEL_LIB STREQUAL "magma")
+  set(TPL_MAGMA_REQUIRED ON)
+endif()
+if (PHIST_KERNEL_LIB STREQUAL "petsc")
+  set(TPL_PETSC_REQUIRED ON)
+endif()
+if (PHIST_KERNEL_LIB STREQUAL "epetra|tpetra")
   set(TPL_Trilinos_REQUIRED ON)
 endif()
 
 # 1. these packages provide a <pkg>-config.cmake file, and we only support TPL_<pkg>_DIR
-foreach (PKG in ${PHIST_CONFIG_TPL_LIST})
+foreach (PKG ${PHIST_CONFIG_TPL_LIST})
   set(TPL_ENABLE_${PKG} ON CACHE BOOL "Try to find and use ${TPL} (if supported by the kernel library).")
   if (TPL_ENABLE_${PKG})
     if (TPL_${PKG}_INCLUDE_DIRS OR TPL_${PKG}_LIBRARIES)
@@ -60,7 +66,7 @@ endforeach()
 
 # 2. packages that can be found using pkg-config (a .pc file). We have Find*.cmake
 # files for these, but essentially they just consist of two lines. We only support the TPL_<pkg>_DIR for these.
-foreach (PKG in ${PHIST_PKG_CONFIG_TPL_LIST})
+foreach (PKG ${PHIST_PKG_CONFIG_TPL_LIST})
   set(TPL_ENABLE_${PKG} ON CACHE BOOL "Try to find and use ${TPL} (if supported by the kernel library).")
   if (TPL_ENABLE_${PKG})
     if (TPL_${PKG}_INCLUDE_DIRS OR TPL_${PKG}_LIBRARIES)
@@ -82,7 +88,7 @@ foreach (PKG in ${PHIST_PKG_CONFIG_TPL_LIST})
 endforeach()
 
 # 3. For these packages we have our own Find<pkg>.cmake module in phist/cmake/, respecting the TPL_* options
-foreach (PKG in ${PHIST_MODULE_TPL_LIST})
+foreach (PKG ${PHIST_MODULE_TPL_LIST})
   string(TOUPPER ${PKG} PKG_CAPS)
   set(TPL_ENABLE_${PKG} ON CACHE BOOL "Try to find and use ${TPL} (if supported by the kernel library).")
   if (TPL_ENABLE_${PKG})
