@@ -408,9 +408,12 @@ ${PHIST_FORCE_32BIT_GIDX_DEFAULT})
 ##############################################################################
 # enable single precision and complex valued calculation if supported
 ##############################################################################
-if( "${PHIST_KERNEL_LIB}" MATCHES "tpetra|ghost|magma|petsc|eigen|tpetra12" )
+if( "${PHIST_KERNEL_LIB}" MATCHES "tpetra|ghost|magma|eigen" )
   set(PHIST_SUPPORT_SP ON)
   set(PHIST_SUPPORT_COMPLEX ON)
+elif( "${PHIST_KERNEL_LIB}" MATCHES "petsc" )
+  set(PHIST_SUPPORT_SP PETSC_USE_REAL_SINGLE)
+  set(PHIST_SUPPORT_COMPLEX PETSC_USE_COMPLEX)
 else()
   set(PHIST_SUPPORT_SP OFF)
   set(PHIST_SUPPORT_COMPLEX OFF)
