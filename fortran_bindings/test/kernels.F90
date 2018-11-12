@@ -73,13 +73,15 @@ ASSERT_EQ(0,iflag)
 verbose = (rank==0)
 
 ! check which data types are supported by the phist installation
-#ifdef PHIST_HAVE_SP
 call phist_Stype_avail(iflag);
 haveS=(iflag==0);
 if (haveS) then
   write(*,*) 'have S (float)'
 end if
+#ifdef PHIST_HAVE_SP
 EXPECT_EQV(.true.,haveS)
+#else
+EXPECT_EQV(.false.,haveS)
 #endif
 
 call phist_Dtype_avail(iflag);
@@ -89,21 +91,26 @@ if (haveD) then
 end if
 EXPECT_EQV(.true.,haveD)
 
-#if defined(PHIST_HAVE_SP)&&defined(PHIST_HAVE_CMPLX)
 call phist_Ctype_avail(iflag);
 haveC=(iflag==0);
 if (haveC) then
   write(*,*) 'have C (complex float)'
 end if
+#if defined(PHIST_HAVE_SP)&&defined(PHIST_HAVE_CMPLX)
 EXPECT_EQV(.true.,haveC)
+#else
+EXPECT_EQV(.false.,haveC)
 #endif
-#ifdef PHIST_HAVE_CMPLX
+
 call phist_Ztype_avail(iflag);
 haveZ=(iflag==0);
 if (haveZ) then
   write(*,*) 'have Z (complex double)'
 end if
+#ifdef PHIST_HAVE_CMPLX
 EXPECT_EQV(.true.,haveZ)
+#else
+EXPECT_EQV(.false.,haveZ)
 #endif
 
 ! sdMat tests
