@@ -98,27 +98,26 @@ foreach (base ${BASENAMES})
     set(TARGET_DIR ${CMAKE_CURRENT_BINARY_DIR}/${tcl_base})
 
     list(APPEND HFILES "${TARGET_DIR}/${tcl_base}.h")
-  list(APPEND FFILES "phist_${tcl_base}.${F_EXT}")
-  list(APPEND OFILES "phist_${tcl_base}.o")
-
-# copy input file and include type-specific headers and CMake options
+    list(APPEND FFILES "phist_${tcl_base}.${F_EXT}")
+    list(APPEND OFILES "phist_${tcl_base}.o")
+    
+    # copy input file and include type-specific headers and CMake options
     configure_file("${CMAKE_CURRENT_SOURCE_DIR}/${base}_X.h.in" "${TARGET_DIR}/${tcl_base}-1.CFWRAPPER_SKIP.h")
 
-# preprocess C header file
+    # preprocess C header file
     add_custom_command(
         OUTPUT ${TARGET_DIR}/${tcl_base}-2.CFWRAPPER_SKIP.h
         COMMAND  gcc
         ARGS ${INC_FLAGS} ${C_DEFINES} ${C_FLAGS} -E ${tcl_base}/${tcl_base}-1.CFWRAPPER_SKIP.h > ${tcl_base}/${tcl_base}-2.CFWRAPPER_SKIP.h
         DEPENDS ${TARGET_DIR}/${tcl_base}-1.CFWRAPPER_SKIP.h
-   )
-# strip of preprocessor comments
+        )
+    # strip of preprocessor comments
     add_custom_command(
         OUTPUT ${TARGET_DIR}/${tcl_base}.h
         COMMAND  sed
         ARGS  "s/\"^#.*\"//g" ${TARGET_DIR}/${tcl_base}-2.CFWRAPPER_SKIP.h > ${TARGET_DIR}/${tcl_base}.h
         DEPENDS ${TARGET_DIR}/${tcl_base}-2.CFWRAPPER_SKIP.h
-   )
-
+        )
   endforeach()
 endforeach()
 
@@ -146,6 +145,14 @@ add_custom_target(cf DEPENDS pp_keep COMMAND ${CMAKE_CURRENT_BINARY_DIR}/cfwrapp
 add_library(phist_fort ${FFILES} ${FSTATIC})
 set_target_properties(phist_fort PROPERTIES DEPENDS cf)
 set_target_properties(phist_fort PROPERTIES Fortran_MODULE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
+
+# the type-specific modules depend on the general ones, e.g. phist_jada_s.F90 needs phist_jada.mod to compile.
+# I think CMake should be able to figure out module dependencies, but maybe it's confused by our code generation.
+foreach (base ${BASENAMES})
+  foreach (tc ${TG_Types})
+    set_source_files_properties(phist_${tcl_base}.${F_EXT} PROPERTIES DEPENDS phist_${base}.o)
+  endforeach()
+endforeach()
 
 foreach(TESTNAME ${TEST_DRIVERS})
         add_executable(test_fortran_${TESTNAME} test/${TESTNAME}.F90)
