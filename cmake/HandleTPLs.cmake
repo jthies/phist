@@ -33,6 +33,13 @@ set(PHIST_CONFIG_TPL_LIST
   Eigen3
   Trilinos
   )
+
+# avoid searching for TPLs that are not supported, and indicate which
+# are required dependencies.
+if (NOT PHIST_KERNEL_LIB STREQUAL "builtin")
+  set(TPL_ENABLE_ParMETIS OFF CACHE BOOL "Try to find and use ParMETIS (if supported by the kernel library).")
+  set(TPL_ENABLE_ColPack OFF CACHE BOOL "Try to find and use ColPack (if supported by the kernel library).")
+endif()
 if (PHIST_KERNEL_LIB STREQUAL "eigen")
   set(TPL_Eigen3_REQUIRED ON)
 else()
