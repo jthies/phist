@@ -1533,7 +1533,7 @@ contains
     !--------------------------------------------------------------------------------
     type(MVec_t), pointer :: x, y
     logical :: aligned, strided, strided_x, strided_y
-    integer(c_int) :: ldx, ldy, nrows, nvec
+    integer(c_int) :: ldx, ldy, nrows, nvecX, nvecY
     !--------------------------------------------------------------------------------
 
     if( .not. c_associated(y_ptr) ) then
@@ -1580,15 +1580,22 @@ contains
       aligned = .false.
     end if
 
-      nvec = x%jmax-x%jmin+1
+      nvecX = x%jmax-x%jmin+1
+      nvecY = y%jmax-y%jmin+1
       nrows = x%map%nlocal(x%map%me)
       ldx = size(x%val,1)
       ldy = size(y%val,1)
-      if (strided .or. (.not. aligned)) then
-        call dmult_general(nvec, nrows, alpha, x%val(x%jmin,1), ldx, y%val(y%jmin,1), ldy)
+      if (nvecX==nvecY) then
+        if (strided .or. (.not. aligned)) then
+          call dmult_general(nvecX, nrows, alpha, x%val(x%jmin,1), ldx, y%val(y%jmin,1), ldy)
+        else
+          call dmult_1(nrows*nvecX, alpha, x%val(x%jmin,1), y%val(y%jmin,1))
+        end if
+      else if (nvecX==1) then
+        call dmult_general_1_k(nvecY, nrows, alpha, x%val(x%jmin,1), ldx, y%val(y%jmin,1), ldy)
       else
-        call dmult_1(nrows*nvec, alpha, x%val(x%jmin,1), y%val(y%jmin,1))
-      end if
+        ierr=PHIST_INVALID_INPUT
+      endif
     end if
   end subroutine mvec_times_mvec_elemwise
 

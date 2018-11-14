@@ -116,6 +116,30 @@ subroutine dmult_general(nvec, nrows, alpha, x, ldx, y, ldy)
 end subroutine dmult_general
 
 
+subroutine dmult_general_1_k(nvec, nrows, alpha, x, ldx, y, ldy)
+  implicit none
+  integer, intent(in) :: nvec, nrows, ldx, ldy
+  real(kind=8), intent(in) :: alpha
+  real(kind=8), intent(in) :: x(ldx,*)
+  real(kind=8), intent(out) :: y(ldy,*)
+  integer :: i
+!dir$ assume_aligned x:8, y:8
+
+  if (alpha==1.0_8) then
+!$omp parallel do schedule(static)
+    do i = 1, nrows, 1
+      y(1:nvec,i) = x(1,i)*y(1:nvec,i)
+    end do
+  else
+!$omp parallel do schedule(static)
+    do i = 1, nrows, 1
+      y(1:nvec,i) = alpha*x(1,i)*y(1:nvec,i)
+    end do
+    
+  endif
+end subroutine dmult_general_1_k
+
+
 subroutine dscal_1(nrows, alpha, x)
   implicit none
   integer, intent(in) :: nrows
