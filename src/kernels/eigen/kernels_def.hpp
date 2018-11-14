@@ -633,18 +633,38 @@ extern "C" void SUBR(mvec_times_mvec_elemwise)(_ST_ alpha, TYPE(const_mvec_ptr) 
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   PHIST_CAST_PTR_FROM_VOID(const Traits<_ST_>::mvec_t,V,vV,*iflag);
   PHIST_CAST_PTR_FROM_VOID(Traits<_ST_>::mvec_t,W,vW,*iflag);
-  int nvec;
+  int nvecV,nvecW;
   phist_lidx nlocal;
-  PHIST_CHK_IERR(SUBR(mvec_num_vectors)(vV, &nvec, iflag), *iflag);
+  PHIST_CHK_IERR(SUBR(mvec_num_vectors)(vV, &nvecV, iflag), *iflag);
+  PHIST_CHK_IERR(SUBR(mvec_num_vectors)(vW, &nvecW, iflag), *iflag);
   PHIST_CHK_IERR(phist_map_get_local_length(V->map,&nlocal,iflag),*iflag);
-  for(phist_lidx j = 0; j < nvec; j++)
+
+  *iflag = PHIST_SUCCESS;
+
+  if (nvecV==nvecW)
   {
-    for(phist_lidx i = 0; i < nlocal; i++)
+    for(phist_lidx j = 0; j < nvecW; j++)
     {
-      W->v(i,j)*=alpha*V->v(i,j);
+      for(phist_lidx i = 0; i < nlocal; i++)
+      {
+        W->v(i,j)*=alpha*V->v(i,j);
+      }
     }
   }
-  *iflag = PHIST_SUCCESS;
+  else if (nvecV==1)
+  {
+    for(phist_lidx j = 0; j < nvecW; j++)
+    {
+      for(phist_lidx i = 0; i < nlocal; i++)
+      {
+        W->v(i,j)*=alpha*V->v(i,0);
+      }
+    }
+  }
+  else
+  {
+    PHIST_CHK_IERR(*iflag=PHIST_INVALID_INPUT, *iflag);
+  }
 }
 
 extern "C" void SUBR(sdMat_add_sdMat)(_ST_ alpha, TYPE(const_sdMat_ptr) vA,
