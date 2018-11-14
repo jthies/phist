@@ -796,7 +796,7 @@ extern "C" void SUBR(mvec_times_mvec_elemwise)(_ST_ alpha, TYPE(const_mvec_ptr) 
   // note: Tpetra defines this operation for <multi-vector> times <single vector>,
   if (X->getNumVectors()==1)
   {
-    PHIST_TRY_CATCH(Y->elementWiseMultiply(alpha,*X,*Y,st::zero()), *iflag);
+    PHIST_TRY_CATCH(Y->elementWiseMultiply(alpha,*(X->getVector(0)),*Y,st::zero()), *iflag);
   }
   else if (X->getNumVectors()==Y->getNumVectors())
   {
