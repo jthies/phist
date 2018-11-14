@@ -521,7 +521,15 @@ void SUBR(mvec_vadd_mvec)(const _ST_ alpha[], TYPE(const_mvec_ptr) X,
 //! \brief element-wise multiplication of two mvecs
 //!
 //!
-//! W(i,j) = alpha*V(i,j)*W(i,j) for i=1:nrows, j=1:ncols. V and W must have the same shape nrows x ncols
+//! We support two modes of operation. If V and W have the same number of columns ncols, compute
+//!
+//! W(i,j) = alpha*V(i,j)*W(i,j) for i=1:nrows, j=1:ncols.
+//!
+//! If W has ncols columns and V has one column, compute
+//!
+//! W(i,j) = alpha*V(i,1)*W(i,j) for i=1:nrows, j=1:ncols,
+//!
+//! which could be used to implement scaling of a block linear system.
 void SUBR(mvec_times_mvec_elemwise)(_ST_ alpha, TYPE(const_mvec_ptr) V, 
                                                 TYPE(mvec_ptr) W,int* iflag);
 

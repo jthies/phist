@@ -710,8 +710,8 @@ public:
   }
 
 
-  // X = Y*diag(a_1,...,a_nvec) + a*X
-  TEST_F(CLASSNAME, times_mvec_elemwise)
+  // Y(i,j)=alpha*X(i,j)*Y(i,j)
+  TEST_F(CLASSNAME, times_mvec_elemwise_k_k)
   {
     if( typeImplemented_ && !problemTooSmall_ )
     {
@@ -720,6 +720,29 @@ public:
       SUBR(mvec_times_mvec_elemwise)(alpha,vec1_,vec2_,&iflag_);
       ASSERT_EQ(0,iflag_);
       SUBR(mvec_scale)(vec1_,alpha,&iflag_);
+      ASSERT_EQ(0,iflag_);
+
+      ASSERT_NEAR(mt::one(),MvecsEqual(vec1_,vec2_, mt::one()), 1000*mt::eps());
+    }
+  }
+
+  // Y(i,j)=alpha*X(i,1)*Y(i,j)
+  TEST_F(CLASSNAME, times_mvec_elemwise_1_k)
+  {
+    if( typeImplemented_ && !problemTooSmall_ )
+    {
+      ST alpha = st::prand();
+      TYPE(mvec_ptr) x;
+      SUBR(mvec_create)(&x,map_,1,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(mvec_put_value)(x,2*st::one(),&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(mvec_add_mvec)(st::one(),vec1_,st::zero(),vec2_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      // v1=v2=random, x=2, so this gives v2=2*alpha*v1
+      SUBR(mvec_times_mvec_elemwise)(alpha,x,vec2_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(mvec_scale)(vec1_,2*alpha,&iflag_);
       ASSERT_EQ(0,iflag_);
 
       ASSERT_NEAR(mt::one(),MvecsEqual(vec1_,vec2_, mt::one()), 1000*mt::eps());
