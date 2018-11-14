@@ -1389,6 +1389,14 @@ PHIST_TASK_BEGIN(ComputeTask)
 PHIST_TASK_END(iflag);
 }
 
+extern "C" void SUBR(mvec_times_mvec_elemwise)(_ST_ alpha, TYPE(const_mvec_ptr) vX,
+                                                  TYPE(mvec_ptr)       vY, int* iflag)
+{
+  PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
+#include "phist_std_typedefs.hpp"
+  PHIST_PERFCHECK_VERIFY_MVEC_TIMES_MVEC_ELEMWISE(alpha,vX,vY,iflag);
+  PHIST_CHK_IERR(*iflag=PHIST_NOT_IMPLEMENTED, *iflag);
+}
 //! B=alpha*A+beta*B
 extern "C" void SUBR(sdMat_add_sdMat)(_ST_ alpha, TYPE(const_sdMat_ptr) vA,
                             _ST_ beta,  TYPE(sdMat_ptr)       vB,
