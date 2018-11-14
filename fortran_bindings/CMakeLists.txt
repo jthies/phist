@@ -159,7 +159,7 @@ foreach(TESTNAME ${TEST_DRIVERS})
 
         target_link_libraries(test_fortran_${TESTNAME} phist_fort ${library_list} ${MPI_Fortran_LIBRARIES})
 
-        add_test(NAME fortran_${TESTNAME} COMMAND ./test_fortran_${TESTNAME})
+        add_test(NAME fortran_${TESTNAME} COMMAND ${TEST_ENV} ./test_fortran_${TESTNAME})
         set_tests_properties(fortran_${TESTNAME} PROPERTIES PASS_REGULAR_EXPRESSION "[. \n]*ALL TESTS PASSED[. \n]*")
         set_tests_properties(fortran_${TESTNAME} PROPERTIES FAIL_REGULAR_EXPRESSION "[. \n]*FAILED[. \n]*")
         set_tests_properties(fortran_${TESTNAME} PROPERTIES TIMEOUT 500)
