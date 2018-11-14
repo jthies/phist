@@ -408,9 +408,11 @@ ${PHIST_FORCE_32BIT_GIDX_DEFAULT})
 ##############################################################################
 # enable single precision and complex valued calculation if supported
 ##############################################################################
-if( "${PHIST_KERNEL_LIB}" MATCHES "tpetra|ghost|magma|eigen" )
+if( "${PHIST_KERNEL_LIB}" MATCHES "ghost|magma|eigen" )
   set(PHIST_SUPPORT_SP ON)
   set(PHIST_SUPPORT_COMPLEX ON)
+elseif( "${PHIST_KERNEL_LIB}" MATCHES "tpetra" )
+  include(cmake/CheckTrilinosTypes.cmake)
 elseif( "${PHIST_KERNEL_LIB}" MATCHES "petsc" )
   set(PHIST_SUPPORT_SP ${PETSC_USE_REAL_SINGLE})
   set(PHIST_SUPPORT_COMPLEX ${PETSC_USE_COMPLEX})
