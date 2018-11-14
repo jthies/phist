@@ -5,7 +5,7 @@
     set (CMAKE_CXX_FLAGS      "${CMAKE_CXX_FLAGS}     -DMKL_LP64")
   endif()
 
-  if(NOT PHIST_CROSS_COMPILE)
+  if(PHIST_HOST_OPTIMIZE)
     set(ARCH_FLAG "-march=native")
   endif()
 

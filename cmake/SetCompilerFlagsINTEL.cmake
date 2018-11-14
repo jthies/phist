@@ -2,7 +2,7 @@
   set (CMAKE_CXX_FLAGS      "${CMAKE_CXX_FLAGS} -align -Wno-unused-variable ${MKL_FLAG}")
   set (CMAKE_Fortran_FLAGS  "${CMAKE_Fortran_FLAGS} ${MKL_FLAG} -align array64byte")
 
-  if(NOT PHIST_CROSS_COMPILE)
+  if(PHIST_HOST_OPTIMIZE)
     set(ARCH_FLAG "-xHOST")
   endif()
 
