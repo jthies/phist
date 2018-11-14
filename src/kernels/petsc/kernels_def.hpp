@@ -758,16 +758,34 @@ extern "C" void SUBR(mvec_times_mvec_elemwise)(_ST_ alpha, TYPE(const_mvec_ptr) 
   PHIST_CAST_PTR_FROM_VOID(Traits<_ST_>::mvec_t,W,vW,*iflag);
 
   // no real support for this in petsc, scale columns one by one
-  phist_lidx nvec, nlocal;
-  PHIST_CHK_IERR(SUBR(mvec_num_vectors)(vV, &nvec, iflag), *iflag);
+  phist_lidx nvecV, nvecW, nlocal;
+  PHIST_CHK_IERR(SUBR(mvec_num_vectors)(vV, &nvecV, iflag), *iflag);
+  PHIST_CHK_IERR(SUBR(mvec_num_vectors)(vW, &nvecW, iflag), *iflag);
   PHIST_CHK_IERR(SUBR(mvec_my_length)(vV, &nlocal, iflag), *iflag);
 
-  for(phist_lidx j = 0; j < nvec; j++)
+  if (nvecV==1)
   {
-    for(phist_lidx i = 0; i < nlocal; i++)
+    for(phist_lidx j = 0; j < nvecW; j++)
     {
-      W->rawData[j*nlocal+i] *= alpha*V->rawData[j*nlocal+i];
+      for(phist_lidx i = 0; i < nlocal; i++)
+      {
+        W->rawData[j*nlocal+i] *= alpha*V->rawData[i];
+      }
     }
+  }
+  else if (nvecV==nvecW)
+  {
+    for(phist_lidx j = 0; j < nvecW; j++)
+    {
+      for(phist_lidx i = 0; i < nlocal; i++)
+      {
+        W->rawData[j*nlocal+i] *= alpha*V->rawData[j*nlocal+i];
+      }
+    }
+  }
+  else
+  {
+    PHIST_CHK_IERR(*iflag=PHIST_INVALID_INPUT, *iflag);
   }
   *iflag = PHIST_SUCCESS;
 }
