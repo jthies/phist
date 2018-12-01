@@ -5,8 +5,13 @@
 
 include(CheckCSourceRuns)
 
-set (CMAKE_C_FLAGS        "-O0 -march=native")
-
+include(CMakePushCheckState)
+cmake_push_check_state() # Save variables
+if (PHIST_HOST_OPTIMIZE)
+  set (CMAKE_REQUIRED_FLAGS        "-O0 -march=native")
+elseif (CMAKE_BUILD_TYPE MATCHES "Rel")
+  message (WARNING "If you set PHIST_HOST_OPTIMIZE=OFF, we will likely not be able to use SIMD intrinsics and loose performance.")
+endif()
 CHECK_C_SOURCE_RUNS("
 #include \"emmintrin.h\"
 #include \"immintrin.h\"
@@ -49,3 +54,5 @@ __m512d a_ = _mm512_set_pd(a,a,a,a,a,a,a,a);\
 return 0;
 }
 " PHIST_HAVE_AVX512)
+
+cmake_pop_check_state() # Recover variables
