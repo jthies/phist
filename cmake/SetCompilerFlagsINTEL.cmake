@@ -16,9 +16,9 @@
 
 #  set (CMAKE_C_FLAGS_DEBUG        "-check-pointers=rw -fstack-protector -w2 -debug -traceback")
 #  set (CMAKE_CXX_FLAGS_DEBUG      "-check-pointers=rw -w2 -fstack-protector -debug -traceback")
-  set (CMAKE_C_FLAGS_DEBUG        "-fstack-protector -w2 -debug -traceback")
-  set (CMAKE_CXX_FLAGS_DEBUG      "-fstack-protector -w2 -debug -traceback")
-  set (CMAKE_Fortran_FLAGS_DEBUG  "-check all -check noarg_temp_created -debug -traceback")
+  set (CMAKE_C_FLAGS_DEBUG        "-fstack-protector -w2 -debug -traceback ${ARCH_FLAG}")
+  set (CMAKE_CXX_FLAGS_DEBUG      "-fstack-protector -w2 -debug -traceback ${ARCH_FLAG}")
+  set (CMAKE_Fortran_FLAGS_DEBUG  "-check all -check noarg_temp_created -debug -traceback ${ARCH_FLAG}")
 
   # this is for some reason required with Intel 15 on Emmy:
   set (CMAKE_EXE_LINKER_FLAGS_DEBUG "-lifcore -lifport")

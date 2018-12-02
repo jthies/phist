@@ -22,10 +22,10 @@
   set (CMAKE_CXX_FLAGS_RELWITHDEBINFO     "${CMAKE_CXX_FLAGS_RELEASE}     -g")
   set (CMAKE_Fortran_FLAGS_RELWITHDEBINFO "${CMAKE_Fortran_FLAGS_RELEASE} -g")
 
-  set (CMAKE_C_FLAGS_DEBUG       "-O0 -g -Wall")
-  set (CMAKE_CXX_FLAGS_DEBUG     "-O0 -g -Wall")
-  set (CMAKE_Fortran_FLAGS_DEBUG "-O0 -g -Wall")
+  set (CMAKE_C_FLAGS_DEBUG       "-O0 -g -Wall $[ARCH_FLAG}")
+  set (CMAKE_CXX_FLAGS_DEBUG     "-O0 -g -Wall ${ARCH_FLAG}")
+  set (CMAKE_Fortran_FLAGS_DEBUG "-O0 -g -Wall ${ARCH_FLAG}")
 
   if (CMAKE_Fortran_COMPILER_ID STREQUAL "Clang")
-    set (CMAKE_Fortran_FLAGS_DEBUG "${CMAKE_Fortran_FLAGS_Debug} -Mbounds")
+    set (CMAKE_Fortran_FLAGS_DEBUG "${CMAKE_Fortran_FLAGS_DEBUG} -Mbounds")
   endif()
