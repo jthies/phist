@@ -87,19 +87,21 @@ int main(int argc, char** argv)
     max_err = std::max(max_err, err);
     PHIST_SOUT(PHIST_INFO,"%8.4e\t%8.4e\t%8.4e\n",std::real(evals[i]),resid[i],err);
   }
+
+  if (num_eigs<opts.numEigs || max_err>10.*opts.convTol)
+  {
+    PHIST_SOUT(PHIST_WARNING,"WARNING: Unexpectedly large error in eigenvalue(s).\n");
+    iflag=+1;
+  }
   
   PHIST_ICHK_IERR(SUBR(mvec_delete)(Q,&iflag),iflag);
   PHIST_ICHK_IERR(SUBR(sdMat_delete)(R,&iflag),iflag);
   PHIST_ICHK_IERR(SUBR(sparseMat_delete)(A,&iflag),iflag);
   delete A_op;
 
-  PHIST_ICHK_IERR(phist_kernels_finalize(&iflag),iflag);
-  if (num_eigs<opts.numEigs || max_err>10.*opts.convTol)
-  {
-    PHIST_SOUT(PHIST_WARNING,"WARNING: Unexpectedly large error in eigenvalue(s).\n");
-    iflag=+1;
-  }
   PHIST_MAIN_TASK_END
+
+  PHIST_ICHK_IERR(phist_kernels_finalize(&iflag),iflag);
 
   return iflag;
 }
