@@ -22,7 +22,7 @@ typedef int MPI_Comm;
 #include "gtest/phist_gtest.h"
 
 
-#ifdef PHIST_HAVE_GHOST
+#ifdef PHIST_USE_GHOST_TASKS
 #include "ghost/util.h"
 #include "ghost/taskq.h"
 #endif
@@ -127,7 +127,7 @@ public:
   {
     if( --kernelTestSetupCounter_ == 0 )
     {
-#ifdef PHIST_HAVE_GHOST
+#ifdef PHIST_USE_GHOST_TASKS
       ghost_taskq_waitall();
 #endif  
     }
