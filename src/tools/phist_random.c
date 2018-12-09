@@ -14,6 +14,7 @@
  *
 */
 
+#include "phist_config.h"
 #include "phist_random.h"
 
 #ifdef PHIST_HAVE_OPENMP
@@ -33,12 +34,12 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <emmintrin.h>
 #include <string.h>
-
-#ifdef PHIST_HIGH_PRECISION_KERNELS
+#if defined(PHIST_HAVE_SSE)||defined(PHIST_HAVE_AVX)
+#include <emmintrin.h>
 #include <immintrin.h>
 #endif
+
 
 
 // ************************************************************************
@@ -154,16 +155,21 @@ void drandom_1(int nrows, double *restrict v, int64_t pre_skip, int64_t post_ski
         double yi2 = KISSD(&x,&y,&z,&c);
         double yi3 = KISSD(&x,&y,&z,&c);
         double yi4 = KISSD(&x,&y,&z,&c);
-#ifdef PHIST_HIGH_PRECISION_KERNELS
+#ifdef PHIST_HAVE_AVX
         // use AVX non-temporal stores
         __m256d yi = _mm256_set_pd(yi4,yi3,yi2,yi1);
         _mm256_stream_pd(v+4*i, yi);
-#else
+#elif PHIST_HAVE_SSE
         // use SSE non-temporal stores
         __m128d yi21 = _mm_set_pd(yi2,yi1);
         _mm_stream_pd(v+4*i, yi21);
         __m128d yi43 = _mm_set_pd(yi4,yi3);
         _mm_stream_pd(v+4*i+2, yi43);
+#else
+        v[4*i+0]=yi1;
+        v[4*i+1]=yi2;
+        v[4*i+2]=yi3;
+        v[4*i+3]=yi4;
 #endif
       }
 
