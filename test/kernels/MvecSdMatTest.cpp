@@ -115,6 +115,12 @@ using namespace testing;
 #define _K_ 5
 #include "../phist_typed_test_gen.h"
 
+// this size caused problems in another test class (SymmMatTest) with CUDA and -np 12
+#define _N_ 163
+#define _M_ 30
+#define _K_ 30
+#include "../phist_typed_test_gen.h"
+
 // case with 7, 11
 #define _N_ 512
 #define _M_ 7

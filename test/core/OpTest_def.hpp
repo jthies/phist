@@ -483,7 +483,7 @@ public:
 
     I_op.apply_shifted(alpha,I_op.A,sigma,vec1_,beta,vec2_,&iflag_);
     ASSERT_EQ(0,iflag_);
-    ASSERT_NEAR(mt::one(),MvecsEqual(vec2_,vec3_),VTest::releps());
+    ASSERT_NEAR(mt::one(),MvecsEqual(vec2_,vec3_),0.5*VTest::releps());
 
     // clean up the operator
     I_op.destroy(&I_op,&iflag_);

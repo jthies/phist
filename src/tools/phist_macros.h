@@ -198,7 +198,7 @@ PHIST_OUT(PHIST_ERROR,"Error code %d (%s) returned from call %s\n(file %s, line 
 # ifdef PHIST_TIMEMONITOR
 #   include "phist_timemonitor.hpp"
 # endif
-# if defined(PHIST_KERNEL_LIB_GHOST) && PHIST_USE_GHOST_TASKS
+# if defined(PHIST_KERNEL_LIB_GHOST) && defined(PHIST_USE_GHOST_TASKS)
 #   include <ghost/task.h>
 #   define PHIST_GHOST_CHK_IN_TASK(s, iflag) { \
       ghost_task_t *curtask = NULL; \

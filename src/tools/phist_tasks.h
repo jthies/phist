@@ -227,7 +227,7 @@ static inline void phist_wait_ghost_task(ghost_task** task, int* iflag)
 }
 
 // some helpful macros
-#if (PHIST_USE_GHOST_TASKS)
+#ifdef PHIST_USE_GHOST_TASKS
 
 #define PHIST_TASK_DECLARE(taskName) \
   ghost_task* taskName = NULL;

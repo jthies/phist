@@ -184,7 +184,7 @@ kernel libs) ?
    because GDB will jump out of the function context and into the tasking stuff. If
    this flag is defined, all kernels are executed in order.
  */
-#cmakedefine PHIST_USE_GHOST_TASKS ${PHIST_USE_GHOST_TASKS}
+#cmakedefine PHIST_USE_GHOST_TASKS
 #cmakedefine PHIST_SELL_C ${PHIST_SELL_C}
 #cmakedefine PHIST_SELL_SIGMA ${PHIST_SELL_SIGMA}
 /* default mode flag passed to ghost_spmv, see ghost/spmv.h for details.
