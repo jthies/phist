@@ -18,7 +18,9 @@
 #ifdef PHIST_HAVE_MPI
 #include <mpi.h>
 #endif
+#if defined(HPIST_HAVE_SSE)||defined(PHIST_HAVE_AVX)||defined(PHIST_HAVE_AVX512)
 #include <immintrin.h>
+#endif
 #ifdef PHIST_HAVE_OPENMP
 #include <omp.h>
 #else
@@ -128,6 +130,15 @@ void dbench_stream_store_run(aligned_double *restrict x, const double* res, doub
   __m128d v4 = _mm_set_pd(*res,*res);
   __m128d v2 = _mm_set_pd(*res,*res);
   __m128d v0 = _mm_set_pd(*res,*res);
+#else
+  double v7 = *res;
+  double v6 = *res;
+  double v5 = *res;
+  double v4 = *res;
+  double v3 = *res;
+  double v2 = *res;
+  double v1 = *res;
+  double v0 = *res;
 #endif
 #pragma omp parallel for schedule(static)
   for(int i = 0; i < PHIST_BENCH_LARGE_N; i+=CHUNK)
@@ -142,6 +153,15 @@ void dbench_stream_store_run(aligned_double *restrict x, const double* res, doub
     _mm_stream_pd(x+i+2,v2);
     _mm_stream_pd(x+i+4,v4);
     _mm_stream_pd(x+i+6,v6);
+#else
+    x[i+0]=v0;
+    x[i+1]=v1;
+    x[i+2]=v2;
+    x[i+3]=v3;
+    x[i+4]=v4;
+    x[i+5]=v5;
+    x[i+6]=v6;
+    x[i+7]=v7;
 #endif
   }
 
@@ -183,6 +203,8 @@ void dbench_stream_triad_run(const aligned_double *restrict x, const aligned_dou
   __m256d a = _mm256_set_pd(*res,*res,*res,*res);
 #elif defined(PHIST_HAVE_SSE)
   __m128d a = _mm_set_pd(*res,*res);
+#else
+  double a = *res;
 #endif
 #pragma omp parallel for schedule(static)
   for(int i = 0; i < PHIST_BENCH_LARGE_N; i+=CHUNK)
@@ -233,6 +255,15 @@ void dbench_stream_triad_run(const aligned_double *restrict x, const aligned_dou
     _mm_stream_pd(z+i+2,z2);
     _mm_stream_pd(z+i+4,z4);
     _mm_stream_pd(z+i+6,z6);
+#else
+    z[i+0]=x[i+0]+a*y[i+0];
+    z[i+1]=x[i+1]+a*y[i+1];
+    z[i+2]=x[i+2]+a*y[i+2];
+    z[i+3]=x[i+3]+a*y[i+3];
+    z[i+4]=x[i+4]+a*y[i+4];
+    z[i+5]=x[i+5]+a*y[i+5];
+    z[i+6]=x[i+6]+a*y[i+6];
+    z[i+7]=x[i+7]+a*y[i+7];
 #endif
   }
 
