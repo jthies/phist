@@ -155,11 +155,11 @@ void drandom_1(int nrows, double *restrict v, int64_t pre_skip, int64_t post_ski
         double yi2 = KISSD(&x,&y,&z,&c);
         double yi3 = KISSD(&x,&y,&z,&c);
         double yi4 = KISSD(&x,&y,&z,&c);
-#ifdef PHIST_HAVE_AVX
+#if defined(PHIST_HAVE_AVX)
         // use AVX non-temporal stores
         __m256d yi = _mm256_set_pd(yi4,yi3,yi2,yi1);
         _mm256_stream_pd(v+4*i, yi);
-#elif PHIST_HAVE_SSE
+#elif defined(PHIST_HAVE_SSE)
         // use SSE non-temporal stores
         __m128d yi21 = _mm_set_pd(yi2,yi1);
         _mm_stream_pd(v+4*i, yi21);
