@@ -1395,7 +1395,12 @@ extern "C" void SUBR(mvec_times_mvec_elemwise)(_ST_ alpha, TYPE(const_mvec_ptr) 
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
 #include "phist_std_typedefs.hpp"
   PHIST_PERFCHECK_VERIFY_MVEC_TIMES_MVEC_ELEMWISE(alpha,vX,vY,iflag);
-  PHIST_CHK_IERR(*iflag=PHIST_NOT_IMPLEMENTED, *iflag);
+  PHIST_TASK_DECLARE(ComputeTask)
+  PHIST_TASK_BEGIN(ComputeTask)
+  PHIST_CAST_PTR_FROM_VOID(ghost_densemat,X,vX,*iflag);  
+  PHIST_CAST_PTR_FROM_VOID(ghost_densemat,Y,vY,*iflag);  
+  PHIST_CHK_GERR(ghost_mult(Y,X,(void*)(&alpha)),*iflag);
+PHIST_TASK_END(iflag);
 }
 //! B=alpha*A+beta*B
 extern "C" void SUBR(sdMat_add_sdMat)(_ST_ alpha, TYPE(const_sdMat_ptr) vA,
