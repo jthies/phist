@@ -18,7 +18,7 @@
 #ifdef PHIST_HAVE_MPI
 #include <mpi.h>
 #endif
-#if defined(HPIST_HAVE_SSE)||defined(PHIST_HAVE_AVX)||defined(PHIST_HAVE_AVX512)
+#if defined(PHIST_HAVE_SSE)||defined(PHIST_HAVE_AVX)||defined(PHIST_HAVE_AVX512)
 #include <immintrin.h>
 #endif
 #ifdef PHIST_HAVE_OPENMP
