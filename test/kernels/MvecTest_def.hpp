@@ -711,11 +711,7 @@ public:
 
 
   // Y(i,j)=alpha*X(i,j)*Y(i,j)
-#ifdef PHIST_KERNEL_LIB_GHOST
-  TEST_F(CLASSNAME, DISABLED_times_mvec_elemwise_k_k)
-#else
   TEST_F(CLASSNAME, times_mvec_elemwise_k_k)
-#endif
   {
     if( typeImplemented_ && !problemTooSmall_ )
     {
@@ -731,11 +727,7 @@ public:
   }
 
   // Y(i,j)=alpha*X(i,1)*Y(i,j)
-#ifdef PHIST_KERNEL_LIB_GHOST
-  TEST_F(CLASSNAME, DISABLED_times_mvec_elemwise_1_k)
-#else
   TEST_F(CLASSNAME, times_mvec_elemwise_1_k)
-#endif
   {
     if( typeImplemented_ && !problemTooSmall_ )
     {
