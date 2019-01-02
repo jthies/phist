@@ -75,10 +75,12 @@ class ScalarTraits< float >
   typedef phist_Sblas_cmplx blas_cmplx_t;
   typedef float blas_scalar_t;
   
+#ifdef PHIST_HAVE_CMPLX
   typedef phist_ClinearOp c_linearOp_t; // this is just to allow a simpler implementation of the complex traits class
   typedef phist_Cmvec c_mvec_t; 
   typedef phist_CsparseMat c_sparseMat_t; 
   typedef phist_CsdMat c_sdMat_t; 
+#endif
   
   //! for complex types, data type of real and imag part.
   //! for real types, magn_t=scalar_t
@@ -251,10 +253,12 @@ class ScalarTraits< double >
   typedef phist_Dblas_cmplx blas_cmplx_t;
   typedef double blas_scalar_t;
 
+#ifdef PHIST_HAVE_CMPLX
   typedef phist_ZlinearOp c_linearOp_t; // this is just to allow a simpler implementation of the complex traits class
   typedef phist_Zmvec c_mvec_t;
   typedef phist_ZsparseMat c_sparseMat_t;
   typedef phist_ZsdMat c_sdMat_t;
+#endif
   
   //! for complex types, data type of real and imag part.
   //! for real types, magn_t=scalar_t
@@ -423,10 +427,13 @@ class ScalarTraits< std::complex<MT> >
 #ifdef PHIST_HAVE_GHOST
   static const ghost_datatype ghost_dt = ScalarTraits<MT>::c_ghost_dt;
 #endif
+
+#ifdef PHIST_HAVE_CMPLX
   typedef typename ScalarTraits<MT>::c_linearOp_t linearOp_t; 
   typedef typename ScalarTraits<MT>::c_mvec_t mvec_t; 
   typedef typename ScalarTraits<MT>::c_sparseMat_t sparseMat_t; 
   typedef typename ScalarTraits<MT>::c_sdMat_t sdMat_t; 
+#endif
   typedef typename ScalarTraits<MT>::blas_cmplx_t blas_cmplx_t;
   typedef typename ScalarTraits<MT>::blas_cmplx_t blas_scalar_t;
 

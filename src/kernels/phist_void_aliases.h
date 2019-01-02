@@ -34,14 +34,8 @@ typedef void* phist_context_ptr;
 //! pointer to const context
 typedef const void* phist_const_context_ptr;
 
-#include "phist_gen_s.h"
-#include "phist_void_aliases_decl.h"
-#include "phist_gen_d.h"
-#include "phist_void_aliases_decl.h"
-#include "phist_gen_c.h"
-#include "phist_void_aliases_decl.h"
-#include "phist_gen_z.h"
-#include "phist_void_aliases_decl.h"
-#include "phist_gen_clean.h"
+#define PHIST_CLASSFILE_DEF "phist_void_aliases_decl.h"
+#include "phist_gen_all.h"
+
 //!@}
 #endif
