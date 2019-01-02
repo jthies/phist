@@ -11,14 +11,6 @@
 #include "cpBase.hpp"
 
 
-#ifdef PHIST_HAVE_SP
-#include "phist_gen_s.h"
-#include "cpPhistMvec_def.hpp"
-#include "phist_gen_c.h"
-#include "cpPhistMvec_def.hpp"
-#endif
+#define PHIST_CLASSFILE_DEF "cpPhistMvec_def.hpp"
+#include "phist_gen_all.h"
 
-#include "phist_gen_d.h"
-#include "cpPhistMvec_def.hpp"
-#include "phist_gen_z.h"
-#include "cpPhistMvec_def.hpp"

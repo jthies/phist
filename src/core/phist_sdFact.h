@@ -35,18 +35,9 @@ extern "C" {
 //! up-to-date with the device, and do not call to_device afterwards.
 //!@{
 
-#ifdef PHIST_HAVE_SP
-#include "phist_gen_s.h"
-#include "phist_sdFact_decl.h"
-#include "phist_gen_c.h"
-#include "phist_sdFact_decl.h"
-#endif
-#include "phist_gen_d.h"
-#include "phist_sdFact_decl.h"
-#include "phist_gen_z.h"
-#include "phist_sdFact_decl.h"
+#define PHIST_CLASSFILE_DEF "phist_sdFact_decl.h"
+#include "phist_gen_all.h"
 
-#include "phist_gen_clean.h"
 //!@}
 #ifdef __cplusplus
 } // extern "C"
