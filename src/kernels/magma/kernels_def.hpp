@@ -252,8 +252,8 @@ extern "C" void SUBR(mvec_set_block)(TYPE(mvec_ptr) vV,
   *iflag = PHIST_SUCCESS;
 }
 
-extern "C" void SUBR(sdMat_view_block)(TYPE(mvec_ptr) vM, 
-    TYPE(mvec_ptr)* vMblock,
+extern "C" void SUBR(sdMat_view_block)(TYPE(sdMat_ptr) vM, 
+    TYPE(sdMat_ptr)* vMblock,
     int imin, int imax, int jmin, int jmax, int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);

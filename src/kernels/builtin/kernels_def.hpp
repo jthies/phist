@@ -79,7 +79,7 @@ extern "C" {
   void SUBR(sdMat_identity_f)(TYPE(sdMat_ptr),int*);
   void SUBR(sdMat_set_block_f)(TYPE(mvec_ptr),TYPE(const_mvec_ptr),int,int,int,int,int*);
   void SUBR(sdMat_times_sdMat_f)(_ST_,TYPE(const_sdMat_ptr),TYPE(const_sdMat_ptr),_ST_,TYPE(sdMat_ptr),int*);
-  void SUBR(sdMat_view_block_f)(TYPE(mvec_ptr),TYPE(mvec_ptr)*,int,int,int,int,int*);
+  void SUBR(sdMat_view_block_f)(TYPE(sdMat_ptr),TYPE(sdMat_ptr)*,int,int,int,int,int*);
 }
 
 extern "C" void SUBR(type_avail)(int *iflag)
@@ -327,8 +327,8 @@ extern "C" void SUBR(mvec_set_block)(TYPE(mvec_ptr) V,
   PHIST_CHK_IERR(SUBR(mvec_set_block_f)(V,Vblock,jmin,jmax,iflag),*iflag);
 }
 
-extern "C" void SUBR(sdMat_view_block)(TYPE(mvec_ptr) M, 
-    TYPE(mvec_ptr)* Mblock,
+extern "C" void SUBR(sdMat_view_block)(TYPE(sdMat_ptr) M, 
+    TYPE(sdMat_ptr)* Mblock,
     int imin, int imax, int jmin, int jmax, int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
