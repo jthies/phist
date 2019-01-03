@@ -90,10 +90,17 @@ void SUBR(linearOp_wrap_sparseMat)(TYPE(linearOp_ptr) op, TYPE(const_sparseMat_p
   op->shifts=NULL;
   PHIST_CHK_IERR(SUBR(sparseMat_get_range_map)(A,&op->range_map,iflag),*iflag);
   PHIST_CHK_IERR(SUBR(sparseMat_get_domain_map)(A,&op->domain_map,iflag),*iflag);
-  op->apply = &SUBR(sparseMat_times_mvec);
-  op->applyT = &SUBR(sparseMatT_times_mvec);
-  op->apply_shifted = &SUBR(sparseMat_times_mvec_vadd_mvec);
-  op->fused_apply_mvTmv = &SUBR(fused_spmv_mvTmv);
+  typedef void (*apply_funptr_type)(_ST_ alpha, const void* A, TYPE(const_mvec_ptr) X, _ST_ beta,  TYPE(mvec_ptr) Y, int* iflag);
+  typedef void (*apply_shifted_funptr_type)(_ST_ alpha, const void* A, _ST_ const * sigma,
+        TYPE(const_mvec_ptr) X, _ST_ beta,  TYPE(mvec_ptr) Y, int* iflag);
+  typedef void (*apply_fused_funptr_type)(_ST_ alpha, const void* A, TYPE(const_mvec_ptr)  V,
+                            _ST_ beta,                 TYPE(mvec_ptr)        W,
+                            TYPE(sdMat_ptr) WtW, TYPE(sdMat_ptr) VtW,
+                            int* iflag);
+  op->apply = (apply_funptr_type) &SUBR(sparseMat_times_mvec);
+  op->applyT = (apply_funptr_type) &SUBR(sparseMatT_times_mvec);
+  op->apply_shifted = (apply_shifted_funptr_type) &SUBR(sparseMat_times_mvec_vadd_mvec);
+  op->fused_apply_mvTmv = (apply_fused_funptr_type) &SUBR(fused_spmv_mvTmv);
   op->update=NULL;
   op->destroy=&SUBR(private_linearOp_destroy_nothing);
   return;

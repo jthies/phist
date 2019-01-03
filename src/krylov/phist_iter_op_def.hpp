@@ -57,7 +57,7 @@ extern "C" void SUBR(private_iter_op_apply)
   }
   else if (op->method==phist_CARP_CG)
   {
-    PHIST_CHK_NEG_IERR(SUBR(carp_cg)( op->A_op->A, X, Y,
+    PHIST_CHK_NEG_IERR(SUBR(carp_cg)( (TYPE(const_sparseMat_ptr))op->A_op->A, X, Y,
         &nIter, tol, iflag), *iflag);
   }
   else

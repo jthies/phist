@@ -986,7 +986,7 @@ extern "C" void SUBR(mvec_QR)(TYPE(mvec_ptr) vV, TYPE(sdMat_ptr) vR, int* iflag)
     PHIST_DEB("single vector QR, R=%8.4e\n",nrm);
     ST* Rval=NULL;
     int ldR;
-    PHIST_CHK_IERR(SUBR(sdMat_extract_view)(R,&Rval,&ldR,iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(sdMat_extract_view)(vR,&Rval,&ldR,iflag),*iflag);
     rank=1;
     *Rval=(ST)nrm;
     if (nrm<rankTol)

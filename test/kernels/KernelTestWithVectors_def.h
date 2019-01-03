@@ -284,23 +284,23 @@ virtual void TearDown()
       // download memory from device 
       if( _numberOfVectorsInitialized >= 1 )
       {
-        SUBR(mvec_from_device)((void*)mem1_,&iflag_);
+        SUBR(mvec_from_device)(mem1_,&iflag_);
       }
       if( _numberOfVectorsInitialized >= 2 )
       {
-        SUBR(mvec_from_device)((void*)mem2_,&iflag_);
+        SUBR(mvec_from_device)(mem2_,&iflag_);
       }
       if( _numberOfVectorsInitialized >= 3 )
       {
-        SUBR(mvec_from_device)((void*)mem3_,&iflag_);
+        SUBR(mvec_from_device)(mem3_,&iflag_);
       }
       if( _numberOfVectorsInitialized >= 4 )
       {
-        SUBR(mvec_from_device)((void*)mem4_,&iflag_);
+        SUBR(mvec_from_device)(mem4_,&iflag_);
       }
       if( _numberOfVectorsInitialized >= 5 )
       {
-        SUBR(mvec_from_device)((void*)mem5_,&iflag_);
+        SUBR(mvec_from_device)(mem5_,&iflag_);
       }
 
       // check pre padding is still the same

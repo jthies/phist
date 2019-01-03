@@ -194,8 +194,8 @@ extern "C" void SUBR(sdMat_view_block)(TYPE(sdMat_ptr) M,
   *iflag=PHIST_NOT_IMPLEMENTED;
 }
 
-extern "C" void SUBR(sdMat_get_block)(TYPE(const_mvec_ptr) M, 
-    TYPE(mvec_ptr) Mblock,
+extern "C" void SUBR(sdMat_get_block)(TYPE(const_sdMat_ptr) M, 
+    TYPE(sdMat_ptr) Mblock,
     int imin, int imax, int jmin, int jmax, int* iflag)
 {
   *iflag=PHIST_NOT_IMPLEMENTED;
@@ -235,7 +235,7 @@ extern "C" void SUBR(mvec_put_func)(TYPE(mvec_ptr) V,
 }
 
 
-extern "C" void SUBR(sdMat_put_value)(TYPE(mvec_ptr) V, _ST_ value, int* iflag)
+extern "C" void SUBR(sdMat_put_value)(TYPE(sdMat_ptr) V, _ST_ value, int* iflag)
 {
   *iflag=PHIST_NOT_IMPLEMENTED;
 }

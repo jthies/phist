@@ -52,9 +52,27 @@ void SUBR(jadaCorrectionSolver_create)(TYPE(jadaCorrectionSolver_ptr) *me, phist
     {
       *iflag=-88;
     }
+    typedef void (*customSolver_run_funptr_type)(         void*  customSolverData,
+                                    void const*    A_op,       void const*    B_op,
+                                    void const*    Qtil,       void const*    BQtil,
+                                    const double sigma_r[],    const double sigma_i[],  
+                                    TYPE(const_mvec_ptr)  res, const int resIndex[],
+                                    const double        tol[], int       maxIter,
+                                    TYPE(mvec_ptr)        t,
+                                    int robust,                int abortAfterFirstConvergedInBlock,
+                                    int *iflag);
+    typedef void (*customSolver_run1_funptr_type)(        void*  customSolverData,
+                                    void const*    A_op,     void const*    B_op,
+                                    void const*    Qtil,     void const*    BQtil,
+                                    double   sigma_r,        double sigma_i, 
+                                     TYPE(const_mvec_ptr)  res,
+                                    const double           tol,    int                   maxIter,
+                                    TYPE(mvec_ptr)        t,
+                                    int robust,
+                                    int *                 iflag);
     (*me)->customSolver_=opts.customSolver;
-    (*me)->customSolver_run=opts.customSolver_run;
-    (*me)->customSolver_run1=opts.customSolver_run1;
+    (*me)->customSolver_run= (customSolver_run_funptr_type) opts.customSolver_run;
+    (*me)->customSolver_run1= (customSolver_run1_funptr_type) opts.customSolver_run1;
   }
   else if ((*me)->method_==phist_NO_LINSOLV)
   {

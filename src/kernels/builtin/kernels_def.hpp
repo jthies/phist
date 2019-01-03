@@ -70,14 +70,14 @@ extern "C" {
 #ifdef PHIST_HIGH_PRECISION_KERNELS
   void SUBR(sdMat_extract_error_f)(TYPE(sdMat_ptr),_ST_**,int*);
 #endif
-  void SUBR(sdMat_get_block_f)(TYPE(const_mvec_ptr),TYPE(mvec_ptr),int,int,int,int,int*);
+  void SUBR(sdMat_get_block_f)(TYPE(const_sdMat_ptr),TYPE(sdMat_ptr),int,int,int,int,int*);
   void SUBR(sdMat_get_ncols_f)(TYPE(const_sdMat_ptr),int*,int*);
   void SUBR(sdMat_get_nrows_f)(TYPE(const_sdMat_ptr),int*,int*);
   void SUBR(sdMat_print_f)(TYPE(const_sdMat_ptr),int*);
   void SUBR(sdMat_put_value_f)(TYPE(sdMat_ptr),_ST_,int*);
   void SUBR(sdMat_random_f)(TYPE(sdMat_ptr),int*);
   void SUBR(sdMat_identity_f)(TYPE(sdMat_ptr),int*);
-  void SUBR(sdMat_set_block_f)(TYPE(mvec_ptr),TYPE(const_mvec_ptr),int,int,int,int,int*);
+  void SUBR(sdMat_set_block_f)(TYPE(sdMat_ptr),TYPE(const_sdMat_ptr),int,int,int,int,int*);
   void SUBR(sdMat_times_sdMat_f)(_ST_,TYPE(const_sdMat_ptr),TYPE(const_sdMat_ptr),_ST_,TYPE(sdMat_ptr),int*);
   void SUBR(sdMat_view_block_f)(TYPE(sdMat_ptr),TYPE(sdMat_ptr)*,int,int,int,int,int*);
 }
@@ -336,8 +336,8 @@ extern "C" void SUBR(sdMat_view_block)(TYPE(sdMat_ptr) M,
   PHIST_CHK_IERR(SUBR(sdMat_view_block_f)(M,Mblock,imin,imax,jmin,jmax,iflag),*iflag);
 }
 
-extern "C" void SUBR(sdMat_get_block)(TYPE(const_mvec_ptr) M, 
-    TYPE(mvec_ptr) Mblock,
+extern "C" void SUBR(sdMat_get_block)(TYPE(const_sdMat_ptr) M, 
+    TYPE(sdMat_ptr) Mblock,
     int imin, int imax, int jmin, int jmax, int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
@@ -395,7 +395,7 @@ extern "C" void SUBR(mvec_put_func)(TYPE(mvec_ptr) V,
   PHIST_CHK_IERR(SUBR(mvec_put_func_f)(V,funPtr,last_arg,iflag),*iflag);
 }
 
-extern "C" void SUBR(sdMat_put_value)(TYPE(mvec_ptr) V, _ST_ value, int* iflag)
+extern "C" void SUBR(sdMat_put_value)(TYPE(sdMat_ptr) V, _ST_ value, int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   PHIST_PERFCHECK_VERIFY_SMALL;

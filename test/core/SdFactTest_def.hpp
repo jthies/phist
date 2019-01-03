@@ -482,7 +482,7 @@ ASSERT_EQ(0,iflag_);
     iflag_=iflag_in;
     SUBR(sdMatT_times_sdMat)(st::one(),mat1_,mat3_,st::zero(),mat2_,&iflag_);
     ASSERT_EQ(0,iflag_);
-    SUBR(mvec_from_device)(mat2_,&iflag_);
+    SUBR(sdMat_from_device)(mat2_,&iflag_);
     ASSERT_EQ(0,iflag_);
 PrintSdMat(PHIST_DEBUG,"R^T*X",mat2_vp_,m_lda_,1,mpi_comm_);
 
@@ -498,7 +498,7 @@ PrintSdMat(PHIST_DEBUG,"R^T*X",mat2_vp_,m_lda_,1,mpi_comm_);
     SUBR(sdMat_to_device)(mat2_,&iflag_);
     ASSERT_EQ(0,iflag_);
 
-    SUBR(mvec_from_device)(mat2_,&iflag_);
+    SUBR(sdMat_from_device)(mat2_,&iflag_);
     ASSERT_EQ(0,iflag_);
 PrintSdMat(PHIST_DEBUG,"reconstructed X",mat2_vp_,m_lda_,1,mpi_comm_);
 

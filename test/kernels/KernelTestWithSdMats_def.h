@@ -164,13 +164,13 @@ virtual void TearDown()
     {
    
       // download memory from device 
-      SUBR(sdMat_from_device)((void*)mem1_,&iflag_);
+      SUBR(sdMat_from_device)(mem1_,&iflag_);
       ASSERT_EQ(0,iflag_);
-      SUBR(sdMat_from_device)((void*)mem2_,&iflag_);
+      SUBR(sdMat_from_device)(mem2_,&iflag_);
       ASSERT_EQ(0,iflag_);
-      SUBR(sdMat_from_device)((void*)mem3_,&iflag_);
+      SUBR(sdMat_from_device)(mem3_,&iflag_);
       ASSERT_EQ(0,iflag_);
-      SUBR(sdMat_from_device)((void*)mem4_,&iflag_);
+      SUBR(sdMat_from_device)(mem4_,&iflag_);
       ASSERT_EQ(0,iflag_);
 
       // check pre col padding is still the same
@@ -319,7 +319,7 @@ static void PrintSdMat(int outlev, std::string label,
 
   /*! compare sdMats on several procs
    */
-  static void sdMat_parallel_check(TYPE(const_sdMat_ptr) mat, int* iflag)
+  static void sdMat_parallel_check(TYPE(sdMat_ptr) mat, int* iflag)
   {
     *iflag = 0;
     // TODO: use correct communicator
@@ -336,7 +336,7 @@ static void PrintSdMat(int outlev, std::string label,
         buff[j*m+i] = mat_raw[MIDX(i,j,lda)];
 
     // download data from device, check if it is consistent
-    PHIST_CHK_IERR(SUBR(sdMat_from_device)((void*)mat,iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(sdMat_from_device)(mat,iflag),*iflag);
 
     int device_error=0;
     for(int j = 0; j < n; j++)
