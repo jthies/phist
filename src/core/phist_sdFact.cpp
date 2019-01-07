@@ -24,35 +24,26 @@
 
 #include "phist_ScalarTraits.hpp"
 
-#ifdef PHIST_HAVE_SP
-#include "phist_gen_s.h"
-#include "phist_sdFact_kernels_def.hpp"
-#include "phist_sdFact_prec_kernels_def.hpp"
-#include "phist_sdFact_def.hpp"
+#define PHIST_CLASSFILE_DEF "phist_sdFact_kernels_def.hpp"
+#include "phist_gen_all.h"
+#undef PHIST_CLASSFILE_DEF
 
-# ifdef PHIST_HAVE_CMPLX
-# include "phist_gen_c.h"
-# include "phist_sdFact_kernels_def.hpp"
-# include "phist_sdFact_prec_kernels_def.hpp"
-# include "phist_sdFact_def.hpp"
-# endif
-#endif
+#define PHIST_CLASSFILE_DEF "phist_sdFact_prec_kernels_def.hpp"
+#include "phist_gen_all.h"
+#undef PHIST_CLASSFILE_DEF
 
-#ifdef PHIST_HAVE_CMPLX
-#include "phist_gen_z.h"
-#include "phist_sdFact_kernels_def.hpp"
-#include "phist_sdFact_prec_kernels_def.hpp"
-#include "phist_sdFact_def.hpp"
-#endif
+#define PHIST_CLASSFILE_DEF "phist_sdFact_def.hpp"
+#include "phist_gen_all.h"
+#undef PHIST_CLASSFILE_DEF
 
-#include "phist_gen_d.h"
-#include "phist_sdFact_kernels_def.hpp"
+
 #ifdef PHIST_HIGH_PRECISION_KERNELS
+#include "phist_gen_d.h"
 extern "C" {
 // high precision variants only available in "D" case up to now
 #include "DsdFact_prec_kernels.c"
 }
+#include "phist_gen_clean.h"
 #endif
-#include "phist_sdFact_def.hpp"
 
 

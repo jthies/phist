@@ -9,21 +9,9 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-#ifdef PHIST_HAVE_SP
-#include "phist_gen_s.h"
-#include "cpPhistSdMat_decl.h"
 
-#include "phist_gen_c.h"
-#include "cpPhistSdMat_decl.h"
-
-#endif
-#include "phist_gen_d.h"
-#include "cpPhistSdMat_decl.h"
-
-#include "phist_gen_z.h"
-#include "cpPhistSdMat_decl.h"
-
-#include "phist_gen_clean.h"
+#define PHIST_CLASSFILE_DEF "cpPhistSdMat_decl.hpp"
+#include "phist_gen_all.h"
 
 #ifdef __cplusplus
 }

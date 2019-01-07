@@ -51,20 +51,7 @@ template<typename T> class SparseMatOwner
   typedef typename T::MissingImplementationOfSparseMatOwnerClass error;
 };
 
-#include "phist_gen_d.h"
-#include "phist_MemOwner_decl.hpp"
-
-#include "phist_gen_z.h"
-#include "phist_MemOwner_decl.hpp"
-
-#ifdef PHIST_HAVE_SP
-#include "phist_gen_s.h"
-#include "phist_MemOwner_decl.hpp"
-
-# include "phist_gen_c.h"
-# include "phist_MemOwner_decl.hpp"
-#endif
-
-#include "phist_gen_clean.h"
+#define PHIST_CLASSFILE_DEF "phist_MemOwner_decl.hpp"
+#include "phist_gen_all.h"
 
 #endif
