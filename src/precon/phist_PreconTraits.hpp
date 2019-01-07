@@ -34,7 +34,8 @@ class PreconTraits
 {
 
   typedef ScalarTraits<ST> st;
-  typedef void mvec_t;
+  typedef typename st::mvec_t* mvec_ptr;
+  typedef typename st::mvec_t const* const_mvec_ptr;
 
 public:
 
@@ -84,18 +85,18 @@ public:
     NotImplemented(iflag);
     return;
   }
-  static void Apply(ST alpha, void const* P, mvec_t const* X, ST beta, mvec_t* Y, int* iflag)
+  static void Apply(ST alpha, void const* P, const_mvec_ptr X, ST beta, mvec_ptr Y, int* iflag)
   {
     NotImplemented(iflag);
     return;
   }
-  static void ApplyT(ST alpha, void const* P, mvec_t const* X, ST beta, mvec_t* Y, int* iflag)
+  static void ApplyT(ST alpha, void const* P, const_mvec_ptr X, ST beta, mvec_ptr Y, int* iflag)
   {
     NotImplemented(iflag);
     return;
   }
   static void ApplyShifted(ST alpha, const void* P, ST const * sigma,
-          mvec_t const* X, ST beta,  mvec_t* Y, int* iflag)
+          const_mvec_ptr X, ST beta,  mvec_ptr Y, int* iflag)
   {
     NotImplemented(iflag);
     return;
@@ -109,7 +110,8 @@ class PreconTraits<ST,phist_NO_PRECON>
 {
 
   typedef ScalarTraits<ST> st;
-  typedef void mvec_t;
+  typedef typename st::mvec_t* mvec_ptr;
+  typedef typename st::mvec_t const* const_mvec_ptr;
 
 public:
 
@@ -149,18 +151,18 @@ public:
     return;
   }
   
-  static void Apply(ST alpha, void const* P, mvec_t const* X, ST beta, mvec_t* Y, int* iflag)
+  static void Apply(ST alpha, void const* P, const_mvec_ptr X, ST beta, mvec_ptr Y, int* iflag)
   {
     *iflag=PHIST_NOT_IMPLEMENTED;
     return;
   } 
 
-  static void ApplyT(ST alpha, void const* P, mvec_t const* X, ST beta, mvec_t* Y, int* iflag)
+  static void ApplyT(ST alpha, void const* P, const_mvec_ptr X, ST beta, mvec_ptr Y, int* iflag)
   {
     Apply(alpha,P,X,beta,Y,iflag);
   }
   static void ApplyShifted(ST alpha, const void* P, ST const * sigma,
-          mvec_t const* X, ST beta,  mvec_t* Y, int* iflag)
+          const_mvec_ptr X, ST beta,  mvec_ptr Y, int* iflag)
   {
     *iflag=PHIST_NOT_IMPLEMENTED;
     return;
@@ -210,7 +212,7 @@ public:
     return;
   }
   static void Update(void* P, const void* A, ST sigma, const void* B,
-        const void* Vkern, const void* BVkern,
+        const_mvec_ptr Vkern, const_mvec_ptr BVkern,
         int* iflag)
   {
     PHIST_CAST_PTR_FROM_VOID(linearOp,userOp,P,*iflag);

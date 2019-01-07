@@ -67,7 +67,7 @@ namespace internal {
     {
       Epetra_MultiVector AX(X->Map(),X->NumVectors());
       iflag1=Op->Apply(*X,AX);
-      SUBR(mvec_vadd_mvec)(minus_shifts, vX,1.0,&AX,&iflag2);
+      SUBR(mvec_vadd_mvec)(minus_shifts, vX,1.0,(TYPE(mvec_ptr))&AX,&iflag2);
       iflag3=Y->Update(alpha,AX,beta);
     }
 

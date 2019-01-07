@@ -246,7 +246,8 @@ PHIST_CHK_IERR(*iflag=(nQ_in==nR_in && nR_in==mR_in)?0:PHIST_INVALID_INPUT,*ifla
   mvec_ptr  t_res = NULL;   //< part of the residual AQ-QR corresponding to current block t
   mvec_ptr  Qtil= NULL;     //< view of part of Q required for the JaDa correction equation
   mvec_ptr BQtil= NULL;     //< B*Qtil
-  mvec_ptr Q = NULL, BQ = NULL, R = NULL;
+  mvec_ptr Q = NULL, BQ = NULL;
+  sdMat_ptr R = NULL;
 
   sdMat_ptr H   = NULL;     //< projection of A onto H, V'*AV
   sdMat_ptr Hful= NULL;     //< projection of A onto H, Vful'*A*Vful
@@ -276,7 +277,7 @@ PHIST_CHK_IERR(*iflag=(nQ_in==nR_in && nR_in==mR_in)?0:PHIST_INVALID_INPUT,*ifla
   int nv0=0;
   if (opts.v0!=NULL)
   {
-    PHIST_CHK_IERR(SUBR(mvec_num_vectors)(opts.v0,&nv0,iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(mvec_num_vectors)((TYPE(const_mvec_ptr))opts.v0,&nv0,iflag),*iflag);
   }
   if (nv0>1 && nv0<minBase)
   {

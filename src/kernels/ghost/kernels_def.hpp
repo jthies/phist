@@ -902,7 +902,7 @@ PHIST_TASK_END(iflag);
 //! Mblock = M(imin:imax,jmin:jmax). The new object Vblock is created but does not
 //! allocate memory for the vector entries, instead using the entries from V
 //! directly.
-extern "C" void SUBR(sdMat_view_block)(TYPE(mvec_ptr) vM, TYPE(mvec_ptr)* vMblock,
+extern "C" void SUBR(sdMat_view_block)(TYPE(sdMat_ptr) vM, TYPE(sdMat_ptr)* vMblock,
                              int imin, int imax, int jmin, int jmax, int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);

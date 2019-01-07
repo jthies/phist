@@ -134,16 +134,16 @@ add_custom_command(
 # the following phony targets are meant for debugging/development only
 
 # generate the preprocessed header files
-add_custom_target(pp DEPENDS ${HFILES} COMMAND ${CMAKE_COMMAND} -E remove */*.CFWRAPPER_SKIP.h)
+#add_custom_target(pp DEPENDS ${HFILES} COMMAND ${CMAKE_COMMAND} -E remove */*.CFWRAPPER_SKIP.h)
 
 # generate the preprocessed header files, keep temporary files
-add_custom_target(pp_keep DEPENDS ${HFILES})
+#add_custom_target(pp_keep DEPENDS ${HFILES})
 
 # run the cfwrapper.py script to create all fortran source files
-add_custom_target(cf DEPENDS pp_keep COMMAND ${CMAKE_CURRENT_BINARY_DIR}/cfwrapper.py)
+#add_custom_target(cf DEPENDS pp_keep COMMAND ${CMAKE_CURRENT_BINARY_DIR}/cfwrapper.py)
 
 add_library(phist_fort ${FFILES} ${FSTATIC})
-set_target_properties(phist_fort PROPERTIES DEPENDS cf)
+#set_target_properties(phist_fort PROPERTIES DEPENDS cf)
 set_target_properties(phist_fort PROPERTIES Fortran_MODULE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
 
 # the type-specific modules depend on the general ones, e.g. phist_jada_s.F90 needs phist_jada.mod to compile.
@@ -170,7 +170,7 @@ include_directories(${CMAKE_CURRENT_BINARY_DIR})
 
 
 # top-level target for PHIST
-add_custom_target(fortran_modules DEPENDS cf phist_fort)
+add_custom_target(fortran_modules DEPENDS phist_fort)
 
 # install all generated Fortran files. Note that we install the actual source files,
 # not the modules, because I don't know how to get their names here. So when compiling

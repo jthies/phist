@@ -132,7 +132,7 @@ extern "C" void SUBR(carp_setup_rc)(TYPE(const_sparseMat_ptr) vA, int numShifts,
   
   dat->invProcWeights_=Teuchos::rcp(new Epetra_Vector(A->ColMap()));
   
-  PHIST_CHK_IERR(SUBR(mvec_put_value)((void*)dat->invProcWeights_.get(),st::one(),iflag),*iflag);
+  PHIST_CHK_IERR(SUBR(mvec_put_value)((TYPE(mvec_ptr))dat->invProcWeights_.get(),st::one(),iflag),*iflag);
   if (A->Importer()!=NULL)
   {
     Teuchos::RCP<Epetra_Vector> locWeights = Teuchos::rcp(new Epetra_Vector(A->RowMap()));
@@ -522,14 +522,14 @@ void private_kacz_sweep_aug(const Epetra_CrsMatrix* A,
     }
     Epetra_MultiVector qx=*q;
     // q_tmp = Q'x
-    PHIST_CHK_IERR(SUBR(mvecT_times_mvec)(1.0, Q, x.get(), 0.0, &qx, iflag), *iflag);
+    PHIST_CHK_IERR(SUBR(mvecT_times_mvec)(1.0, (TYPE(mvec_ptr))Q, (TYPE(mvec_ptr))x.get(), 0.0, (TYPE(sdMat_ptr))&qx, iflag), *iflag);
     // scale col k by omega[k]
     for (int k=0; k<qx.NumVectors(); k++)
     {
       qx(k)->Scale(omega[k]);
     }
     // x = x - Q*qx
-    PHIST_CHK_IERR(SUBR(mvec_times_sdMat)(-1.0,Q,&qx,1.0,x.get(),iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(mvec_times_sdMat)(-1.0,(TYPE(mvec_ptr))Q,(TYPE(sdMat_ptr))&qx,1.0,(TYPE(mvec_ptr))x.get(),iflag),*iflag);
   }
 
   for (int i=istart; i!=iend;i+=istep)
@@ -606,14 +606,14 @@ void private_kacz_sweep_aug(const Epetra_CrsMatrix* A,
     }
     Epetra_MultiVector qx=*q;
     // q_tmp = Q'x
-    PHIST_CHK_IERR(SUBR(mvecT_times_mvec)(1.0, Q, x.get(), 0.0, &qx, iflag), *iflag);
+    PHIST_CHK_IERR(SUBR(mvecT_times_mvec)(1.0, (TYPE(mvec_ptr))Q, (TYPE(mvec_ptr))x.get(), 0.0, (TYPE(sdMat_ptr))&qx, iflag), *iflag);
     // scale col k by omega[k]
     for (int k=0; k<qx.NumVectors(); k++)
     {
       qx(k)->Scale(omega[k]);
     }
     // x = x - Q*qx
-    PHIST_CHK_IERR(SUBR(mvec_times_sdMat)(-1.0,Q,&qx,1.0,x.get(),iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(mvec_times_sdMat)(-1.0,(TYPE(mvec_ptr))Q,(TYPE(sdMat_ptr))&qx,1.0,(TYPE(mvec_ptr))x.get(),iflag),*iflag);
   }
 }
 

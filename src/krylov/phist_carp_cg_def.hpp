@@ -228,7 +228,7 @@ void SUBR(carp_cgState_delete)(TYPE(carp_cgState_ptr) state, int* iflag)
   PHIST_ENTER_FCN(__FUNCTION__);
   *iflag=0;
   
-  PHIST_CHK_IERR(SUBR(carp_destroy)(state->A_,
+  PHIST_CHK_IERR(SUBR(carp_destroy)((TYPE(sparseMat_ptr))state->A_,
         state->aux_, iflag),*iflag);
   
   
