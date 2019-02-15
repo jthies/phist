@@ -58,7 +58,8 @@ class PreconTraits<double,phist_IFPACK>
     const Epetra_CrsMatrix* B = (const Epetra_CrsMatrix*)vB;
     Ifpack_Preconditioner* P_in = (Ifpack_Preconditioner*)last_arg;
     
-    phist::internal::prec_and_mat* PAM=new phist::internal::prec_and_mat(A,sigma,B);
+    phist::internal::prec_and_mat* PAM=new 
+        phist::internal::prec_and_mat((phist_Dconst_sparseMat_ptr)A,sigma,(phist_Dconst_sparseMat_ptr)B);
 
     PAM->IfpackPrec = Teuchos::rcp(P_in,false);
     PAM->Prec=PAM->IfpackPrec;
@@ -100,7 +101,8 @@ class PreconTraits<double,phist_IFPACK>
       ifpack_list->set("fact: ilut level-of-fill",(double)lof);
     }
     
-    phist::internal::prec_and_mat* PAM=new phist::internal::prec_and_mat(A,sigma,B);
+    phist::internal::prec_and_mat* PAM=new 
+    phist::internal::prec_and_mat((phist_Dconst_sparseMat_ptr)A,sigma,(phist_Dconst_sparseMat_ptr)B);
 
     PAM->IfpackPrec = Teuchos::rcp(Factory.Create(PrecType, PAM->Mat.get(), OverlapLevel));
     PAM->Prec=PAM->IfpackPrec;
@@ -123,7 +125,7 @@ class PreconTraits<double,phist_IFPACK>
     PHIST_ENTER_FCN(__FUNCTION__);
     *iflag=0;
     PHIST_CAST_PTR_FROM_VOID(phist::internal::prec_and_mat, PAM, vP,*iflag);
-    PHIST_CHK_IERR(PAM->UpdateMatrix(vA,sigma,vB,iflag),*iflag);
+    PHIST_CHK_IERR(PAM->UpdateMatrix((phist_Dconst_sparseMat_ptr)vA,sigma,(phist_Dconst_sparseMat_ptr)vB,iflag),*iflag);
     PHIST_CHK_IERR(*iflag=PAM->IfpackPrec->Compute(),*iflag);
   }                                                                             
 

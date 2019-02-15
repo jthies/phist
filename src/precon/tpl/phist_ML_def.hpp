@@ -57,7 +57,8 @@ class PreconTraits<double,phist_ML>
     const Epetra_CrsMatrix* B = (const Epetra_CrsMatrix*)vB;
     ML_Epetra::MultiLevelPreconditioner* P_in = (ML_Epetra::MultiLevelPreconditioner*)last_arg;
     
-    phist::internal::prec_and_mat* PAM=new phist::internal::prec_and_mat(A,sigma,B);
+    phist::internal::prec_and_mat* PAM=new 
+        phist::internal::prec_and_mat((phist_Dconst_sparseMat_ptr)A,sigma,(phist_Dconst_sparseMat_ptr)B);
 
     PAM->MLPrec = Teuchos::rcp(P_in,false);
     PAM->Prec=PAM->MLPrec;
@@ -89,7 +90,8 @@ class PreconTraits<double,phist_ML>
       ml_list->remove("default values");
     }
 
-    phist::internal::prec_and_mat* PAM=new phist::internal::prec_and_mat(A,sigma,B);
+    phist::internal::prec_and_mat* PAM=new 
+        phist::internal::prec_and_mat((phist_Dconst_sparseMat_ptr)A,sigma,(phist_Dconst_sparseMat_ptr)B);
 
     PAM->MLPrec = Teuchos::rcp(new ML_Epetra::MultiLevelPreconditioner(*(PAM->Mat), *ml_list));
     PAM->Prec=PAM->MLPrec;
@@ -106,7 +108,7 @@ class PreconTraits<double,phist_ML>
                      int* iflag) 
   {
     PHIST_CAST_PTR_FROM_VOID(phist::internal::prec_and_mat,PAM,P,*iflag);
-    PHIST_CHK_IERR(PAM->UpdateMatrix(A,sigma,B,iflag),*iflag);
+    PHIST_CHK_IERR(PAM->UpdateMatrix((phist_Dconst_sparseMat_ptr)A,sigma,(phist_Dconst_sparseMat_ptr)B,iflag),*iflag);
     int dimV=0;
     Epetra_MultiVector* V = (Epetra_MultiVector*)Vkern;
 //    if (V) dimV=std::min(2,V->NumVectors());
