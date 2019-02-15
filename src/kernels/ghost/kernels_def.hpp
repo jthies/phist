@@ -974,8 +974,8 @@ PHIST_TASK_BEGIN_SMALLDETERMINISTIC(ComputeTask)
 #endif 
   _ST_ *m_ptr, *mb_ptr;
   phist_lidx ldm, ldmb;
-  PHIST_CHK_IERR(SUBR(sdMat_extract_view)((void*)M,&m_ptr,&ldm,iflag),*iflag);
-  PHIST_CHK_IERR(SUBR(sdMat_extract_view)((void*)Mblock,&mb_ptr,&ldmb,iflag),*iflag);
+  PHIST_CHK_IERR(SUBR(sdMat_extract_view)((TYPE(sdMat_ptr))M,&m_ptr,&ldm,iflag),*iflag);
+  PHIST_CHK_IERR(SUBR(sdMat_extract_view)((TYPE(sdMat_ptr))Mblock,&mb_ptr,&ldmb,iflag),*iflag);
 #ifdef PHIST_SDMATS_ROW_MAJOR
 // if we ever want that...
 #error "row-major sdMats not implemented here"
@@ -1798,7 +1798,7 @@ extern "C" void SUBR(mvecT_times_mvec)(_ST_ alpha, TYPE(const_mvec_ptr) vV, TYPE
   _ST_ mybeta = st::zero();
   phist_const_comm_ptr vcomm=NULL;
   phist_const_map_ptr map=NULL;
-  PHIST_CHK_IERR(SUBR(mvec_get_map)(W,&map,iflag),*iflag);
+  PHIST_CHK_IERR(SUBR(mvec_get_map)((TYPE(mvec_ptr))W,&map,iflag),*iflag);
   PHIST_CHK_IERR(phist_map_get_comm(map,&vcomm,iflag),*iflag);
   PHIST_CAST_PTR_FROM_VOID(const MPI_Comm,comm,vcomm,*iflag);
   int rank = 0;
