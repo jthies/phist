@@ -871,10 +871,10 @@ int nv_v,nv_vb;
 phist_lidx nr_v,nr_vb;
 PHIST_CHK_IERR(*iflag=V->elSize-Vblock->elSize,*iflag);
 PHIST_CHK_IERR(*iflag=V->elSize-sizeof(_ST_),*iflag);
-PHIST_CHK_IERR(SUBR(mvec_num_vectors)(V,&nv_v,iflag),*iflag);
-PHIST_CHK_IERR(SUBR(mvec_num_vectors)(Vblock,&nv_vb,iflag),*iflag);
-PHIST_CHK_IERR(SUBR(mvec_my_length)(V,&nr_v,iflag),*iflag);
-PHIST_CHK_IERR(SUBR(mvec_my_length)(Vblock,&nr_vb,iflag),*iflag);
+PHIST_CHK_IERR(SUBR(mvec_num_vectors)(vV,&nv_v,iflag),*iflag);
+PHIST_CHK_IERR(SUBR(mvec_num_vectors)(vVblock,&nv_vb,iflag),*iflag);
+PHIST_CHK_IERR(SUBR(mvec_my_length)(vV,&nr_v,iflag),*iflag);
+PHIST_CHK_IERR(SUBR(mvec_my_length)(vVblock,&nr_vb,iflag),*iflag);
   if ((nr_v!=nr_vb) || ((jmax-jmin+1)!=nv_vb) ||
       (jmin<0) || (jmax>nv_v))
       {
