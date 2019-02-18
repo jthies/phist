@@ -1,0 +1,7 @@
+clone_repo
+   - echo "Hello, I am user '$USER' on host '$HOST'."
+#   - 'cd /local_data/gitlab-ci/ESSEX_workspace/'
+#   - 'git clone https://bitbucket.org/essex/phist phist'
+
+#run_script
+#   - cd /local_data/gitlab-ci/ESSEX_workspace/phist && ./buildScripts/ci-sc-dlr.sh
