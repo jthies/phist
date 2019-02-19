@@ -390,32 +390,34 @@ PHIST_PERFCHECK_BENCHMARK(STREAM_STORE, phist_bench_stream_store);
 #define PHIST_PERFCHECK_VERIFY_MVEC_TIMES_MVEC_ELEMWISE(a,X,Y,iflag) \
   int tmp_iflag = *iflag; \
   PHIST_PERFCHECK_MVEC_LEN_T n; \
-  int nV; \
+  int nX, nY; \
   PHIST_CHK_IERR(PHIST_PERFCHECK_MVEC_LENGTH(X,&n,iflag),*iflag); \
-  PHIST_CHK_IERR(SUBR(mvec_num_vectors)(X,&nV,iflag),*iflag); \
+  PHIST_CHK_IERR(SUBR(mvec_num_vectors)(X,&nX,iflag),*iflag); \
+  PHIST_CHK_IERR(SUBR(mvec_num_vectors)(Y,&nY,iflag),*iflag); \
   *iflag = tmp_iflag; \
-  PHIST_PERFCHECK_VERIFY(__FUNCTION__,(a!=_ST_(0)),(b!=_ST_(1)),nV,0,0,0,0, STREAM_TRIAD((a!=_ST_(0))*2*nV*n*sizeof(_ST_)), (a!=0)*((a!=1)+1)*n*nV);
+  PHIST_PERFCHECK_VERIFY(__FUNCTION__,(a!=_ST_(0)),nX,nY,0,0,0,0, STREAM_TRIAD((a!=_ST_(0))*(nX+2*nY)*n*sizeof(_ST_)), (a!=_ST_(0))*((a!=_ST_(1))+1)*n*nY);
 
 #else
 
 // realistic model which respects cache line length
-#define PHIST_PERFCHECK_VERIFY_MVEC_ADD_MVEC(a,X,b,Y,iflag) \
+#define PHIST_PERFCHECK_VERIFY_MVEC_TIMES_MVEC_ELEMWISE(a,X,Y,iflag) \
   int tmp_iflag = *iflag; \
   PHIST_PERFCHECK_MVEC_LEN_T n; \
-  int nV; \
+  int nX, nY; \
   PHIST_CHK_IERR(PHIST_PERFCHECK_MVEC_LENGTH(X,&n,iflag),*iflag); \
-  PHIST_CHK_IERR(SUBR(mvec_num_vectors)(X,&nV,iflag),*iflag); \
+  PHIST_CHK_IERR(SUBR(mvec_num_vectors)(X,&nX,iflag),*iflag); \
+  PHIST_CHK_IERR(SUBR(mvec_num_vectors)(Y,&nY,iflag),*iflag); \
   _ST_ *X_raw, *Y_raw; \
   phist_lidx ldX, ldY; \
   SUBR(mvec_extract_view)((TYPE(mvec_ptr))X,&X_raw,&ldX,iflag); \
   SUBR(mvec_extract_view)((TYPE(mvec_ptr))Y,&Y_raw,&ldY,iflag); \
   phist_lidx cl_size = phist_cacheline_size<_ST_>(); \
-  int nX_ = std::min(ldX,((nV-1)/cl_size+1)*cl_size); \
+  int nX_ = std::min(ldX,((nX-1)/cl_size+1)*cl_size); \
+  int nY_ = std::min(ldY,((nY-1)/cl_size+1)*cl_size); \
   if( nX_+cl_size > ldX ) nX_ = ldX; \
-  int nY_ = std::min(ldY,((nV-1)/cl_size+1)*cl_size); \
   if( nY_+cl_size > ldY ) nY_ = ldY; \
   *iflag = tmp_iflag; \
-  PHIST_PERFCHECK_VERIFY(__FUNCTION__,(a!=_ST_(0)),(b!=_ST_(1)),nV,nX_,nY_,0,0,   STREAM_TRIAD((a!=_ST_(0))*(nx_+nY_)*n*sizeof(_ST_)), (a!=0)*((a!=1)+1)*n*nV);
+  PHIST_PERFCHECK_VERIFY(__FUNCTION__,(a!=_ST_(0)),nX,nY,nX_,nY_,0,0, STREAM_TRIAD((a!=_ST_(0))*(nX_+2*nY_)*n*sizeof(_ST_)), (a!=_ST_(0))*((a!=_ST_(1))+1)*n*nY);
 
 #endif
 
