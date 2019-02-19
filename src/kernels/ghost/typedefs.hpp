@@ -59,8 +59,8 @@ public:
     phist_lidx stride = M->stride;
     phist_lidx nrows,ncols;
     // note: we can call the 'D' variant because these functions are in fact type independent
-    phist_DsdMat_get_nrows(M.get(),&nrows,iflag);
-    phist_DsdMat_get_ncols(M.get(),&ncols,iflag);
+    phist_DsdMat_get_nrows((phist_Dconst_sdMat_ptr)(M.get()),&nrows,iflag);
+    phist_DsdMat_get_ncols((phist_Dconst_sdMat_ptr)(M.get()),&ncols,iflag);
 
     if (M->traits.datatype != phist::ScalarTraits<ST>::ghost_dt)
       {
@@ -89,8 +89,8 @@ public:
     int stride = M->stride;
     phist_lidx nrows,ncols;
     // note: we can call the 'D' variant because these functions are in fact type independent
-    phist_DsdMat_get_nrows(M.get(),&nrows,iflag);
-    phist_DsdMat_get_ncols(M.get(),&ncols,iflag);
+    phist_DsdMat_get_nrows((phist_Dconst_sdMat_ptr)M.get(),&nrows,iflag);
+    phist_DsdMat_get_ncols((phist_Dconst_sdMat_ptr)M.get(),&ncols,iflag);
     
     if (M->traits.datatype != phist::ScalarTraits<ST>::ghost_dt)
       {
