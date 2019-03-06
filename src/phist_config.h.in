@@ -117,7 +117,8 @@ kernel libs) ?
 #cmakedefine PHIST_HAVE_TEUCHOS
 #cmakedefine PHIST_HAVE_KOKKOS
 /* Belos and Anasazi interfaces require the PHIST C++ bindings */
-#if ${XSDK_ENABLE_CXX}
+#cmakedefine XSDK_ENABLE_CXX
+#ifdef XSDK_ENABLE_CXX
 #cmakedefine PHIST_HAVE_ANASAZI
 #cmakedefine PHIST_HAVE_BELOS
 #endif
