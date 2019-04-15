@@ -30,7 +30,6 @@
 #include "Teuchos_RCP.hpp"
 #include "MatrixMarket_Tpetra.hpp"
 #include "Tpetra_MatrixIO.hpp"
-#include "Tpetra_DefaultPlatform.hpp"
 
 #ifdef PHIST_HAVE_BELOS
 #include "Belos_config.h"
