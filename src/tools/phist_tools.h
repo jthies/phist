@@ -141,6 +141,9 @@ extern "C" {
   //! \brief return the name of the library that provides the kernels for this phist installation as a string,
   //! e.g. "builtin","ghost","tpetra".
   const char* phist_kernel_lib();
+  
+  //! return 1 if mvecs are stored in row-major order, 0 otherwise
+  int mvecs_rowmajor();
 
   //! convert a standard return code from phist into a human-readable string.
   const char* phist_retcode2str(int code);

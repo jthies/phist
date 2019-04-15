@@ -33,7 +33,11 @@ _phist_tools.phist_kernel_lib.argtypes = list()
 _phist_tools.phist_kernel_lib.restype = _ct.c_char_p
 _phist_tools.phist_kernel_lib.__doc__ = 'return configured kernel library'
 phist_kernel_lib = _phist_tools.phist_kernel_lib
-
+#phist_mvecs_rowmajor
+_phist_tools.phist_mvecs_rowmajor.argtypes = list()
+_phist_tools.phist_mvecs_rowmajor.restype = _ct.c_int
+_phist_tools.phist_mvecs_rowmajor.__doc__ = 'returns 1 if mvecs are in col-major storage, 0 otherwise'
+phist_mvecs_rowmajor = _phist_tools.phist_mvecs_rowmajor
 
 
 #--------------------------------------------------------------------------------

@@ -399,6 +399,15 @@ extern "C" const char* phist_kernel_lib()
 #endif
 }
 
+extern "C" int phist_mvecs_rowmajor()
+{
+#ifdef PHIST_MVECS_ROWMAJOR
+  return 1;
+#else
+  return 0;
+#endif
+}
+
 extern "C" const char* phist_version()
 {
   return PHIST_VERSION_STRING;
