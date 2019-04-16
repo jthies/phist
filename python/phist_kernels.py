@@ -211,6 +211,8 @@ for _varT in ('S', 'D', 'C', 'Z'):
     _declare(None, _prefix+'sparseMat_get_col_map', (_sparseMat_ptr, map_ptr_p, c_int_p), skip_if_missing=True)
     _declare(None, _prefix+'sparseMat_get_range_map', (_sparseMat_ptr, map_ptr_p, c_int_p), skip_if_missing=True)
     _declare(None, _prefix+'sparseMat_get_domain_map', (_sparseMat_ptr, map_ptr_p, c_int_p), skip_if_missing=True)
+    _declare(None, _prefix+'sparseMat_global_nrows', (_sparseMat_ptr, gidx_p, c_int_p), skip_if_missing=True)
+    _declare(None, _prefix+'sparseMat_global_ncols', (_sparseMat_ptr, gidx_p, c_int_p), skip_if_missing=True)
 
     #void SUBR(mvec_create)(TYPE(mvec_ptr)* V, const_map_ptr_t map, int nvec, int* iflag);
     #void SUBR(mvec_clone_shape)(TYPE(mvec_ptr)* V, TYPE(const_mvec_ptr) V_in, int* iflag);
