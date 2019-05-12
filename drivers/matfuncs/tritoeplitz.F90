@@ -29,7 +29,7 @@ contains
     integer(kind=G_GIDX_T), intent(out) :: nrows
     integer(kind=G_LIDX_T), intent(out) :: maxnne_per_row
 
-    n = 2**newN
+    n = 2_8**newN
     nrows = n
     maxnne_per_row = 3
 
