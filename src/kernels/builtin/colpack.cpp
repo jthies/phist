@@ -148,7 +148,7 @@ int verbose=1;
 #endif
 //#ifdef PHIST_TESTING
     PHIST_SOUT(PHIST_VERBOSE,"thoroughly test local dist-2 coloring\n");
-    PHIST_CHK_IERR(*iflag=GC->CheckPartialDistanceTwoColoring(),*iflag);
+    PHIST_CHK_IERR(*iflag=GC->CheckPartialDistanceTwoColoring()-1,*iflag);
 /*
 #else
     PHIST_SOUT(PHIST_VERBOSE,"quickly test local dist-2 coloring\n");
