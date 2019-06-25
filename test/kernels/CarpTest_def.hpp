@@ -8,15 +8,17 @@
 /*******************************************************************************************/
 #include "../tools/TestHelpers.h"
 
+#if defined(PHIST_KERNEL_LIB_BUILTIN)&&defined(PHIST_HAVE_OPENMP)
+#include <omp.h>
+#endif
+
 #ifndef CLASSNAME
 #error "file not included correctly."
 #endif
 
 using namespace phist::testing;
 
-// NOTE: the last check (HAVE_CMPLX) is not strictly needed but right now the code won't
-// compile because the Z kernels are not defined, we could fix this.
-#if !defined(IS_COMPLEX)&&defined(IS_DOUBLE)&&defined(PHIST_HAVE_CMPLX)
+#if !defined(IS_COMPLEX)&&defined(IS_DOUBLE)
 
 /*! Test fixure. 
   
@@ -41,6 +43,12 @@ using namespace phist::testing;
 class CLASSNAME: public KernelTestWithSparseMat<_ST_,_N_,_N_,MATNAME>,
                  public KernelTestWithVectors<_ST_,_N_,_NV_,0,3> 
 {
+
+#ifndef PHIST_HAVE_CMPLX
+typedef void* phist_ZsparseMat_ptr;
+typedef void* phist_Zmvec_ptr;
+#endif
+
 
 public:
   typedef KernelTestWithSparseMat<_ST_,_N_,_N_,MATNAME> SparseMatTest;
@@ -120,10 +128,13 @@ public:
       ASSERT_EQ(0,iflag_);
 
 
+#ifdef PHIST_HAVE_CMPLX
       iflag_=PHIST_MVEC_REPLICATE_DEVICE_MEM;
       phist_Zmvec_create(&z_vec1_,map_,nvec_,&iflag_);
       cTypeImplemented_=(iflag_!=PHIST_NOT_IMPLEMENTED);         
-
+#else
+      cTypeImplemented_=false;
+#endif
       sigma_[0]=1.0-ct::cmplx_I();        minus_sigma_[0]=-sigma_[0];
       sigma_r_[0]=ct::real(sigma_[0]);     sigma_i_[0]=ct::imag(sigma_[0]);
       for (int i=1; i<nvec_; i++)
@@ -135,7 +146,7 @@ public:
       for (int i=0; i<nvec_; i++) omega_[i]=1.84299;
 
 
-
+#ifdef PHIST_HAVE_CMPLX
       if (cTypeImplemented_)
       {
         ASSERT_EQ(0,iflag_);
@@ -166,6 +177,7 @@ public:
 
       }
       else
+#endif
       {
         z_vec1_=NULL;
         z_vec2_=NULL;
@@ -253,7 +265,7 @@ public:
       if (x_vec1_!=NULL) delete x_vec1_;
       if (x_vec2_!=NULL) delete x_vec2_;
       if (x_vec3_!=NULL) delete x_vec3_;
-  
+#ifdef PHIST_HAVE_CMPLX  
       if (cTypeImplemented_)
       {
         if (z_vec1_!=NULL)
@@ -287,6 +299,7 @@ public:
           ASSERT_EQ(0,iflag_);
         }
       }
+#endif
     }
     
     VTest::TearDown();
@@ -438,6 +451,7 @@ protected:
 
   void do_spmv_test(double alpha, double beta)
   {
+#ifdef PHIST_HAVE_CMPLX
     // sanity check of initial status
     ASSERT_REAL_EQ(1.0,MvecsEqualZD(z_vec1_, x_vec1_->v_, x_vec1_->vi_));
     ASSERT_REAL_EQ(1.0,MvecsEqualZD(z_vec2_, x_vec2_->v_, x_vec2_->vi_));
@@ -458,10 +472,12 @@ protected:
     
     ASSERT_REAL_EQ(1.0,MvecsEqualZD(z_vec1_, x_vec1_->v_, x_vec1_->vi_));
     ASSERT_NEAR(1.0,MvecsEqualZD(z_vec2_, x_vec2_->v_, x_vec2_->vi_),mt::sqrt(VTest::releps()));
+  #endif
   }
   
   void do_spmv_test_single(double alpha, double beta, phist_d_complex sigma, phist_ZsparseMat_ptr z_A_shift)
   {
+#ifdef PHIST_HAVE_CMPLX
   for (int i=0; i<nvec_; i++)
   {
     x_A_->sigma_r_[i]=ct::real(sigma);;
@@ -484,6 +500,7 @@ protected:
 
     ASSERT_REAL_EQ(1.0,MvecsEqualZD(z_vec1_, x_vec1_->v_, x_vec1_->vi_));
     ASSERT_NEAR(1.0,MvecsEqualZD(z_vec2_, x_vec2_->v_, x_vec2_->vi_),1.0e-9);
+#endif
   }
   
   // identity matrix (only used for checking if CARP is implemented at all right now)
@@ -556,22 +573,28 @@ protected:
       SUBR(mvec_norm2)(x_i,norm1i,&iflag_);
       ASSERT_EQ(0,iflag_);
       
-      // reset x_r and x_i to original vectors
-      SUBR(mvec_add_mvec)(st::one(),vec1b_,st::zero(),vec1_,&iflag_);
-      ASSERT_EQ(0,iflag_);
-      SUBR(mvec_add_mvec)(st::one(),vec2b_,st::zero(),vec2_,&iflag_);
-      ASSERT_EQ(0,iflag_);
-      create_and_apply_carp_rc(A_);
-      ASSERT_EQ(0,iflag_);
+      for (int run=1; run<=8; run++)
+      {
+#if defined(PHIST_KERNEL_LIB_BUILTIN)&&defined(PHIST_HAVE_OPENMP)
+        omp_set_num_threads(run);
+#endif
+        // reset x_r and x_i to original vectors
+        SUBR(mvec_add_mvec)(st::one(),vec1b_,st::zero(),vec1_,&iflag_);
+        ASSERT_EQ(0,iflag_);
+        SUBR(mvec_add_mvec)(st::one(),vec2b_,st::zero(),vec2_,&iflag_);
+        ASSERT_EQ(0,iflag_);
+        create_and_apply_carp_rc(A_);
+        ASSERT_EQ(0,iflag_);
+  
+        MT norm2r[_NV_], norm2i[_NV_];
+        SUBR(mvec_norm2)(x_r,norm2r,&iflag_);
+        ASSERT_EQ(0,iflag_);
+        SUBR(mvec_norm2)(x_i,norm2i,&iflag_);
+        ASSERT_EQ(0,iflag_);
 
-      MT norm2r[_NV_], norm2i[_NV_];
-      SUBR(mvec_norm2)(x_r,norm2r,&iflag_);
-      ASSERT_EQ(0,iflag_);
-      SUBR(mvec_norm2)(x_i,norm2i,&iflag_);
-      ASSERT_EQ(0,iflag_);
-
-      ASSERT_NEAR(mt::one(),MT_Test::ArraysEqual(norm1r,norm2r,_NV_,1,_NV_,1),10*mt::eps());
-      ASSERT_NEAR(mt::one(),MT_Test::ArraysEqual(norm1i,norm2i,_NV_,1,_NV_,1),10*mt::eps());
+        ASSERT_NEAR(mt::one(),MT_Test::ArraysEqual(norm1r,norm2r,_NV_,1,_NV_,1),10*mt::eps());
+        ASSERT_NEAR(mt::one(),MT_Test::ArraysEqual(norm1i,norm2i,_NV_,1,_NV_,1),10*mt::eps());
+      }
     }
   }
 
@@ -598,16 +621,26 @@ protected:
       SUBR(mvec_norm2)(x_r,norm1r,&iflag_);
       ASSERT_EQ(0,iflag_);
       
-      // reset x_r and x_i to original vectors
-      SUBR(mvec_add_mvec)(st::one(),vec1b_,st::zero(),vec1_,&iflag_);
-      ASSERT_EQ(0,iflag_);
-      create_and_apply_carp(A_);
-      ASSERT_EQ(0,iflag_);
+      for (int run=1; run<=8; run++)
+      {
+        // reset x_r and x_i to original vectors
+        SUBR(mvec_add_mvec)(st::one(),vec1b_,st::zero(),vec1_,&iflag_);
+        ASSERT_EQ(0,iflag_);
+#if defined(PHIST_KERNEL_LIB_BUILTIN)&&defined(PHIST_HAVE_OPENMP)
+        // our builtin implementation of node-local KACZ uses ColPack,
+        // so the execution order is independent of the number of threads.
+        // Note that this is not the case for RACE coloring, so the test
+        // may have to be adjusted if RACE is used
+        omp_set_num_threads(run);
+#endif
+        create_and_apply_carp(A_);
+        ASSERT_EQ(0,iflag_);
 
-      MT norm2r[_NV_];
-      SUBR(mvec_norm2)(x_r,norm2r,&iflag_);
+        MT norm2r[_NV_];
+        SUBR(mvec_norm2)(x_r,norm2r,&iflag_);
 
-      ASSERT_NEAR(mt::one(),MT_Test::ArraysEqual(norm1r,norm2r,_NV_,1,_NV_,1),10*mt::eps());
+        ASSERT_NEAR(mt::one(),MT_Test::ArraysEqual(norm1r,norm2r,_NV_,1,_NV_,1),10*mt::eps());
+      }
     }
   }
 
@@ -680,6 +713,7 @@ protected:
 
 #if MATNAME==MATNAME_IDFUNC
 
+#ifdef PHIST_HAVE_CMPLX
   TEST_F(CLASSNAME, ZsparseMat_times_mvec_works)
   {
     if (!typeImplemented_ || problemTooSmall_ || !cTypeImplemented_) return;
@@ -696,7 +730,8 @@ protected:
     phist_Zmvec_norm2(z_vec2_,nrm0,&iflag_);
     ASSERT_NEAR(mt::one(),ArrayEqual(nrm0,nvec_,1,nvec_,1,st::zero()),VTest::releps());
   }
-  
+
+#endif
 
   TEST_F(CLASSNAME, Identity_yields_zero)
   {
@@ -728,6 +763,10 @@ protected:
 //////////////////////////////////////////////////
 // tests for matrix/vector operations in "RC"   //
 //////////////////////////////////////////////////
+
+// these tests typically compare with the result of complex arithmetic operations,
+// hence we can't always use them:
+#ifdef PHIST_HAVE_CMPLX
 
 // these tests only use basic kernels (not the CARP kernel) but require complex
 // arithmetic in order to work. So right now, the tests above will be run with
@@ -819,7 +858,6 @@ TEST_F(CLASSNAME, x_mvec_dot_mvec)
   ASSERT_NEAR(1.0,1.0+max_err_i,std::sqrt(st::eps()));
   
 }
-
 
 TEST_F(CLASSNAME, x_sparseMat_times_mvec_without_shift)
 {
@@ -926,4 +964,6 @@ TEST_F(CLASSNAME, x_sparseMat_times_mvec_compare_with_rnd_shifted_matrix_alpha_b
 
 }
 
+#endif
+/* PHIST_HAVE_CMPLX */
 #endif
