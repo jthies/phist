@@ -97,3 +97,6 @@ for _varT in ('S', 'D', 'C', 'Z'):
     _declare(None, _prefix+'orthog', (_mvec_ptr, _mvec_ptr, _linearOp_ptr, _sdMat_ptr, _sdMat_ptr, c_int, c_int_p, c_int_p), skip_if_missing=True)
 
 
+    # from phist_schur_deocomp_decl.h
+    #void SUBR(ComputeEigenvectors)(TYPE(const_mvec_ptr) Q, TYPE(sdMat_ptr) R, TYPE(mvec_ptr) X, int* iflag);
+    _declare(None, _prefix+'ComputeEigenvectors', (_mvec_ptr, _sdMat_ptr, _mvec_ptr, c_int_p), skip_if_missing=True)
