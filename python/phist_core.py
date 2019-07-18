@@ -88,9 +88,9 @@ for _varT in ('S', 'D', 'C', 'Z'):
 
     # from phist_driver_operator_decl.h
     #void SUBR(linearOp_wrap_sparseMat)(TYPE(linearOp_ptr) op, TYPE(const_sparseMat_ptr) A, int* ierr);
-    #void SUBR(linearOp_identity)(TYPE(linearOp_ptr) op, int* ierr);
+    #void SUBR(linearOp_identity)(TYPE(linearOp_ptr) op, phist_const_map_ptr range_map, phist_const_map_ptr domain_map, int* ierr);
     _declare(None, _prefix+'linearOp_wrap_sparseMat', (_linearOp_ptr, _sparseMat_ptr, c_int_p), skip_if_missing=True)
-    _declare(None, _prefix+'linearOp_identity', (_linearOp_ptr, c_int_p), skip_if_missing=True)
+    _declare(None, _prefix+'linearOp_identity', (_linearOp_ptr, _map_ptr, _map_ptr, c_int_p), skip_if_missing=True)
 
     # from phist_orthog_decl.h
     #void SUBR(orthog)(TYPE(const_mvec_ptr) V, TYPE(mvec_ptr) W, TYPE(const_linearOp_ptr) B, TYPE(sdMat_ptr) R1, TYPE(sdMat_ptr) R2, int numSweeps, int* rankVW, int* iflag);
