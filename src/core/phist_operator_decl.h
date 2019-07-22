@@ -27,13 +27,17 @@ typedef struct TYPE(linearOp) {
  
  //! \brief Switch on using the transposed operator (applyT instead of apply). This affects the function
  //! subr(linearOp_apply_respective) below.
+ //! Note that this flag can currently *not* be used to in general use the transpose of the operator,
+ //! because our iterative solvers typically call op->apply directly, and even linearOp_apply(op,...)
+ //! ignores the flag. In order to generate a linear operator that acts as the transpose, the apply
+ //! function must explictly implement the transposed operation.
  int use_transpose;
  
  //! \brief If not NULL, apply_shifted will be used instead of apply in subr(linearOp_apply_respective) below.
  //!
  //! If allocated it should have at least as many elements as there are vectors   
  //! in the apply function because apply_shifted can use a different shift for each   
- //! culoumn.
+ //! culoumn. Setting this field does *not* affect the op->apply or linearOp_apply functions,
  _ST_* shifts;
  
  //! Pointer to function for computing Y=alpha*A*X+beta*Y
