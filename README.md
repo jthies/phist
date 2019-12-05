@@ -66,6 +66,18 @@ adjusted to your system.
 
 Finally there are small examples of how to use PHIST in an external application in the exampleProjects/ subdirectory.
 
+Citing PHIST
+============
+
+In order to refer to this software, please cite at least this paper and specify the version of the software used.
+
+- Thies, J. et al.: PHIST: a Pipelined, Hybrid-parallel Iterative Solver 
+Toolkit. ACM TOMS (submitted) [preprint](https://elib.dlr.de/123323/1/phist2018.pdf)
+
+A more extensive list of publications can be found on
+[ this wiki page](https://bitbucket.org/essex/phist/wiki/WikiHome.wiki#!Related Publications).
+
+
 Contact
 =======
 
