@@ -1,0 +1,15 @@
+spack:
+  specs:
+    - valgrind %gcc@9.2.0
+    - openmpi@4.0.2 %gcc@9.2.0
+    - python@3.8.0 %gcc@9.2.0
+    - netlib-lapack %gcc@9.2.0
+    - parmetis %gcc@9.2.0
+    - trilinos
+    - petsc
+    - eigen
+    - ghost@develop
+    - py-cython
+    - py-numpy
+    - py-pytest
+  concretization: together
