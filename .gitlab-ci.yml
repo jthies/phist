@@ -1,6 +1,5 @@
 job:
-    script:
-        - echo "Hello, I am user '$USER' on host '$HOST'."
-        - source /tools/modulesystem/spack_KP/share/spack/setup-env.sh
-        - `spack env loads PrgEnv-gcc9-openmpi|grep source`
-        - module list
+  script:
+    - echo "Hello, I am user '$USER' on host '$HOST'."
+    - source /tools/modulesystem/spack_KP/share/spack/setup-env.sh
+    - spack find -v -d openmpi
