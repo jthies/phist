@@ -1,5 +1,8 @@
 job:
   script:
     - echo "Hello, I am user '$USER' on host '$HOST'."
+    - pwd
+    - uname -a
+    - ls
     - source /tools/modulesystem/spack_KP/share/spack/setup-env.sh
     - spack find -v -d openmpi
