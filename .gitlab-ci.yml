@@ -1,9 +1,6 @@
-clone_repo:
+job:
     script:
         - echo "Hello, I am user '$USER' on host '$HOST'."
-#        - 'cd /local_data/gitlab-ci/ESSEX_workspace/'
-#        - 'git clone https://bitbucket.org/essex/phist phist'
-
-#run_script:
-#    script:
-#        - cd /local_data/gitlab-ci/ESSEX_workspace/phist && ./buildScripts/ci-sc-dlr.sh
+        - source /tools/modulesystem/spack_KP/share/spack/setup-env.sh
+        - `spack env loads PrgEnv-gcc9-openmpi|grep source`
+        - module list
