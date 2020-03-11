@@ -1,4 +1,6 @@
 job:
+  tags:
+    - ESSEX
   script:
     - echo "Hello, I am user '$USER' on host '$HOST'."
     - pwd
