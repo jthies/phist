@@ -5,6 +5,7 @@ job:
     - echo "Hello, I am user '$USER' on host '$HOST'."
     - pwd
     - uname -a
-    - ls
+    - pwd
     - source /tools/modulesystem/spack_KP/share/spack/setup-env.sh
     - spack find -v -d openmpi
+    - spack env list
