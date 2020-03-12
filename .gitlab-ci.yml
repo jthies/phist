@@ -2,10 +2,4 @@ job:
   tags:
     - ESSEX
   script:
-    - echo "Hello, I am user '$USER' on host '$HOST'."
-    - pwd
-    - uname -a
-    - pwd
-    - source /tools/modulesystem/spack_KP/share/spack/setup-env.sh
-    - spack find -v -d openmpi
-    - spack env list
+    - ./buildScripts/ci-sc-dlr.sh -e gcc7-openmpi -k builtin

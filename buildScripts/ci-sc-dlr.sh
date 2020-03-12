@@ -97,9 +97,8 @@ export MODULEPATH=/tools/modulesystem/modulefiles
 module() { eval `/usr/bin/modulecmd bash $*`; }
 
 # load modules
-module load "PrgEnv/$PRGENV"
-for m in $MODULES_BASIC; do module load $m; done
-for m in ${MODULES_KERNELS["$KERNELS"]}; do module load $m; done
+source /tools/modulesystem/spack_KP/share/spack/setup-env.sh
+`spack env loads PrgEnv-${PRGENV}|grep source` || update_error $LINENO
 if [[ "$FLAGS" = *optional-libs* ]]; then
   for m in ${MODULES_KERNELS_OPTIONAL["$KERNELS"]}; do module load $m; done
   ADD_CMAKE_FLAGS+=" -DPHIST_USE_GRAPH_TPLS:BOOL=ON"
@@ -113,7 +112,6 @@ else
   ADD_CMAKE_FLAGS+=" -DPHIST_USE_SOLVER_TPLS:BOOL=OFF"
 fi
 if [ "${VECT_EXT}" = "CUDA" ]; then
-  module load cuda/cuda-${CUDA_VERSION}
   SANITIZER=""
   nvidia-smi
   export CUDA_VISIBLE_DEVICES=0
