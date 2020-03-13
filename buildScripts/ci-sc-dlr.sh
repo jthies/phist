@@ -98,9 +98,10 @@ module() { eval `/usr/bin/modulecmd bash $*`; }
 
 # load modules
 source /tools/modulesystem/spack_KP/share/spack/setup-env.sh
-`spack env loads PrgEnv-${PRGENV}|grep source` || update_error $LINENO
+ spack env loads PrgEnv-${PRGENV}||exit -1
+`spack env loads PrgEnv-${PRGENV}|grep source`
 if [[ "$FLAGS" = *optional-libs* ]]; then
-  for m in ${MODULES_KERNELS_OPTIONAL["$KERNELS"]}; do module load $m; done
+
   ADD_CMAKE_FLAGS+=" -DPHIST_USE_GRAPH_TPLS:BOOL=ON"
   ADD_CMAKE_FLAGS+=" -DPHIST_USE_PRECON_TPLS:BOOL=ON"
   ADD_CMAKE_FLAGS+=" -DPHIST_USE_SOLVER_TPLS:BOOL=ON"
@@ -133,9 +134,7 @@ if [[ $PRGENV =~ gcc* ]]; then
   else
     export FC=gfortran CC=gcc CXX=g++
   fi
-  module load lapack
   if [[ "${VECT_EXT}" != "CUDA" ]] && [[ "${PRGENV}" != "gcc-7.2.0-openmpi" ]]; then
-    module load ccache
     ADD_CMAKE_FLAGS+=" -DPHIST_USE_CCACHE=ON"
     export CCACHE_DIR=/home_local/f_buildn/ESSEX_workspace/.ccache/
   else
@@ -148,7 +147,6 @@ if [[ $PRGENV =~ gcc* ]]; then
 elif [[ "$PRGENV" =~ intel* ]]; then
   export FC=ifort CC=icc CXX=icpc
   
-  module load mkl
   # make CMake find and use MKL:
 fi
 
