@@ -136,7 +136,7 @@ namespace phist
                 need_endif=True
                 module_decl_file.write("#ifdef PHIST_KERNEL_LIB_BUILTIN\n")
 
-            if (name=="linearOp_wrap_epetra"):
+            if (name=="linearOp_wrap_epetra" or name=="linearOp_wrap_epetra_inv"):
                 need_endif=True
                 module_decl_file.write("#if defined(PHIST_KERNEL_LIB_EPETRA)&&defined(IS_DOUBLE)&&!defined(IS_COMPLEX)\n")
 
