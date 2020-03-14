@@ -7,9 +7,6 @@ job-builtin-gcc9:
     paths:
     - build_gcc9-openmpi_*/test.log.gz
     - build_gcc9-openmpi_*/test_output_np*/*/xunit.xml
-    reports:
-      junit:
-        - build_gcc9-openmpi_*/test_output_np*/*/xunit.xml
 
 job-epetra-gcc9:
   tags:
