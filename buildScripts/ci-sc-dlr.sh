@@ -97,11 +97,11 @@ export MODULEPATH=/tools/modulesystem/modulefiles
 module() { eval `/usr/bin/modulecmd bash $*`; }
 
 # load modules
-module load "PrgEnv/$PRGENV"
-for m in $MODULES_BASIC; do module load $m; done
-for m in ${MODULES_KERNELS["$KERNELS"]}; do module load $m; done
+source /tools/modulesystem/spack_KP/share/spack/setup-env.sh
+ spack env loads PrgEnv-${PRGENV}||exit -1
+`spack env loads PrgEnv-${PRGENV}|grep source`
 if [[ "$FLAGS" = *optional-libs* ]]; then
-  for m in ${MODULES_KERNELS_OPTIONAL["$KERNELS"]}; do module load $m; done
+
   ADD_CMAKE_FLAGS+=" -DPHIST_USE_GRAPH_TPLS:BOOL=ON"
   ADD_CMAKE_FLAGS+=" -DPHIST_USE_PRECON_TPLS:BOOL=ON"
   ADD_CMAKE_FLAGS+=" -DPHIST_USE_SOLVER_TPLS:BOOL=ON"
@@ -113,7 +113,6 @@ else
   ADD_CMAKE_FLAGS+=" -DPHIST_USE_SOLVER_TPLS:BOOL=OFF"
 fi
 if [ "${VECT_EXT}" = "CUDA" ]; then
-  module load cuda/cuda-${CUDA_VERSION}
   SANITIZER=""
   nvidia-smi
   export CUDA_VISIBLE_DEVICES=0
@@ -135,9 +134,7 @@ if [[ $PRGENV =~ gcc* ]]; then
   else
     export FC=gfortran CC=gcc CXX=g++
   fi
-  module load lapack
   if [[ "${VECT_EXT}" != "CUDA" ]] && [[ "${PRGENV}" != "gcc-7.2.0-openmpi" ]]; then
-    module load ccache
     ADD_CMAKE_FLAGS+=" -DPHIST_USE_CCACHE=ON"
     export CCACHE_DIR=/home_local/f_buildn/ESSEX_workspace/.ccache/
   else
@@ -150,7 +147,6 @@ if [[ $PRGENV =~ gcc* ]]; then
 elif [[ "$PRGENV" =~ intel* ]]; then
   export FC=ifort CC=icc CXX=icpc
   
-  module load mkl
   # make CMake find and use MKL:
 fi
 
