@@ -4,11 +4,10 @@ job-builtin-gcc9:
   script:
     - ./buildScripts/ci-sc-dlr.sh -e gcc9-openmpi -k builtin
   artifacts:
-    paths:
-      - build_gcc9-openmpi_*/test.log.gz
-      - build_gcc9-openmpi_*/test_output*/*/xunit.xml
+    - build_gcc9-openmpi_*/test.log.gz
     reports:
-      junit: xunit.xml
+      junit:
+        - build_gcc9-openmpi_*/test_output_np*/*/xunit.xml
 
 job-epetra-gcc9:
   tags:
