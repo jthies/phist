@@ -3,7 +3,7 @@ job-builtin-gcc9:
     - ESSEX
   script:
     - ./buildScripts/ci-sc-dlr.sh -e gcc9-openmpi -k builtin
- artifacts:
+  artifacts:
     paths:
       - build_gcc9-openmpi_*/test.log.gz
       - build_gcc9-openmpi_*/test_output*/*/xunit.xml
