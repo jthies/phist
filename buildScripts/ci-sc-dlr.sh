@@ -28,7 +28,7 @@ SANITIZER="address"
 
 
 ## parse command line arguments
-usage() { echo "Usage: $0 [-k <builtin|ghost|epetra|tpetra|petsc|eigen>] [-e <PrgEnv/module-string>] [-f <optional-libs>]"; \
+usage() { echo "Usage: $0 [-k <builtin|ghost|epetra|tpetra|petsc|eigen>] [-e PrgEnv/<module-string>] [-f <optional-libs>]"; \
           echo "       [-c <cmake flags to be added>] [-v <SSE|AVX|AVX2|CUDA>] [-t <trilinos version>] [-w <workspace-dir>]" 1>&2; exit 1; }
 
 function update_error { 
@@ -98,8 +98,8 @@ module() { eval `/usr/bin/modulecmd bash $*`; }
 
 # load modules
 source /tools/modulesystem/spack_KP/share/spack/setup-env.sh
- spack env loads PrgEnv-${PRGENV}||exit -1
-`spack env loads PrgEnv-${PRGENV}|grep source`
+module load PrgEnv/${PRGENV}||exit -1
+
 if [[ "$FLAGS" = *optional-libs* ]]; then
 
   ADD_CMAKE_FLAGS+=" -DPHIST_USE_GRAPH_TPLS:BOOL=ON"
