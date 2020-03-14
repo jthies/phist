@@ -1,36 +1,41 @@
-job-builtin-gcc9:
+builtin-gcc9:
   tags:
     - ESSEX
   script:
     - ./buildScripts/ci-sc-dlr.sh -e gcc9-openmpi -k builtin
   artifacts:
     paths:
-    - build_gcc9-openmpi_*/test.log.gz
-    - build_gcc9-openmpi_*/test_output_np*/*/xunit.xml
+    - build_*/test.log.gz
+    - build_*/test_output_np*/*/xunit.xml
 
-job-epetra-gcc9:
+builtin-gcc9-optional-libs:
+  tags:
+    - ESSEX
+  script:
+    - ./buildScripts/ci-sc-dlr.sh -e gcc9-openmpi -k builtin -f optional-libs
+  artifacts:
+    paths:
+    - build_*/test.log.gz
+    - build_*/test_output_np*/*/xunit.xml
+
+epetra-gcc9:
   tags:
     - ESSEX
   script:
     - ./buildScripts/ci-sc-dlr.sh -e gcc9-openmpi -k epetra
-
-job-tpetra-gcc9:
-  tags:
-    - ESSEX
-  script:
-    - ./buildScripts/ci-sc-dlr.sh -e gcc9-openmpi -k tpetra
+  artifacts:
+    paths:
+    - build_*/test.log.gz
+    - build_*/test_output_np*/*/xunit.xml
 
 
-job-petsc-gcc9:
-  tags:
-    - ESSEX
-  script:
-    - ./buildScripts/ci-sc-dlr.sh -e gcc9-openmpi -k petsc
-
-
-job-eigen-gcc9:
+eigen-gcc9:
   tags:
     - ESSEX
   script:
     - ./buildScripts/ci-sc-dlr.sh -e gcc9-openmpi -k eigen
+  artifacts:
+    paths:
+    - build_*/test.log.gz
+    - build_*/test_output_np*/*/xunit.xml
 

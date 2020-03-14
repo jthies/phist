@@ -1120,7 +1120,6 @@ foreach(label ${PHIST_TESTS})
   # compile tests without optimization
   set_target_properties(${TEST_EXE} PROPERTIES COMPILE_FLAGS "-O0")
   target_link_libraries(${TEST_EXE} ${library_list})
-  target_link_libraries(${TEST_EXE} pthread)
   target_include_directories(${TEST_EXE} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/test/${label})
   LIST(APPEND test_list ${TEST_EXE})
 
