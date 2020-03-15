@@ -452,7 +452,7 @@ if (PHIST_ENABLE_SCAMAC)
   include_directories(${PROJECT_SOURCE_DIR}/drivers/matfuncs/scamac)
   include_directories(${CMAKE_BINARY_DIR}/drivers/matfuncs/scamac)
   set(SCAMAC_BUILD_MWE OFF CACHE BOOL "")
-  set(SCAMAC_USE_OPENMP ${PHIST_ENABLE_OPENMP} CACHE BOOL "")
+  set(SCAMAC_USE_OPENMP OFF CACHE BOOL "")
 
   # to avoid conflicts with e.g. ghost (which also uses cblas), disable blas and lapack in the scamac within phist.
   # they are used for allowing to compute some eigenvalues etc., but we are only interested in the matrix generator
@@ -688,6 +688,8 @@ add_library(phist_solvers ${PHIST_KRYLOV_SOURCE}
                           ${PHIST_JADA_SOURCE})
 add_library(phist_precon ${PHIST_PRECON_SOURCE})
 
+message(STATUS "pre: ${library_list}")
+
 LIST(APPEND library_list phist_solvers)
 LIST(APPEND library_list phist_precon)
 LIST(APPEND library_list phist_core)
@@ -700,6 +702,8 @@ target_link_libraries(phist_kernels_${PHIST_KERNEL_LIB} phist_tools ${SCAMACLIB}
 target_link_libraries(phist_core phist_kernels_${PHIST_KERNEL_LIB})
 target_link_libraries(phist_precon phist_core)
 target_link_libraries(phist_solvers phist_precon)
+
+message(STATUS "after links: ${library_list}")
 
 if(PHIST_KERNEL_LIB STREQUAL "ghost")
   find_package(GHOST 1.1.1 REQUIRED CONFIG)
@@ -815,6 +819,7 @@ endforeach()
 #########################################################################################
 # check for and enable optional libs from Trilinos (preconditioners, Belos/Anasazi)     #
 #########################################################################################
+
 
 if (NOT PHIST_USE_TRILINOS_TPLS)
   set(OPTIONAL_TRILI_PKG "")
@@ -1001,6 +1006,7 @@ LIST(APPEND driver_list phist_carp_cg)
 # setup pkg-config and cmake package files to find phist and dependencies            #
 ######################################################################################
 
+set(library_shortlist $library_list)
 get_target_property(library_list phist_Dsubspacejada INTERFACE_LINK_LIBRARIES)
 
 set(PHIST_PKG_CONFIG_LIBRARIES "")
@@ -1381,7 +1387,7 @@ endif()
 include(CPack)
 
 # Custom targets
-add_custom_target(libs DEPENDS ${library_list})
+add_custom_target(libs DEPENDS ${library_shortlist})
 add_custom_target(drivers DEPENDS ${driver_list})
 add_custom_target(tests DEPENDS ${test_list})
 
