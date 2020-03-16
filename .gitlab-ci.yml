@@ -4,6 +4,7 @@ builtin-gcc9:
   script:
     - ./buildScripts/ci-sc-dlr.sh -e gcc9-openmpi -k builtin
   artifacts:
+    when: always
     paths:
     - build_*/test.log.gz
     - build_*/test_output_np*/*/xunit.xml
