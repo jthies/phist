@@ -1006,7 +1006,7 @@ LIST(APPEND driver_list phist_carp_cg)
 # setup pkg-config and cmake package files to find phist and dependencies            #
 ######################################################################################
 
-set(library_shortlist $library_list)
+set(library_shortlist ${library_list})
 get_target_property(library_list phist_Dsubspacejada INTERFACE_LINK_LIBRARIES)
 
 set(PHIST_PKG_CONFIG_LIBRARIES "")
