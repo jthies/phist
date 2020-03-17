@@ -1,42 +1,35 @@
-builtin-gcc9:
-  tags:
-    - ESSEX
-  script:
-    - ./buildScripts/ci-sc-dlr.sh -e gcc9-openmpi -k builtin
+.job_template: &phist_artifacts
   artifacts:
     when: always
     paths:
     - build_*/test.log.gz
     - build_*/test_output_np*/*/xunit.xml
 
+                    
+builtin-gcc9:
+  tags:
+    - ESSEX
+  script:
+    - ./buildScripts/ci-sc-dlr.sh -e gcc9-openmpi -k builtin
+  <<: *phist_artifacts
+
 builtin-gcc9-optional-libs:
   tags:
     - ESSEX
   script:
     - ./buildScripts/ci-sc-dlr.sh -e gcc9-openmpi -k builtin -f optional-libs
-  artifacts:
-    paths:
-    - build_*/test.log.gz
-    - build_*/test_output_np*/*/xunit.xml
+  <<: *phist_artifacts
 
 epetra-gcc9:
   tags:
     - ESSEX
   script:
     - ./buildScripts/ci-sc-dlr.sh -e gcc9-openmpi -k epetra
-  artifacts:
-    paths:
-    - build_*/test.log.gz
-    - build_*/test_output_np*/*/xunit.xml
-
+  <<: *phist_artifacts
 
 eigen-gcc9:
   tags:
     - ESSEX
   script:
     - ./buildScripts/ci-sc-dlr.sh -e gcc9-openmpi -k eigen
-  artifacts:
-    paths:
-    - build_*/test.log.gz
-    - build_*/test_output_np*/*/xunit.xml
-
+  <<: *phist_artifacts
