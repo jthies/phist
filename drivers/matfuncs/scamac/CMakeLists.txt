@@ -241,6 +241,8 @@ include(CTest)
 
 # silly tests
 
+set(TEST_ENV ASAN_OPTIONS=\"exitcode=0\" LSAN_OPTIONS=\"exitcode=0\")
+
 add_test (scamac_TestRuns scamact)
 
 add_test (scamac_TestSimple scamact list)
@@ -250,5 +252,6 @@ set_tests_properties(scamac_TestSimple PROPERTIES PASS_REGULAR_EXPRESSION "Hubba
 add_executable(scamac_TestRandom scamac_test_random.c)
 target_link_libraries(scamac_TestRandom scamac m)
 add_test(scamac_TestRandom scamac_TestRandom)
+set_tests_properties(scamac_TestRandom PROPERTIES ENVIRONMENT "${TEST_ENV}")
 
 
