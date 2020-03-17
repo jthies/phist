@@ -4,6 +4,9 @@
     paths:
     - build_*/test.log.gz
     - build_*/test_output_np*/*/xunit.xml
+  reports:
+    junit: 
+      - build_*/test_output_np*/*/xunit.xml
 
                     
 builtin-gcc9:
