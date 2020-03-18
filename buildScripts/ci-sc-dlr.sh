@@ -22,7 +22,6 @@ VECT_EXT="native"
 TRILINOS_VERSION="git"
 CUDA_VERSION=8.0.6
 # list of modules to load
-MODULES_BASIC="cmake cppcheck gcovr doxygen"
 # GCC_SANITIZE flag for debug mode, disabled for CUDA
 SANITIZER="address"
 
@@ -72,32 +71,16 @@ while getopts "k:e:f:c:v:w:t:h" o; do
 done
 shift $((OPTIND-1))
 
-declare -A MODULES_KERNELS
-MODULES_KERNELS=( 
-  ["builtin"]=""
-  ["ghost"]=""
-  ["epetra"]="trilinos/trilinos-${TRILINOS_VERSION}"
-  ["tpetra"]="lapack trilinos/trilinos-${TRILINOS_VERSION}" 
-  ["petsc"]="petsc" 
-  ["eigen"]="Eigen" )
-
-declare -A MODULES_KERNELS_OPTIONAL
-MODULES_KERNELS_OPTIONAL=(
-  ["builtin"]="ColPack parmetis trilinos"
-  ["ghost"]="ColPack trilinos"
-  ["epetra"]=""
-  ["tpetra"]=""
-  ["petsc"]="trilinos" 
-  ["eigen"]="trilinos" )
-
+echo "USER: ${USER}"
+echo "HOST: ${HOSTNAME}"
+echo "SOURCE DIR: ${PWD}"
 
 ## prepare system for compilation
 # configure modulesystem
-export MODULEPATH=/tools/modulesystem/modulefiles
 module() { eval `/usr/bin/modulecmd bash $*`; }
+source /tools/modulesystem/spack_KP/share/spack/setup-env.sh
 
 # load modules
-source /tools/modulesystem/spack_KP/share/spack/setup-env.sh
 module load PrgEnv/${PRGENV}||exit -1
 
 if [[ "$FLAGS" = *optional-libs* ]]; then
