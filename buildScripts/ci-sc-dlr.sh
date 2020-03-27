@@ -23,7 +23,11 @@ TRILINOS_VERSION="git"
 CUDA_VERSION=8.0.6
 # list of modules to load
 # GCC_SANITIZE flag for debug mode, disabled for CUDA
-SANITIZER="address"
+# note: with any GCC>=7 I get false positives and non-zero exit codes
+# despite setting environment variables such as ASAN_OPTIONS="exitcode=0", 
+# so I disable the sanitizers completely for now
+#SANITIZER="address"
+SANITIZER=""
 
 
 ## parse command line arguments

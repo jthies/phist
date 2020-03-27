@@ -1,0 +1,40 @@
+node("SC-030114L") {
+   dir("/home_local/f_jkessx/phist_builtin/"){
+   
+   stage 'check out from bitbucket'
+   checkout([$class: 'GitSCM', branches: [[name: '*/devel']], doGenerateSubmoduleConfigurations: false, extensions: [[$class: 'CleanCheckout']], gitTool: 'Default', submoduleCfg: [], userRemoteConfigs: [[url: 'https://bitbucket.org/essex/phist.git']]])
+    
+   shellPrefix="#!/bin/bash\n"
+   
+   stage 'builtin_gcc9-openmpi'
+   sh(shellPrefix + '''
+./buildScripts/ci-sc-dlr.sh -e gcc9-openmpi -k builtin
+''')
+
+   stage 'builtin_gcc9-openmpi_optional-libs'
+   sh(shellPrefix + '''
+./buildScripts/ci-sc-dlr.sh -e gcc9-openmpi -f optional-libs -k builtin
+''')
+
+ stage 'e-mail results'
+
+ archiveArtifacts artifacts: '**/test.log.gz', junit '**/test_output_np*/xunit.xml'
+   
+ emailext body: '''Project: ${PROJECT_NAME}
+Revision: ${GIT_REVISION}
+
+CI-Build trigger: ${CAUSE}
+
+Attachements:
+- Build log: build.zip
+- Test results (Debug+Release mode): test.log.gz
+
+Changes:
+${CHANGES, showDependencies=true, format="[%a] %r %m\\n"}
+
+Failed tests:
+${FAILED_TESTS, showStack=false,showMessage=false,maxTests=200}
+ ''', subject: '$DEFAULT_SUBJECT',  attachLog: true, attachmentsPattern: 'build_*/test.log.gz', compressLog: true, replyTo: 'Jonas.Thies@DLR.de', to: 'Jonas.Thies@DLR.de'
+ }
+}
+
