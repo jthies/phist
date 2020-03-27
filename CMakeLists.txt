@@ -220,6 +220,15 @@ if (NOT PythonInterp_FOUND)
   set(XSDK_ENABLE_Fortran OFF)
   set(XSDK_ENABLE_CXX OFF)
   set(DISABLE_PYTHON_TESTS 1)
+else()
+  execute_process(COMMAND ${PYTHON_EXECUTABLE} -c "\"import ptest\""
+                  RESULT_VARIABLE pytest_status)
+  if ("${pytest_status}" STREQUAL "0")
+    message(STATUS "Found pytest")
+  else()
+    message(WARNING "pytest not found, disabling all Python tests")
+    set(DISABLE_PYTHON_TESTS 1)
+  endif()
 endif()
 
 ##############################################################################
@@ -852,11 +861,11 @@ foreach(PKG ${OPTIONAL_TRILI_PKG})
 endforeach()
 
 if (PHIST_HAVE_ANASAZI)
-  set(PHIST_ANASAZI_THEIR_ORTHO_MANAGER OFF CACHE LOGICAL "In the Anasazi interface, rely on the Trilinos orthogonalization routines rather than our own.")
+  set(PHIST_ANASAZI_THEIR_ORTHO_MANAGER OFF CACHE BOOL "In the Anasazi interface, rely on the Trilinos orthogonalization routines rather than our own.")
   mark_as_advanced(PHIST_ANASAZI_THEIR_ORTHO_MANAGER)
 endif()
 if (PHIST_HAVE_BELOS)
-  set(PHIST_BELOS_THEIR_ORTHO_MANAGER OFF CACHE LOGICAL "In the Belos interface, rely on the Trilinos orthogonalization routines rather than our own.")
+  set(PHIST_BELOS_THEIR_ORTHO_MANAGER OFF CACHE BOOL "In the Belos interface, rely on the Trilinos orthogonalization routines rather than our own.")
   mark_as_advanced(PHIST_BELOS_THEIR_ORTHO_MANAGER)
 endif()
 
@@ -1257,19 +1266,17 @@ if (PHIST_KERNEL_LIB_GHOST AND GCC_SANITIZE )
   message(WARNING "Disabling Python tests with GHOST+GCC sanitizer, cf. issue #165")
   set(DISABLE_PYTHON_TESTS 1)
 endif()
-# Test python interface. This requires pytest, which can be found in the python/ subdirectory.
+# Test python interface. This requires pytest
 if(NOT DISABLE_PYTHON_TESTS)
-  
+
   set(PYSTDIR "${PROJECT_SOURCE_DIR}/python/")
-  set(PYTESTDIR "${PROJECT_SOURCE_DIR}/python/pytest-3.2.2/:${PROJECT_SOURCE_DIR}/python/py-1.5.3/")
-  file(COPY ${PYSTDIR}/py.test DESTINATION ${CMAKE_CURRENT_BINARY_DIR} FILE_PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE)
-  
+
 foreach(pyt ${PYTHON_TESTS})
     get_filename_component(pyt_name ${pyt} NAME_WE)
     set(pyt_name "${pyt_name}_py")
     set(TEST_OUTPUT_DIR ${PROJECT_BINARY_DIR}/test_output_np1/${pyt_name})
     file(MAKE_DIRECTORY ${TEST_OUTPUT_DIR})
-    set(TEST_COMMAND ${TEST_ENV} ${PYTHON_EXECUTABLE} ./py.test -s -v --junitxml ${TEST_OUTPUT_DIR}/xunit.xml --junit-prefix=${CMAKE_BUILD_TYPE} ${pyt})
+    set(TEST_COMMAND ${TEST_ENV} ${PYTHON_EXECUTABLE} -m pytest -s -v --junitxml ${TEST_OUTPUT_DIR}/xunit.xml --junit-prefix=${CMAKE_BUILD_TYPE} ${pyt})
     list(APPEND ALL_PHIST_TESTS ${pyt_name})
     add_test(NAME ${pyt_name} COMMAND ${TEST_COMMAND})
     set_tests_properties(${pyt_name} PROPERTIES ENVIRONMENT "LD_LIBRARY_PATH=${CMAKE_CURRENT_BINARY_DIR}:$ENV{LD_LIBRARY_PATH};PYTHONPATH=${PYSTDIR}:${PYTESTDIR}:$ENV{PYTHONPATH};${MPIEXEC_ENVIRONMENT};PHIST_NUM_THREADS=12;OMP_NUM_THREADS=12")    
