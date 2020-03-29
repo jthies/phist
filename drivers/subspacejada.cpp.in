@@ -214,6 +214,8 @@ else
     PHIST_ICHK_IERR(SUBR(linearOp_wrap_sparseMat)(opA,A,&iflag),iflag);
   }
 
+{
+  // at the end of this scope, the MemOwner class takes care of deleting objects
   // setup necessary vectors and matrices for the schur form
   mvec_ptr Q = NULL;
   PHIST_ICHK_IERR(SUBR(mvec_create)(&Q,map,nEig+opts.blockSize-1,&iflag),iflag);
@@ -426,6 +428,8 @@ else
   {
     PHIST_ICHK_IERR(SUBR(sparseMat_delete)(B,&iflag),iflag);
   }
+}//MemOwner block
+
   PHIST_ICHK_IERR(phist_comm_delete(comm,&iflag),iflag);
 
   PHIST_MAIN_TASK_END
