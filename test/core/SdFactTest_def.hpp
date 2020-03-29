@@ -688,7 +688,7 @@ PrintSdMat(PHIST_DEBUG,"reconstructed X",mat2_vp_,m_lda_,1,mpi_comm_);
       SUBR(sdMatT_times_sdMat)(st::one(),AplusT,A,st::zero(),mat_tmp,&iflag_);
       EXPECT_EQ(0,iflag_);
 
-      EXPECT_NEAR(mt::one(),mt::one()+MTest::symmetry_check(mat_tmp,&iflag_),100*mt::eps());
+      EXPECT_NEAR(mt::one(),mt::one()+MTest::symmetry_check(mat_tmp,&iflag_),120*mt::eps());
       SUBR(sdMat_delete)(mat_tmp,&iflag_);
       ASSERT_EQ(0,iflag_);
     }
