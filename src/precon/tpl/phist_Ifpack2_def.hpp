@@ -140,8 +140,14 @@ class PreconTraits<ST,phist_IFPACK>
     PHIST_CAST_PTR_FROM_VOID(const prec_type, P, vP,*iflag);
     PHIST_CAST_PTR_FROM_VOID(const mvec_type, X, vX,*iflag);
     PHIST_CAST_PTR_FROM_VOID(      mvec_type, Y, vY,*iflag);
-
-    PHIST_CHK_IERR(P->apply(*X,*Y,Teuchos::NO_TRANS,alpha,beta),*iflag);
+    if (alpha==st::one() && beta==st::zero())
+    {
+      PHIST_CHK_IERR(P->apply(*X,*Y,Teuchos::NO_TRANS),*iflag);
+    }
+    else
+    {
+      PHIST_CHK_IERR(P->apply(*X,*Y,Teuchos::NO_TRANS,alpha,beta),*iflag);
+    }
   }
   
   static void ApplyT(ST alpha, void const* vP, phist_const_mvec_ptr vX, ST beta, phist_mvec_ptr vY, int* iflag)
