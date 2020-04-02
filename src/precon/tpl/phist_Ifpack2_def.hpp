@@ -141,32 +141,18 @@ class PreconTraits<ST,phist_IFPACK>
     PHIST_CAST_PTR_FROM_VOID(const mvec_type, X, vX,*iflag);
     PHIST_CAST_PTR_FROM_VOID(      mvec_type, Y, vY,*iflag);
 
-    Teuchos::RCP<mvec_type> Y2 = Teuchos::rcp(Y,false);
-    if (beta!=st::zero())
-    {
-      Y2=Teuchos::rcp(new mvec_type(*Y));
-    }
-    PHIST_CHK_IERR(P->apply(*X,*Y2),*iflag);
-    if (beta!=st::zero())
-    {
-      Y->update(alpha,*Y2,beta);
-    }
-    else if (alpha!=st::one())
-    {
-      Y->scale(alpha);
-    }
-
+    PHIST_CHK_IERR(P->apply(*X,*Y,Teuchos::NO_TRANS,alpha,beta),*iflag);
   }
   
-  static void ApplyT(ST alpha, void const* P, phist_const_mvec_ptr X, ST beta, phist_mvec_ptr Y, int* iflag)
+  static void ApplyT(ST alpha, void const* vP, phist_const_mvec_ptr vX, ST beta, phist_mvec_ptr vY, int* iflag)
   {
     PHIST_ENTER_FCN(__FUNCTION__);
-    // we currently don't need to apply the transpose of a preconditioner, and in Ifpack
-    // it would mean we have to call SetUseTranspose on the operator, which is not possible
-    // here as it is const. So we do the default thing, return -99 and leave the problem
-    // for whoever stumbles on it first.
-    *iflag=PHIST_NOT_IMPLEMENTED;
-    return;
+    *iflag=0;
+    PHIST_CAST_PTR_FROM_VOID(const prec_type, P, vP,*iflag);
+    PHIST_CAST_PTR_FROM_VOID(const mvec_type, X, vX,*iflag);
+    PHIST_CAST_PTR_FROM_VOID(      mvec_type, Y, vY,*iflag);
+
+    PHIST_CHK_IERR(P->apply(*X,*Y,Teuchos::TRANS,alpha,beta),*iflag);
   }
   
   static void ApplyShifted(ST alpha, const void* vP, ST const * sigma,
