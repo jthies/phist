@@ -310,7 +310,7 @@ public:
       OPT::Apply(A_op,*V0,*V1);
 
       ASSERT_REAL_EQ(1.0,MvecsEqual(V0->get(),V0_copied->get()));
-      ASSERT_NEAR(1.0,MvecsEqual(V1->get(),V1_copied->get()),VTest::releps());
+      ASSERT_NEAR(1.0,MvecsEqual(V1->get(),V1_copied->get()),5*VTest::releps());
     }
   }
 
