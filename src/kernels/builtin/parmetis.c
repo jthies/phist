@@ -23,6 +23,14 @@
 #include <parmetis.h>
 #include <stdlib.h>
 
+#if REALTYPEWIDTH == 32
+typedef float real;
+#elif REALTYPEWITH == 64
+typedef doublle real;
+#else
+#error "do not find or understand RELTYPEWIDTH, should be defined in metis.h as 32 or 64"
+#endif
+
 /*! wrapper for parmetis, so it can be called from fortran:<br>
  * it is necessary to convert the mpi communicator from c
  * to fortran (and this is only possible in c!)<br>
@@ -37,8 +45,8 @@ void parmetis_v3_partkway_f_ (int64_t * a,
                             int64_t * g,
                             int64_t * h,
                             int64_t * i,
-                            float * j,
-                            float * k,
+                            real * j,
+                            real * k,
                             int64_t * l,
                             int64_t * m,
                             int64_t * n,
@@ -60,8 +68,8 @@ void parmetis_v3_refinekway_f_ (int64_t * a,
                             int64_t * g,
                             int64_t * h,
                             int64_t * i,
-                            float * j,
-                            float * k,
+                            real * j,
+                            real * k,
                             int64_t * l,
                             int64_t * m,
                             int64_t * n,
@@ -72,7 +80,7 @@ void parmetis_v3_refinekway_f_ (int64_t * a,
 
   /* the RefineKway doesn't support the uncoupling the vertices from the processors int the current version, so we try AdaptiveRepart */
   /* newer versions fail in the above function for empty processes */
-  float itr = 1000;
+  real itr = 1000;
   ParMETIS_V3_AdaptiveRepart(a,b,c,d,NULL,e,f,g,h,i,j,k,&itr,l,m,n,comm);
   /*ParMETIS_V3_RefineKway(a,b,c,d,e,f,g,h,i,j,k,l,m,n,comm);*/
 }
