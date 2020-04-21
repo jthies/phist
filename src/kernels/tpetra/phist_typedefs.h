@@ -34,19 +34,18 @@
 using phist_s_complex = std::complex<float>;
 //! double precision complex type
 using phist_d_complex = std::complex<double>;
-//! type of global indices
-using phist_gidx = std::ptrdiff_t;
 #else
 typedef float complex phist_s_complex;
 typedef double complex phist_d_complex;
+#endif
+
 //! type of global indices
 #ifdef PHIST_FORCE_32BIT_GIDX
 typedef int phist_gidx;
 #define PRgidx "d"
 #else
-typedef ptrdiff_t phist_gidx;
-#define PRgidx "ld"
-#endif
+typedef long long phist_gidx;
+#define PRgidx "lld"
 #endif
 
 // we want ptrdiff_t (aka long long int on 64 bit systems) as local index,
