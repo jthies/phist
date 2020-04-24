@@ -339,7 +339,7 @@ void SUBR(create_matrix)(TYPE(sparseMat_ptr)* mat, phist_const_comm_ptr comm,
   //TODO!!!
     PHIST_SOUT(outlev,"problem type: spin[%d]\n",L);
 
-    ghost_lidx conf_spin[3] = {L,0};
+    ghost_lidx conf_spin[2] = {L,0};
     SpinChain( -2, conf_spin, &DIM, NULL, NULL);
 
     matfuncs_info_t info;
@@ -348,8 +348,6 @@ void SUBR(create_matrix)(TYPE(sparseMat_ptr)* mat, phist_const_comm_ptr comm,
     PHIST_CHK_IERR(SUBR(sparseMat_create_fromRowFunc)(mat,comm,
         (phist_gidx)info.nrows, (phist_gidx)info.ncols, (phist_lidx)info.row_nnz,
         &SpinChain, NULL, iflag), *iflag);
-    // clean up internal memory allocated by the function
-    SpinChain( -3, conf_spin, &DIM, NULL, NULL);
   }
   else if (mat_type==SPINSZ)
   {
