@@ -124,7 +124,7 @@ if [[ $PRGENV =~ gcc* ]]; then
   if [[ "${VECT_EXT}" != "CUDA" ]] && [[ "${PRGENV}" != "gcc-7.2.0-openmpi" ]]; then
     ADD_CMAKE_FLAGS+=" -DPHIST_USE_CCACHE=OFF"
 #    ADD_CMAKE_FLAGS+=" -DPHIST_USE_CCACHE=ON"
-#    export CCACHE_DIR=/home_local/f_jkessx/.ccache/
+#    export CCACHE_DIR=/localdata1/f_jkessx/.ccache/
   else
     ADD_CMAKE_FLAGS+=" -DPHIST_USE_CCACHE=OFF"
   fi
