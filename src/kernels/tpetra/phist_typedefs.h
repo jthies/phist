@@ -50,10 +50,11 @@ typedef int phist_gidx;
 #ifndef TPETRACORE_CONFIG_H
 #error "TpetraCore_config.h not included!"
 #endif
-#warning "want int!"
 typedef long phist_gidx;
 #elif defined(HAVE_TPETRA_INST_INT_UNSIGNED)
+typedef unsigned phist_gidx;
 #elif defined(HAVE_TPETRA_INST_INT_UNSIGNED_LONG)
+typedef unsigned long phist_gidx;
 #else
 #error "You requested 32-bit global indices, but the Tpetra installation does not instantiate any int/long global index types supported here."
 #endif
