@@ -423,7 +423,7 @@ int SpinChainSZ( ghost_gidx row, ghost_lidx *nnz, ghost_gidx *cols, void *vals, 
 
 int SpinChain( ghost_gidx row, ghost_lidx *nnz, ghost_gidx *cols, void *vals, void* data ){
 
-	static ghost_gidx L   = 1;
+	static ghost_gidx L   = 0;
 	static double Jx = 1.;
 	static double Jy = 1.;
 	static double Jz = 1.;
@@ -501,6 +501,8 @@ int SpinChain( ghost_gidx row, ghost_lidx *nnz, ghost_gidx *cols, void *vals, vo
 		
 	}
 	else if( row == -1 ){
+
+                if (L==0) return -2; // not initialized
 		
 		matfuncs_info_t *info = vals;
 
@@ -523,16 +525,16 @@ int SpinChain( ghost_gidx row, ghost_lidx *nnz, ghost_gidx *cols, void *vals, vo
 
 	// =================================================================
 	else if ( row == -2 ) {
-		L      = cols[0];
-		useOBC = cols[2];
+		L      = nnz[0];
+		useOBC = nnz[1];
 		
-		*nnz = power_of_2( L );
+		*cols = power_of_2( L );
 		
 
 		return 0;
 	}
 	
-	printf("SpinChainSZ(): error in row %" PRGIDX "\n",row);
+	printf("SpinChain(): error in row %" PRGIDX "\n",row);
 	*nnz = -1;
 	return 1;              //  error
 }

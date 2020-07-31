@@ -29,24 +29,43 @@
 #endif
 #endif /* DOXYGEN */
 
+#include "TpetraCore_config.h"
+
+
 #ifdef __cplusplus
 //! single precision complex type
 using phist_s_complex = std::complex<float>;
 //! double precision complex type
 using phist_d_complex = std::complex<double>;
-//! type of global indices
-using phist_gidx = std::ptrdiff_t;
 #else
 typedef float complex phist_s_complex;
 typedef double complex phist_d_complex;
+#endif
+
 //! type of global indices
 #ifdef PHIST_FORCE_32BIT_GIDX
+#if defined(HAVE_TPETRA_INST_INT_INT)
 typedef int phist_gidx;
+#elif defined(HAVE_TPETRA_INST_INT_LONG)
+#ifndef TPETRACORE_CONFIG_H
+#error "TpetraCore_config.h not included!"
+#endif
+typedef long phist_gidx;
+#elif defined(HAVE_TPETRA_INST_INT_UNSIGNED)
+typedef unsigned phist_gidx;
+#elif defined(HAVE_TPETRA_INST_INT_UNSIGNED_LONG)
+typedef unsigned long phist_gidx;
+#else
+#error "You requested 32-bit global indices, but the Tpetra installation does not instantiate any int/long global index types supported here."
+#endif
 #define PRgidx "d"
 #else
-typedef ptrdiff_t phist_gidx;
-#define PRgidx "ld"
+#ifdef HAVE_TPETRA_INST_INT_LONG_LONG
+typedef long long phist_gidx;
+#else
+#error "You requested 64-bit global indices, but the Tpetra installation does not instantiate any long_long global index types supported here."
 #endif
+#define PRgidx "lld"
 #endif
 
 // we want ptrdiff_t (aka long long int on 64 bit systems) as local index,

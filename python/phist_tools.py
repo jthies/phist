@@ -87,6 +87,7 @@ str2linSolv = _phist_tools.str2linSolv
 Eprecon = _ct.c_uint
 precon_NO_PRECON   = _ct.c_uint(0)
 precon_IFPACK        = _ct.c_uint(1)
+precon_ML            = _ct.c_uint(2)
 #others not exposed here yet
 _phist_tools.precon2str.argtypes = (Eprecon,)
 _phist_tools.precon2str.resType = _ct.c_char_p

@@ -1,5 +1,7 @@
+devel
   - builtin kernels: minor fix for gfortran 10
   
+phist-1.9.0     update tpetra local/global index types to int/long long because the spack trilinos package offers to instantiate those variants
 phist-1.8.0     bug fixes and added missing functions in the Python interface.
 phist-1.7.5     patches for compiling on non-x86 architectures
 phist.1.7.4     phist-1.7.4 has some new kernels and fixes to the Python interface so it can function as a backend PyNCT.

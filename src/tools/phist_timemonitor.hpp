@@ -142,7 +142,7 @@ namespace phist_TimeMonitor
 #else
        struct timeval timecheck;
        gettimeofday(&timecheck, NULL);
-       return (double)timecheck.tv_sec + (double)timecheck.tv_usec / 1000.;
+       return (double)timecheck.tv_sec + (double)timecheck.tv_usec * 1.0e-6;
 #endif
       }
 
