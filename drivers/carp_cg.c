@@ -61,6 +61,11 @@ int test_xex_i(ghost_gidx i, ghost_lidx j, void * val, void * aux)
 int main(int argc, char** argv)
   {
      int iflag;
+
+     PHIST_ICHK_IERR(phist_kernels_init(&argc,&argv,&iflag),iflag);
+
+     PHIST_MAIN_TASK_BEGIN
+
      if ( argc < 2 )
      {
        PHIST_SOUT(PHIST_ERROR,"Usage: carp_cg    <problem> <shiftFile> <num vecs>\n"
@@ -93,10 +98,6 @@ int main(int argc, char** argv)
   MT *sigma_r, *sigma_i;
   MT omega; /* relaxation parameter */
   
-  PHIST_ICHK_IERR(phist_kernels_init(&argc,&argv,&iflag),iflag);
-
-  PHIST_MAIN_TASK_BEGIN
-
   PHIST_ICHK_IERR(phist_comm_create(&comm,&iflag),iflag);
 
   PHIST_ICHK_IERR(phist_comm_get_rank(comm, &rank,&iflag),iflag);
