@@ -3678,7 +3678,7 @@ contains
       & ( mvec%jmin .eq. lbound(mvec%val,1) .and. &
       &   mvec%jmax .eq. ubound(mvec%val,1)       ) ) then
 
-      call dset_1(size(mvec%val,1)*mvec%map%nlocal(mvec%map%me), mvec%val(1,1), val)
+      call dset_1(size(mvec%val,1)*mvec%map%nlocal(mvec%map%me), mvec%val, val)
     else
       call dset_general(mvec%jmax-mvec%jmin+1, mvec%map%nlocal(mvec%map%me), mvec%val(mvec%jmin,1), size(mvec%val,1), val)
     end if
