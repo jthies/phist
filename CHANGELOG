@@ -1,5 +1,7 @@
-devel
+phist-1.9.1
   - builtin kernels: minor fix for gfortran 10
+  - we do not bring our own pytest anymore
+  - bugfix: timing was broken if neither MPI nor OpenMP were available
   
 phist-1.9.0     update tpetra local/global index types to int/long long because the spack trilinos package offers to instantiate those variants
 phist-1.8.0     bug fixes and added missing functions in the Python interface.
