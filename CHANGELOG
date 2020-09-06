@@ -1,3 +1,6 @@
+phist-1.9.2
+  - fix some issues with Tpetra from Trilinos 13 (API change)
+  - fix problem with Fortran interface and Tpetra
 phist-1.9.1
   - builtin kernels: minor fix for gfortran 10
   - we do not bring our own pytest anymore
