@@ -909,12 +909,12 @@ return;
 
       // should return the same code
       ASSERT_EQ(my_ret,their_ret);
-
+/*
       std::cout << "my B = "<<*B << std::endl;
       std::cout << "their B = "<<*B2 << std::endl;
       std::cout << "my C = "<<*C << std::endl;
       std::cout << "their C = "<<*C2 << std::endl;
-
+*/
       // there may be sign switches in B, depending on the algorithm used, so 'normalize' the signs first.
       std::vector<_ST_> col_signs(k_),col_signs2(k_);
       for (int i=0; i<k_; i++)
@@ -1080,12 +1080,12 @@ return;
 
       // should return the same code
       ASSERT_EQ(my_ret,their_ret);
-
+/*
       std::cout << "my B = "<<*B << std::endl;
       std::cout << "their B = "<<*B2 << std::endl;
       std::cout << "my C = "<<*C << std::endl;
       std::cout << "their C = "<<*C2 << std::endl;
-
+*/
       // there may be sign switches in B, depending on the algorithm used, so 'normalize' the signs first.
       std::vector<_ST_> col_signs(k_),col_signs2(k_);
       for (int i=0; i<k_; i++)
