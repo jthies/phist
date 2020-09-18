@@ -7,6 +7,7 @@
 /*                                                                                         */
 /*******************************************************************************************/
 
+#include "Trilinos_version.h"
 #include "Kokkos_View.hpp"
 #include "Tpetra_MultiVector.hpp"
 
@@ -433,7 +434,13 @@ extern "C" void SUBR(sdMat_view_block)(TYPE(sdMat_ptr) vM,
   }
 
   // Get a view of the whole matrix
+#if TRILINOS_MAJOR_VERSION>=13
+  auto h_view = mat->getLocalViewHost();
+  auto d_view = mat->getLocalViewDevice();
+  Traits<_ST_>::mvec_t::dual_view_type view(d_view, h_view);
+#else
   auto view = mat->getDualView();
+#endif
 
   // Take a subview, subview = view[imin:imax ; jmin: jmax]
   // Phists wants inclusive endpoints, so we correct by adding + 1
