@@ -86,6 +86,7 @@ source /tools/modulesystem/spack_KP/share/spack/setup-env.sh
 
 # load modules
 module load PrgEnv/${PRGENV}||exit -1
+module load py-pytest-5.3.4-gcc-7.5.0-python3-slogudr || exit -1
 
 if [[ "$FLAGS" = *optional-libs* ]]; then
 
