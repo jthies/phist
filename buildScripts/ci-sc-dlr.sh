@@ -85,9 +85,11 @@ module() { eval `/usr/bin/modulecmd bash $*`; }
 source /tools/modulesystem/spack_KP/share/spack/setup-env.sh
 
 # load modules
-module load PrgEnv/${PRGENV}||exit -1
-module load py-pytest-5.3.4-gcc-7.5.0-python3-slogudr || exit -1
-module load py-numpy-1.18.5-gcc-7.5.0-mkl-python3-mogymwt  py-numpy-1.18.5-gcc-7.5.0-mogymwt
+module load PrgEnv/${PRGENV}||exit ${LINENO}
+module load py-pytest-5.3.4-gcc-7.5.0-python3-slogudr || ${LINENO}
+module load py-numpy-1.18.5-gcc-7.5.0-mkl-python3-mogymwt  py-numpy-1.18.5-gcc-7.5.0-mogymwt || exit ${LINENO}
+module test PrgEnv/${PRGENV} || exit ${LINENO}
+
 
 if [[ "$FLAGS" = *optional-libs* ]]; then
 
