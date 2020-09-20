@@ -16,7 +16,7 @@ FLAGS="default" # optional-libs
 #optional CMake flags 
 # BENCH_LARGE_N=-1 disables benchmarks to speed up build jobs!
 # XSDK_eNABLE_Fortran makes sure the Fortran interfaces are generated and tested
-ADD_CMAKE_FLAGS="-DPHIST_BENCH_LARGE_N=-1 -DXSDK_ENABLE_Fortran=ON -DBLA_VENDOR=Intel10_64ilp_seq" 
+ADD_CMAKE_FLAGS="-DPHIST_BENCH_LARGE_N=-1 -DXSDK_ENABLE_Fortran=ON -DBLA_VENDOR=Intel10_64lp_seq" 
 WORKSPACE="$PWD/.."
 VECT_EXT="native"
 TRILINOS_VERSION="git"
