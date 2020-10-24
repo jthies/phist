@@ -320,12 +320,11 @@ extern "C" void phist_kernels_finalize(int* iflag)
 extern "C" void phist_comm_create(phist_comm_ptr* vcomm, int* iflag)
 {
   *iflag=0;
-  // concept doesn't exist in ghost, return MPI_Comm
-  MPI_Comm* comm = new MPI_Comm;
+  ghost_mpi_comm* comm = new ghost_mpi_comm;
 #ifdef PHIST_HAVE_MPI
   *comm=phist_get_default_comm();
 #else
-  *comm=(MPI_Comm)0;
+  *comm=0;
 #endif
   *vcomm=(phist_comm_ptr)comm;
 }
@@ -334,7 +333,7 @@ extern "C" void phist_comm_create(phist_comm_ptr* vcomm, int* iflag)
 extern "C" void phist_comm_delete(phist_comm_ptr vcomm, int* iflag)
 {
   *iflag=0;
-  PHIST_CAST_PTR_FROM_VOID(MPI_Comm,comm,vcomm,*iflag);
+  PHIST_CAST_PTR_FROM_VOID(ghost_mpi_comm,comm,vcomm,*iflag);
   delete comm;
 }
 
@@ -342,16 +341,16 @@ extern "C" void phist_comm_delete(phist_comm_ptr vcomm, int* iflag)
 extern "C" void phist_comm_get_rank(phist_const_comm_ptr vcomm, int* rank, int* iflag)
 {
   *iflag=0;
-  PHIST_CAST_PTR_FROM_VOID(MPI_Comm,comm,vcomm,*iflag);
+  PHIST_CAST_PTR_FROM_VOID(ghost_mpi_comm,comm,vcomm,*iflag);
   ghost_rank(rank,*comm);
 }
 //!
 extern "C" void phist_comm_get_size(phist_const_comm_ptr vcomm, int* size, int* iflag)
-  {
+{
   *iflag=0;
-  PHIST_CAST_PTR_FROM_VOID(MPI_Comm,comm,vcomm,*iflag);
+  PHIST_CAST_PTR_FROM_VOID(ghost_mpi_comm,comm,vcomm,*iflag);
   ghost_nrank(size,*comm);
-  }
+}
 #ifdef PHIST_HAVE_MPI
 extern "C" void phist_comm_get_mpi_comm(phist_const_comm_ptr vcomm, MPI_Comm* mpiComm, int* iflag)
 {
@@ -428,23 +427,23 @@ extern "C" void phist_context_create(phist_context_ptr* vctx,
   ghost_map const* col_map=(ghost_map const*)vcol_map;
   ghost_map const* range_map=(ghost_map const*)vrange_map;
   ghost_map const* domain_map=(ghost_map const*)vdomain_map;
-  
+
   if (domain_map==NULL) domain_map=row_map; // assume a square matrix
-  if (range_map==NULL) 
+  if (range_map==NULL)
   {
     range_map=row_map;  
   }
   // ghost doesn't allow range_map!=row_map!
   PHIST_CHK_IERR(*iflag=(range_map!=row_map)?PHIST_INVALID_INPUT:0,*iflag);
-  
+
   ghost_context* ctx=NULL;
-  
+
   ghost_gidx gnrows=row_map->gdim;
   ghost_gidx gncols=domain_map->gdim;
   ghost_context_create(&ctx,gnrows,gncols,GHOST_CONTEXT_DEFAULT,row_map->mpicomm,1.);
-  
+
   PHIST_CHK_GERR(ghost_context_set_map(ctx,GHOST_MAP_ROW,(ghost_map*)row_map),*iflag);
-  
+
   if (col_map!=NULL)
   {
     // this map will use the same communication as the matrix that originally created the maps
