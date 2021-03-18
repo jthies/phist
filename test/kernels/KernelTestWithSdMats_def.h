@@ -298,7 +298,7 @@ static void PrintSdMat(int outlev, std::string label,
     if( iflag!= PHIST_SUCCESS )
       return false;
 
-    phist_lidx n = 0;
+    int n = 0;
 #ifdef PHIST_SDMATS_ROW_MAJOR
     SUBR(sdMat_get_nrows)(V,&n,&iflag);
 #else

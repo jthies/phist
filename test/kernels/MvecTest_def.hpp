@@ -1071,18 +1071,18 @@ TEST_F(CLASSNAME,apply_func_by_put_func)
   ASSERT_EQ(0,iflag_);
   SUBR(mvec_put_func)(vec1_,&PHIST_TG_PREFIX(mvecScaleEntries),&scale_by,&iflag_);
   ASSERT_EQ(0,iflag_);
-  
+
   ASSERT_REAL_EQ(mt::one(),MvecsEqual(vec1_,vec2_));
 }
 
 TEST_F(CLASSNAME, get_set_data)
 {
   if (!typeImplemented_ || problemTooSmall_) return;
-  phist_lidx lda_RM=std::max(nvec_,42);
-  phist_lidx lda_CM=std::max(nloc_,421);
+  phist_lidx lda_RM=std::max(phist_lidx(nvec_),(phist_lidx)42);
+  phist_lidx lda_CM=std::max(nloc_,(phist_lidx)421);
   _ST_ data_RM_in[nloc_*lda_RM], data_RM_out[nloc_*lda_RM];
   _ST_ data_CM_in[nvec_*lda_CM], data_CM_out[nvec_*lda_CM];
-  
+
   for (phist_lidx i=0; i<nloc_; i++)
   {
     for (int j=0; j<nvec_; j++)
