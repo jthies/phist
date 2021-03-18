@@ -248,10 +248,11 @@ extern "C" void SUBR(mvec_random)(TYPE(mvec_ptr) V, int* iflag)
   phist_const_comm_ptr comm;
   phist_gidx gnrows,ilower,iupper,pre_skip,post_skip;
   phist_const_map_ptr map=NULL;
-  phist_lidx lnrows,nvec;
-  
+  phist_lidx lnrows;
+  int nvec;
+
   bool is_linear_map;
-  
+
   PHIST_CHK_IERR(SUBR(mvec_num_vectors)(V,&nvec,iflag),*iflag);
 
   PHIST_CHK_IERR(SUBR(mvec_get_map)(V,&map,iflag),*iflag);
@@ -351,7 +352,8 @@ extern "C" void SUBR(sdMat_random)(TYPE(sdMat_ptr) M, int* iflag)
 {
 #include "phist_std_typedefs.hpp"
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
-  phist_lidx nrows,ncols,lda;
+  phist_lidx lda;
+  int nrows, ncols;
   _ST_* M_raw = NULL;
   PHIST_CHK_IERR(SUBR(sdMat_get_nrows)(M,&nrows,iflag),*iflag);
   PHIST_CHK_IERR(SUBR(sdMat_get_ncols)(M,&ncols,iflag),*iflag);
