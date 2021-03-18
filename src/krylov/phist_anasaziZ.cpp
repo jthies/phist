@@ -15,6 +15,11 @@
 # ifndef HAVE_TPETRA_INST_COMPLEX_DOUBLE
 # undef PHIST_HAVE_ANASAZI
 # endif
+#else
+# include "Teuchos_config.h"
+# ifndef HAVE_TEUCHOS_COMPLEX
+# undef PHIST_HAVE_ANASAZI
+# endif
 #endif
 
 #include "phist_tools.h"
