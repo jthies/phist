@@ -24,7 +24,8 @@ extern "C" void SUBR(sdMat_cholesky)(TYPE(sdMat_ptr) M, int* perm, int* rank, _M
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   PHIST_PERFCHECK_VERIFY_SMALL;
-  phist_lidx ldM, n,m;
+  phist_lidx ldM;
+  int n,m;
   _ST_ *Mval, *Merr=NULL;
   *iflag=0;
   PHIST_CHK_IERR(SUBR(sdMat_get_nrows)(M,&n,iflag),*iflag);
@@ -49,7 +50,8 @@ extern "C" void SUBR(sdMat_backwardSubst_sdMat)(const TYPE(sdMat_ptr) R, int* pe
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   PHIST_PERFCHECK_VERIFY_SMALL;
-  phist_lidx ldR, n, m, ldX, k;
+  phist_lidx ldR, ldX;
+  int  n, m, k;
   _ST_ *Rval, *Rerr=NULL, *Xval, *Xerr=NULL;
   *iflag=0;
   PHIST_CHK_IERR(SUBR(sdMat_get_nrows)(R,&n,iflag),*iflag);
@@ -82,7 +84,8 @@ extern "C" void SUBR(sdMat_forwardSubst_sdMat)(const TYPE(sdMat_ptr) R, int* per
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   PHIST_PERFCHECK_VERIFY_SMALL;
-  phist_lidx ldR, n, m, ldX, k;
+  phist_lidx ldR, ldX;
+  int n, m, k;
   _ST_ *Rval, *Rerr=NULL, *Xval, *Xerr=NULL;
   *iflag=0;
   PHIST_CHK_IERR(SUBR(sdMat_get_nrows)(R,&n,iflag),*iflag);
@@ -118,7 +121,8 @@ extern "C" void SUBR(sdMat_qb)(TYPE(sdMat_ptr) B,
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   PHIST_PERFCHECK_VERIFY_SMALL;
-  phist_lidx ldB, ldB_1, n, m;
+  phist_lidx ldB, ldB_1;
+  int n, m;
   _ST_ *Bval, *B_1val, *Berr=NULL, *B_1err=NULL;
   PHIST_TOUCH(Berr);
   PHIST_TOUCH(B_1err);
@@ -401,7 +405,7 @@ void SUBR(sdMat_qr)(TYPE(sdMat_ptr) Q, TYPE(sdMat_ptr) R, int* iflag)
 #include "phist_std_typedefs.hpp"
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   PHIST_PERFCHECK_VERIFY_SMALL;
-  phist_lidx mQ,nQ,mR,nR;
+  int mQ,nQ,mR,nR;
   phist_lidx ldR, ldQ;
   _ST_ *R_raw, *Q_raw;
   PHIST_CHK_IERR(SUBR(sdMat_get_nrows)(R,&mR,iflag),*iflag);

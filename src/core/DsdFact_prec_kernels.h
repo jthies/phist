@@ -40,15 +40,15 @@ extern "C" {
 //!
 //! \param[in,out] rank rank of the cholesky factor on output, size of the locked part of a previous calculation on input (set it to zero when you don't need this!)
 //!
-void phist_Dprec_cholesky(double *__restrict__ a, double *__restrict__ aC, phist_lidx n, phist_lidx lda, phist_lidx *perm, int *rank, int* iflag);
+void phist_Dprec_cholesky(double *__restrict__ a, double *__restrict__ aC, int n, phist_lidx lda, int *perm, int *rank, int* iflag);
 
 //! apply backward substitution with permuted upper triangular matrix to k vectors in col-major storage
-void phist_Dprec_backwardSubst(const double *__restrict__ r, const double *__restrict__ rC, phist_lidx n, phist_lidx ldr, phist_lidx *p, int rank,
-        double *__restrict__ x, double *__restrict__ xC, phist_lidx k, phist_lidx ldx, int* iflag);
+void phist_Dprec_backwardSubst(const double *__restrict__ r, const double *__restrict__ rC, int n, phist_lidx ldr, int *p, int rank,
+        double *__restrict__ x, double *__restrict__ xC, int k, phist_lidx ldx, int* iflag);
 
 //! apply forward substitution with permuted transposed upper triangular matrix
-void phist_Dprec_forwardSubst(const double *__restrict__ r, const double *__restrict__ rC, phist_lidx n, phist_lidx ldr, phist_lidx *p, int rank,
-        double *__restrict__ x, double *__restrict__ xC, phist_lidx k, phist_lidx ldx, int* iflag);
+void phist_Dprec_forwardSubst(const double *__restrict__ r, const double *__restrict__ rC, int n, phist_lidx ldr, int *p, int rank,
+        double *__restrict__ x, double *__restrict__ xC, int k, phist_lidx ldx, int* iflag);
 
 //! \brief given symmetric A=V'V, compute B s.t. Q=V*B is orthonormal.
 //!
@@ -57,7 +57,7 @@ void phist_Dprec_forwardSubst(const double *__restrict__ r, const double *__rest
 //! s.t. Q has exactly rank *rank. In bi, biC we return the inverse of B.
 void phist_Dprec_qb(double *__restrict__ a,  double *__restrict__ aC, 
                     double *__restrict__ bi, double *__restrict__ biC, 
-                    phist_lidx n, phist_lidx lda, int *rank, int* iflag);
+                    int n, phist_lidx lda, int *rank, int* iflag);
 
 //!@}
 #ifdef __cplusplus

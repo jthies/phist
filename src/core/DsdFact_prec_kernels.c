@@ -43,7 +43,8 @@
 
 // calculates a possibly low rank approximation of a lower cholesky factor of an spd matrix
 // higher-precision + pivoting + stable low rank approximation
-void phist_Dprec_cholesky(double *__restrict__ a, double *__restrict__ aC, phist_lidx n, phist_lidx lda, phist_lidx *perm, int *rank, double rankTol, int* iflag)
+void phist_Dprec_cholesky(double *__restrict__ a, double *__restrict__ aC, int n, phist_lidx lda, int *perm, int 
+*rank, double rankTol, int* iflag)
 {
 #if defined(PHIST_TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
   printf("Entering %s\n", __FUNCTION__);
@@ -166,8 +167,8 @@ void phist_Dprec_cholesky(double *__restrict__ a, double *__restrict__ aC, phist
 
 
 // apply backward substitution with permuted upper triangular matrix to k vectors in col-major storage
-void phist_Dprec_backwardSubst(const double *__restrict__ r, const double *__restrict__ rC, phist_lidx n, phist_lidx ldr, phist_lidx *p, int rank,
-        double *__restrict__ x, double *__restrict__ xC, phist_lidx k, phist_lidx ldx, int* iflag)
+void phist_Dprec_backwardSubst(const double *__restrict__ r, const double *__restrict__ rC, int n, phist_lidx ldr, int *p, int rank,
+        double *__restrict__ x, double *__restrict__ xC, int k, phist_lidx ldx, int* iflag)
 {
 #if defined(PHIST_TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
   printf("Entering %s\n", __FUNCTION__);
@@ -216,8 +217,8 @@ void phist_Dprec_backwardSubst(const double *__restrict__ r, const double *__res
 }
 
 // apply forward substitution with permuted transposed upper triangular matrix
-void phist_Dprec_forwardSubst(const double *__restrict__ r, const double *__restrict__ rC, phist_lidx n, phist_lidx ldr, phist_lidx *p, int rank,
-        double *__restrict__ x, double *__restrict__ xC, phist_lidx k, phist_lidx ldx, int* iflag)
+void phist_Dprec_forwardSubst(const double *__restrict__ r, const double *__restrict__ rC, int n, phist_lidx ldr, int *p, int rank,
+        double *__restrict__ x, double *__restrict__ xC, int k, phist_lidx ldx, int* iflag)
 {
 #if defined(PHIST_TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
   printf("Entering %s\n", __FUNCTION__);
@@ -274,7 +275,7 @@ void phist_Dprec_forwardSubst(const double *__restrict__ r, const double *__rest
 void phist_Dprec_qb(double *__restrict__ a, double *__restrict__ aC, 
                     double *__restrict__ bi, double *__restrict__ biC,
                     double *__restrict__ D,
-                    phist_lidx n, phist_lidx lda, int *rank, double rankTol, int* iflag)
+                    int n, phist_lidx lda, int *rank, double rankTol, int* iflag)
 {
 #ifdef PHIST_HAVE_MPACK_QD
   // compute sqrt(diag(A)) and its inverse

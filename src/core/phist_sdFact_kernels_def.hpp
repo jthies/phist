@@ -24,7 +24,7 @@
 
 // calculates a possibly low rank approximation of a lower cholesky factor of an spd matrix
 // higher-precision + pivoting + stable low rank approximation
-extern "C" void SUBR(cholesky)(_ST_ *__restrict__ a, phist_lidx n, phist_lidx lda, phist_lidx *perm, int *rank, 
+extern "C" void SUBR(cholesky)(_ST_ *__restrict__ a, int n, phist_lidx lda, int *perm, int *rank, 
         _MT_ rankTol, int* iflag)
 {
 #include "phist_std_typedefs.hpp"
@@ -130,8 +130,8 @@ extern "C" void SUBR(cholesky)(_ST_ *__restrict__ a, phist_lidx n, phist_lidx ld
 
 
 // apply backward substitution with permuted upper triangular matrix to k vectors in col-major storage
-extern "C" void SUBR(backwardSubst)(const _ST_ *__restrict__ r, phist_lidx n, phist_lidx ldr, phist_lidx *p, int rank,
-        _ST_ *__restrict__ x, phist_lidx k, phist_lidx ldx, int* iflag)
+extern "C" void SUBR(backwardSubst)(const _ST_ *__restrict__ r, int n, phist_lidx ldr, int *p, int rank,
+        _ST_ *__restrict__ x, int k, phist_lidx ldx, int* iflag)
 {
 #include "phist_std_typedefs.hpp"
   PHIST_ENTER_FCN(__FUNCTION__);
@@ -172,8 +172,8 @@ extern "C" void SUBR(backwardSubst)(const _ST_ *__restrict__ r, phist_lidx n, ph
 }
 
 // apply forward substitution with permuted transposed upper triangular matrix
-extern "C" void SUBR(forwardSubst)(const _ST_ *__restrict__ r, phist_lidx n, phist_lidx ldr, phist_lidx *p, int rank,
-        _ST_ *__restrict__ x, phist_lidx k, phist_lidx ldx, int* iflag)
+extern "C" void SUBR(forwardSubst)(const _ST_ *__restrict__ r, int n, phist_lidx ldr, int *p, int rank,
+        _ST_ *__restrict__ x, int k, phist_lidx ldx, int* iflag)
 {
 #include "phist_std_typedefs.hpp"
   PHIST_ENTER_FCN(__FUNCTION__);
@@ -211,7 +211,7 @@ extern "C" void SUBR(forwardSubst)(const _ST_ *__restrict__ r, phist_lidx n, phi
 extern "C" void SUBR(qb)(_ST_ *__restrict__ a,
                     _ST_ *__restrict__ bi,
                     _MT_ *D,
-                    phist_lidx n, phist_lidx lda, int *rank, _MT_ rankTol, int* iflag)
+                    int n, phist_lidx lda, int *rank, _MT_ rankTol, int* iflag)
 {
 #include "phist_std_typedefs.hpp"
   // compute sqrt(diag(A)) and its inverse
