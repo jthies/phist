@@ -100,8 +100,9 @@ extern "C" void phist_comm_delete(phist_comm_ptr vcomm, int* iflag)
 extern void phist_comm_get_mpi_comm(phist_const_comm_ptr vcomm, MPI_Comm* mpiComm, int* iflag)
 {
   *iflag=0;
-  PHIST_CAST_PTR_FROM_VOID(const Epetra_MpiComm,comm,vcomm,*iflag);
-  *mpiComm=comm->Comm();
+  PHIST_CAST_PTR_FROM_VOID(const Epetra_Comm,comm,vcomm,*iflag);
+  Epetra_MpiComm const* eMpiComm=dynamic_cast<Epetra_MpiComm const*>(comm);
+  *mpiComm=eMpiComm->GetMpiComm();
 }
 #endif
 
