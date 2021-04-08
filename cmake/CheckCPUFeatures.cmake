@@ -5,10 +5,12 @@
 
 include(CheckCSourceRuns)
 
+include(SetHostCompileFlag)
+
 include(CMakePushCheckState)
 cmake_push_check_state() # Save variables
 if (PHIST_HOST_OPTIMIZE)
-  set (CMAKE_REQUIRED_FLAGS        "-O0 -march=native")
+  set (CMAKE_REQUIRED_FLAGS        "-O0 ${C_ARCH_FLAG}")
 elseif (CMAKE_BUILD_TYPE MATCHES "Rel")
   message (WARNING "If you set PHIST_HOST_OPTIMIZE=OFF, we will likely not be able to use SIMD intrinsics and loose performance.")
 endif()
