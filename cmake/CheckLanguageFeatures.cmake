@@ -5,6 +5,7 @@
 # PHIST_HAVE_CXX11_THREADLOCAL
 # PHIST_HAVE_OPENMP_SIMD
 
+include (CMakePushCheckState)
 include(CheckCXXSourceCompiles)
 include(CheckFortranSourceCompiles)
 

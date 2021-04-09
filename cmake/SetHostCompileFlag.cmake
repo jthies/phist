@@ -1,8 +1,13 @@
 # this file tries to figure out a compiler flag to enable host-specific
-# code generation and returns it in ARCH_FLAG (e.g. -march=native, -xHOST, ...)
+# code generation and returns it in ${LANG}_ARCH_FLAG (e.g. -march=native, -xHOST, ...)
 # If the variable PHIST_HOST_OPTIMIZE is not set, ARCH_FLAG is left blank and
 # no host-specific code (like SIMD operations) will be generated.
+# LANG is Fortran, C, CXX here.
+#
+# the flag is then also added to CMAKE_${LANG}_FLAGS
+#
 
+include(CMakePushCheckState)
 include(CheckCCompilerFlag)
 include(CheckFortranCompilerFlag)
 include(CheckCXXCompilerFlag)
@@ -31,9 +36,12 @@ if(PHIST_HOST_OPTIMIZE)
         set(${LANG}_ARCH_FLAG ${FLAG} CACHE STRING "${LANG} compiler flag to enable host-specific code generation")
         break()
       endif()
-      list(APPEND CMAKE_${LANG}_FLAGS ${${LANG}_ARCH_FLAG})
     endforeach()
   endforeach()
 endif()
 
 cmake_pop_check_state() # Recover variables
+
+foreach (LANG C CXX Fortran)
+  set(CMAKE_${LANG}_FLAGS "${CMAKE_${LANG}_FLAGS} ${${LANG}_ARCH_FLAG}")
+endforeach()
