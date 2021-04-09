@@ -240,6 +240,10 @@ void SUBR(mvec_get_data)(TYPE(const_mvec_ptr) V, _ST_* data, phist_lidx lda, int
 //!
 void SUBR(mvec_extract_view)(TYPE(mvec_ptr) V, _ST_** V_raw,
         phist_lidx* lda, int* iflag);
+
+//! like mvec_extract_view but "read only".
+void SUBR(mvec_extract_const_view)(TYPE(const_mvec_ptr) V, _ST_ const** V_raw,
+        phist_lidx* lda, int* iflag);
 //!@}
 
 //! \name getting data from sdMat
@@ -257,6 +261,10 @@ void SUBR(sdMat_get_ncols)(TYPE(const_sdMat_ptr) M, int* ncols, int* iflag);
 //! See comment for mvec_extract_view for details,
 //! the macro indicating row-major storage layout is PHIST_SDMATS_ROW_MAJOR.
 void SUBR(sdMat_extract_view)(TYPE(sdMat_ptr) M, _ST_** M_raw,
+        phist_lidx* lda, int* iflag);
+
+//! like sdMat_extract_view, but "read only"
+void SUBR(sdMat_extract_const_view)(TYPE(const_sdMat_ptr) M, _ST_ const** M_raw,
         phist_lidx* lda, int* iflag);
 
 #ifdef PHIST_HIGH_PRECISION_KERNELS

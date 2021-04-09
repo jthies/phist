@@ -63,6 +63,18 @@ extern "C" void SUBR(sparseMat_times_mvec_add_mvec)(_ST_ alpha, TYPE(const_spars
   free(shifts);
 }
 
+// like mvec_extract_view but "read only"
+void SUBR(mvec_extract_const_view)(TYPE(const_mvec_ptr) vV, _ST_ const** V_raw, phist_lidx* ldV, int* iflag)
+{
+  SUBR(mvec_extract_view)((TYPE(mvec_ptr))vV, (_ST_**)V_raw, ldV, iflag);
+}
+
+// like sdMat_extract_view but "read only"
+void SUBR(sdMat_extract_const_view)(TYPE(const_sdMat_ptr) vM, _ST_ const** M_raw, phist_lidx* ldM, int* iflag)
+{
+  SUBR(sdMat_extract_view)((TYPE(sdMat_ptr))vM, (_ST_**)M_raw, ldM, iflag);
+}
+
 // create a new mvec with the same dimensions (number of rows and columns) and
 // distribution (map)  as an existing one. The values of the new object are not
 // initialized explicitly, so if you want to clone the vector contents as well,
