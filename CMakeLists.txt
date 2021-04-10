@@ -30,7 +30,7 @@ project(phist C CXX Fortran)
 # the function claims to do, depending on the status of the repository.
 set(PHIST_VERSION_MAJOR 1)
 set(PHIST_VERSION_MINOR 9)
-set(PHIST_VERSION_PATCH 3)
+set(PHIST_VERSION_PATCH 4)
 set(PHIST_VERSION ${PHIST_VERSION_MAJOR}.${PHIST_VERSION_MINOR}.${PHIST_VERSION_PATCH})
 math(EXPR PHIST_VERSION_INT "( ( ${PHIST_VERSION_MAJOR} * 100 ) + ${PHIST_VERSION_MINOR} ) * 100 + ${PHIST_VERSION_PATCH}")
 
@@ -866,11 +866,11 @@ foreach(PKG ${OPTIONAL_TRILI_PKG})
 endforeach()
 
 if (PHIST_HAVE_ANASAZI)
-  set(PHIST_ANASAZI_THEIR_ORTHO_MANAGER OFF CACHE BOOL "In the Anasazi interface, rely on the Trilinos orthogonalization routines rather than our own.")
+  set(PHIST_ANASAZI_THEIR_ORTHO_MANAGER ON CACHE BOOL "In the Anasazi interface, rely on the Trilinos orthogonalization routines rather than our own.")
   mark_as_advanced(PHIST_ANASAZI_THEIR_ORTHO_MANAGER)
 endif()
 if (PHIST_HAVE_BELOS)
-  set(PHIST_BELOS_THEIR_ORTHO_MANAGER OFF CACHE BOOL "In the Belos interface, rely on the Trilinos orthogonalization routines rather than our own.")
+  set(PHIST_BELOS_THEIR_ORTHO_MANAGER ON CACHE BOOL "In the Belos interface, rely on the Trilinos orthogonalization routines rather than our own.")
   mark_as_advanced(PHIST_BELOS_THEIR_ORTHO_MANAGER)
 endif()
 
