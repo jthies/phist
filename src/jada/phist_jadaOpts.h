@@ -36,6 +36,8 @@ typedef struct phist_jadaOpts {
 int numEigs; //!< How many eigenpairs are sought?
 phist_EeigSort which; //!< LM, SM, LR, SR, or TARGET
 double convTol; //!< Convergence tolerance for eigenvalues
+int relConvTol; //!< if 1, scale the tolerance by the absolute value of the current Ritz value
+                //!< when checking for convergence
 phist_EmatSym symmetry; //!< Symmetry properties of the matrix
 phist_EeigExtr how; //!< \brief Use standard or harmonic Ritz values, etc.
                //!<
