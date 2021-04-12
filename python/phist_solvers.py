@@ -58,6 +58,7 @@ class phist_jadaOpts_t(_ct.Structure):
        int numEigs; //! howmany eigenpairs are sought?
        EeigSort which; //! LM, SM, LR, SR, or TARGET
        double convTol; //! convergence tolerance for eigenvalues
+       int relConvTol; //! if 1, scale the tolerance by the absolute value of the current Ritz value
        EmatSym symmetry; //! Symmetry properties of the matrix
        EeigExtr how; //! use standaard or harmonic Ritz values, etc.
 
@@ -145,6 +146,7 @@ class phist_jadaOpts_t(_ct.Structure):
     _fields_ = [("numEigs",             c_int),
                 ("which",               _phist_tools.EeigSort),
                 ("convTol",             c_double),
+                ("relConvTol",          c_int),
                 ("symmetry",            _phist_tools.EmatSym),
                 ("how",                 _phist_tools.EeigExtr),
                 ("maxIters",            c_int),
