@@ -64,7 +64,7 @@ extern "C" void SUBR(sparseMat_times_mvec_add_mvec)(_ST_ alpha, TYPE(const_spars
 }
 
 // like mvec_extract_view but "read only"
-void SUBR(mvec_extract_const_view)(TYPE(const_mvec_ptr) vV, _ST_ const** V_raw, phist_lidx* ldV, int* iflag)
+extern "C" void SUBR(mvec_extract_const_view)(TYPE(const_mvec_ptr) vV, _ST_ const** V_raw, phist_lidx* ldV, int* iflag)
 {
   SUBR(mvec_extract_view)((TYPE(mvec_ptr))vV, (_ST_**)V_raw, ldV, iflag);
 }
