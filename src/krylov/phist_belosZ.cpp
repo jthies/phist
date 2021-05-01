@@ -8,7 +8,7 @@
 /*******************************************************************************************/
 #include "phist_config.h"
 
-#ifdef PHIST_HAVE_CMPLX
+#if defined(PHIST_HAVE_CMPLX)&&defined(PHIST_HAVE_BELOS)
 
 #if defined(PHIST_KERNEL_LIB_TPETRA)
 #include "TpetraCore_config.h"
