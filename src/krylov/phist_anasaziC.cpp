@@ -8,19 +8,20 @@
 /*******************************************************************************************/
 #include "phist_config.h"
 
-#if defined(PHIST_HAVE_SP)&&defined(PHIST_HAVE_CMPLX)&&defined(PHIST_HAVE_ANASAZI)
+#if defined(PHIST_HAVE_SP)&&defined(PHIST_HAVE_CMPLX)
 
-#if defined(PHIST_KERNEL_LIB_TPETRA)
-#include "TpetraCore_config.h"
-# ifndef HAVE_TPETRA_INST_COMPLEX_FLOAT
-# undef PHIST_HAVE_ANASAZI
-# endif
-#else
+/* check wether we have to disable Anasazi because the Trilinos installation doesn't support this data type */
+# if defined(PHIST_KERNEL_LIB_TPETRA)
+# include "TpetraCore_config.h"
+#  ifndef HAVE_TPETRA_INST_COMPLEX_FLOAT
+#  undef PHIST_HAVE_ANASAZI
+#  endif
+# elif defined(PHIST_HAVE_TEUCHOS)
 # include "Teuchos_config.h"
-# ifndef HAVE_TEUCHOS_COMPLEX
-# undef PHIST_HAVE_ANASAZI
+#  ifndef HAVE_TEUCHOS_COMPLEX
+#  undef PHIST_HAVE_ANASAZI
+#  endif
 # endif
-#endif
 
 #include "phist_tools.h"
 #include "phist_ScalarTraits.hpp"
