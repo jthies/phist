@@ -1,3 +1,18 @@
+phist-1.9.4
+  - better way of setting compiler flag -march=native or similar
+    using cmake feature tests
+  - const version of kernel functions mvec/sdMat_extract_view
+  - when interfacing to Trilinos Belos and Anasazi, use their
+    OrthoManager by default because the interface to our own seems to
+    be buggy/broken and needs attention
+phist-1.9.3
+  - resolve pthreads dependency via gtest (assume pthreads available if OpenMP is) 
+  - fix compiling with ghost but without MPI  
+
+phist-1.9.2
+  - fix some issues with Tpetra from Trilinos 13 (API change)
+  - fix problem with Fortran interface and Tpetra
+
 phist-1.9.1
   - builtin kernels: minor fix for gfortran 10
   - we do not bring our own pytest anymore

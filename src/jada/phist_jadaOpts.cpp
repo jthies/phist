@@ -29,6 +29,7 @@ extern "C" void phist_jadaOpts_setDefaults(phist_jadaOpts *opts)
   opts->minBas=10;
   opts->maxBas=20;
   opts->convTol=1.0e-12;
+  opts->relConvTol=0;
 
   opts->v0=NULL;
   opts->arno=1;
@@ -105,6 +106,7 @@ extern "C" void phist_jadaOpts_fromFile(phist_jadaOpts* opts, const char* filena
   set_value("minBas",opts->minBas,file);
   set_value("maxBas",opts->maxBas,file);
   set_value("convTol",opts->convTol,file);
+  set_value("relConvTol",opts->relConvTol,file);
 
   set_value("arno",opts->arno,file);
   set_value("initialShift_r",opts->initialShift_r,file);
@@ -142,6 +144,7 @@ extern "C" void phist_jadaOpts_toFile(phist_jadaOpts const *opts, FILE* stream)
   fprintf(stream,"minBas\t%d\n",opts->minBas);
   fprintf(stream,"maxBas\t%d\n",opts->maxBas);
   fprintf(stream,"convTol\t%4.2e\n",opts->convTol);
+  fprintf(stream,"relConvTol\t%d\n",opts->relConvTol);
 
   fprintf(stream,"arno\t%d\n",opts->arno);
   fprintf(stream,"initialShift_r\t%e\n",opts->initialShift_r);

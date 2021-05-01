@@ -29,8 +29,16 @@
 #endif
 #endif /* DOXYGEN */
 
+#ifndef DOXYGEN
 #include "TpetraCore_config.h"
-
+#else
+/* we need something, so we guess the default */
+# ifdef PHIST_FORCE_32BIT_GIDX
+# define HAVE_TPETRA_INST_INT_LONG
+# else
+# define HAVE_TPETRA_INST_INT_LONG_LONG
+# endif
+#endif
 
 #ifdef __cplusplus
 //! single precision complex type
@@ -47,9 +55,6 @@ typedef double complex phist_d_complex;
 #if defined(HAVE_TPETRA_INST_INT_INT)
 typedef int phist_gidx;
 #elif defined(HAVE_TPETRA_INST_INT_LONG)
-#ifndef TPETRACORE_CONFIG_H
-#error "TpetraCore_config.h not included!"
-#endif
 typedef long phist_gidx;
 #elif defined(HAVE_TPETRA_INST_INT_UNSIGNED)
 typedef unsigned phist_gidx;

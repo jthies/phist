@@ -16,7 +16,7 @@ FLAGS="default" # optional-libs
 #optional CMake flags 
 # BENCH_LARGE_N=-1 disables benchmarks to speed up build jobs!
 # XSDK_eNABLE_Fortran makes sure the Fortran interfaces are generated and tested
-ADD_CMAKE_FLAGS="-DPHIST_BENCH_LARGE_N=-1 -DXSDK_ENABLE_Fortran=ON" 
+ADD_CMAKE_FLAGS="-DPHIST_BENCH_LARGE_N=-1 -DXSDK_ENABLE_Fortran=ON -DBLA_VENDOR=Intel10_64lp_seq" 
 WORKSPACE="$PWD/.."
 VECT_EXT="native"
 TRILINOS_VERSION="git"
@@ -85,7 +85,11 @@ module() { eval `/usr/bin/modulecmd bash $*`; }
 source /tools/modulesystem/spack_KP/share/spack/setup-env.sh
 
 # load modules
-module load PrgEnv/${PRGENV}||exit -1
+module load PrgEnv/${PRGENV}||exit ${LINENO}
+module load py-pytest-5.3.4-gcc-7.5.0-python3-slogudr || ${LINENO}
+module load py-numpy-1.18.5-gcc-7.5.0-mkl-python3-mogymwt  py-numpy-1.18.5-gcc-7.5.0-mogymwt || exit ${LINENO}
+module test PrgEnv/${PRGENV} || exit ${LINENO}
+
 
 if [[ "$FLAGS" = *optional-libs* ]]; then
 

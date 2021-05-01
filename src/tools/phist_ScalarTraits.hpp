@@ -49,9 +49,14 @@ namespace phist {
 template<typename ST>
 class ScalarTraits
 {
-  public: 
+  public:
 
-  typedef typename ST::MissingImplementationOfScalarTraitsClass error;
+  typedef typename ST::MissingImplementationOfScalarTraitsClass scalar_t;
+  typedef typename ST::MissingImplementationOfScalarTraitsClass magn_t;
+  typedef typename ST::MissingImplementationOfScalarTraitsClass mvec_t;
+  typedef typename ST::MissingImplementationOfScalarTraitsClass sdMat_t;
+  typedef typename ST::MissingImplementationOfScalarTraitsClass sparseMat_t;
+  typedef typename ST::MissingImplementationOfScalarTraitsClass linearOp_t;
   
 };
 

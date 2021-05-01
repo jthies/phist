@@ -76,7 +76,7 @@ protected:
       SUBR(mvec_random)(vec2_,&iflag_);
       SUBR(sparseMat_times_mvec)(st::one(),A_,vec1_,st::zero(),vec2_,&iflag_);
       ASSERT_EQ(0,iflag_);
-    
+
       TYPE(sdMat_ptr) VtAV=NULL;
       SUBR(sdMat_create)(&VtAV,_NV_,_NV_,comm_,&iflag_);
       ASSERT_EQ(0,iflag_);
@@ -88,10 +88,10 @@ protected:
       ASSERT_EQ(0,iflag_);
 
       _ST_* C_raw=NULL;
-      int lda;
+      phist_lidx lda;
       SUBR(sdMat_extract_view)(VtAV,&C_raw,&lda,&iflag_);
       ASSERT_EQ(0,iflag_);
-      
+
       // check V'AV != 0 and V'AV symmetric      
       _MT_ sum=mt::one();;
       _MT_ diff=mt::zero();

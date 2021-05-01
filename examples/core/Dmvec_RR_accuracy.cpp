@@ -38,7 +38,8 @@ typedef phist::ScalarTraits<MT> mt;
 void SUBR(mvec_put_func_substitute)(TYPE(mvec_ptr) V, int (*func)(phist_gidx,phist_lidx,void*),int* ierr)
 {
   _ST_ *val;
-  phist_lidx nloc, lda, ncols;
+  phist_lidx nloc, lda;
+  int ncols;
   phist_gidx ilower, iupper;
   phist_const_map_ptr map;
   PHIST_CHK_IERR(SUBR(mvec_get_map)(V,&map,ierr),*ierr);

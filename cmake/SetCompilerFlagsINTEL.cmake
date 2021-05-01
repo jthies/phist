@@ -2,13 +2,9 @@
   set (CMAKE_CXX_FLAGS      "${CMAKE_CXX_FLAGS} -align -Wno-unused-variable ${MKL_FLAG}")
   set (CMAKE_Fortran_FLAGS  "${CMAKE_Fortran_FLAGS} ${MKL_FLAG} -align array64byte")
 
-  if(PHIST_HOST_OPTIMIZE)
-    set(ARCH_FLAG "-xHOST")
-  endif()
-
-  set (CMAKE_C_FLAGS_RELEASE        "-O3 -prec-div ${ARCH_FLAG}")
-  set (CMAKE_CXX_FLAGS_RELEASE      "-O3 -prec-div ${ARCH_FLAG}")
-  set (CMAKE_Fortran_FLAGS_RELEASE  "-O3 -prec-div ${ARCH_FLAG}")
+  set (CMAKE_C_FLAGS_RELEASE        "-O3 -prec-div")
+  set (CMAKE_CXX_FLAGS_RELEASE      "-O3 -prec-div")
+  set (CMAKE_Fortran_FLAGS_RELEASE  "-O3 -prec-div")
 
   set (CMAKE_C_FLAGS_RELWITHDEBINFO       "${CMAKE_C_FLAGS_RELEASE}       -debug")
   set (CMAKE_CXX_FLAGS_RELWITHDEBINFO     "${CMAKE_CXX_FLAGS_RELEASE}     -debug")
@@ -16,9 +12,9 @@
 
 #  set (CMAKE_C_FLAGS_DEBUG        "-check-pointers=rw -fstack-protector -w2 -debug -traceback")
 #  set (CMAKE_CXX_FLAGS_DEBUG      "-check-pointers=rw -w2 -fstack-protector -debug -traceback")
-  set (CMAKE_C_FLAGS_DEBUG        "-fstack-protector -w2 -debug -traceback ${ARCH_FLAG}")
-  set (CMAKE_CXX_FLAGS_DEBUG      "-fstack-protector -w2 -debug -traceback ${ARCH_FLAG}")
-  set (CMAKE_Fortran_FLAGS_DEBUG  "-check all -check noarg_temp_created -debug -traceback ${ARCH_FLAG}")
+  set (CMAKE_C_FLAGS_DEBUG        "-fstack-protector -w2 -debug -traceback")
+  set (CMAKE_CXX_FLAGS_DEBUG      "-fstack-protector -w2 -debug -traceback")
+  set (CMAKE_Fortran_FLAGS_DEBUG  "-check all -check noarg_temp_created -debug -traceback")
 
   # this is for some reason required with Intel 15 on Emmy:
   set (CMAKE_EXE_LINKER_FLAGS_DEBUG "-lifcore -lifport")

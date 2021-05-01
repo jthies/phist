@@ -8,11 +8,16 @@
 /*******************************************************************************************/
 #include "phist_config.h"
 
-#if defined(PHIST_HAVE_SP)&&defined(PHIST_HAVE_CMPLX)
+#if defined(PHIST_HAVE_SP)&&defined(PHIST_HAVE_CMPLX)&&defined(PHIST_HAVE_BELOS)
 
 #if defined(PHIST_KERNEL_LIB_TPETRA)
 #include "TpetraCore_config.h"
 # ifndef HAVE_TPETRA_INST_COMPLEX_FLOAT
+# undef PHIST_HAVE_BELOS
+# endif
+#else
+# include "Teuchos_config.h"
+# ifndef HAVE_TEUCHOS_COMPLEX
 # undef PHIST_HAVE_BELOS
 # endif
 #endif

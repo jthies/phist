@@ -24,7 +24,8 @@ extern "C" void SUBR(sdMat_cholesky)(TYPE(sdMat_ptr) M, int* perm, int* rank, _M
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   PHIST_PERFCHECK_VERIFY_SMALL;
-  phist_lidx ldM, n,m;
+  phist_lidx ldM;
+  int n,m;
   _ST_ *Mval, *Merr=NULL;
   *iflag=0;
   PHIST_CHK_IERR(SUBR(sdMat_get_nrows)(M,&n,iflag),*iflag);
@@ -49,7 +50,8 @@ extern "C" void SUBR(sdMat_backwardSubst_sdMat)(const TYPE(sdMat_ptr) R, int* pe
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   PHIST_PERFCHECK_VERIFY_SMALL;
-  phist_lidx ldR, n, m, ldX, k;
+  phist_lidx ldR, ldX;
+  int  n, m, k;
   _ST_ *Rval, *Rerr=NULL, *Xval, *Xerr=NULL;
   *iflag=0;
   PHIST_CHK_IERR(SUBR(sdMat_get_nrows)(R,&n,iflag),*iflag);
@@ -82,7 +84,8 @@ extern "C" void SUBR(sdMat_forwardSubst_sdMat)(const TYPE(sdMat_ptr) R, int* per
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   PHIST_PERFCHECK_VERIFY_SMALL;
-  phist_lidx ldR, n, m, ldX, k;
+  phist_lidx ldR, ldX;
+  int n, m, k;
   _ST_ *Rval, *Rerr=NULL, *Xval, *Xerr=NULL;
   *iflag=0;
   PHIST_CHK_IERR(SUBR(sdMat_get_nrows)(R,&n,iflag),*iflag);
@@ -118,7 +121,8 @@ extern "C" void SUBR(sdMat_qb)(TYPE(sdMat_ptr) B,
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   PHIST_PERFCHECK_VERIFY_SMALL;
-  phist_lidx ldB, ldB_1, n, m;
+  phist_lidx ldB, ldB_1;
+  int n, m;
   _ST_ *Bval, *B_1val, *Berr=NULL, *B_1err=NULL;
   PHIST_TOUCH(Berr);
   PHIST_TOUCH(B_1err);
@@ -314,7 +318,7 @@ void SUBR(sdMat_svd)(TYPE(sdMat_ptr) A, TYPE(sdMat_ptr) U, TYPE(sdMat_ptr) Sigma
   PHIST_CHK_IERR(SUBR(sdMat_put_value)(Sigma,st::zero(),iflag),*iflag);
   
   _ST_ *A_val, *U_val, *Vt_val, *S_val;
-  int ldA, ldU, ldVt, ldSigma;
+  phist_lidx ldA, ldU, ldVt, ldSigma;
   PHIST_CHK_IERR(SUBR(sdMat_extract_view)(A,&A_val,&ldA,iflag),*iflag);
   PHIST_CHK_IERR(SUBR(sdMat_extract_view)(Sigma,&S_val,&ldSigma,iflag),*iflag);
   PHIST_CHK_IERR(SUBR(sdMat_extract_view)(U,&U_val,&ldU,iflag),*iflag);
@@ -355,30 +359,31 @@ void SUBR(sdMat_svd)(TYPE(sdMat_ptr) A, TYPE(sdMat_ptr) U, TYPE(sdMat_ptr) Sigma
     int mn=std::min(m,n);
     _MT_ RS_val[mn];
     const char jobu='A', jobvt='A';
+    int ildA=(int)ldA, ildU=(int)ldU, ildVt=(int)ldVt;
 #ifdef IS_COMPLEX
     _MT_ rwork[5*mn];
     PHIST_TG_PREFIX(GESVD)((phist_blas_char*)(&jobu),(phist_blas_char*)(&jobvt),&m,&n,
-        (st::blas_scalar_t*)A_val,&ldA,
+        (st::blas_scalar_t*)A_val,&ildA,
         (mt::blas_scalar_t*)RS_val,
-        (st::blas_scalar_t*)U_val,&ldU,
-        (st::blas_scalar_t*)Vt_val,&ldVt,
+        (st::blas_scalar_t*)U_val,&ildU,
+        (st::blas_scalar_t*)Vt_val,&ildVt,
         (st::blas_scalar_t*)&tmp_work,&lwork,
         (mt::blas_scalar_t*)rwork,iflag);
 #else
-    PHIST_TG_PREFIX(GESVD)((phist_blas_char*)(&jobu),(phist_blas_char*)(&jobvt),&m,&n,A_val,&ldA,RS_val,U_val,&ldU,Vt_val,&ldVt,&tmp_work,&lwork,iflag);
+    PHIST_TG_PREFIX(GESVD)((phist_blas_char*)(&jobu),(phist_blas_char*)(&jobvt),&m,&n,A_val,&ildA,RS_val,U_val,&ildU,Vt_val,&ildVt,&tmp_work,&lwork,iflag);
 #endif
     lwork=(int)st::real(tmp_work);
     work=new _ST_[lwork];
 #ifdef IS_COMPLEX
     PHIST_TG_PREFIX(GESVD)((phist_blas_char*)(&jobu),(phist_blas_char*)(&jobvt),&m,&n,
-        (st::blas_scalar_t*)A_val,&ldA,
+        (st::blas_scalar_t*)A_val,&ildA,
         (mt::blas_scalar_t*)RS_val,
-        (st::blas_scalar_t*)U_val,&ldU,
-        (st::blas_scalar_t*)Vt_val,&ldVt,
+        (st::blas_scalar_t*)U_val,&ildU,
+        (st::blas_scalar_t*)Vt_val,&ildVt,
         (st::blas_scalar_t*)work,&lwork,
         (mt::blas_scalar_t*)rwork,iflag);
 #else
-    PHIST_TG_PREFIX(GESVD)((phist_blas_char*)(&jobu),(phist_blas_char*)(&jobvt),&m,&n,A_val,&ldA,RS_val,U_val,&ldU,Vt_val,&ldVt,work,&lwork,iflag);
+    PHIST_TG_PREFIX(GESVD)((phist_blas_char*)(&jobu),(phist_blas_char*)(&jobvt),&m,&n,A_val,&ildA,RS_val,U_val,&ildU,Vt_val,&ildVt,work,&lwork,iflag);
 #endif
     delete [] work;
     int ldS=svals_only?0: ldSigma;
@@ -401,34 +406,34 @@ void SUBR(sdMat_qr)(TYPE(sdMat_ptr) Q, TYPE(sdMat_ptr) R, int* iflag)
 #include "phist_std_typedefs.hpp"
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   PHIST_PERFCHECK_VERIFY_SMALL;
-  phist_lidx mQ,nQ,mR,nR;
+  int mQ,nQ,mR,nR;
   phist_lidx ldR, ldQ;
   _ST_ *R_raw, *Q_raw;
   PHIST_CHK_IERR(SUBR(sdMat_get_nrows)(R,&mR,iflag),*iflag);
   PHIST_CHK_IERR(SUBR(sdMat_get_ncols)(R,&nR,iflag),*iflag);
   PHIST_CHK_IERR(SUBR(sdMat_get_nrows)(Q,&mQ,iflag),*iflag);
   PHIST_CHK_IERR(SUBR(sdMat_get_ncols)(Q,&nQ,iflag),*iflag);
-  
+
   // note: lapack accepts rectangular matrices, but I don't want to deal with the complexities
   // of that right now and I don't need them here.
   PHIST_CHK_IERR(*iflag = (nR==mR&&nR==nQ&&nR==mQ)? 0:PHIST_NOT_IMPLEMENTED,*iflag);
-  
+
   int k=nQ;
 
   PHIST_CHK_IERR(SUBR(sdMat_extract_view)(R,&R_raw,&ldR,iflag),*iflag);
   PHIST_CHK_IERR(SUBR(sdMat_extract_view)(Q,&Q_raw,&ldQ,iflag),*iflag);
-  
+
   int nb=1;
-  int ldT=nb;
+  int ldT=nb, ildR=(int)ldR, ildQ=(int)ldQ;
   _ST_ tau[ldT*k];
   _ST_ work[nb*k];
 
-  PHIST_CHK_IERR(PHIST_TG_PREFIX(GEQRT)(&k,&k,&nb,(st::blas_scalar_t*)R_raw,&ldR,(st::blas_scalar_t*)tau,&ldT,(st::blas_scalar_t*)work,iflag),*iflag);
+  PHIST_CHK_IERR(PHIST_TG_PREFIX(GEQRT)(&k,&k,&nb,(st::blas_scalar_t*)R_raw,&ildR,(st::blas_scalar_t*)tau,&ldT,(st::blas_scalar_t*)work,iflag),*iflag);
 
   PHIST_CHK_IERR(SUBR(sdMat_identity)(Q,iflag),*iflag);
   phist_blas_char side='L', trans='N';
   PHIST_CHK_IERR(PHIST_TG_PREFIX(GEMQRT)( &side, &trans, &k, &k, &k, &nb,
-                           (st::blas_scalar_t*)R_raw, &ldR, (st::blas_scalar_t*)tau, &ldT, (st::blas_scalar_t*)Q_raw, &ldQ, 
+                           (st::blas_scalar_t*)R_raw, &ildR, (st::blas_scalar_t*)tau, &ldT, (st::blas_scalar_t*)Q_raw, &ildQ,
                            (st::blas_scalar_t*)work, iflag),*iflag);
 
   // zero-out the lower triangular part of R, which currently still contains data from the QR decomp

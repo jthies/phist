@@ -739,7 +739,8 @@ void SUBR(ComputeEigenvectors)(TYPE(const_mvec_ptr) Q, TYPE(sdMat_ptr) R,
     // eigenvectors in S. Then compute the eigenvectors of A as Q*S.
     TYPE(sdMat_ptr) S, S0=NULL; // S0 views the first nX columns of S
     _ST_ *S_raw, *R_raw;
-    phist_lidx n,nX,ldR,ldS;
+    int n, nX;
+    phist_lidx ldR,ldS;
     PHIST_CHK_IERR(SUBR(mvec_num_vectors)(Q,&n,iflag),*iflag);
     PHIST_CHK_IERR(SUBR(mvec_num_vectors)(X,&nX,iflag),*iflag);
     PHIST_CHK_IERR(*iflag=(nX<=n)?0:PHIST_INVALID_INPUT,*iflag);

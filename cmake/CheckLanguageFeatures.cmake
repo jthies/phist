@@ -5,8 +5,11 @@
 # PHIST_HAVE_CXX11_THREADLOCAL
 # PHIST_HAVE_OPENMP_SIMD
 
+include (CMakePushCheckState)
 include(CheckCXXSourceCompiles)
 include(CheckFortranSourceCompiles)
+
+cmake_push_check_state() # Save variables
 
 set(CMAKE_REQUIRED_FLAGS "-std=c++11")
 
@@ -51,3 +54,5 @@ CHECK_Fortran_SOURCE_COMPILES("
   end program test
 " PHIST_HAVE_OPENMP_SIMD
 )
+
+cmake_pop_check_state() # Recover variables

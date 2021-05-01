@@ -89,6 +89,7 @@ extern "C" void SUBR(subspacejada)( TYPE(const_linearOp_ptr) AB_op,  TYPE(const_
   // copy options
   phist_EeigSort which=opts.which;
   _MT_ tol=opts.convTol;
+  int useRelTol=opts.relConvTol;
   int nEig=opts.numEigs;
   int blockDim=opts.blockSize;
   int lookAhead=opts.lookAhead>0?opts.lookAhead:2*blockDim;
@@ -227,7 +228,10 @@ PHIST_CHK_IERR(*iflag=(nQ_in==nR_in && nR_in==mR_in)?0:PHIST_INVALID_INPUT,*ifla
     BV_ = V_;
   }
   // array for the (possibly complex) eigenvalues for SchurDecomp
-  CT* ev_H = new CT[maxBase];
+  CT ev_H[maxBase];
+  // absolute values of the Ritz values
+  MT ev_abs[maxBase], resScaling[maxBase];
+  for (int i=0; i<maxBase; i++) resScaling[i]=mt::one();
 
   // create views on mvecs and sdMats with current dimensions
   int nV=0; //< current subspace dimension
@@ -593,6 +597,12 @@ PHIST_CHK_IERR(SUBR( sdMat_view_block ) (R_,  &R, 0, nEig_-1, 0, nEig_-1, iflag)
     PHIST_CHK_IERR(SUBR( mvec_times_sdMat ) (st::one(), BQ,   Rr_H,    -st::one(), t_res, iflag), *iflag);
     // calculate norm of the residual
     PHIST_CHK_IERR(SUBR( mvec_norm2 ) (t_res, resNorm+nConvEig, iflag), *iflag);
+    // scale by the eigenvalue
+    for (int j=nConvEig; j<nEig_; j++)
+    {
+      _ST_ ev_r=ct::real(ev_H[j]), ev_i=ct::imag(ev_H[j]);
+      ev_abs[j]=st::sqrt(ev_r*ev_r+ev_i*ev_i);
+    }
 #ifdef PHIST_TESTING
 {
   // check that the residual is orthogonal to Q (should be by construction!)
@@ -631,7 +641,11 @@ PHIST_CHK_IERR(SUBR( sdMat_view_block ) (R_,  &R, 0, nEig_-1, 0, nEig_-1, iflag)
     {
       PHIST_CHK_IERR( SUBR(ReorderPartialSchurDecomp)(R_H_raw+offR_H, ldaR_H, Q_H_raw+offQ_H, ldaQ_H, nV-nConvEig, nEig_-nConvEig, which, sqrt(tol), resNorm+nConvEig, ev_H+nConvEig, &resPermutation[nConvEig], iflag), *iflag);
       for(int i = nConvEig; i < nEig_; i++)
+      {
         resPermutation[i] += nConvEig;
+        ST ev_r=ct::real(ev_H[i]), ev_i=ct::imag(ev_H[i]);
+        ev_abs[i]=st::sqrt(ev_r*ev_r+ev_i*ev_i);
+      }
 #ifdef PHIST_TESTING
 PHIST_SOUT(PHIST_INFO,"resPermutation: ");
 for(int i = 0; i < nEig_; i++)
@@ -693,25 +707,39 @@ PHIST_SOUT(PHIST_INFO,"\n");
 }
 #endif
 
-    // check for converged eigenvalues
+    // check for converged eigenvalues. Depending on the input parameters,
+    // scale the residual norm with the absolute value of the eigenvalues.
+    for (int j=nConvEig; j<nEig_; j++)
+    {
+      if (useRelTol && ev_abs[j]>std::pow(mt::eps(),2.0/3.0))
+      {
+        resScaling[j]=ev_abs[j];
+      }
+      else
+      {
+        resScaling[j]=mt::one();
+      }
+    }
+
+
     int nNewConvEig = 0;
 #if PHIST_OUTLEV>=PHIST_EXTREME
     for(int i = 0; i < nConvEig; i++)
     {
-      PHIST_SOUT(PHIST_INFO,"In iteration %d:                    Locked eigenvalue %d is %16.8g%+16.8gi with residual %e\n", 
-        *nIter, i+1, ct::real(ev_H[i]),ct::imag(ev_H[i]), resNorm[i]);
+      PHIST_SOUT(PHIST_INFO,"In iteration %d:                    Locked eigenvalue %d is %16.8g%+16.8gi with %s residual %e\n",
+        *nIter, i+1, ct::real(ev_H[i]),ct::imag(ev_H[i]), useRelTol? "rel.":"abs.",resNorm[i]/resScaling[i]);
     }
 #endif
     for(int i = nConvEig; i < std::min(nEig,nEig_); i++)
     {
       if (resNorm[i]>0)
       {
-        PHIST_SOUT(PHIST_INFO,"In iteration %d: Current approximation for eigenvalue %d is %16.8g%+16.8gi with residual %e\n", 
-        *nIter, i+1, ct::real(ev_H[i]),ct::imag(ev_H[i]), resNorm[i]);
+        PHIST_SOUT(PHIST_INFO,"In iteration %d: Current approximation for eigenvalue %d is %16.8g%+16.8gi with %s residual %e\n",
+        *nIter, i+1, ct::real(ev_H[i]),ct::imag(ev_H[i]), useRelTol?"rel.":"abs.",resNorm[i]/resScaling[i]);
       }
       else
       {
-        PHIST_SOUT(PHIST_INFO,"In iteration %d: Current approximation for eigenvalue %d is %16.8g%+16.8gi (residual not yet available)\n", 
+        PHIST_SOUT(PHIST_INFO,"In iteration %d: Current approximation for eigenvalue %d is %16.8g%+16.8gi (residual not yet available)\n",
         *nIter, i+1, ct::real(ev_H[i]),ct::imag(ev_H[i]));
       }
 #ifndef IS_COMPLEX
@@ -720,13 +748,13 @@ PHIST_SOUT(PHIST_INFO,"\n");
         PHIST_SOUT(PHIST_WARNING, "Detected possible complex-conjugate eigenpair, but blockDim == 1 (you need at least blockDim=2 to detect complex-conjugate eigenpairs correctly)!\n");
       }
 #endif
-      if( resNorm[i] <= tol && i == nConvEig+nNewConvEig )
+      if( resNorm[i] <= tol*resScaling[i] && i == nConvEig+nNewConvEig )
       {
 #ifndef IS_COMPLEX
         // detect complex conjugate eigenvalue pairs
         if( mt::abs(ct::imag(ev_H[i])) > tol && i+1 < nEig_ )
         {
-          if( ct::abs(ct::conj(ev_H[i]) - ev_H[i+1]) < sqrt(tol) && resNorm[i+1] <= tol )
+          if( ct::abs(ct::conj(ev_H[i]) - ev_H[i+1]) < sqrt(tol) && resNorm[i+1] <= tol*resScaling[i+1] )
             nNewConvEig+=2;
           continue;
         }
@@ -739,8 +767,8 @@ PHIST_SOUT(PHIST_INFO,"\n");
 #if PHIST_OUTLEV>=PHIST_EXTREME
     for(int i = std::min(nEig,nEig_); i<nEig+blockDim-1; i++)
     {
-      PHIST_SOUT(PHIST_INFO,"In iteration %d:                additional Ritz value %d (%16.8g%+16.8gi) with residual %e\n", 
-        *nIter, i+1, ct::real(ev_H[i]),ct::imag(ev_H[i]),resNorm[i]);
+      PHIST_SOUT(PHIST_INFO,"In iteration %d:                additional Ritz value %d (%16.8g%+16.8gi) with %s residual %e\n",
+        *nIter, i+1, ct::real(ev_H[i]),ct::imag(ev_H[i]),useRelTol?"rel.":"abs.", resNorm[i]/resScaling[i]);
     }
 #endif
 
@@ -1043,8 +1071,6 @@ PHIST_TESTING_CHECK_SUBSPACE_INVARIANTS;
   PHIST_CHK_IERR(SUBR( mvec_delete  ) (BQtil,iflag), *iflag);
   PHIST_CHK_IERR(SUBR( mvec_delete  ) (Q,   iflag), *iflag);
   PHIST_CHK_IERR(SUBR( mvec_delete  ) (BQ,  iflag), *iflag);
-
-  delete[] ev_H;
 
   // delete mvecs and sdMats
   PHIST_CHK_IERR(SUBR( sdMat_delete ) (Q_H_,iflag), *iflag);

@@ -5,15 +5,11 @@
     set (CMAKE_CXX_FLAGS      "${CMAKE_CXX_FLAGS}     -DMKL_LP64")
   endif()
 
-  if(PHIST_HOST_OPTIMIZE)
-    set(ARCH_FLAG "-march=native")
-  endif()
-
   # -ffast-math kills high precision stuff!
   set(FAST_MATH "-fno-math-errno -ffinite-math-only -fno-signed-zeros -fno-trapping-math")
-  set (CMAKE_C_FLAGS_RELEASE        "-O3 ${FAST_MATH} ${ARCH_FLAG}")
-  set (CMAKE_CXX_FLAGS_RELEASE      "-O3 ${FAST_MATH} ${ARCH_FLAG}")
-  set (CMAKE_Fortran_FLAGS_RELEASE  "-O3 ${FAST_MATH} ${ARCH_FLAG}")
+  set (CMAKE_C_FLAGS_RELEASE        "-O3 ${FAST_MATH}")
+  set (CMAKE_CXX_FLAGS_RELEASE      "-O3 ${FAST_MATH}")
+  set (CMAKE_Fortran_FLAGS_RELEASE  "-O3 ${FAST_MATH}")
 
   set (CMAKE_C_FLAGS_RELWITHDEBINFO       "${CMAKE_C_FLAGS_RELEASE}       -g")
   set (CMAKE_CXX_FLAGS_RELWITHDEBINFO     "${CMAKE_CXX_FLAGS_RELEASE}     -g")
@@ -45,6 +41,6 @@
     endif()
   endif()
 
-  set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} ${ARCH_FLAG}")
-  set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} ${ARCH_FLAG}")
-  set(CMAKE_Fortran_FLAGS_DEBUG "${CMAKE_Fortran_FLAGS_DEBUG} ${ARCH_FLAG}")
+  set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG}")
+  set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG}")
+  set(CMAKE_Fortran_FLAGS_DEBUG "${CMAKE_Fortran_FLAGS_DEBUG}")
