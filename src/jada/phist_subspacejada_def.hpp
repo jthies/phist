@@ -600,8 +600,8 @@ PHIST_CHK_IERR(SUBR( sdMat_view_block ) (R_,  &R, 0, nEig_-1, 0, nEig_-1, iflag)
     // scale by the eigenvalue
     for (int j=nConvEig; j<nEig_; j++)
     {
-      _ST_ ev_r=ct::real(ev_H[j]), ev_i=ct::imag(ev_H[j]);
-      ev_abs[j]=st::sqrt(ev_r*ev_r+ev_i*ev_i);
+      MT ev_r=ct::real(ev_H[j]), ev_i=ct::imag(ev_H[j]);
+      ev_abs[j]=std::sqrt(ev_r*ev_r+ev_i*ev_i);
     }
 #ifdef PHIST_TESTING
 {
@@ -643,8 +643,8 @@ PHIST_CHK_IERR(SUBR( sdMat_view_block ) (R_,  &R, 0, nEig_-1, 0, nEig_-1, iflag)
       for(int i = nConvEig; i < nEig_; i++)
       {
         resPermutation[i] += nConvEig;
-        ST ev_r=ct::real(ev_H[i]), ev_i=ct::imag(ev_H[i]);
-        ev_abs[i]=st::sqrt(ev_r*ev_r+ev_i*ev_i);
+        MT ev_r=ct::real(ev_H[i]), ev_i=ct::imag(ev_H[i]);
+        ev_abs[i]=std::sqrt(ev_r*ev_r+ev_i*ev_i);
       }
 #ifdef PHIST_TESTING
 PHIST_SOUT(PHIST_INFO,"resPermutation: ");
