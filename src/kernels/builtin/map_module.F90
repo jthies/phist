@@ -328,7 +328,7 @@ end if
     type(Map_t), pointer :: map1,map2
     !------------------------------------------------------------
     
-    integer :: i, mpi_ierr
+    integer :: i, mpi_ierr, my_ierr, global_ierr
     logical :: map1_permuted, map2_permuted
 
     ! check if the two pointers refer to the same memory location
@@ -386,11 +386,13 @@ end if
           exit
         end if
       end do
-      call MPI_Allreduce(MPI_IN_PLACE,ierr,1,MPI_INTEGER,MPI_MAX,map1%comm,mpi_ierr)
+      my_ierr=ierr
+      call MPI_Allreduce(my_ierr,global_ierr,1,MPI_INTEGER,MPI_MAX,map1%comm,mpi_ierr)
       if (mpi_ierr/=MPI_SUCCESS) then
         ierr=PHIST_MPI_ERROR
         return
       end if
+      ierr=global_ierr
       if (ierr/=0) then
         ! we don't support this type of construction (both maps permuted with different orderings)
         ierr=-1
