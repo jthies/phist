@@ -1,3 +1,5 @@
+phist-1.9.5
+  - minor bug fixes for certain systems (ppc64le, Cray)
 phist-1.9.4
   - better way of setting compiler flag -march=native or similar
     using cmake feature tests
