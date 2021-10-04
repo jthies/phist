@@ -1171,7 +1171,7 @@ contains
   !==================================================================================
   !> calculate 2-norm of the vectors in a multivector
   subroutine mvec_norm2(mvec, vnrm, iflag)
-    use mpi
+    use mpi_f08
     !--------------------------------------------------------------------------------
     type(MVec_t), intent(in)    :: mvec
     real(kind=8), intent(out)   :: vnrm(mvec%jmin:mvec%jmax)
@@ -1602,7 +1602,7 @@ contains
   !==================================================================================
   ! dot product for mvecs
   subroutine mvec_dot_mvec(x,y,dot,iflag)
-    use mpi
+    use mpi_f08
     !--------------------------------------------------------------------------------
     type(MVec_t), intent(in)    :: x, y
     real(kind=8), intent(out)   :: dot(x%jmin:x%jmax)
@@ -1913,7 +1913,7 @@ contains
   !==================================================================================
   ! special gemm routine for the augmented mvec times sdmat variant
   subroutine mvec_times_sdmat_augmented(alpha,v,M,beta,w,N,iflag)
-    use mpi
+    use mpi_f08
     !--------------------------------------------------------------------------------
     real(kind=8),  intent(in)    :: alpha, beta
     type(MVec_t),  intent(in)    :: v
@@ -2161,7 +2161,7 @@ contains
   !==================================================================================
   ! special gemm routine for the augmented mvec times sdmat variant
   subroutine mvec_times_sdmat_add_mvec_times_sdMat(v,M,w,N,iflag)
-    use mpi
+    use mpi_f08
     !--------------------------------------------------------------------------------
     type(MVec_t),  intent(in)    :: v
     type(SDMat_t), intent(in)    :: M
@@ -2419,7 +2419,7 @@ contains
   !==================================================================================
   ! special gemm routine for mvecT_times_mvec
   subroutine mvecT_times_mvec(alpha,v,w,beta,m,iflag)
-    use mpi
+    use mpi_f08
     !--------------------------------------------------------------------------------
     real(kind=8),  intent(in)    :: alpha
     type(MVec_t),  intent(in)    :: v
@@ -2746,7 +2746,7 @@ contains
   !==================================================================================
   ! special augmented double-gemm routine for mvecT_times_mvec_times_sdMat_inplace
   subroutine mvecT_times_mvec_times_sdMat_inplace(alpha,v,w,n,beta,m,iflag)
-    use mpi
+    use mpi_f08
     !--------------------------------------------------------------------------------
     real(kind=8),  intent(in)    :: alpha
     type(MVec_t),  intent(in)    :: v
@@ -4259,7 +4259,7 @@ end subroutine phist_Dmvec_put_func
 
   subroutine phist_Dmvec_to_mvec(v_ptr, w_ptr, ierr) bind(C,name='phist_Dmvec_to_mvec_f')
     use, intrinsic :: iso_c_binding
-    use mpi
+    use mpi_f08
     !--------------------------------------------------------------------------------
     type(C_PTR),        value         :: v_ptr, w_ptr
     integer(C_INT),     intent(out)   :: ierr

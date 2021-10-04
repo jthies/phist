@@ -23,6 +23,7 @@
 
 !> Implements phist_map_* for builtin kernels
 module map_module
+  use mpi_f08, only: MPI_Comm
   implicit none
   private
 
@@ -38,7 +39,7 @@ module map_module
 
 
   type Map_t
-    integer :: comm
+    type(MPI_Comm) :: comm
     integer :: nProcs
     integer :: me
     !! offset array, length (0:nProcs)
@@ -72,7 +73,7 @@ contains
     use mpi_f08
     !------------------------------------------------------------
     type(Map_t),    intent(inout) :: map
-    integer,        intent(in)  :: comm
+    type(MPI_Comm),        intent(in)  :: comm
     integer(kind=8),intent(in)  :: n_glob
     logical,        intent(in)  :: verbose
     integer,        intent(out) :: ierr
@@ -125,7 +126,7 @@ end if
   !================================================================================
   ! check if two maps are compatible
   function map_compatible_map(map1, map2, reorder) result(res)
-    use mpi
+    use mpi_f08
     !------------------------------------------------------------
     type(Map_t),  intent(in)            :: map1, map2
     logical,      intent(in), optional  :: reorder
@@ -182,7 +183,7 @@ end if
 
   subroutine phist_map_create(map_ptr, comm_ptr, n_glob, ierr) bind(C,name='phist_map_create')
     use, intrinsic :: iso_c_binding
-    use mpi
+    use mpi_f08
     !------------------------------------------------------------
     type(C_PTR),        intent(out) :: map_ptr
     type(C_PTR),        value       :: comm_ptr
@@ -190,7 +191,7 @@ end if
     integer(C_INT),     intent(out) :: ierr
     !------------------------------------------------------------
     type(Map_t), pointer :: map
-    integer, pointer :: comm
+    type(MPI_Comm), pointer :: comm
     logical :: verbose
     !------------------------------------------------------------
     verbose = .not. CHECK_IFLAG(ierr,PHIST_SPARSEMAT_QUIET)
@@ -238,7 +239,7 @@ end if
 
   subroutine phist_map_get_comm(map_ptr, comm_ptr, ierr) bind(C,name='phist_map_get_comm')
     use, intrinsic :: iso_c_binding
-    use mpi
+    use mpi_f08
     !------------------------------------------------------------
     type(C_PTR),    value       :: map_ptr
     type(C_PTR),    intent(out) :: comm_ptr
@@ -255,7 +256,7 @@ end if
 
   subroutine phist_map_get_local_length(map_ptr, nloc, ierr) bind(C,name='phist_map_get_local_length')
     use, intrinsic :: iso_c_binding
-    use mpi
+    use mpi_f08
     !------------------------------------------------------------
     type(C_PTR),    value       :: map_ptr
     integer(C_INT), intent(out) :: nloc, ierr
@@ -270,7 +271,7 @@ end if
 
   subroutine phist_map_get_global_length(map_ptr, nglob, ierr) bind(C,name='phist_map_get_global_length')
     use, intrinsic :: iso_c_binding
-    use mpi
+    use mpi_f08
     !------------------------------------------------------------
     type(C_PTR),        value       :: map_ptr
     integer(C_INT64_T), intent(out) :: nglob
@@ -287,7 +288,7 @@ end if
 
   subroutine phist_map_get_ilower(map_ptr, ilower, ierr) bind(C,name='phist_map_get_ilower')
     use, intrinsic :: iso_c_binding
-    use mpi
+    use mpi_f08
     !------------------------------------------------------------
     type(C_PTR),        value       :: map_ptr
     integer(C_INT64_T), intent(out) :: ilower
@@ -304,7 +305,7 @@ end if
 
   subroutine phist_map_get_iupper(map_ptr, iupper, ierr) bind(C,name='phist_map_get_iupper')
     use, intrinsic :: iso_c_binding
-    use mpi
+    use mpi_f08
     !------------------------------------------------------------
     type(C_PTR),        value       :: map_ptr
     integer(C_INT64_T), intent(out) :: iupper
@@ -320,7 +321,7 @@ end if
 
   subroutine phist_maps_compatible(map1_ptr, map2_ptr, ierr) bind(C,name='phist_maps_compatible')
     use, intrinsic :: iso_c_binding
-    use mpi
+    use mpi_f08
     !------------------------------------------------------------
     type(C_PTR),        value       :: map1_ptr, map2_ptr
     integer(C_INT),     intent(out) :: ierr

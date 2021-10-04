@@ -131,7 +131,7 @@ contains
   !! multiplication for a distributed matrix in crs format.
   !! Also allocates necessary buffer space.
   subroutine setup_commBuff(mat,combuff, verbose)
-    use mpi
+    use mpi_f08
     type(CrsMat_t),      intent(in)    :: mat
     type(CrsCommBuff_t), intent(inout) :: combuff
     logical,             intent(in)    :: verbose
@@ -382,7 +382,7 @@ end do
   !! and setup persistent communication. nvec is nb above,
   !! and nblock is nb' above.
   subroutine alloc_buffers(B,comm,nvec,ierr)
-  use mpi  
+  use mpi_f08  
   implicit none
   
   TYPE(CrsCommBuff_t) :: B
@@ -668,7 +668,7 @@ end do
   !! \param outlev output verbosity level
   !! \param ierr returns value != 0 on error
   subroutine repartcrs(crsMat,outlev,ierr)
-    use mpi
+    use mpi_f08
     type(crsMat_t) :: crsMat
     integer,intent(in) :: outlev
     integer,intent(out) :: ierr
@@ -1188,7 +1188,7 @@ end do
   !! of each block. This is meant only for node-level performance studies right now.
   subroutine colorcrs(crsMat,dist,outlev,ierr)
       use, intrinsic :: iso_c_binding
-    use mpi
+    use mpi_f08
     implicit none
     type(crsMat_t),target :: crsMat
     ! distance (1 or 2)
@@ -1474,7 +1474,7 @@ end subroutine permute_local_matrix
   !> multiply crsmat with mvec
   subroutine crsmat_times_mvec(alpha, A, shifts, x, beta, y, ierr)
     use, intrinsic :: iso_c_binding, only: C_INT
-    use mpi
+    use mpi_f08
     !--------------------------------------------------------------------------------
     real(kind=8),   intent(in)    :: alpha
     type(CrsMat_t), intent(inout) :: A
@@ -1838,7 +1838,7 @@ end subroutine permute_local_matrix
     & bind(C,name='phist_DcrsMat_read_mm_f') ! circumvent bug in opari (openmp instrumentalization)
     use, intrinsic :: iso_c_binding
     use env_module, only: newunit
-    use mpi
+    use mpi_f08
     !--------------------------------------------------------------------------------
     type(C_PTR),        intent(out) :: A_ptr
     type(C_PTR),        value  :: comm_ptr
@@ -1979,7 +1979,7 @@ end subroutine permute_local_matrix
     & bind(C,name='phist_DcrsMat_read_mm_with_map_f') ! circumvent bug in opari (openmp instrumentalization)
     use, intrinsic :: iso_c_binding
     use env_module, only: newunit
-    use mpi
+    use mpi_f08
     !--------------------------------------------------------------------------------
     type(C_PTR),        intent(out) :: A_ptr
     type(C_PTR),        value  :: map_ptr
@@ -2059,7 +2059,7 @@ end subroutine permute_local_matrix
     & bind(C,name='phist_DcrsMat_create_fromRowFunc_f') ! circumvent bug in opari (openmp instrumentalization)
     use, intrinsic :: iso_c_binding
     use env_module, only: newunit
-    use mpi
+    use mpi_f08
     !--------------------------------------------------------------------------------
     type(C_PTR),        intent(out) :: A_ptr
     type(C_PTR),        value  :: comm_ptr
@@ -2980,7 +2980,7 @@ end if
   end subroutine phist_Dcarp_destroy
 
 subroutine Dspmv_import(A,x,ierr)
-use mpi
+use mpi_f08
 implicit none
 
   TYPE(crsMat_t) :: A
@@ -3079,7 +3079,7 @@ implicit none
 ! operation performed before an spMVM. On exit, the halo elements
 ! are found in A%comm_buf%recvData(1:nvec,:,1)
 subroutine Dcarp_import(A,x, ierr)
-  use mpi
+  use mpi_f08
   implicit none
 
   TYPE(crsMat_t) :: A
@@ -3131,7 +3131,7 @@ end subroutine Dcarp_import
 ! like carp_import, but for two vector blocks. Halo elements are put into
 ! A%comm_buff%recvData(1:nvec,:,K) for xK, K=1,2
 subroutine Dcarp_import2(A,x1,x2, ierr)
-  use mpi
+  use mpi_f08
   implicit none
 
   TYPE(crsMat_t) :: A
@@ -3198,7 +3198,7 @@ end subroutine Dcarp_import2
 ! by averaging. Before the next spMVM or CARP sweep, a standard
 ! halo import occurs to update the values on the other procs.
 subroutine Dcarp_average(A,x,invProcCount, ierr)
-  use mpi
+  use mpi_f08
   implicit none
 
   TYPE(crsMat_t) :: A
@@ -3275,7 +3275,7 @@ subroutine Dcarp_average(A,x,invProcCount, ierr)
 end subroutine Dcarp_average
 
 subroutine Dcarp_average2(A,x1,x2,invProcCount, ierr)
-  use mpi
+  use mpi_f08
   implicit none
 
   TYPE(crsMat_t) :: A
