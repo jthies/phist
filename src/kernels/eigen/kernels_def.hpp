@@ -3,13 +3,13 @@
 /* You may redistribute it and/or modify it under the terms of the BSD-style licence       */
 /* included in this software.                                                              */
 /*                                                                                         */
-/* Contact: Jonas Thies (Jonas.Thies@DLR.de)                                               */
+/* Contact: Jonas Thies (j.thies@tudelft.nl)                                               */
 /*                                                                                         */
 /*******************************************************************************************/
 /*! \file Eigen/kernels_def.hpp
  * included by Eigen/kernels.cpp
  * \author "Melven Roehrig-Zoellner <Melven.Roehrig-Zoellner@DLR.de>
- * \author "Jonas Thies <Jonas.Thies@DLR.de>
+ * \author "Jonas Thies <j.thies@tudelft.nl>
  *
 */
 

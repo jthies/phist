@@ -81,4 +81,4 @@ A more extensive list of publications can be found on
 Contact
 =======
 
-For questions or comments, please contact Jonas.Thies@DLR.de
+For questions or comments, please contact j.thies@tudelft.nl

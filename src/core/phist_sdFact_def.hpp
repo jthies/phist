@@ -3,14 +3,14 @@
 /* You may redistribute it and/or modify it under the terms of the BSD-style licence       */
 /* included in this software.                                                              */
 /*                                                                                         */
-/* Contact: Jonas Thies (Jonas.Thies@DLR.de)                                               */
+/* Contact: Jonas Thies (j.thies@tudelft.nl)                                               */
 /*                                                                                         */
 /*******************************************************************************************/
 /*! \file phist_sdFact_def.hpp
  * Generic Implementation of interface in phist_sdFact.h
  * (should eventually be used by e.g. GHOST as well).
  * 
- * \author "Jonas Thies" <Jonas.Thies@DLR.de>
+ * \author "Jonas Thies" <j.thies@tudelft.nl>
  * This implementation can be used by any kernel lib that provides
  * PHIST_HIGH_PRECISION_KERNELS and implements sdMat_extract_err.
 */

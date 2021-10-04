@@ -3,7 +3,7 @@
 /* You may redistribute it and/or modify it under the terms of the BSD-style licence       */
 /* included in this software.                                                              */
 /*                                                                                         */
-/* Contact: Jonas Thies (Jonas.Thies@DLR.de)                                               */
+/* Contact: Jonas Thies (j.thies@tudelft.nl)                                               */
 /*                                                                                         */
 /*******************************************************************************************/
 //! apply a transformation matrix M to a given search space V and AV, BV and the projection H=V'AV

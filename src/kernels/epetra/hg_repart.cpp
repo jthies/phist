@@ -3,7 +3,7 @@
 /* You may redistribute it and/or modify it under the terms of the BSD-style licence       */
 /* included in this software.                                                              */
 /*                                                                                         */
-/* Contact: Jonas Thies (Jonas.Thies@DLR.de)                                               */
+/* Contact: Jonas Thies (j.thies@tudelft.nl)                                               */
 /*                                                                                         */
 /*******************************************************************************************/
 // this file is an adaptation of an example from Trilinos 11.12.1, isorropia package.

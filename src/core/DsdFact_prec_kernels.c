@@ -3,13 +3,13 @@
 /* You may redistribute it and/or modify it under the terms of the BSD-style licence       */
 /* included in this software.                                                              */
 /*                                                                                         */
-/* Contact: Jonas Thies (Jonas.Thies@DLR.de)                                               */
+/* Contact: Jonas Thies (j.thies@tudelft.nl)                                               */
 /*                                                                                         */
 /*******************************************************************************************/
 /*! \file DsdFact_prec_kernels.c
  * Implementation of some serial LAPaCK like functions with high precision
  * \author "Melven Roehrig-Zoellner" <Melven.Roehrig-Zoellner@DLR.de>
- * \author "Jonas Thies" <Jonas.Thies@DLR.de>
+ * \author "Jonas Thies" <j.thies@tudelft.nl>
  *
  * This implementation can be used by any kernel lib that provides
  * PHIST_HIGH_PRECISION_KERNELS and implements sdMat_extract_err.

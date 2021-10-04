@@ -3,14 +3,14 @@
 /* You may redistribute it and/or modify it under the terms of the BSD-style licence       */
 /* included in this software.                                                              */
 /*                                                                                         */
-/* Contact: Jonas Thies (Jonas.Thies@DLR.de)                                               */
+/* Contact: Jonas Thies (j.thies@tudelft.nl)                                               */
 /*                                                                                         */
 /*******************************************************************************************/
 
 !> \file map_module.f90
 !! Defines map_module, the phist_map implementation of the builtin kernels
 !! \author "Melven Roehrig-Zoellner <Melven.Roehrig-Zoellner@DLR.de>
-!! \author "Jonas Thies <Jonas.Thies@DLR.de>
+!! \author "Jonas Thies <j.thies@tudelft.nl>
 !!
 
 #include "phist_config_fortran.h"
@@ -69,7 +69,7 @@ contains
   !================================================================================
   ! setup map from comm and number of rows
   subroutine map_setup(map, comm, n_glob, verbose, ierr)
-    use mpi
+    use mpi_f08
     !------------------------------------------------------------
     type(Map_t),    intent(inout) :: map
     integer,        intent(in)  :: comm
