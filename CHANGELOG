@@ -1,7 +1,8 @@
-develop
-  - update contact information Jonas Thies
 phist-1.9.5
-  - minor bug fixes for certain systems (ppc64le, Cray)
+  - update contact information Jonas Thies
+  - builtin kernels now use mpi_f08 module (adds type safety and prevents errors with
+  stricter fortran compilers)
+  - minor bug fixes for Power9 systems
 phist-1.9.4
   - better way of setting compiler flag -march=native or similar
     using cmake feature tests
