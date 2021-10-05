@@ -26,6 +26,7 @@ module crsmat_module
   use env_module,   only: allocate_aligned, deallocate_aligned
   use map_module,   only: Map_t, map_setup, map_compatible_map
   use mvec_module,  only: MVec_t, mvec_scale
+  use mpi_f08
   implicit none
 
   private
@@ -61,12 +62,12 @@ module crsmat_module
     integer,      allocatable :: sendRowBlkInd(:)     !< local row block index of the data in the sendBuffer, has size (sendBuffInd(nSendProcs+1)-1)
     integer,      allocatable :: sendBuffInd(:,:)     !< sorted Variant of sendRowBlkInd, hast size (size(sendRowBlkInd),2), first entry is the local row block index, second is the index in the send buffer
     integer(kind=8), allocatable :: recvRowBlkInd(:)     !< global row block index of the data in the recvBuffer, has size (recvBuffInd(nRecvProcs+1)-1)
-    integer,      allocatable :: sendRequests(:)      !< buffer for mpi send requests, has     size (nSendProcs,nb')
-    integer,      allocatable :: recvRequests(:)      !< buffer for mpi receive requests, has size (nRecvProcs,nb')
-    integer,      allocatable :: inv_sendRequests(:)  !< MPI requests for reversed communication in CARP-CG
-    integer,      allocatable :: inv_recvRequests(:)  !< MPI requests for reversed communication in CARP-CG
-    integer,      allocatable :: sendStatus(:,:)      !< buffer for mpi send status, has size (MPI_STATUS_SIZE,nSendProcs,nb')
-    integer,      allocatable :: recvStatus(:,:)      !< buffer for mpi receive status, has size (MPI_STATUS_SIZE,nRecvProcs,nb')
+    type(MPI_Request),      allocatable :: sendRequests(:)      !< buffer for mpi send requests, has size (nSendProcs,nb')
+    type(MPI_Request),      allocatable :: recvRequests(:)      !< buffer for mpi receive requests, has size (nRecvProcs,nb')
+    type(MPI_Request),      allocatable :: inv_sendRequests(:)  !< MPI requests for reversed communication in CARP-CG
+    type(MPI_Request),      allocatable :: inv_recvRequests(:)  !< MPI requests for reversed communication in CARP-CG
+    type(MPI_Status),      allocatable :: sendStatus(:)      !< buffer for mpi send status, has size (MPI_STATUS_SIZE,nSendProcs,nb')
+    type(MPI_Status),      allocatable :: recvStatus(:)      !< buffer for mpi receive status, has size (MPI_STATUS_SIZE,nRecvProcs,nb')
     integer,      allocatable :: recvIndices(:)       !< buffer for indices of received data, used for mpi_wait_some, has size(nRecvProcs)
   end type CrsCommBuff_t
 
@@ -196,8 +197,8 @@ end if
     combuff%inv_recvRequests=MPI_REQUEST_NULL
     allocate(combuff%inv_sendRequests(combuff%nRecvProcs*NBLOCKS))
     combuff%inv_sendRequests=MPI_REQUEST_NULL
-    allocate(combuff%sendStatus(MPI_STATUS_SIZE,combuff%nSendProcs*NBLOCKS))
-    allocate(combuff%recvStatus(MPI_STATUS_SIZE,combuff%nRecvProcs*NBLOCKS))
+    allocate(combuff%sendStatus(combuff%nSendProcs*NBLOCKS))
+    allocate(combuff%recvStatus(combuff%nRecvProcs*NBLOCKS))
     allocate(combuff%recvIndices(combuff%nRecvProcs))
 
 
@@ -237,8 +238,8 @@ end if
     do i=1,combuff%nSendProcs,1
       call mpi_recv(combuff%sendInd(i+1),1,MPI_INTEGER,&
         &           MPI_ANY_SOURCE,10,mat%row_map%Comm,&
-        &           combuff%sendStatus(:,i),ierr)
-      combuff%sendProcId(i) = combuff%sendStatus(MPI_SOURCE,i)
+        &           combuff%sendStatus(i),ierr)
+      combuff%sendProcId(i) = combuff%sendStatus(i)%MPI_SOURCE
     end do
 
 
@@ -386,7 +387,7 @@ end do
   implicit none
   
   TYPE(CrsCommBuff_t) :: B
-  INTEGER, intent(in) :: comm
+  type(MPI_Comm), intent(in) :: comm
   INTEGER, intent(in) :: nvec
   INTEGER, intent(out) :: ierr
   INTEGER :: i,j,k,l
@@ -1842,7 +1843,7 @@ end subroutine permute_local_matrix
     !--------------------------------------------------------------------------------
     type(C_PTR),        intent(out) :: A_ptr
     type(C_PTR),        value  :: comm_ptr
-    integer, pointer :: comm
+    type(MPI_Comm), pointer :: comm
     integer(C_INT),     value       :: filename_len
     character(C_CHAR),  intent(in)  :: filename_ptr(filename_len)
     integer(C_INT),     intent(out) :: ierr
@@ -2085,7 +2086,7 @@ end subroutine permute_local_matrix
     !integer :: funit
     integer(kind=8) :: localDim(2), globalDim(2)
     real(kind=8) :: wtime
-    integer, pointer :: comm
+    type(MPI_Comm), pointer :: comm
     logical :: verbose
     !--------------------------------------------------------------------------------
 
