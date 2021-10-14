@@ -3,12 +3,12 @@
 /* You may redistribute it and/or modify it under the terms of the BSD-style licence       */
 /* included in this software.                                                              */
 /*                                                                                         */
-/* Contact: Jonas Thies (Jonas.Thies@DLR.de)                                               */
+/* Contact: Jonas Thies (j.thies@tudelft.nl)                                               */
 /*                                                                                         */
 /*******************************************************************************************/
 /*! \file sdmat_syev_prec.cpp
  * interface to multiple-precision lapack routine Rsyev
- * \author "Jonas Thies" <Jonas.Thies@DLR.de>
+ * \author "Jonas Thies" <j.thies@tudelft.nl>
  *
 */
 

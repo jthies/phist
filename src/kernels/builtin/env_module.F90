@@ -3,7 +3,7 @@
 /* You may redistribute it and/or modify it under the terms of the BSD-style licence       */
 /* included in this software.                                                              */
 /*                                                                                         */
-/* Contact: Jonas Thies (Jonas.Thies@DLR.de)                                               */
+/* Contact: Jonas Thies (j.thies@tudelft.nl)                                               */
 /*                                                                                         */
 /*******************************************************************************************/
 
@@ -39,7 +39,8 @@ module env_module
   interface
   
     function phist_get_default_comm() bind(C,name='phist_get_default_comm_f')
-      INTEGER :: phist_get_default_comm
+      use mpi_f08, only: MPI_Comm
+      TYPE(MPI_Comm) :: phist_get_default_comm
     end function phist_get_default_comm
 
     function posix_memalign(p, align, n) bind(C)
@@ -90,12 +91,12 @@ contains
 
   subroutine phist_comm_create(comm_ptr, ierr) bind(C,name='phist_comm_create')
     use, intrinsic :: iso_c_binding
-    use mpi
+    use mpi_f08
     !------------------------------------------------------------
     type(C_PTR),    intent(out) :: comm_ptr
     integer(C_INT), intent(out) :: ierr
     !------------------------------------------------------------
-    integer, pointer :: comm
+    type(MPI_Comm), pointer :: comm
     !------------------------------------------------------------
     allocate(comm)
     comm = phist_get_default_comm()
@@ -119,12 +120,12 @@ contains
 
   subroutine phist_comm_get_rank(comm_ptr, rank, ierr) bind(C,name='phist_comm_get_rank')
     use, intrinsic :: iso_c_binding
-    use mpi
+    use mpi_f08
     !------------------------------------------------------------
     type(C_PTR),    value       :: comm_ptr
     integer(C_INT), intent(out) :: rank, ierr
     !------------------------------------------------------------
-    integer, pointer :: comm
+    type(MPI_Comm), pointer :: comm
     !------------------------------------------------------------
     call c_f_pointer(comm_ptr,comm)
     call mpi_comm_rank(comm,rank,ierr)
@@ -132,12 +133,12 @@ contains
 
   subroutine phist_comm_get_size(comm_ptr, nprocs, ierr) bind(C,name='phist_comm_get_size')
     use, intrinsic :: iso_c_binding
-    use mpi
+    use mpi_f08
     !------------------------------------------------------------
     type(C_PTR),    value       :: comm_ptr
     integer(C_INT), intent(out) :: nprocs, ierr
     !------------------------------------------------------------
-    integer, pointer :: comm
+    type(MPI_Comm), pointer :: comm
     !------------------------------------------------------------
     call c_f_pointer(comm_ptr,comm)
     call mpi_comm_size(comm,nprocs,ierr)

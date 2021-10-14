@@ -3,14 +3,14 @@
 /* You may redistribute it and/or modify it under the terms of the BSD-style licence       */
 /* included in this software.                                                              */
 /*                                                                                         */
-/* Contact: Jonas Thies (Jonas.Thies@DLR.de)                                               */
+/* Contact: Jonas Thies (j.thies@tudelft.nl)                                               */
 /*                                                                                         */
 /*******************************************************************************************/
 
 !> \file crsmat_module.f90
 !! defines crsmat_module, the sparseMat implementation of phist builtin kernels
 !! \author "Melven Roehrig-Zoellner <Melven.Roehrig-Zoellner@DLR.de>"
-!! \author "Jonas Thies <Jonas.Thies@DLR.de>"
+!! \author "Jonas Thies <j.thies@tudelft.nl>"
 !!
 
 #include "phist_config_fortran.h"
@@ -26,6 +26,7 @@ module crsmat_module
   use env_module,   only: allocate_aligned, deallocate_aligned
   use map_module,   only: Map_t, map_setup, map_compatible_map
   use mvec_module,  only: MVec_t, mvec_scale
+  use mpi_f08
   implicit none
 
   private
@@ -61,12 +62,12 @@ module crsmat_module
     integer,      allocatable :: sendRowBlkInd(:)     !< local row block index of the data in the sendBuffer, has size (sendBuffInd(nSendProcs+1)-1)
     integer,      allocatable :: sendBuffInd(:,:)     !< sorted Variant of sendRowBlkInd, hast size (size(sendRowBlkInd),2), first entry is the local row block index, second is the index in the send buffer
     integer(kind=8), allocatable :: recvRowBlkInd(:)     !< global row block index of the data in the recvBuffer, has size (recvBuffInd(nRecvProcs+1)-1)
-    integer,      allocatable :: sendRequests(:)      !< buffer for mpi send requests, has     size (nSendProcs,nb')
-    integer,      allocatable :: recvRequests(:)      !< buffer for mpi receive requests, has size (nRecvProcs,nb')
-    integer,      allocatable :: inv_sendRequests(:)  !< MPI requests for reversed communication in CARP-CG
-    integer,      allocatable :: inv_recvRequests(:)  !< MPI requests for reversed communication in CARP-CG
-    integer,      allocatable :: sendStatus(:,:)      !< buffer for mpi send status, has size (MPI_STATUS_SIZE,nSendProcs,nb')
-    integer,      allocatable :: recvStatus(:,:)      !< buffer for mpi receive status, has size (MPI_STATUS_SIZE,nRecvProcs,nb')
+    type(MPI_Request),      allocatable :: sendRequests(:)      !< buffer for mpi send requests, has size (nSendProcs,nb')
+    type(MPI_Request),      allocatable :: recvRequests(:)      !< buffer for mpi receive requests, has size (nRecvProcs,nb')
+    type(MPI_Request),      allocatable :: inv_sendRequests(:)  !< MPI requests for reversed communication in CARP-CG
+    type(MPI_Request),      allocatable :: inv_recvRequests(:)  !< MPI requests for reversed communication in CARP-CG
+    type(MPI_Status),      allocatable :: sendStatus(:)      !< buffer for mpi send status, has size (MPI_STATUS_SIZE,nSendProcs,nb')
+    type(MPI_Status),      allocatable :: recvStatus(:)      !< buffer for mpi receive status, has size (MPI_STATUS_SIZE,nRecvProcs,nb')
     integer,      allocatable :: recvIndices(:)       !< buffer for indices of received data, used for mpi_wait_some, has size(nRecvProcs)
   end type CrsCommBuff_t
 
@@ -131,7 +132,7 @@ contains
   !! multiplication for a distributed matrix in crs format.
   !! Also allocates necessary buffer space.
   subroutine setup_commBuff(mat,combuff, verbose)
-    use mpi
+    use mpi_f08
     type(CrsMat_t),      intent(in)    :: mat
     type(CrsCommBuff_t), intent(inout) :: combuff
     logical,             intent(in)    :: verbose
@@ -196,8 +197,8 @@ end if
     combuff%inv_recvRequests=MPI_REQUEST_NULL
     allocate(combuff%inv_sendRequests(combuff%nRecvProcs*NBLOCKS))
     combuff%inv_sendRequests=MPI_REQUEST_NULL
-    allocate(combuff%sendStatus(MPI_STATUS_SIZE,combuff%nSendProcs*NBLOCKS))
-    allocate(combuff%recvStatus(MPI_STATUS_SIZE,combuff%nRecvProcs*NBLOCKS))
+    allocate(combuff%sendStatus(combuff%nSendProcs*NBLOCKS))
+    allocate(combuff%recvStatus(combuff%nRecvProcs*NBLOCKS))
     allocate(combuff%recvIndices(combuff%nRecvProcs))
 
 
@@ -237,8 +238,8 @@ end if
     do i=1,combuff%nSendProcs,1
       call mpi_recv(combuff%sendInd(i+1),1,MPI_INTEGER,&
         &           MPI_ANY_SOURCE,10,mat%row_map%Comm,&
-        &           combuff%sendStatus(:,i),ierr)
-      combuff%sendProcId(i) = combuff%sendStatus(MPI_SOURCE,i)
+        &           combuff%sendStatus(i),ierr)
+      combuff%sendProcId(i) = combuff%sendStatus(i)%MPI_SOURCE
     end do
 
 
@@ -382,11 +383,11 @@ end do
   !! and setup persistent communication. nvec is nb above,
   !! and nblock is nb' above.
   subroutine alloc_buffers(B,comm,nvec,ierr)
-  use mpi  
+  use mpi_f08  
   implicit none
   
   TYPE(CrsCommBuff_t) :: B
-  INTEGER, intent(in) :: comm
+  type(MPI_Comm), intent(in) :: comm
   INTEGER, intent(in) :: nvec
   INTEGER, intent(out) :: ierr
   INTEGER :: i,j,k,l
@@ -668,7 +669,7 @@ end do
   !! \param outlev output verbosity level
   !! \param ierr returns value != 0 on error
   subroutine repartcrs(crsMat,outlev,ierr)
-    use mpi
+    use mpi_f08
     type(crsMat_t) :: crsMat
     integer,intent(in) :: outlev
     integer,intent(out) :: ierr
@@ -1188,7 +1189,7 @@ end do
   !! of each block. This is meant only for node-level performance studies right now.
   subroutine colorcrs(crsMat,dist,outlev,ierr)
       use, intrinsic :: iso_c_binding
-    use mpi
+    use mpi_f08
     implicit none
     type(crsMat_t),target :: crsMat
     ! distance (1 or 2)
@@ -1474,7 +1475,7 @@ end subroutine permute_local_matrix
   !> multiply crsmat with mvec
   subroutine crsmat_times_mvec(alpha, A, shifts, x, beta, y, ierr)
     use, intrinsic :: iso_c_binding, only: C_INT
-    use mpi
+    use mpi_f08
     !--------------------------------------------------------------------------------
     real(kind=8),   intent(in)    :: alpha
     type(CrsMat_t), intent(inout) :: A
@@ -1838,11 +1839,11 @@ end subroutine permute_local_matrix
     & bind(C,name='phist_DcrsMat_read_mm_f') ! circumvent bug in opari (openmp instrumentalization)
     use, intrinsic :: iso_c_binding
     use env_module, only: newunit
-    use mpi
+    use mpi_f08
     !--------------------------------------------------------------------------------
     type(C_PTR),        intent(out) :: A_ptr
     type(C_PTR),        value  :: comm_ptr
-    integer, pointer :: comm
+    type(MPI_Comm), pointer :: comm
     integer(C_INT),     value       :: filename_len
     character(C_CHAR),  intent(in)  :: filename_ptr(filename_len)
     integer(C_INT),     intent(out) :: ierr
@@ -1979,7 +1980,7 @@ end subroutine permute_local_matrix
     & bind(C,name='phist_DcrsMat_read_mm_with_map_f') ! circumvent bug in opari (openmp instrumentalization)
     use, intrinsic :: iso_c_binding
     use env_module, only: newunit
-    use mpi
+    use mpi_f08
     !--------------------------------------------------------------------------------
     type(C_PTR),        intent(out) :: A_ptr
     type(C_PTR),        value  :: map_ptr
@@ -2059,7 +2060,7 @@ end subroutine permute_local_matrix
     & bind(C,name='phist_DcrsMat_create_fromRowFunc_f') ! circumvent bug in opari (openmp instrumentalization)
     use, intrinsic :: iso_c_binding
     use env_module, only: newunit
-    use mpi
+    use mpi_f08
     !--------------------------------------------------------------------------------
     type(C_PTR),        intent(out) :: A_ptr
     type(C_PTR),        value  :: comm_ptr
@@ -2085,7 +2086,7 @@ end subroutine permute_local_matrix
     !integer :: funit
     integer(kind=8) :: localDim(2), globalDim(2)
     real(kind=8) :: wtime
-    integer, pointer :: comm
+    type(MPI_Comm), pointer :: comm
     logical :: verbose
     !--------------------------------------------------------------------------------
 
@@ -2980,7 +2981,7 @@ end if
   end subroutine phist_Dcarp_destroy
 
 subroutine Dspmv_import(A,x,ierr)
-use mpi
+use mpi_f08
 implicit none
 
   TYPE(crsMat_t) :: A
@@ -3079,7 +3080,7 @@ implicit none
 ! operation performed before an spMVM. On exit, the halo elements
 ! are found in A%comm_buf%recvData(1:nvec,:,1)
 subroutine Dcarp_import(A,x, ierr)
-  use mpi
+  use mpi_f08
   implicit none
 
   TYPE(crsMat_t) :: A
@@ -3131,7 +3132,7 @@ end subroutine Dcarp_import
 ! like carp_import, but for two vector blocks. Halo elements are put into
 ! A%comm_buff%recvData(1:nvec,:,K) for xK, K=1,2
 subroutine Dcarp_import2(A,x1,x2, ierr)
-  use mpi
+  use mpi_f08
   implicit none
 
   TYPE(crsMat_t) :: A
@@ -3198,7 +3199,7 @@ end subroutine Dcarp_import2
 ! by averaging. Before the next spMVM or CARP sweep, a standard
 ! halo import occurs to update the values on the other procs.
 subroutine Dcarp_average(A,x,invProcCount, ierr)
-  use mpi
+  use mpi_f08
   implicit none
 
   TYPE(crsMat_t) :: A
@@ -3275,7 +3276,7 @@ subroutine Dcarp_average(A,x,invProcCount, ierr)
 end subroutine Dcarp_average
 
 subroutine Dcarp_average2(A,x1,x2,invProcCount, ierr)
-  use mpi
+  use mpi_f08
   implicit none
 
   TYPE(crsMat_t) :: A

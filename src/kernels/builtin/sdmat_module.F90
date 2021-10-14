@@ -3,7 +3,7 @@
 /* You may redistribute it and/or modify it under the terms of the BSD-style licence       */
 /* included in this software.                                                              */
 /*                                                                                         */
-/* Contact: Jonas Thies (Jonas.Thies@DLR.de)                                               */
+/* Contact: Jonas Thies (j.thies@tudelft.nl)                                               */
 /*                                                                                         */
 /*******************************************************************************************/
 
@@ -19,6 +19,7 @@
 !! Everything should be straight-forward - not tuned specifically for
 !! performance as it is assumed that sdMats are much smaller mvecs
 module sdmat_module
+  use mpi_f08, only: MPI_Comm
   implicit none
   private
 
@@ -50,7 +51,7 @@ module sdmat_module
     !--------------------------------------------------------------------------------
     integer     :: imin, imax
     integer     :: jmin, jmax
-    integer     :: comm
+    type(MPI_Comm) :: comm
     real(kind=8), contiguous, pointer :: val(:,:) => null()
 #ifdef PHIST_HIGH_PRECISION_KERNELS
     real(kind=8), contiguous, pointer :: err(:,:) => null()
@@ -241,7 +242,7 @@ contains
 
   subroutine phist_DsdMat_create(sdmat_ptr, nrows, ncols, comm_ptr, ierr) bind(C,name='phist_DsdMat_create_f')
     use, intrinsic :: iso_c_binding
-    use mpi
+    use mpi_f08
     !--------------------------------------------------------------------------------
     type(C_PTR),        intent(out) :: sdmat_ptr
     integer(C_INT),     value       :: nrows, ncols
@@ -249,7 +250,7 @@ contains
     integer(C_INT),     intent(out) :: ierr
     !--------------------------------------------------------------------------------
     type(sdmat_t), pointer :: sdmat
-    integer, pointer :: comm
+    type(MPI_Comm), pointer :: comm
 #ifdef F_DEBUG
     integer(C_INTPTR_T) :: dummy
 #endif
@@ -285,7 +286,7 @@ contains
   subroutine phist_DsdMat_create_view(sdmat_ptr, comm_ptr,c_val,lda,nrows,ncols,ierr) &
   bind(C,name='phist_DsdMat_create_view_f')
     use, intrinsic :: iso_c_binding
-    use mpi
+    use mpi_f08
     !--------------------------------------------------------------------------------
     type(C_PTR),        intent(out) :: sdmat_ptr
     type(C_PTR),        value       :: comm_ptr
@@ -295,7 +296,7 @@ contains
     integer(C_INT),     intent(out) :: ierr
     !--------------------------------------------------------------------------------
     type(sdmat_t), pointer :: sdmat
-    integer, pointer :: comm
+    type(MPI_Comm), pointer :: comm
 #ifdef F_DEBUG
     integer(C_INTPTR_T) :: dummy
 #endif
@@ -618,7 +619,7 @@ contains
 
   subroutine phist_DsdMat_random(sdmat_ptr, ierr) bind(C,name='phist_DsdMat_random_f')
     use, intrinsic :: iso_c_binding
-    use mpi
+    use mpi_f08
     !--------------------------------------------------------------------------------
     type(C_PTR),        value         :: sdmat_ptr
     integer(C_INT),     intent(out)   :: ierr
@@ -651,7 +652,7 @@ contains
 
   subroutine phist_DsdMat_identity(sdmat_ptr, ierr) bind(C,name='phist_DsdMat_identity_f')
     use, intrinsic :: iso_c_binding
-    use mpi
+    use mpi_f08
     !--------------------------------------------------------------------------------
     type(C_PTR),        value         :: sdmat_ptr
     integer(C_INT),     intent(out)   :: ierr

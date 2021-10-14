@@ -40,7 +40,7 @@ ${CHANGES, showDependencies=true, format="[%a] %r %m\\n"}
 
 Failed tests:
 ${FAILED_TESTS, showStack=false,showMessage=false,maxTests=200}
- ''', subject: '$DEFAULT_SUBJECT',  attachLog: true, attachmentsPattern: 'build_*/test.log.gz', compressLog: true, replyTo: 'Jonas.Thies@DLR.de', to: 'Jonas.Thies@DLR.de'
+ ''', subject: '$DEFAULT_SUBJECT',  attachLog: true, attachmentsPattern: 'build_*/test.log.gz', compressLog: true, replyTo: 'j.thies@tudelft.nl', to: 'j.thies@tudelft.nl'
  }
 }
 

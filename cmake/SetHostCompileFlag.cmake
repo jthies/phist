@@ -47,7 +47,7 @@ foreach (LANG C CXX Fortran)
 endforeach()
 
 if(PHIST_HOST_OPTIMIZE)
-  if (CMAKE_HOST_SYSTEM_PROCESSOR STREQUAL "ppc64le")
+  if (CMAKE_SYSTEM_PROCESSOR STREQUAL "ppc64le")
     add_definitions(-DNO_WARN_X86_INTRINSICS)
   endif()
 endif()
