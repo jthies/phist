@@ -697,8 +697,6 @@ add_library(phist_solvers ${PHIST_KRYLOV_SOURCE}
                           ${PHIST_JADA_SOURCE})
 add_library(phist_precon ${PHIST_PRECON_SOURCE})
 
-message(STATUS "pre: ${library_list}")
-
 LIST(APPEND library_list phist_solvers)
 LIST(APPEND library_list phist_precon)
 LIST(APPEND library_list phist_core)
@@ -711,8 +709,6 @@ target_link_libraries(phist_kernels_${PHIST_KERNEL_LIB} phist_tools ${SCAMACLIB}
 target_link_libraries(phist_core phist_kernels_${PHIST_KERNEL_LIB})
 target_link_libraries(phist_precon phist_core)
 target_link_libraries(phist_solvers phist_precon)
-
-message(STATUS "after links: ${library_list}")
 
 if(PHIST_KERNEL_LIB STREQUAL "ghost")
   find_package(GHOST 1.1.1 REQUIRED CONFIG)
@@ -879,11 +875,30 @@ if (PHIST_KERNEL_LIB STREQUAL "tpetra")
     # compiling tpetra/kokkos with CUDA is tricky and requires special flags
     # and a special wrapper script to be used as the MPI C++ compiler
     set(IS_TPETRA_CUDA 1)
-    if (NOT CMAKE_CXX_COMPILER MATCHES "mpicxx" AND "$ENV{OMPI_CXX}" MATCHES "nvcc_wrapper" AND "$ENV{OMPI_MPICXX_CXXFLAGS}" MATCHES "-expt-extended-lambda")
-      message(WARNING "NOTE: in order to compile Tpetra/Kokkos code with CUDA we recommend using OpenMPI"
-                      "      and setting the environment variables CXX=mpicxx, OMPI_CXX=nvcc_wrapper, and OMPI_MPICXX_CXXFLAGS='-std=c++11 -expt-extended-lambda'."
-                      "      The nvcc_wrapper script is installed along with Trilinos. You can unset the OMPI variables after 'make libs' to avoid compiling everytingg with nvcc.")
+    # these source files must be compiled with the nvcc_wrapper script provided by Trilinos/Kokkos,
+    # and since it includes Kokkos headers, needs some special flags in order to be compiled
+    if (NOT CMAKE_CXX_COMPILER MATCHES "nvcc_wrapper")
+      message(WARNING "Since your Trilinos installation supports CUDA, you may need to set the CMAKE_CXX_COMPILER to nvcc_wrapper"
+                     " for phist. The nvcc_wrapper script is provided by Kokkos in your Trilinos installation.")
     endif()
+    set(PHIST_TPETRA_SOURCE ${PROJECT_SOURCE_DIR}/src/kernels/tpetra/kernels.cpp
+                      ${PROJECT_SOURCE_DIR}/src/kernels/tpetra/kernelsS.cpp
+                      ${PROJECT_SOURCE_DIR}/src/kernels/tpetra/kernelsD.cpp
+                      ${PROJECT_SOURCE_DIR}/src/kernels/tpetra/kernelsC.cpp
+                      ${PROJECT_SOURCE_DIR}/src/kernels/tpetra/kernelsZ.cpp
+                      ${PROJECT_SOURCE_DIR}/src/krylov/phist_anasaziS.cpp
+                      ${PROJECT_SOURCE_DIR}/src/krylov/phist_anasaziD.cpp
+                      ${PROJECT_SOURCE_DIR}/src/krylov/phist_anasaziC.cpp
+                      ${PROJECT_SOURCE_DIR}/src/krylov/phist_anasaziZ.cpp
+                      ${PROJECT_SOURCE_DIR}/src/krylov/phist_belosS.cpp
+                      ${PROJECT_SOURCE_DIR}/src/krylov/phist_belosD.cpp
+                      ${PROJECT_SOURCE_DIR}/src/krylov/phist_belosC.cpp
+                      ${PROJECT_SOURCE_DIR}/src/krylov/phist_belosZ.cpp
+                      ${PROJECT_SOURCE_DIR}/src/precon/phist_preconS.cpp
+                      ${PROJECT_SOURCE_DIR}/src/precon/phist_preconD.cpp
+                      ${PROJECT_SOURCE_DIR}/src/precon/phist_preconC.cpp
+                      ${PROJECT_SOURCE_DIR}/src/precon/phist_preconZ.cpp)
+    set_source_files_properties(${PHIST_TPETRA_SOURCE} PROPERTIES COMPILE_FLAGS ${Kokkos_CXX_FLAGS})
   endif()
 endif()
 
