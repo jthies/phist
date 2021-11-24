@@ -33,6 +33,27 @@
 #include "phist_kernels.h"
 #endif
 
+//! map owner object
+class MapOwner
+{
+
+  public:
+
+    //! constructor
+    MapOwner(phist_map_ptr m=nullptr){m_=m;}
+
+    //! destructor
+    ~MapOwner(){int iflag=0; if (m_!=nullptr) phist_map_delete)(m_,&iflag);}
+
+    //! set map pointer
+    void set(map_ptr m) {m_=m;}
+
+  private:
+
+    //! wraped map pointer
+    phist_map_ptr m_;
+};
+
 //! mvec owner object
 template<typename T> class MvecOwner
 {
