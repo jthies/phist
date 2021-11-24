@@ -40,18 +40,24 @@ class MapOwner
   public:
 
     //! constructor
-    MapOwner(phist_map_ptr m=nullptr){m_=m;}
+    MapOwner(phist_map_ptr v=nullptr){v_=v;}
 
     //! destructor
-    ~MapOwner(){int iflag=0; if (m_!=nullptr) phist_map_delete)(m_,&iflag);}
+    ~MapOwner(){int iflag=0; if (v_!=nullptr) phist_map_delete(v_,&iflag);}
 
     //! set map pointer
-    void set(map_ptr m) {m_=m;}
+    void set(phist_map_ptr v) {v_=v;}
+
+    //! get map pointer
+    phist_map_ptr get() {return v_;}
+
+    //! get map pointer (const)
+    phist_const_map_ptr get() const {return v_;}
 
   private:
 
     //! wraped map pointer
-    phist_map_ptr m_;
+    phist_map_ptr v_;
 };
 
 //! mvec owner object
