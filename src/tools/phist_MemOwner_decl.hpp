@@ -29,6 +29,8 @@ extern "C" void SUBR(sdMat_delete)(TYPE(sdMat_ptr) V, int* iflag);
 //!     the user having to call SUBR(mvec_delete)
 //!     }
 
+namespace phist {
+
 //! mvec owner object
 template<> class MvecOwner<_ST_>
 {
@@ -113,3 +115,4 @@ template<> class SparseMatOwner<_ST_>
     TYPE(sparseMat_ptr) v_;
 };
 
+}//namespace phist

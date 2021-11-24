@@ -308,7 +308,7 @@ PHIST_CHK_IERR(*iflag=(nQ_in==nR_in && nR_in==mR_in)?0:PHIST_INVALID_INPUT,*ifla
     PHIST_CHK_IERR(SUBR(mvec_create)(&v0,AB_op->domain_map,nv0,iflag),*iflag);
     PHIST_CHK_IERR(SUBR(mvec_random)(v0,iflag),*iflag);
   }
-  MvecOwner<_ST_> _v0(v0);
+  phist::MvecOwner<_ST_> _v0(v0);
 
   nV = nv0;
 

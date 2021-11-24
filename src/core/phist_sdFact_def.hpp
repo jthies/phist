@@ -215,7 +215,7 @@ void SUBR(sdMat_pseudo_inverse)(TYPE(sdMat_ptr) A_gen, int* rank, _MT_ rankTol, 
   PHIST_CHK_IERR(SUBR(sdMat_create)(&U,m,m,comm,iflag),*iflag);
   PHIST_CHK_IERR(SUBR(sdMat_create)(&Sigma,m,n,comm,iflag),*iflag);
   PHIST_CHK_IERR(SUBR(sdMat_create)(&Vt,n,n,comm,iflag),*iflag);
-  SdMatOwner<_ST_> _Sigma(Sigma),_U(U),_Vt(Vt);
+  phist::SdMatOwner<_ST_> _Sigma(Sigma),_U(U),_Vt(Vt);
 
   // eigenvalue decomposition, A = V*Sigma*W'
   *iflag=iflag_in;
@@ -279,7 +279,7 @@ void SUBR(sdMat_pseudo_inverse)(TYPE(sdMat_ptr) A_gen, int* rank, _MT_ rankTol, 
   // USig <- U*inv(Sigma)
   TYPE(sdMat_ptr) USig=NULL;
   PHIST_CHK_IERR(SUBR(sdMat_create)(&USig,m,n,comm,iflag),*iflag);
-  SdMatOwner<_ST_> _USig(USig);
+  phist::SdMatOwner<_ST_> _USig(USig);
   PHIST_CHK_IERR(SUBR(sdMat_times_sdMat)(st::one(),U,Sigma,st::zero(),USig,iflag),*iflag);
   
   // A <- U*inv(Sigma)*V'

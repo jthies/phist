@@ -33,6 +33,8 @@
 #include "phist_kernels.h"
 #endif
 
+namespace phist {
+
 //! map owner object
 class MapOwner
 {
@@ -77,6 +79,8 @@ template<typename T> class SparseMatOwner
 {
   typedef typename T::MissingImplementationOfSparseMatOwnerClass error;
 };
+
+}//namespace phist
 
 #define PHIST_CLASSFILE_DEF "phist_MemOwner_decl.hpp"
 #include "phist_gen_all.h"
