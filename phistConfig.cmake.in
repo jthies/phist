@@ -32,6 +32,11 @@ if(@PHIST_HAVE_GHOST@)
   list(APPEND PHIST_LIBRARIES ${GHOST_LIBRARIES})
 endif()
 
+if(@TPL_ENABLE_Trilinos@)
+  include(CMakeFindDependencyMacro)
+  find_dependency(Trilinos @Trilinos_VERSION@)
+endif()
+
 if(@PHIST_KERNEL_LIB_PETSC@)
   link_directories(@PETSC_LIBRARY_DIRS@)
 endif()
