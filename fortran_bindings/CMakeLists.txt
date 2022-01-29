@@ -71,7 +71,7 @@ foreach (base ${BASENAMES_TI})
 # preprocess C header file
   add_custom_command(
       OUTPUT ${TARGET_DIR}/${base}-2.CFWRAPPER_SKIP.h
-      COMMAND  gcc
+      COMMAND  ${CMAKE_C_COMPILER}
       ARGS ${INC_FLAGS} ${C_DEFINES} ${C_FLAGS} -E ${base}/${base}-1.CFWRAPPER_SKIP.h > ${base}/${base}-2.CFWRAPPER_SKIP.h
       DEPENDS ${TARGET_DIR}/${base}-1.CFWRAPPER_SKIP.h
  )
@@ -107,7 +107,7 @@ foreach (base ${BASENAMES})
     # preprocess C header file
     add_custom_command(
         OUTPUT ${TARGET_DIR}/${tcl_base}-2.CFWRAPPER_SKIP.h
-        COMMAND  gcc
+        COMMAND  ${CMAKE_C_COMPILER}
         ARGS ${INC_FLAGS} ${C_DEFINES} ${C_FLAGS} -E ${tcl_base}/${tcl_base}-1.CFWRAPPER_SKIP.h > ${tcl_base}/${tcl_base}-2.CFWRAPPER_SKIP.h
         DEPENDS ${TARGET_DIR}/${tcl_base}-1.CFWRAPPER_SKIP.h
         )
@@ -145,6 +145,7 @@ add_custom_command(
 add_library(phist_fort ${FFILES} ${FSTATIC})
 #set_target_properties(phist_fort PROPERTIES DEPENDS cf)
 set_target_properties(phist_fort PROPERTIES Fortran_MODULE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
+target_include_directories(phist_fort PUBLIC ${MPI_Fortran_MODULE_DIR})
 
 # the type-specific modules depend on the general ones, e.g. phist_jada_s.F90 needs phist_jada.mod to compile.
 # I think CMake should be able to figure out module dependencies, but maybe it's confused by our code generation.
@@ -158,6 +159,7 @@ foreach(TESTNAME ${TEST_DRIVERS})
         add_executable(test_fortran_${TESTNAME} test/${TESTNAME}.F90)
 
         target_link_libraries(test_fortran_${TESTNAME} phist_fort ${library_list} ${MPI_Fortran_LIBRARIES})
+        target_include_directories(test_fortran_${TESTNAME} PUBLIC ${MPI_Fortran_MODULE_DIR})
 
         add_test(NAME fortran_${TESTNAME} COMMAND ${TEST_ENV} ./test_fortran_${TESTNAME})
         set_tests_properties(fortran_${TESTNAME} PROPERTIES PASS_REGULAR_EXPRESSION "[. \n]*ALL TESTS PASSED[. \n]*")

@@ -171,7 +171,7 @@ if (NOT TPL_LAPACKE_LIBRARIES)
     # note: lapacke is included in the mkl library
     set(TPL_LAPACKE_LIBRARIES ${TPL_LAPACK_LIBRARIES} CACHE STRING "full library names of lapack and blas." FORCE)
   else()
-    find_library (LAPACKE_LIBRARY lapacke ${LAPACKE_LIBDIR})
+    find_library (LAPACKE_LIBRARY NAMES lapacke openblas ${LAPACKE_LIBDIR})
     if (LAPACKE_LIBRARY MATCHES "LAPACKE_LIBRARY-NOTFOUND")
       message(FATAL_ERROR "Did not find the LAPACKe library based on the LAPACK_LIBRARIES you provided, please set "
                           "LAPACKE_LIBRARIES and LAPACKE_INCLUDE_DIRS instead (including lapacke,lapack and blas library "
