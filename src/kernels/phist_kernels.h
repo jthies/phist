@@ -172,6 +172,8 @@ void phist_context_delete(phist_context_ptr vctx, int* iflag);
 void phist_bench_stream_load(double* mean_bw, double *max_bw, int* iflag);
 //! simple store dominated streaming benchmark
 void phist_bench_stream_store(double* mean_bw, double* max_bw, int* iflag);
+//! simple stream copy benchmark
+void phist_bench_stream_copy(double* mean_bw, double* max_bw, int* iflag);
 //! simple stream triad benchmark
 void phist_bench_stream_triad(double* mean_bw, double* max_bw, int* iflag);
 //!@}
