@@ -150,7 +150,7 @@ elseif(TPL_LAPACK_LIBRARIES)
 elseif (CMAKE_C_COMPILER_ID STREQUAL "Intel")
   set(TPL_LAPACKE_LIBRARIES "MKL_VIA_FLAG")
   set(TPL_LAPACKE_INCLUDE_DIRS "MKL_VIA_FLAG")
-  set(MKL_FLAG "-mkl=sequential")
+  set(MKL_FLAG "-qmkl=sequential")
   set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${MKL_FLAG}")
 else()
   # try to find lapack and blas using the standard CMake module.
