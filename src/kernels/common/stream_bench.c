@@ -181,6 +181,84 @@ void dbench_stream_store_destroy(double* x, int* ierr)
   dbench_stream_load_destroy(x,ierr);
 }
 
+////////////////////////// COPY //////////////////////////////////////
+
+//! allocate memory for bench_stream_copy_run
+void dbench_stream_copy_create(double** x, double** y, int* ierr)
+{
+  dbench_stream_load_create(x,ierr); if(*ierr != 0 ) return;
+  dbench_stream_load_create(y,ierr); if(*ierr != 0 ) return;
+}
+
+
+//! stream copy micro benchmark, determines the bandwidth
+void dbench_stream_copy_run(const aligned_double *restrict x, aligned_double *restrict y, const double *restrict res, double *restrict bw, int *restrict ierr)
+{
+  // start timing
+  double wtime = stream_bench_get_wtime();
+
+#ifdef PHIST_HAVE_AVX512
+  __m512d a = _mm512_set_pd(*res,*res,*res,*res,*res,*res,*res,*res);
+#elif defined(PHIST_HAVE_AVX)
+  __m256d a = _mm256_set_pd(*res,*res,*res,*res);
+#elif defined(PHIST_HAVE_SSE)
+  __m128d a = _mm_set_pd(*res,*res);
+#else
+  double a = *res;
+#endif
+#pragma omp parallel for schedule(static)
+  for(int i = 0; i < PHIST_BENCH_LARGE_N; i+=CHUNK)
+  {
+#ifdef PHIST_HAVE_AVX512
+    __m512d x0 = _mm512_load_pd(x+i+0);
+    _mm512_stream_pd(y+i+0,x0);
+#elif defined(PHIST_HAVE_AVX)
+    __m256d x0 = _mm256_load_pd(x+i+0);
+    __m256d x4 = _mm256_load_pd(x+i+4);
+
+    _mm256_stream_pd(y+i+0,x0);
+    _mm256_stream_pd(y+i+4,x4);
+#elif defined(PHIST_HAVE_SSE)
+    __m128d x0 = _mm_load_pd(x+i+0);
+    __m128d x2 = _mm_load_pd(x+i+2);
+    __m128d x4 = _mm_load_pd(x+i+4);
+    __m128d x6 = _mm_load_pd(x+i+6);
+
+    _mm_stream_pd(y+i+0,x0);
+    _mm_stream_pd(y+i+2,x2);
+    _mm_stream_pd(y+i+4,x4);
+    _mm_stream_pd(y+i+6,x6);
+#else
+    y[i+0]=x[i+0];
+    y[i+1]=x[i+1];
+    y[i+2]=x[i+2];
+    y[i+3]=x[i+3];
+    y[i+4]=x[i+4];
+    y[i+5]=x[i+5];
+    y[i+6]=x[i+6];
+    y[i+7]=x[i+7];
+#endif
+  }
+
+  // end timing
+  wtime = stream_bench_get_wtime() - wtime;
+
+  // calculate bandwidth
+  *bw = 2*sizeof(double)*PHIST_BENCH_LARGE_N / wtime;
+
+  *ierr = 0;
+}
+
+
+//! delete memory for bench_stream_copy_run
+void dbench_stream_copy_destroy(double* x, double* y, int* ierr)
+{
+  dbench_stream_load_destroy(x,ierr); if(*ierr != 0 ) return;
+  dbench_stream_load_destroy(y,ierr); if(*ierr != 0 ) return;
+}
+
+
+////////////////////////// TRIAD //////////////////////////////////////
 
 //! allocate memory for bench_stream_triad_run
 void dbench_stream_triad_create(double** x, double** y, double** z, int* ierr)
@@ -284,4 +362,5 @@ void dbench_stream_triad_destroy(double* x, double* y, double *z, int* ierr)
   dbench_stream_load_destroy(y,ierr); if(*ierr != 0 ) return;
   dbench_stream_load_destroy(z,ierr); if(*ierr != 0 ) return;
 }
+
 
