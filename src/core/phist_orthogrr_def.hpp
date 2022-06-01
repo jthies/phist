@@ -127,7 +127,7 @@ void SUBR(orthogrrB)(TYPE(const_mvec_ptr) W, TYPE(mvec_ptr) V, TYPE(mvec_ptr) BV
     }
 
     // memory management
-    SdMatOwner<_ST_> _R(R),_R1_tmp(R1_tmp),_R_1(R_1),_WtV(WtV),_VtV_I(VtV_I),_WtW_inv(WtW_inv),_EWtV(EWtV);
+    phist::SdMatOwner<_ST_> _R(R),_R1_tmp(R1_tmp),_R_1(R_1),_WtV(WtV),_VtV_I(VtV_I),_WtW_inv(WtW_inv),_EWtV(EWtV);
 
     int rank = m;
     MT VtV_err = mt::zero();

@@ -136,7 +136,7 @@ class TYPE(projOp_data)
 
   TYPE(const_mvec_ptr)  V;
   TYPE(const_mvec_ptr)  W;
-  MvecOwner<_ST_> _V, _W; // these objects make sure that some temporary storage is freed when the object is deleted
+  phist::MvecOwner<_ST_> _V, _W; // these objects make sure that some temporary storage is freed when the object is deleted
 };
 
 //! apply for jadaOp
@@ -352,7 +352,7 @@ extern "C" void SUBR(skewProjOp_create)(TYPE(const_linearOp_ptr) P_op,
     PHIST_CHK_IERR(phist_map_get_comm(P_op->domain_map,&comm,iflag),*iflag);
     PHIST_CHK_IERR(SUBR(sdMat_create)(&BVtPV, nproj,nproj,comm,iflag),*iflag);
     PHIST_CHK_IERR(SUBR(sdMat_create)(&M, nproj,nproj,comm,iflag),*iflag);
-    SdMatOwner<_ST_> _BVtPV(BVtPV), _M(M);
+    phist::SdMatOwner<_ST_> _BVtPV(BVtPV), _M(M);
 
     PHIST_CHK_IERR(SUBR(mvecT_times_mvec)(st::one(),BV,PV,st::zero(),BVtPV,iflag),*iflag);
 

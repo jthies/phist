@@ -60,7 +60,7 @@ extern "C" void SUBR(blockedBiCGStab_iterate)(TYPE(const_linearOp_ptr) Aop, TYPE
 
   TYPE(mvec_ptr) sol=NULL;
   PHIST_CHK_IERR(SUBR(mvec_view_block)(sol_in,&sol,0,numSys-1,iflag),*iflag);
-  MvecOwner<_ST_> _sol(sol), _p(p),_q(q),_r(r),_r0(r0),_s(s),_t(t);
+  phist::MvecOwner<_ST_> _sol(sol), _p(p),_q(q),_r(r),_r0(r0),_s(s),_t(t);
 
   // set x=0, p=r=r0=b
   PHIST_CHK_IERR(SUBR(mvec_put_value)(sol,st::zero(),iflag),*iflag);

@@ -568,7 +568,7 @@ PrintSdMat(PHIST_DEBUG,"reconstructed X",mat2_vp_,m_lda_,1,mpi_comm_);
     _MT_ tol=mt::eps()*100;
 #endif
 
-    SdMatOwner<_ST_> _U(U),_Vt(Vt),_UtU(UtU),_VtV(VtV);
+    phist::SdMatOwner<_ST_> _U(U),_Vt(Vt),_UtU(UtU),_VtV(VtV);
 
     // initialize Sigma, U and V with random entries, this should not hurt...
     //SUBR(sdMat_put_value)(Sigma,st::zero(),&iflag_);

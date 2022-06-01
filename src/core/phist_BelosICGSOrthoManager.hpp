@@ -66,7 +66,7 @@ namespace Belos {
 
     pk::sdMat_create(&Bphist,ncolsX,ncolsX,comm,&iflag);
     pk::sdMat_create(&XtMX,ncolsX,ncolsX,comm,&iflag);
-    SdMatOwner< _ST_ > _Bphist(Bphist),_XtMX(XtMX), _Cphist;
+    phist::SdMatOwner< _ST_ > _Bphist(Bphist),_XtMX(XtMX), _Cphist;
     
     if (Q.size()>1)
     {

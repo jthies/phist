@@ -156,7 +156,7 @@ void SUBR(jadaCorrectionSolver_run)(TYPE(jadaCorrectionSolver_ptr) me,
         res0=NULL;
         PHIST_CHK_IERR(SUBR(mvec_view_block)((TYPE(mvec_ptr))res,&res0,resIndex[0],resIndex[0],iflag),*iflag);
       }
-      MvecOwner<_ST_> _res0(res0!=res?res0:NULL);
+      phist::MvecOwner<_ST_> _res0(res0!=res?res0:NULL);
       PHIST_CHK_IERR(me->customSolver_run1(me->customSolver_,AB_op,B_op,Qtil,BQtil,(double)st::real(sigma[0]),
         (double)st::imag(sigma[0]), res0,
         (double)tol[0],maxIter,t,useIMGS,iflag),*iflag);
@@ -250,7 +250,7 @@ void SUBR(jadaCorrectionSolver_run)(TYPE(jadaCorrectionSolver_ptr) me,
   }*/
 
   // make sure these vectors get deleted at the end of the scope
-  MvecOwner<_ST_> _q(q!=Qtil?q:NULL),_Bq(( (Bq!=q)&&(Bq!=BQtil) )?Bq:NULL);
+  phist::MvecOwner<_ST_> _q(q!=Qtil?q:NULL),_Bq(( (Bq!=q)&&(Bq!=BQtil) )?Bq:NULL);
   
   if (preconUpdate!=0)
   {
@@ -285,7 +285,7 @@ void SUBR(jadaCorrectionSolver_run)(TYPE(jadaCorrectionSolver_ptr) me,
       PHIST_CHK_IERR(SUBR(mvec_view_block)((TYPE(mvec_ptr))res,&_res,jlower,jupper,iflag),*iflag);
     }
     // make sure the view gets deleted at the end of the scope
-    MvecOwner<_ST_> __res(_res!=res?_res:NULL);
+    phist::MvecOwner<_ST_> __res(_res!=res?_res:NULL);
     // wrap the preconditioner so that apply_shifted is called
     TYPE(linearOp_ptr) jadaPrec=NULL;
 
@@ -328,7 +328,7 @@ void SUBR(jadaCorrectionSolver_run)(TYPE(jadaCorrectionSolver_ptr) me,
         // pass in the last k columns of Qtil (the current approximate eigenspace we're solving for)
         TYPE(mvec_ptr) V=NULL;
         PHIST_CHK_IERR(SUBR(mvec_view_block)((TYPE(mvec_ptr))Qtil,&V,std::max(numProj-k,0),numProj-1,iflag),*iflag);
-        MvecOwner<_ST_> _V(V);
+        phist::MvecOwner<_ST_> _V(V);
         if (me->method_==phist_BICGSTAB)
         {
           PHIST_CHK_NEG_IERR(SUBR(blockedBiCGStab_iterate)(&jadaOp, jadaPrec, _res,_t, V, k, &nIter, tol, iflag),*iflag);
@@ -399,7 +399,7 @@ void SUBR(jadaCorrectionSolver_run)(TYPE(jadaCorrectionSolver_ptr) me,
   }
   
   // in case a preconditioned copy was made, delete it at the end of the scope
-  MvecOwner<_ST_> _rhs(rhs!=res?rhs:NULL);
+  phist::MvecOwner<_ST_> _rhs(rhs!=res?rhs:NULL);
 
   int nextSystem = 0;
 

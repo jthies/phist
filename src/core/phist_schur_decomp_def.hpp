@@ -93,7 +93,11 @@ PHIST_TASK_BEGIN_SMALLDETERMINISTIC(ComputeTask)
 #endif
     }
   }
-  PHIST_CHK_IERR(PHIST_TOUCH("GEES"),*iflag);
+  if (*iflag>0)
+  {
+    PHIST_SOUT(PHIST_WARNING,"Lapack routine xGEES returned positive value INfo=%d, input size was m=%d\n",*iflag,m);
+  }
+  PHIST_CHK_NEG_IERR(PHIST_TOUCH("GEES"),*iflag);
 
 #if PHIST_OUTLEV>=PHIST_DEBUG
 //PHIST_OUT(0,"eigenvalues of unsorted Schur form:\n");
@@ -748,7 +752,7 @@ void SUBR(ComputeEigenvectors)(TYPE(const_mvec_ptr) Q, TYPE(sdMat_ptr) R,
     PHIST_CHK_IERR(SUBR(mvec_get_comm)(Q,&comm,iflag),*iflag);
     PHIST_CHK_IERR(SUBR(sdMat_create)(&S,n,n,comm,iflag),*iflag);
     PHIST_CHK_IERR(SUBR(sdMat_view_block)(S,&S0,0,n-1,0,nX-1,iflag),*iflag);
-    SdMatOwner<ST> _S(S),_S0(S0);
+    phist::SdMatOwner<ST> _S(S),_S0(S0);
 
     PHIST_CHK_IERR(SUBR(sdMat_extract_view)(S,&S_raw, &ldS,iflag),*iflag);
     PHIST_CHK_IERR(SUBR(sdMat_extract_view)(R,&R_raw, &ldR,iflag),*iflag);
