@@ -13,10 +13,16 @@
 extern "C" {
 #endif
 
+//! kernel with loads:stores:flops 1:0:0
 void phist_bench_stream_load(double* mean_bw, double* max_bw, int* iflag);
 
+//! kernel with loads:stores/flops 0:1:0
 void phist_bench_stream_store(double* mean_bw, double* max_bw, int* iflag);
 
+//! kernel with loads:stores:flops 1:1:0
+void phist_bench_stream_copy(double* mean_bw, double* max_bw, int* iflag);
+
+//! kernel with loads:stores:flops 2:1:2
 void phist_bench_stream_triad(double* mean_bw, double* max_bw, int* iflag);
 
 

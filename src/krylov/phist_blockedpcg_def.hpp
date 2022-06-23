@@ -62,7 +62,7 @@ extern "C" void SUBR(blockedPCG)(TYPE(const_linearOp_ptr) Aop, TYPE(const_linear
   }
   TYPE(mvec_ptr) sol=NULL;
   PHIST_CHK_IERR(SUBR(mvec_view_block)(sol_in,&sol,0,numSys-1,iflag),*iflag);
-  MvecOwner<_ST_> _sol(sol), _p(p),_q(q),_r(r),_r0(r0),_z(z!=r?z:NULL);
+  phist::MvecOwner<_ST_> _sol(sol), _p(p),_q(q),_r(r),_r0(r0),_z(z!=r?z:NULL);
 
   // set x=p=0, r=r0=b, z=P*r
   PHIST_CHK_IERR(SUBR(mvec_put_value)(sol,st::zero(),iflag),*iflag);

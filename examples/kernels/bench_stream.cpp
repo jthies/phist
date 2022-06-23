@@ -30,14 +30,16 @@ int main(int argc, char** argv)
 PHIST_MAIN_TASK_BEGIN
 
 #ifndef PHIST_KERNEL_LIB_MAGMA
-  double max_bw_load,max_bw_store,max_bw_triad;
-  double mean_bw_load,mean_bw_store,mean_bw_triad;
+  double max_bw_load,  max_bw_store,  max_bw_copy,  max_bw_triad;
+  double mean_bw_load, mean_bw_store, mean_bw_copy, mean_bw_triad;
   PHIST_ICHK_IERR(phist_bench_stream_load(&mean_bw_load,&max_bw_load,&iflag),iflag);
   PHIST_ICHK_IERR(phist_bench_stream_store(&mean_bw_store,&max_bw_store,&iflag),iflag);
+  PHIST_ICHK_IERR(phist_bench_stream_copy(&mean_bw_copy,&max_bw_copy,&iflag),iflag);
   PHIST_ICHK_IERR(phist_bench_stream_triad(&mean_bw_triad,&max_bw_triad,&iflag),iflag);
 #else
   mean_bw_load=0.0;  max_bw_load=0.0;
   mean_bw_store=0.0; max_bw_store=0.0;
+  mean_bw_copy=0.0; max_bw_copy=0.0;
   mean_bw_triad=0.0; max_bw_triad=0.0;
   PHIST_SOUT(PHIST_WARNING,"benchmark not implemented correctly with MAGMA\n");
 #endif
@@ -45,9 +47,12 @@ PHIST_MAIN_TASK_BEGIN
 // output in GB/s
 max_bw_load/=1.0e9;
 max_bw_store/=1.0e9;
+max_bw_copy/=1.0e9;
 max_bw_triad/=1.0e9;
+
 mean_bw_load/=1.0e9;
 mean_bw_store/=1.0e9;
+mean_bw_copy/=1.0e9;
 mean_bw_triad/=1.0e9;
 
 
@@ -60,13 +65,16 @@ MPI_Comm_size(MPI_COMM_WORLD,&comm_size);
 size=comm_size;
 
 // collect the results for printing them
-double all_mean_store[comm_size], all_mean_load[comm_size], all_mean_triad[comm_size];
+double all_mean_store[comm_size], all_mean_load[comm_size], all_mean_copy[comm_size], all_mean_triad[comm_size];
 
 MPI_Gather(&mean_bw_load,1,MPI_DOUBLE,
            all_mean_load,1,MPI_DOUBLE,0,MPI_COMM_WORLD);
 
 MPI_Gather(&mean_bw_store,1,MPI_DOUBLE,
            all_mean_store,1,MPI_DOUBLE,0,MPI_COMM_WORLD);
+
+MPI_Gather(&mean_bw_copy,1,MPI_DOUBLE,
+           all_mean_copy,1,MPI_DOUBLE,0,MPI_COMM_WORLD);
 
 MPI_Gather(&mean_bw_triad,1,MPI_DOUBLE,
            all_mean_triad,1,MPI_DOUBLE,0,MPI_COMM_WORLD);
@@ -90,7 +98,7 @@ if (rank==0)
 
   PHIST_SOUT(PHIST_INFO,"\n|  load     |");
   for (int i=0; i<size; i++)
-  { 
+  {
     fprintf(stdout," %5.3g |",all_mean_load[i]);
   }
   PHIST_SOUT(PHIST_INFO,"\n|  store    |");
@@ -99,9 +107,15 @@ if (rank==0)
     fprintf(stdout," %5.3g |",all_mean_store[i]);
   }
 
+  PHIST_SOUT(PHIST_INFO,"\n|  copy    |");
+  for (int i=0; i<size; i++)
+  {
+    fprintf(stdout," %5.3g |",all_mean_copy[i]);
+  }
+
   PHIST_SOUT(PHIST_INFO,"\n|  triad    |");
   for (int i=0; i<size; i++)
-{   
+  {
     fprintf(stdout," %5.3g |",all_mean_triad[i]);
   }
 

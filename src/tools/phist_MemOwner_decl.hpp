@@ -29,6 +29,8 @@ extern "C" void SUBR(sdMat_delete)(TYPE(sdMat_ptr) V, int* iflag);
 //!     the user having to call SUBR(mvec_delete)
 //!     }
 
+namespace phist {
+
 //! mvec owner object
 template<> class MvecOwner<_ST_>
 {
@@ -43,6 +45,12 @@ template<> class MvecOwner<_ST_>
     
     //! set mvec pointer
     void set(TYPE(mvec_ptr) v) {v_=v;}
+
+    //! get mvec pointer
+    TYPE(mvec_ptr) get() {return v_;}
+
+    //! get mvec pointer (const)
+    TYPE(const_mvec_ptr) get() const {return v_;}
 
   private:
   
@@ -67,6 +75,12 @@ template<> class SdMatOwner<_ST_>
     //! set sdMat pointer
     void set(TYPE(sdMat_ptr) v) {v_=v;}
 
+    //! get sdMat pointer
+    TYPE(sdMat_ptr) get() {return v_;}
+
+    //! get sdMat pointer (const)
+    TYPE(const_sdMat_ptr) get() const {return v_;}
+
   private:
   
     //! wraped sdMat pointer
@@ -89,9 +103,16 @@ template<> class SparseMatOwner<_ST_>
     //! set sparseMat pointer
     void set(TYPE(sparseMat_ptr) v) {v_=v;}
 
+    //! get sparseMat pointer
+    TYPE(sparseMat_ptr) get() {return v_;}
+
+    //! get sparseMat pointer (const)
+    TYPE(const_sparseMat_ptr) get() const {return v_;}
+
   private:
   
     //! wraped sparseMat pointer
     TYPE(sparseMat_ptr) v_;
 };
 
+}//namespace phist

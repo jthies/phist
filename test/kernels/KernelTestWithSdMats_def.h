@@ -450,7 +450,7 @@ static void PrintSdMat(int outlev, std::string label,
     // create temporary object for A*B (or A^T*B etc.)
     TYPE(sdMat_ptr) AB=NULL;
     PHIST_CHK_IERR(SUBR(sdMat_create)(&AB,nrA,ncB,comm_,iflag),*iflag);
-    SdMatOwner<_ST_> _AB(AB);
+    phist::SdMatOwner<_ST_> _AB(AB);
     
     if (transA)
     {
@@ -459,7 +459,7 @@ static void PrintSdMat(int outlev, std::string label,
         // (A'*B') = (B*A)' since we don't have a kernel function for this case
         TYPE(sdMat_ptr) BA=NULL;
         PHIST_CHK_IERR(SUBR(sdMat_create)(&BA,nrB,ncA,comm_,iflag),*iflag);
-        SdMatOwner<_ST_> _BA(BA);
+        phist::SdMatOwner<_ST_> _BA(BA);
         PHIST_CHK_IERR(SUBR(sdMat_times_sdMat)(st::one(),B,A,st::zero(),BA,iflag),*iflag);
         PHIST_CHK_IERR(SUBR(sdMatT_add_sdMat)(st::one(),BA,st::zero(),AB,iflag),*iflag);
       }

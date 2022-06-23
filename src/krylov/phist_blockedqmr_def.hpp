@@ -55,11 +55,11 @@ extern "C" void SUBR(blockedQMR_iterate)(TYPE(const_linearOp_ptr) Aop, TYPE(cons
   PHIST_CHK_IERR(SUBR(mvec_create) (&p,  Aop->domain_map, numSys, iflag), *iflag);
   PHIST_CHK_IERR(SUBR(mvec_create) (&u,  Aop->domain_map, numSys, iflag), *iflag);
   PHIST_CHK_IERR(SUBR(mvec_create) (&d,  Aop->domain_map, numSys, iflag), *iflag);
-  MvecOwner<_ST_> _r(r), _rp(rp), _v(v), _t(t), _q(q), _p(p), _u(u), _d(d);
+  phist::MvecOwner<_ST_> _r(r), _rp(rp), _v(v), _t(t), _q(q), _p(p), _u(u), _d(d);
   
   TYPE(mvec_ptr) sol=NULL;
   PHIST_CHK_IERR(SUBR(mvec_view_block)(sol_in,&sol,0,numSys-1,iflag),*iflag);
-  MvecOwner<_ST_> _sol(sol);
+  phist::MvecOwner<_ST_> _sol(sol);
 
   // compute initial residual
   // assuming x0 = 0, r = rhs

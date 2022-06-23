@@ -89,9 +89,9 @@ void phist_comm_create(phist_comm_ptr* comm, int* iflag);
 //!
 //! Only do this for comms obtained by phist_comm_create.
 void phist_comm_delete(phist_comm_ptr comm, int* iflag);
-//! get the rank of the calling node
+//! get the rank of the calling MPI process in comm.
 void phist_comm_get_rank(phist_const_comm_ptr comm, int* rank, int* iflag);
-//! get the number of MPI asks
+//! get the number of MPI processes in comm.
 void phist_comm_get_size(phist_const_comm_ptr comm, int* size, int* iflag);
 //! get MPI comm.
 //!
@@ -172,6 +172,8 @@ void phist_context_delete(phist_context_ptr vctx, int* iflag);
 void phist_bench_stream_load(double* mean_bw, double *max_bw, int* iflag);
 //! simple store dominated streaming benchmark
 void phist_bench_stream_store(double* mean_bw, double* max_bw, int* iflag);
+//! simple stream copy benchmark
+void phist_bench_stream_copy(double* mean_bw, double* max_bw, int* iflag);
 //! simple stream triad benchmark
 void phist_bench_stream_triad(double* mean_bw, double* max_bw, int* iflag);
 //!@}

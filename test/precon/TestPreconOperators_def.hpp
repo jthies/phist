@@ -251,7 +251,7 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,_N_,MATNAME>,
         ASSERT_EQ(0,iflag_);
         
         TYPE(mvec_ptr) Prhs=rhs;
-        MvecOwner<_ST_> _Prhs;        
+        phist::MvecOwner<_ST_> _Prhs;
         if (leftPrec!=NULL)
         {
           SUBR(jadaOp_set_leftPrecond)(jdOp,leftPrec,&iflag_);
@@ -289,7 +289,7 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,_N_,MATNAME>,
         ASSERT_EQ(0,*iflag);
         
         // make sure these views are eventually deleted
-        MvecOwner<_ST_> _rhs0(rhs0), _Prhs0(Prhs0),_sol0(sol0);
+        phist::MvecOwner<_ST_> _rhs0(rhs0), _Prhs0(Prhs0),_sol0(sol0);
         
         for (int i=1; i<nv; i++)
         {
@@ -420,7 +420,7 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,_N_,MATNAME>,
       TYPE(mvec_ptr) pq=NULL;
       PHISTTEST_MVEC_CLONE_SHAPE(&pq,q_,&iflag_);
       ASSERT_EQ(0,iflag_);
-      MvecOwner<_ST_> _pq(pq);
+      phist::MvecOwner<_ST_> _pq(pq);
       SUBR(linearOp_apply)(st::one(),jdPrec_,q_,st::zero(),pq,&iflag_);
       ASSERT_EQ(0,iflag_);
       
@@ -553,8 +553,8 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,_N_,MATNAME>,
       ASSERT_EQ(0,iflag_);
       SUBR(sdMat_create)(&R2,nQ,nQ,comm_,&iflag_);
       ASSERT_EQ(0,iflag_);
-      MvecOwner<_ST_> _Q1(Q1),_Q2(Q2);
-      SdMatOwner<_ST_> _R1(R1),_R2(R2);
+      phist::MvecOwner<_ST_> _Q1(Q1),_Q2(Q2);
+      phist::SdMatOwner<_ST_> _R1(R1),_R2(R2);
       
       _CT_ ev1[nQ],ev2[nQ];
       _MT_ resNorm1[nQ],resNorm2[nQ];

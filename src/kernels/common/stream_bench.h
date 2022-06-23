@@ -39,6 +39,15 @@ void dbench_stream_store_run(double* x, const double* res, double* bw, int* ierr
 void dbench_stream_store_destroy(double* x, int* ierr);
 
 
+//! allocate memory for bench_stream_copy_run
+void dbench_stream_copy_create(double** x, double** y, int* ierr);
+
+//! stream copy micro benchmark, determines the bandwidth
+void dbench_stream_copy_run(const double* x, double* y, const double* res, double* bw, int* ierr);
+
+//! delete memory for bench_stream_triad_run
+void dbench_stream_copy_destroy(double* x, double* y, int* ierr);
+
 //! allocate memory for bench_stream_triad_run
 void dbench_stream_triad_create(double** x, double** y, double** z, int* ierr);
 
