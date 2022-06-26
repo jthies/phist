@@ -35,6 +35,7 @@ endif()
 if(@TPL_ENABLE_Trilinos@)
   include(CMakeFindDependencyMacro)
   find_dependency(Trilinos @Trilinos_VERSION@)
+  list(APPEND PHIST_INCLUDE_DIRS ${Trilinos_INCLUDE_DIRS})
 endif()
 
 if(@PHIST_KERNEL_LIB_PETSC@)
