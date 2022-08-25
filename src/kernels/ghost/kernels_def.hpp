@@ -541,11 +541,26 @@ extern "C" void SUBR(mvec_extract_view)(TYPE(mvec_ptr) vV, _ST_** val, phist_lid
   PHIST_CHK_IERR(*iflag=check_local_size(V->stride),*iflag);
   *lda = V->stride;
 
+  if (*iflag&PHIST_MVEC_RUN_ON_DEVICE)
+  {
+    if (V->traits.location & GHOST_LOCATION_DEVICE)
+    {
+      *val=(ST*)V->cu_val;
+      return
+    }
+    else
+    {
+      PHIST_OUT(PHIST_ERROR,"%s, PHIST_MVEC_RUN_ON_DEVICE requested, but mvec has no device side\n",__FUNCTION__);
+      *iflag=-2;
+      *val = NULL;
+      return;
+    }
+
   if (V->val==NULL)
   {
     if (V->traits.location == GHOST_LOCATION_DEVICE)
     {
-      if (V->traits.flags & GHOST_DENSEMAT_NOT_RELOCATE) {      
+      if (V->traits.flags & GHOST_DENSEMAT_NOT_RELOCATE) {
         static bool first_time=true;
         if (first_time)
         {

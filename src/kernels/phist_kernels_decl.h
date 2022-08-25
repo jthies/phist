@@ -237,6 +237,9 @@ void SUBR(mvec_get_data)(TYPE(const_mvec_ptr) V, _ST_* data, phist_lidx lda, int
 //!     the data is consistent with the copy on a GPU, always call mvec_from_device before
 //!     accessing the raw data and mvec_upload after manipulating it. Make sure that you
 //!     know which copy is up-to-date at what point.
+//!     Alternatively, you can retrieve the device pointer with this function by setting
+//!     *iflag = PHIST_RUN_ON_DEVICE on input. In that case, if the kernel library supports
+//!     it and this vector lives on the device, *V_raw will point to the device memory.
 //!
 void SUBR(mvec_extract_view)(TYPE(mvec_ptr) V, _ST_** V_raw,
         phist_lidx* lda, int* iflag);
