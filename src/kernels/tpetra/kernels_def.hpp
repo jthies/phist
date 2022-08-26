@@ -339,7 +339,20 @@ extern "C" void SUBR(mvec_extract_view)(TYPE(mvec_ptr) V, _ST_** val, phist_lidx
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   PHIST_CAST_PTR_FROM_VOID(Traits<_ST_>::mvec_t, mVec, V, *iflag);
 
-  Teuchos::ArrayRCP<_ST_> valptr = mVec->get1dViewNonConst();
+  Teuchos::ArrayRCP<_ST_> valptr = Teuchos::null;
+  
+  if (*iflag & PHIST_MVEC_RUN_ON_DEVICE)
+  {
+    auto X_lcl = mVec->getLocalViewDevice(Access::ReadWrite);
+    PHIST_CHK_IERR(*iflag = (X_lcl==Teuchos::null) ? PHIST_BAD_CAST: PHIST_SUCCESS, *iflag);
+    auto dataAsArcp = Kokkos::Compat::persistingView (X_lcl);
+    valptr = Teuchos::arcp_reinterpret_cast<_ST_> (dataAsArcp);
+
+  }
+  else
+  {
+    valptr = mVec->get1dViewNonConst();
+  }
   *val = valptr.get();
   *lda = mVec->getStride();
   PHIST_CHK_IERR(*iflag = (*val == nullptr) ? PHIST_BAD_CAST: PHIST_SUCCESS, *iflag);
