@@ -417,12 +417,18 @@ ${PHIST_FORCE_32BIT_GIDX_DEFAULT})
 ##############################################################################
 # enable single precision and complex valued calculation if supported
 ##############################################################################
+
+# note: this check comes before we find_package below, so
+# we need to do that here already to make sure we can check
+# config settings.
 if( "${PHIST_KERNEL_LIB}" MATCHES "ghost|magma|eigen" )
   set(PHIST_SUPPORT_SP ON)
   set(PHIST_SUPPORT_COMPLEX ON)
 elseif( "${PHIST_KERNEL_LIB}" MATCHES "tpetra" )
+  find_package(Trilinos REQUIRED)
   include(cmake/CheckTrilinosTypes.cmake)
 elseif( "${PHIST_KERNEL_LIB}" MATCHES "petsc" )
+  find_package(PETSC REQUIRED)
   set(PHIST_SUPPORT_SP ${PETSC_USE_REAL_SINGLE})
   set(PHIST_SUPPORT_COMPLEX ${PETSC_USE_COMPLEX})
 else()
