@@ -10,6 +10,7 @@
 #include "Trilinos_version.h"
 #include "Kokkos_View.hpp"
 #include "Tpetra_MultiVector.hpp"
+#include "Tpetra_Access.hpp"
 
 extern "C" void SUBR(type_avail)(int *iflag)
 {
@@ -108,7 +109,7 @@ try
   
   auto sparseMat = new Traits<_ST_>::sparseMat_t(mapPtr, static_cast<int>(maxnne));
 
-  phist_lidx numRows = sparseMat->getNodeNumRows();
+  phist_lidx numRows = sparseMat->getLocalNumRows();
 
   // note: parallel_for here leads to segfault, and I could not find a Tpetra example
   // where they insertGlobalVAlues in a parallel_for. Probably the function is not thread-safe
@@ -202,7 +203,7 @@ extern "C" void SUBR(sparseMat_local_nnz)(TYPE(const_sparseMat_ptr) A,
                                             int64_t* local_nnz, int* iflag)
 {
   PHIST_CAST_PTR_FROM_VOID(const Traits<_ST_>::sparseMat_t, mat, A, *iflag);
-  *local_nnz=(int64_t)(mat->getGraph()->getNodeNumEntries());
+  *local_nnz=(int64_t)(mat->getGraph()->getLocalNumEntries());
   *iflag=0;
 }                                            
 
@@ -343,9 +344,9 @@ extern "C" void SUBR(mvec_extract_view)(TYPE(mvec_ptr) V, _ST_** val, phist_lidx
   
   if (*iflag & PHIST_MVEC_RUN_ON_DEVICE)
   {
-    auto X_lcl = mVec->getLocalViewDevice(Access::ReadWrite);
-    PHIST_CHK_IERR(*iflag = (X_lcl==Teuchos::null) ? PHIST_BAD_CAST: PHIST_SUCCESS, *iflag);
+    auto X_lcl = mVec->getLocalViewDevice(Tpetra::Access::ReadWrite);
     auto dataAsArcp = Kokkos::Compat::persistingView (X_lcl);
+    PHIST_CHK_IERR(*iflag = (dataAsArcp==Teuchos::null) ? PHIST_BAD_CAST: PHIST_SUCCESS, *iflag);
     valptr = Teuchos::arcp_reinterpret_cast<_ST_> (dataAsArcp);
 
   }
@@ -448,8 +449,8 @@ extern "C" void SUBR(sdMat_view_block)(TYPE(sdMat_ptr) vM,
 
   // Get a view of the whole matrix
 #if TRILINOS_MAJOR_VERSION>=13
-  auto h_view = mat->getLocalViewHost();
-  auto d_view = mat->getLocalViewDevice();
+  auto h_view = mat->getLocalViewHost(Tpetra::Access::ReadWrite);
+  auto d_view = mat->getLocalViewDevice(Tpetra::Access::ReadWrite);
   Traits<_ST_>::mvec_t::dual_view_type view(d_view, h_view);
 #else
   auto view = mat->getDualView();
@@ -1075,7 +1076,7 @@ extern "C" void SUBR(mvec_split)(TYPE(const_mvec_ptr) V, phist_Dmvec* reV, phist
   reMvec->sync<Kokkos::HostSpace> ();
   imMvec->sync<Kokkos::HostSpace> ();
 
-  auto const sourceMvecView = mvec->getLocalView<Kokkos::HostSpace>();
+  auto const sourceMvecView = mvec->getLocalView<Kokkos::HostSpace>(Tpetra::Access::ReadOnly);
   auto reMvecView = reMvec->getLocalView<Kokkos::HostSpace>();
   auto imMvecView = imMvec->getLocalView<Kokkos::HostSpace>();
 
@@ -1102,7 +1103,7 @@ extern "C" void SUBR(mvec_combine)(TYPE(mvec_ptr) V, phist_Dconst_mvec_ptr reV, 
   
   mvec->sync<Kokkos::HostSpace> ();
 
-  auto const targetMvecView = mvec->getLocalView<Kokkos::HostSpace>();
+  auto const targetMvecView = mvec->getLocalView<Kokkos::HostSpace>(Tpetra::Access::ReadOnly);
   auto reMvecView = reMvec->getLocalView<Kokkos::HostSpace>();
   auto imMvecView = imMvec->getLocalView<Kokkos::HostSpace>();
 

@@ -293,7 +293,7 @@ extern "C" void phist_map_get_comm(phist_const_map_ptr vmap, phist_const_comm_pt
 extern "C" void phist_map_get_local_length(phist_const_map_ptr vmap, phist_lidx* nloc, int* iflag)
 {
   PHIST_CAST_PTR_FROM_VOID(const map_type, map, vmap, *iflag);
-  *nloc = map->getNodeNumElements();
+  *nloc = map->getLocalNumElements();
   *iflag = PHIST_SUCCESS;
 }
 
