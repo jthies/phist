@@ -1,6 +1,9 @@
 develop
+  - no changes yet
+1.10.0
   - get rid of some deprecated code in the phist/tpetra interface -- we will now require trilinos version >= 13
   - fix a cmake issue, data types supported by Trilinos and PETSc kernel libs should now be detected correctly
+  - allow obtaining device pointer via mvec_extract_view
 phist-1.9.5
   - update contact information Jonas Thies
   - builtin kernels now use mpi_f08 module (adds type safety and prevents errors with
