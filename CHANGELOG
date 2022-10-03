@@ -1,5 +1,5 @@
 develop
-  - no changes yet
+  - fix a minor build error with Intel OneAPI Fortran compiler ifx
 1.10.0
   - get rid of some deprecated code in the phist/tpetra interface -- we will now require trilinos version >= 13
   - fix a cmake issue, data types supported by Trilinos and PETSc kernel libs should now be detected correctly
