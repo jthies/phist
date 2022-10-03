@@ -23,7 +23,7 @@ implicit none
 integer(c_int) :: iflag
 ! dummy args to phist_kernels_init
 integer(c_int) :: argc
-type(c_ptr), target :: argv
+type(c_ptr), target, dimension(1) :: argv
 
 ! communicator and map handles
 TYPE(comm_ptr) :: comm
@@ -59,7 +59,7 @@ integer :: rank
 logical :: verbose
 
 argc=0
-argv=C_NULL_PTR
+argv(1)=C_NULL_PTR
 #ifdef PHIST_HAVE_MPI
 call MPI_Init(iflag)
 #endif
@@ -70,7 +70,7 @@ call tests_init('jada')
 ! *as long as we already initialized MPI!*
 ! Otherwise, the kernel lib may call the C variant
 ! of mpi_init and pass in these pointers
-call phist_kernels_init(argc,c_loc(argv), iflag)
+call phist_kernels_init(argc, argv, iflag)
 ASSERT_EQ(0,iflag)
 
 ! create a communicator object, note that this may be different from an MPI_Comm in Fortran
