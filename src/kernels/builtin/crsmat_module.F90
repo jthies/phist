@@ -360,7 +360,7 @@ end do
   !! these private subroutines need to be caleed before
   !! an spMVM if nvec changes (not by the user, of course)
   subroutine delete_buffers(B)
-  USE mpi
+  USE mpi_f08
   implicit none
   TYPE(CrsCommBuff_t) :: B
   integer :: i, j, ierr

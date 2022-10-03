@@ -210,6 +210,10 @@
  */
 #define PHIST_SDMAT_RUN_ON_HOST_AND_DEVICE (PHIST_SDMAT_RUN_ON_HOST|PHIST_SDMAT_RUN_ON_DEVICE)
 
+/*! Explicitly run an mvec kernel on the device
+ */
+#define PHIST_MVEC_RUN_ON_DEVICE PHIST_SDMAT_RUN_ON_DEVICE
+
 /*!@}*/
 
 #endif

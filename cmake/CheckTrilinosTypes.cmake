@@ -1,7 +1,7 @@
 # Figure out which data types are supported by the Trilinos installation found.
 include(CheckSymbolExists)
 
-set(CMAKE_REQUIRED_INCLUDES ${Teuchos_INCLUDE_DIRS} ${Tpetra_INCLUDE_DIRS})
+set(CMAKE_REQUIRED_INCLUDES ${Trilinos_INCLUDE_DIRS})
 check_symbol_exists(HAVE_TEUCHOS_COMPLEX "Teuchos_config.h" HAVE_TEUCHOS_COMPLEX)
 check_symbol_exists(HAVE_TPETRA_INST_DOUBLE "TpetraCore_config.h" HAVE_TPETRA_INST_DOUBLE)
 check_symbol_exists(HAVE_TPETRA_INST_FLOAT "TpetraCore_config.h" HAVE_TPETRA_INST_FLOAT)

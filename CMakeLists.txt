@@ -29,8 +29,8 @@ project(phist C CXX Fortran)
 # still under development, whereas the next development version may or may not do what
 # the function claims to do, depending on the status of the repository.
 set(PHIST_VERSION_MAJOR 1)
-set(PHIST_VERSION_MINOR 9)
-set(PHIST_VERSION_PATCH 6)
+set(PHIST_VERSION_MINOR 10)
+set(PHIST_VERSION_PATCH 0)
 set(PHIST_VERSION ${PHIST_VERSION_MAJOR}.${PHIST_VERSION_MINOR}.${PHIST_VERSION_PATCH})
 math(EXPR PHIST_VERSION_INT "( ( ${PHIST_VERSION_MAJOR} * 100 ) + ${PHIST_VERSION_MINOR} ) * 100 + ${PHIST_VERSION_PATCH}")
 
@@ -417,12 +417,18 @@ ${PHIST_FORCE_32BIT_GIDX_DEFAULT})
 ##############################################################################
 # enable single precision and complex valued calculation if supported
 ##############################################################################
+
+# note: this check comes before we find_package below, so
+# we need to do that here already to make sure we can check
+# config settings.
 if( "${PHIST_KERNEL_LIB}" MATCHES "ghost|magma|eigen" )
   set(PHIST_SUPPORT_SP ON)
   set(PHIST_SUPPORT_COMPLEX ON)
 elseif( "${PHIST_KERNEL_LIB}" MATCHES "tpetra" )
+  find_package(Trilinos REQUIRED)
   include(cmake/CheckTrilinosTypes.cmake)
 elseif( "${PHIST_KERNEL_LIB}" MATCHES "petsc" )
+  find_package(PETSC REQUIRED)
   set(PHIST_SUPPORT_SP ${PETSC_USE_REAL_SINGLE})
   set(PHIST_SUPPORT_COMPLEX ${PETSC_USE_COMPLEX})
 else()
