@@ -5,7 +5,7 @@ program phist_fort_core_test
 
 use, intrinsic :: iso_c_binding
 #ifdef PHIST_HAVE_MPI
-use mpi
+use mpi_f08
 #endif
 use phist_types
 use phist_tools_d
