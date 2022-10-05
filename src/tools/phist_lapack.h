@@ -24,6 +24,7 @@ typedef const char phist_blas_char;
 typedef MKL_Complex8 phist_Sblas_cmplx;
 typedef MKL_Complex16 phist_Dblas_cmplx;
 typedef MKL_INT phist_blas_idx;
+#define LAPACK_SUBR(NAME,name) name
 #else
 # define lapack_complex_float phist_s_complex
 # define lapack_complex_double phist_d_complex
@@ -32,6 +33,7 @@ typedef lapack_complex_float phist_Sblas_cmplx;
 typedef lapack_complex_double phist_Dblas_cmplx;
 typedef int phist_blas_idx;
 typedef char phist_blas_char;
+#define LAPACK_SUBR(NAME,name) LAPACK_ ## name
 #endif
 
 #ifdef PHIST_SDMATS_ROW_MAJOR
@@ -40,7 +42,6 @@ typedef char phist_blas_char;
 #define SDMAT_FLAG LAPACK_COL_MAJOR
 #endif
 
-#define LAPACK_SUBR(NAME,name) LAPACK_ ## name
 
 #define BLAS_SUBR(NAME,name) name ## _
 
