@@ -40,17 +40,7 @@ typedef char phist_blas_char;
 #define SDMAT_FLAG LAPACK_COL_MAJOR
 #endif
 
-// TODO - cmake/blas/lapack integration.
-// this is a platform dependent macro, we should have CMake determine
-// how to define the name of a fortran 77 routine
-// NOTE: mkl_lapack.h defines a variety of options, so as long as it is
-// used we're fine. The lower case/underscore variant here works for
-// linux systems, typically.
-#ifndef PHIST_HAVE_MKL
-#define LAPACK_SUBR(NAME,name) name ## _
-#else
-#define LAPACK_SUBR(NAME,name) name ## _
-#endif
+#define LAPACK_SUBR(NAME,name) LAPACK_ ## name
 
 #define BLAS_SUBR(NAME,name) name ## _
 
@@ -125,10 +115,8 @@ typedef char phist_blas_char;
 #define CTRSM BLAS_SUBR(CTRSM,ctrsm)
 #define ZTRSM BLAS_SUBR(ZTRSM,ztrsm)
 /* LARTG */
-#define SLARTG LAPACK_SUBR(SLARTG,slartg)
-#define DLARTG LAPACK_SUBR(DLARTG,dlartg)
-#define CLARTG LAPACK_SUBR(CLARTG,clartg)
-#define ZLARTG LAPACK_SUBR(ZLARTG,zlartg)
+#define SLARTGP LAPACK_SUBR(SLARTGP,slartgp)
+#define DLARTGP LAPACK_SUBR(DLARTGP,dlartgp)
 /* GESVD */
 #define SGESVD LAPACK_SUBR(SGESVD,sgesvd)
 #define DGESVD LAPACK_SUBR(DGESVD,dgesvd)
