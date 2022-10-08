@@ -18,21 +18,29 @@
 //      I think we should gradually move towards
 //      using lapacke everywhere
 #ifdef PHIST_HAVE_MKL
+# include "mkl_blas.h"
 # include "mkl_lapack.h"
 # include "mkl_lapacke.h"
 typedef const char phist_blas_char;
 typedef MKL_Complex8 phist_Sblas_cmplx;
 typedef MKL_Complex16 phist_Dblas_cmplx;
 typedef MKL_INT phist_blas_idx;
+#define BLAS_SUBR(NAME,name) name
 #define LAPACK_SUBR(NAME,name) name
 #else
-# define lapack_complex_float phist_s_complex
-# define lapack_complex_double phist_d_complex
+/* this works for OpenBLAS, not sure about other lapack vendors... */
+# include "lapack.h"
+# ifndef lapack_complex_float
+#  define lapack_complex_float phist_s_complex
+#  define lapack_complex_double phist_d_complex
+# endif
 # include "lapacke.h"
 typedef lapack_complex_float phist_Sblas_cmplx;
 typedef lapack_complex_double phist_Dblas_cmplx;
 typedef int phist_blas_idx;
 typedef char phist_blas_char;
+
+#define BLAS_SUBR(NAME,name) name##_
 #define LAPACK_SUBR(NAME,name) LAPACK_ ## name
 #endif
 
@@ -41,9 +49,6 @@ typedef char phist_blas_char;
 #else
 #define SDMAT_FLAG LAPACK_COL_MAJOR
 #endif
-
-
-#define BLAS_SUBR(NAME,name) name ## _
 
 /* GEMM - matrix-matrix multiplication */
 #define SGEMM BLAS_SUBR(SGEMM,sgemm)
@@ -115,9 +120,27 @@ typedef char phist_blas_char;
 #define DTRSM BLAS_SUBR(DTRSM,dtrsm)
 #define CTRSM BLAS_SUBR(CTRSM,ctrsm)
 #define ZTRSM BLAS_SUBR(ZTRSM,ztrsm)
-/* LARTG */
+/* LARTG: C interface missing in MKL and OpenBLAS, so we switch to [S|D]LARTGP */
+/* and call the Fortran variant [c|z]lartgp_ directly because that one is mis- */
+/* sing in OpenBLAS, too.                                                      */
 #define SLARTGP LAPACK_SUBR(SLARTGP,slartgp)
 #define DLARTGP LAPACK_SUBR(DLARTGP,dlartgp)
+#ifdef PHIST_HAVE_MKL
+#define CLARTG LAPACK_SUBR(CLARTG,clartg)
+#define ZLARTG LAPACK_SUBR(ZLARTG,zlartg)
+#else
+#define CLARTG LAPACK_GLOBAL(clartg, CLARTG)
+#define ZLARTG LAPACK_GLOBAL(zlartg, ZLARTG)
+# ifdef __cplusplus
+extern "C" {
+# endif
+/* missing in OpenBLAS lapack.h */
+void CLARTG(lapack_complex_float* F, lapack_complex_float* G, float* CS, lapack_complex_float* SN, lapack_complex_float* R);
+void ZLARTG(lapack_complex_double* F, lapack_complex_double* G, double* CS, lapack_complex_double* SN, lapack_complex_double* R);
+# ifdef __cplusplus
+}
+# endif
+#endif
 /* GESVD */
 #define SGESVD LAPACK_SUBR(SGESVD,sgesvd)
 #define DGESVD LAPACK_SUBR(DGESVD,dgesvd)
@@ -131,10 +154,14 @@ for row-major sdMats right now, I think
 #warning "standard lapack calls will not work for row-major sdMats"
 #endif
 
-#ifdef PHIST_HAVE_MKL
-#include "mkl_blas.h"
-#include "mkl_lapack.h"
-#else
+#ifndef PHIST_HAVE_MKL
+
+/* OpenBLAS has some conflicting declarations of BLAS routines
+   in the headers f77blas.h and lapack.h (!?), so we can't include
+   both. The workaround here is to declare all BLAS routines we need
+   ourselves. An alternative would be to use cblas.h, but that's a
+   slightly different interface, and not quite complete either in OpenBLAS.
+ */
 
 #ifdef __cplusplus
 extern "C" {
@@ -156,20 +183,6 @@ void ZTRSV(const char* uplo, const char* trans, const char* diag, const phist_bl
 const phist_Dblas_cmplx* a, const phist_blas_idx* lda, phist_Dblas_cmplx* b, const phist_blas_idx* incb);
 
 ///////////////////////////////////////////////////////////////////////////////////////////
-//      XLARTG - compute givens rotation
-///////////////////////////////////////////////////////////////////////////////////////////
-void SLARTG(const float *f, const float *g, float* cs, float* sn, float* r);
-
-void DLARTG(const double *f, const double *g, double* cs, double* sn, double*
-r);
-
-void CLARTG(const phist_Sblas_cmplx *f, const phist_Sblas_cmplx *g, float* cs,
-phist_Sblas_cmplx* sn, phist_Sblas_cmplx* r);
-
-void ZLARTG(const phist_Dblas_cmplx *f, const phist_Dblas_cmplx *g, double* cs,
-phist_Dblas_cmplx* sn, phist_Dblas_cmplx* r);
-
-///////////////////////////////////////////////////////////////////////////////////////////
 //      XGEMM - matrix multiplication
 ///////////////////////////////////////////////////////////////////////////////////////////
 void SGEMM(const char* transA, const char* transB, const phist_blas_idx* m, const phist_blas_idx* n, const phist_blas_idx* k,
@@ -183,41 +196,7 @@ const phist_Sblas_cmplx* alpha, const phist_Sblas_cmplx* a,  const phist_blas_id
 
 void ZGEMM(const char* transA, const char* transB, const phist_blas_idx* m, const phist_blas_idx* n, const phist_blas_idx* k,
 const phist_Dblas_cmplx* alpha, const phist_Dblas_cmplx* a,  const phist_blas_idx* lda, phist_Dblas_cmplx* b, const phist_blas_idx* ldb, const phist_Dblas_cmplx* beta, phist_Dblas_cmplx* c, const phist_blas_idx* ldc);
-/*
-///////////////////////////////////////////////////////////////////////////////////////////
-//      XGEQRT - QR factorization
-///////////////////////////////////////////////////////////////////////////////////////////
 
-void SGEQRT( const phist_blas_idx* m, const phist_blas_idx* n, const phist_blas_idx* nb, float* a, const phist_blas_idx* lda,
-                   float* tau, const phist_blas_idx* ldT, float* work, phist_blas_idx *info);
-void DGEQR( const phist_blas_idx* m, const phist_blas_idx* n, const phist_blas_idx* nb, double* a, const phist_blas_idx* lda,
-                  double* tau, const phist_blas_idx* ldT, double* work, phist_blas_idx *info);
-void CGEQRT( const phist_blas_idx* m, const phist_blas_idx* n, const phist_blas_idx* nb, phist_Sblas_cmplx* a, const phist_blas_idx* lda,
-                   phist_Sblas_cmplx* tau, const phist_blas_idx* ldT, phist_Sblas_cmplx* work, phist_blas_idx *info );
-void ZGEQRT( const phist_blas_idx* m, const phist_blas_idx* n, const phist_blas_idx* nb, phist_Dblas_cmplx* a, const phist_blas_idx* lda,
-                   phist_Dblas_cmplx* tau, const phist_blas_idx* ldT, phist_Dblas_cmplx* work, phist_blas_idx *info );
-
-///////////////////////////////////////////////////////////////////////////////////////////
-//      XGEMQR - 'multiply by Q' after XGEQR
-///////////////////////////////////////////////////////////////////////////////////////////
-
-void SGEMQRT( phist_blas_char* side, phist_blas_char* trans, const phist_blas_idx* m, const phist_blas_idx* n, const phist_blas_idx* k,
-             const phist_blas_idx* nb, const float* A, const phist_blas_idx* lda, const float* tau, const phist_blas_idx *ldT,
-             float* c, const phist_blas_idx *ldc, float* work, phist_blas_idx* info);
-
-void DGEMQRT( phist_blas_char* side, phist_blas_char* trans, const phist_blas_idx* m, const phist_blas_idx* n, const phist_blas_idx* k,
-             const phist_blas_lidx* nb, const double* A, const phist_blas_idx* lda, const double* tau, const phist_blas_idx *ldT,
-             double* c, const phist_blas_idx *ldc, double* work, phist_blas_idx* info);
-
-void CGEMQRT( phist_blas_char* side, phist_blas_char* trans, const phist_blas_idx* m, const phist_blas_idx* n, const phist_blas_idx* k,
-             const phist_blas_lidx* nb, const phist_Sblas_cmplx* A, const phist_blas_idx* lda, const phist_Sblas_cmplx* tau, const phist_blas_idx *ldT,
-             phist_Sblas_cmplx* c, const phist_blas_idx *ldc, phist_Sblas_cmplx* work, phist_blas_idx* info);
-
-void ZGEMQRT( phist_blas_char* side, phist_blas_char* trans, const phist_blas_idx* m, const phist_blas_idx* n, const phist_blas_idx* k,
-             const phist_blas_idx* nb, const phist_Dblas_cmplx* A, const phist_blas_idx* lda, const phist_Dblas_cmplx* tau, const phist_blas_idx *ldT, 
-             phist_Dblas_cmplx* c, const phist_blas_idx *ldc, phist_Dblas_cmplx* work, phist_blas_idx* info);
-
-*/
 #ifdef __cplusplus
 } // extern "C"
 #endif
