@@ -29,7 +29,7 @@ project(phist C CXX Fortran)
 # still under development, whereas the next development version may or may not do what
 # the function claims to do, depending on the status of the repository.
 set(PHIST_VERSION_MAJOR 1)
-set(PHIST_VERSION_MINOR 10)
+set(PHIST_VERSION_MINOR 11)
 set(PHIST_VERSION_PATCH 0)
 set(PHIST_VERSION ${PHIST_VERSION_MAJOR}.${PHIST_VERSION_MINOR}.${PHIST_VERSION_PATCH})
 math(EXPR PHIST_VERSION_INT "( ( ${PHIST_VERSION_MAJOR} * 100 ) + ${PHIST_VERSION_MINOR} ) * 100 + ${PHIST_VERSION_PATCH}")

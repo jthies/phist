@@ -410,7 +410,7 @@ PHIST_TASK_BEGIN(ComputeTask)
       S[i]->cs_[j-1] = (_ST_) cs;
       S[i]->sn_[j-1] = st::conj(S[i]->sn_[j-1]);
 #else
-      PHIST_TG_PREFIX(LARTG)(&Hj[j-1],&Hj[j],&S[i]->cs_[j-1],&S[i]->sn_[j-1],&tmp);
+      PHIST_TG_PREFIX(LARTGP)(&Hj[j-1],&Hj[j],&S[i]->cs_[j-1],&S[i]->sn_[j-1],&tmp);
       //{
         //_MT_ len = mt::sqrt(st::real(st::conj(Hj[j-1])*Hj[j-1])+st::real(st::conj(Hj[j])*Hj[j]));
         //S[i]->cs_[j-1] = Hj[j-1]/len;

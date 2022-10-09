@@ -1,5 +1,5 @@
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
-file(GLOB INPUT_FILES ${PROJECT_SOURCE_DIR}/src/*/*.h*)
+file(GLOB INPUT_FILES ${PROJECT_SOURCE_DIR}/src/*/*.h ${PROJECT_SOURCEDIR}/src/*/*.hpp)
 
 set(STATIC_HPP_FILES phist_types.hpp phist_exception.hpp)
 

@@ -1077,8 +1077,8 @@ extern "C" void SUBR(mvec_split)(TYPE(const_mvec_ptr) V, phist_Dmvec* reV, phist
   imMvec->sync<Kokkos::HostSpace> ();
 
   auto const sourceMvecView = mvec->getLocalView<Kokkos::HostSpace>(Tpetra::Access::ReadOnly);
-  auto reMvecView = reMvec->getLocalView<Kokkos::HostSpace>();
-  auto imMvecView = imMvec->getLocalView<Kokkos::HostSpace>();
+  auto reMvecView = reMvec->getLocalViewHost(Tpetra::Access::ReadWrite);
+  auto imMvecView = imMvec->getLocalViewHost(Tpetra::Access::ReadWrite);
 
   const size_t localNumRows = mvec->getLocalLength();
   const size_t numVectors = mvec->getNumVectors();
