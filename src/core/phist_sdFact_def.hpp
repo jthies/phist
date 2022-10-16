@@ -353,39 +353,18 @@ void SUBR(sdMat_svd)(TYPE(sdMat_ptr) A, TYPE(sdMat_ptr) U, TYPE(sdMat_ptr) Sigma
   else
   {
     // create work array
-    _ST_* work=NULL;
-    int lwork=-1;
-    _ST_ tmp_work;
     int mn=std::min(m,n);
     _MT_ RS_val[mn];
-    const char jobu='A', jobvt='A';
-    int ildA=(int)ldA, ildU=(int)ldU, ildVt=(int)ldVt;
+    phist_blas_char jobu='A', jobvt='A';
 #ifdef IS_COMPLEX
-    _MT_ rwork[5*mn];
-    PHIST_TG_PREFIX(GESVD)((phist_blas_char*)(&jobu),(phist_blas_char*)(&jobvt),&m,&n,
-        (st::blas_scalar_t*)A_val,&ildA,
+    *iflag = PHIST_TG_PREFIX(GESVD)(SDMAT_FLAG, jobu, jobvt, m, n,
+        (st::blas_scalar_t*)A_val, ldA,
         (mt::blas_scalar_t*)RS_val,
-        (st::blas_scalar_t*)U_val,&ildU,
-        (st::blas_scalar_t*)Vt_val,&ildVt,
-        (st::blas_scalar_t*)&tmp_work,&lwork,
-        (mt::blas_scalar_t*)rwork,iflag);
+        (st::blas_scalar_t*)U_val, ildU,
+        (st::blas_scalar_t*)Vt_val, ildVt);
 #else
-    PHIST_TG_PREFIX(GESVD)((phist_blas_char*)(&jobu),(phist_blas_char*)(&jobvt),&m,&n,A_val,&ildA,RS_val,U_val,&ildU,Vt_val,&ildVt,&tmp_work,&lwork,iflag);
+    *iflag = PHIST_TG_PREFIX(GESVD)(jobu,jobvt,m,n,A_val,ildA,RS_val,U_val,ildU,Vt_val,ildVt);
 #endif
-    lwork=(int)st::real(tmp_work);
-    work=new _ST_[lwork];
-#ifdef IS_COMPLEX
-    PHIST_TG_PREFIX(GESVD)((phist_blas_char*)(&jobu),(phist_blas_char*)(&jobvt),&m,&n,
-        (st::blas_scalar_t*)A_val,&ildA,
-        (mt::blas_scalar_t*)RS_val,
-        (st::blas_scalar_t*)U_val,&ildU,
-        (st::blas_scalar_t*)Vt_val,&ildVt,
-        (st::blas_scalar_t*)work,&lwork,
-        (mt::blas_scalar_t*)rwork,iflag);
-#else
-    PHIST_TG_PREFIX(GESVD)((phist_blas_char*)(&jobu),(phist_blas_char*)(&jobvt),&m,&n,A_val,&ildA,RS_val,U_val,&ildU,Vt_val,&ildVt,work,&lwork,iflag);
-#endif
-    delete [] work;
     int ldS=svals_only?0: ldSigma;
     // copy the returned singular values to the diagonal of Sigma
     for (int i=0; i<mn; i++)
@@ -426,15 +405,14 @@ void SUBR(sdMat_qr)(TYPE(sdMat_ptr) Q, TYPE(sdMat_ptr) R, int* iflag)
   int nb=1;
   int ldT=nb, ildR=(int)ldR, ildQ=(int)ldQ;
   _ST_ tau[ldT*k];
-  _ST_ work[nb*k];
 
-  PHIST_CHK_IERR(PHIST_TG_PREFIX(GEQRT)(&k,&k,&nb,(st::blas_scalar_t*)R_raw,&ildR,(st::blas_scalar_t*)tau,&ldT,(st::blas_scalar_t*)work,iflag),*iflag);
+  PHIST_CHK_IERR(*iflag=PHIST_TG_PREFIX(GEQRT)(SDMAT_FLAG, k,k,nb,(st::blas_scalar_t*)R_raw,ildR,(st::blas_scalar_t*)tau,ldT),*iflag);
 
   PHIST_CHK_IERR(SUBR(sdMat_identity)(Q,iflag),*iflag);
   phist_blas_char side='L', trans='N';
-  PHIST_CHK_IERR(PHIST_TG_PREFIX(GEMQRT)( &side, &trans, &k, &k, &k, &nb,
-                           (st::blas_scalar_t*)R_raw, &ildR, (st::blas_scalar_t*)tau, &ldT, (st::blas_scalar_t*)Q_raw, &ildQ,
-                           (st::blas_scalar_t*)work, iflag),*iflag);
+  PHIST_CHK_IERR(*iflag=PHIST_TG_PREFIX(GEMQRT)(SDMAT_FLAG, side, trans, k, k, k, nb,
+                           (st::blas_scalar_t*)R_raw, ildR, (st::blas_scalar_t*)tau,
+                           ldT, (st::blas_scalar_t*)Q_raw, ildQ),*iflag);
 
   // zero-out the lower triangular part of R, which currently still contains data from the QR decomp
   for (int j=0; j<k; j++)
