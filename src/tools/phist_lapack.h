@@ -124,8 +124,8 @@ typedef char phist_blas_char;
 /* LARTG: C interface missing in MKL and OpenBLAS, so we switch to [S|D]LARTGP */
 /* and call the Fortran variant [c|z]lartgp_ directly because that one is mis- */
 /* sing in OpenBLAS, too.                                                      */
-#define SLARTGP LAPACKE_SUBR(SLARTGP,slartgp)
-#define DLARTGP LAPACKE_SUBR(DLARTGP,dlartgp)
+#define SLARTGP LAPACK_SUBR(SLARTGP,slartgp)
+#define DLARTGP LAPACK_SUBR(DLARTGP,dlartgp)
 #ifdef PHIST_HAVE_MKL
 #define CLARTG LAPACK_SUBR(CLARTG,clartg)
 #define ZLARTG LAPACK_SUBR(ZLARTG,zlartg)

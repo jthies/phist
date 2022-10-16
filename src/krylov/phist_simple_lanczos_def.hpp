@@ -109,7 +109,7 @@ PHIST_TASK_BEGIN(ComputeTask)
       {
         st::blas_scalar_t z;
         int ldz=1;
-        PHIST_TG_PREFIX(STEQR)((phist_blas_char*)"N", &n, falphas, fbetas, &z, &ldz, NULL, iflag );
+        *iflag=PHIST_TG_PREFIX(STEQR)(SDMAT_FLAG, 'N', n, falphas, fbetas, &z, ldz);
       }
     }
         if (*iflag)
