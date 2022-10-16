@@ -275,16 +275,16 @@ void SUBR(sdMat_pseudo_inverse)(TYPE(sdMat_ptr) A_gen, int* rank, _MT_ rankTol, 
   }
   // multiply the three matrices back together to get the Pseudo-Inverse,
   // B=A^{+,T} <- U*inv(Sigma)*V'
-  
+
   // USig <- U*inv(Sigma)
   TYPE(sdMat_ptr) USig=NULL;
   PHIST_CHK_IERR(SUBR(sdMat_create)(&USig,m,n,comm,iflag),*iflag);
   phist::SdMatOwner<_ST_> _USig(USig);
   PHIST_CHK_IERR(SUBR(sdMat_times_sdMat)(st::one(),U,Sigma,st::zero(),USig,iflag),*iflag);
-  
+
   // A <- U*inv(Sigma)*V'
   PHIST_CHK_IERR(SUBR(sdMat_times_sdMat)(st::one(),USig,Vt,st::zero(),A_gen,iflag),*iflag);
-  
+
   return;  
 }
 
@@ -348,22 +348,22 @@ void SUBR(sdMat_svd)(TYPE(sdMat_ptr) A, TYPE(sdMat_ptr) U, TYPE(sdMat_ptr) Sigma
     }
 #else
     PHIST_CHK_IERR(*iflag=PHIST_NOT_IMPLEMENTED,*iflag);
-#endif  
+#endif
   }
   else
   {
     // create work array
     int mn=std::min(m,n);
-    _MT_ RS_val[mn];
+    _MT_ RS_val[mn], superb[mn];
     phist_blas_char jobu='A', jobvt='A';
 #ifdef IS_COMPLEX
     *iflag = PHIST_TG_PREFIX(GESVD)(SDMAT_FLAG, jobu, jobvt, m, n,
         (st::blas_scalar_t*)A_val, ldA,
         (mt::blas_scalar_t*)RS_val,
-        (st::blas_scalar_t*)U_val, ildU,
-        (st::blas_scalar_t*)Vt_val, ildVt);
+        (st::blas_scalar_t*)U_val, ldU,
+        (st::blas_scalar_t*)Vt_val, ldVt, superb);
 #else
-    *iflag = PHIST_TG_PREFIX(GESVD)(jobu,jobvt,m,n,A_val,ildA,RS_val,U_val,ildU,Vt_val,ildVt);
+    *iflag = PHIST_TG_PREFIX(GESVD)(SDMAT_FLAG, jobu,jobvt,m,n,A_val,ldA,RS_val,U_val,ldU,Vt_val,ldVt,superb);
 #endif
     int ldS=svals_only?0: ldSigma;
     // copy the returned singular values to the diagonal of Sigma

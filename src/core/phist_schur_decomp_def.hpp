@@ -45,22 +45,14 @@ void SUBR(SchurDecomp)(_ST_* T, int ldT, _ST_* S, int ldS,
   *iflag = 0;
 PHIST_TASK_DECLARE(ComputeTask)
 PHIST_TASK_BEGIN_SMALLDETERMINISTIC(ComputeTask)
-  // this is for XGEES (computing the Schur form)
-  int lwork = std::max(20*m,2*nselect*(m-nselect));
-                          // min required workspace is 3*m 
-                          // for GEES and 2*m*(m-nsort) for 
-                          // TRSEN with condition estimate,
-                          // so this should be enough for  
-                          // good performance of GEES as.  
-  ST work[lwork];
 
   MT ev_r[m];   // in the complex case this is used as RWORK
 #ifndef IS_COMPLEX
   // real and imag part of ritz values
   MT ev_i[m];
 #endif
-  const char *jobvs="V"; // compute the ritz vectors in S
-  const char *sort="N";  // do not sort Ritz values (we do that later
+  phist_blas_char jobvs='V'; // compute the ritz vectors in S
+  phist_blas_char sort='N';  // do not sort Ritz values (we do that later
                           // because gees only accepts the simple select
                           // function which does not compare the Ritz values)
   int sdim;
@@ -80,12 +72,12 @@ PHIST_TASK_BEGIN_SMALLDETERMINISTIC(ComputeTask)
     {
 #ifdef IS_COMPLEX
       PHIST_DEB("call complex %cGEES\n",st::type_char());
-      PHIST_TG_PREFIX(GEES)((phist_blas_char*)jobvs,(phist_blas_char*)sort,NULL,&m,(blas_cmplx*)T,&ldT,
-             &sdim,(blas_cmplx*)ev,(blas_cmplx*)S,&ldS,(blas_cmplx*)work,&lwork,ev_r,NULL,iflag);
+      *iflag=PHIST_TG_PREFIX(GEES)(SDMAT_FLAG,jobvs,sort,NULL,m,(blas_cmplx*)T,ldT,
+             &sdim,(blas_cmplx*)ev,(blas_cmplx*)S,ldS);
 #else
       PHIST_DEB("call real %cGEES\n",st::type_char());
-      PHIST_TG_PREFIX(GEES)((phist_blas_char*)jobvs,(phist_blas_char*)sort,NULL,&m,T,&ldT,
-            &sdim,ev_r,ev_i,S,&ldS,work,&lwork,NULL,iflag);
+      *iflag=PHIST_TG_PREFIX(GEES)(SDMAT_FLAG,jobvs,sort,NULL,m,T,ldT,
+            &sdim,ev_r,ev_i,S,ldS);
       for (int i=0;i<m;i++)
       {
         ev[i]=std::complex<MT>(ev_r[i],ev_i[i]);
@@ -132,10 +124,10 @@ PHIST_TASK_BEGIN_SMALLDETERMINISTIC(ComputeTask)
   for (int i=0;i<m;i++) select[i]=0;
 
   // call lapack routine to reorder Schur form
-  const char *job="N"; // indicates wether we want condition estimates
+  phist_blas_char job='N'; // indicates wether we want condition estimates
                        // for [E]igenvalues, the invariant [S]ubspace or [B]oth
                        // (or [N]one, just sort)
-  const char *compq = "V"; // indicates wether we want to update the schur vectors
+  phist_blas_char compq = 'V'; // indicates wether we want to update the schur vectors
                            // [V]: update schur vectors in Q
                            // [N]: don't update schur vectors in Q
   MT S_cond;
@@ -158,11 +150,11 @@ PHIST_TASK_BEGIN_SMALLDETERMINISTIC(ComputeTask)
 #pragma omp master
       {
 #ifdef IS_COMPLEX
-        PHIST_TG_PREFIX(TRSEN)((phist_blas_char*)job,(phist_blas_char*)compq,select,&m,(blas_cmplx*)T,&ldT,(blas_cmplx*)S,&ldS,(blas_cmplx*)ev,&nsorted,
-              &S_cond, &sep, (blas_cmplx*)work, &lwork, iflag);
+        *iflag=PHIST_TG_PREFIX(TRSEN)(SDMAT_FLAG,job,compq,select,m,(blas_cmplx*)T,ldT,(blas_cmplx*)S,ldS,(blas_cmplx*)ev,&nsorted,
+              &S_cond, &sep);
 #else
-        PHIST_TG_PREFIX(TRSEN)((phist_blas_char*)job,(phist_blas_char*)compq,select,&m,T,&ldT,S,&ldS,ev_r,ev_i,&nsorted,
-              &S_cond, &sep, work, &lwork, iwork, &liwork, iflag);
+        *iflag=PHIST_TG_PREFIX(TRSEN)(SDMAT_FLAG,job,compq,select,m,T,ldT,S,ldS,ev_r,ev_i,&nsorted,
+              &S_cond, &sep);
         for (int i=0;i<m;i++)
         {
           ev[i]=std::complex<MT>(ev_r[i],ev_i[i]);
@@ -208,11 +200,11 @@ PHIST_TASK_BEGIN_SMALLDETERMINISTIC(ComputeTask)
         // we pass in ev+i
         int nsorted_before=nsorted;
 #ifdef IS_COMPLEX
-        PHIST_TG_PREFIX(TRSEN)((phist_blas_char*)job,(phist_blas_char*)compq,select,&m,(blas_cmplx*)T,&ldT,(blas_cmplx*)S,&ldS,
-              (blas_cmplx*)ev,&nsorted,&S_cond, &sep, (blas_cmplx*)work, &lwork, iflag);
+        PHIST_TG_PREFIX(TRSEN)(SDMAT_FLAG,job,compq,select,m,(blas_cmplx*)T,ldT,(blas_cmplx*)S,ldS,
+              (blas_cmplx*)ev,&nsorted,&S_cond, &sep);
 #else
-        PHIST_TG_PREFIX(TRSEN)((phist_blas_char*)job,(phist_blas_char*)compq,select,&m,T,&ldT,S,&ldS,ev_r,ev_i,&nsorted,
-              &S_cond, &sep, work, &lwork, iwork, &liwork, iflag);
+        *iflag=PHIST_TG_PREFIX(TRSEN)(SDMAT_FLAG,job,compq,select,m,T,ldT,S,ldS,ev_r,ev_i,&nsorted,
+              &S_cond, &sep);
         for (int j=0;j<m;j++)
         {
           ev[j]=std::complex<MT>(ev_r[j],ev_i[j]);
@@ -254,9 +246,9 @@ void SUBR(GenSchurDecomp)(_ST_* S, int ldS, _ST_* T, int ldT,
   int clwork=2*m;       // dimension of work in the complex case
   ST alpha[m], alphai[2*m], beta[m]; // in the complex case, alphai is used as WORK
 
-  const char *jobvsl="V"; // compute the left Ritz vectors in VS
-  const char *jobvsr="V"; // compute the right Ritz vectors in WR
-  const char *sort="N";  // do not sort Ritz values (we do that later
+  phist_blas_char jobvsl='V'; // compute the left Ritz vectors in VS
+  phist_blas_char jobvsr='V'; // compute the right Ritz vectors in WR
+  phist_blas_char sort='N';  // do not sort Ritz values (we do that later
                           // because gees only accepts the simple select
                           // function which does not compare the Ritz values)
   int sdim;
@@ -277,15 +269,15 @@ void SUBR(GenSchurDecomp)(_ST_* S, int ldS, _ST_* T, int ldT,
     {
 #ifdef IS_COMPLEX
       PHIST_DEB("call complex %cGGES\n",st::type_char());
-      PHIST_TG_PREFIX(GGES)((phist_blas_char*)jobvsl,(phist_blas_char*)jobvsr,(phist_blas_char*)sort,NULL,&m,(blas_cmplx*)S,&ldS,
-             (blas_cmplx*)T, &ldT, &sdim,(blas_cmplx*)alpha, (blas_cmplx*)beta,
-             (blas_cmplx*)VS,&ldVS, (blas_cmplx*)WS, &ldWS, (blas_cmplx*)alphai, &clwork, rwork, NULL, iflag);
+      *iflag=PHIST_TG_PREFIX(GGES)(SDMAT_FLAG,jobvsl,jobvsr,sort,NULL,m,(blas_cmplx*)S,ldS,
+             (blas_cmplx*)T, ldT, &sdim,(blas_cmplx*)alpha, (blas_cmplx*)beta,
+             (blas_cmplx*)VS,ldVS, (blas_cmplx*)WS, ldWS);
 #else
       PHIST_DEB("call real %cGGES\n",st::type_char());
-      PHIST_TG_PREFIX(GGES)((phist_blas_char*)jobvsl,(phist_blas_char*)jobvsr,(phist_blas_char*)sort,NULL,&m,S,&ldS,
-             T, &ldT, &sdim, alpha, alphai, beta,
-             VS,&ldVS, WS, &ldWS, rwork, &lwork, NULL, iflag);
-      
+      *iflag=PHIST_TG_PREFIX(GGES)(SDMAT_FLAG,jobvsl,jobvsr,sort,NULL,m,S,ldS,
+             T, ldT, &sdim, alpha, alphai, beta,
+             VS,ldVS, WS, ldWS);
+
       for (int i=0;i<m;i++)
       {
         ev[i]=ct::zero();
@@ -324,7 +316,7 @@ void SUBR(GenSchurDecomp)(_ST_* S, int ldS, _ST_* T, int ldT,
     *iflag=1;
     return;
   }
-  
+
   //The function to sort a generalized Schur form in lapack is called XTGSEN
 
   // find indices for the first howMany eigenvalues. A pair of complex conjugate
@@ -346,9 +338,6 @@ void SUBR(GenSchurDecomp)(_ST_* S, int ldS, _ST_* T, int ldT,
   MT dif[2];
   int wantq=1,wantz=1;
 
-  int liwork=m+6;
-  int iwork[liwork];
-
   if (nselect<m)
   {
     PHIST_DEB("initial sort step, nselect=%d\n",nselect);
@@ -364,15 +353,15 @@ void SUBR(GenSchurDecomp)(_ST_* S, int ldS, _ST_* T, int ldT,
         int ijob=0; // do not retrieve info on conditioning or deflating subspaces, maybe we could use it somehow?
 #ifdef IS_COMPLEX
         int clwork=1;
-        PHIST_TG_PREFIX(TGSEN)(&ijob, &wantq, &wantz, select, &m, 
-                (blas_cmplx*)S,&ldS,(blas_cmplx*)T,&ldT,(blas_cmplx*)alpha,(blas_cmplx*)beta,
-                (blas_cmplx*)VS,&ldVS,(blas_cmplx*)WS,&ldWS,&m,
-                &pl,&pr,dif,(blas_cmplx*)rwork,&clwork,iwork,&liwork,iflag);
+        *iflag=PHIST_TG_PREFIX(TGSEN)(SDMAT_FLAG, ijob, wantq, wantz, select, m,
+                (blas_cmplx*)S,ldS,(blas_cmplx*)T,ldT,(blas_cmplx*)alpha,(blas_cmplx*)beta,
+                (blas_cmplx*)VS,ldVS,(blas_cmplx*)WS,ldWS,&m,
+                &pl,&pr,dif);
 #else
-        PHIST_TG_PREFIX(TGSEN)(&ijob, &wantq, &wantz, select, &m, 
-                S,&ldS,T,&ldT,alpha,alphai,beta,
-                VS,&ldVS,WS,&ldWS,&m,
-                &pl,&pr,dif,rwork,&lwork,iwork,&liwork,iflag);
+        *iflag=PHIST_TG_PREFIX(TGSEN)(SDMAT_FLAG, ijob, wantq, wantz, select, m,
+                S,ldS,T,ldT,alpha,alphai,beta,
+                VS,ldVS,WS,ldWS,&m,
+                &pl,&pr,dif);
 
 
         for (int i=0;i<m;i++)
@@ -402,7 +391,7 @@ void SUBR(GenSchurDecomp)(_ST_* S, int ldS, _ST_* T, int ldT,
       nselect = nsorted;
     }
   }//nselect<m
-  
+
   if (nselect==1) return; // the one (or two for complex pairs) selected eigenvalue
                           // according to 'which' is already 'sorted'
 
@@ -431,16 +420,14 @@ void SUBR(GenSchurDecomp)(_ST_* S, int ldS, _ST_* T, int ldT,
         int ijob=0; // this subroutine can do more, i.e. compute conditioning and
                     // deflating subspaces
 #ifdef IS_COMPLEX
-        int clwork=1;
-        PHIST_TG_PREFIX(TGSEN)(&ijob, &wantq, &wantz, select, &m, 
-                (blas_cmplx*)S,&ldS,(blas_cmplx*)T,&ldT,(blas_cmplx*)alpha,(blas_cmplx*)beta,
-                (blas_cmplx*)VS,&ldVS,(blas_cmplx*)WS,&ldWS,&m,
-                &pl,&pr,dif,(blas_cmplx*)rwork,&clwork,iwork,&liwork,iflag);
+        *iflag=PHIST_TG_PREFIX(TGSEN)(SDMAT_FLAG, ijob, wantq, wantz, select, m,
+                (blas_cmplx*)S,ldS,(blas_cmplx*)T,ldT,(blas_cmplx*)alpha,(blas_cmplx*)beta,
+                (blas_cmplx*)VS,ldVS,(blas_cmplx*)WS,ldWS,&m,&pl,&pr,dif);
 #else
-        PHIST_TG_PREFIX(TGSEN)(&ijob, &wantq, &wantz, select, &m, 
-                S,&ldS,T,&ldT,alpha,alphai,beta,
-                VS,&ldVS,WS,&ldWS,&m,
-                &pl,&pr,dif,rwork,&lwork,iwork,&liwork,iflag);
+        *iflag=PHIST_TG_PREFIX(TGSEN)(SDMAT_FLAG, ijob, wantq, wantz, select, m,
+                S,ldS,T,ldT,alpha,alphai,beta,
+                VS,ldVS,WS,ldWS,&m,
+                &pl,&pr,dif);
 
         for (int j=0;j<m;j++)
         {
@@ -574,16 +561,16 @@ PHIST_TASK_BEGIN_SMALLDETERMINISTIC(ComputeTask)
         std::swap(permutation[pos],permutation[pos-1]);
         std::swap(ev[pos],ev[pos-1]);
 
-        const char* compq = "V";
+        phist_blas_char compq = 'V';
         int ifst = pos;
         int ilst = pos+1;
         PHIST_SOUT(PHIST_DEBUG,"swapping %d %d in unconverged eigenvalues\n",ifst-1,ilst-1);
 #ifdef IS_COMPLEX
-        PHIST_TG_PREFIX(TREXC) ((phist_blas_char*)compq, &m, (blas_cmplx*) T, 
-            &ldT, (blas_cmplx*) S, &ldS, &ifst, &ilst, iflag);
+        *iflag=PHIST_TG_PREFIX(TREXC) (SDMAT_FLAG, compq, m, (blas_cmplx*) T,
+            ldT, (blas_cmplx*) S, ldS, ifst, ilst);
 #else
-        PHIST_TG_PREFIX(TREXC) ((phist_blas_char*)compq, &m, T, &ldT, S, &ldS, 
-            &ifst, &ilst, work, iflag);
+        *iflag=PHIST_TG_PREFIX(TREXC) (SDMAT_FLAG, compq, m, T, ldT, S, ldS,
+            &ifst, &ilst);
 #endif
         if( *iflag != 0 )
           break;
@@ -626,13 +613,6 @@ PHIST_TASK_END(iflag)
     }
   }
 #endif
-
-  // work array for lapack
-#ifndef IS_COMPLEX
-  int lwork=4*m+16;
-  _ST_ work[lwork];
-#endif
-
 
 // prohibit parallel execution to assure identical results on different procs
 #pragma omp parallel
@@ -708,14 +688,14 @@ PHIST_TASK_END(iflag)
         int ilst = pos+1;
         PHIST_SOUT(PHIST_DEBUG,"swapping %d %d in unconverged eigenvalues\n",ifst-1,ilst-1);
 #ifdef IS_COMPLEX
-        PHIST_TG_PREFIX(TGEXC) (&wantq, &wantz, &m, 
-                (blas_cmplx*) S, &ldS, (blas_cmplx*) T, &ldT,
-                (blas_cmplx*) VS, &ldVS, (blas_cmplx*) WS, &ldWS, 
-                &ifst, &ilst, iflag);
+        *iflag=PHIST_TG_PREFIX(TGEXC) (SDMAT_FLAG, wantq, wantz, m,
+                (blas_cmplx*) S, ldS, (blas_cmplx*) T, ldT,
+                (blas_cmplx*) VS, ldVS, (blas_cmplx*) WS, ldWS,
+                ifst, ilst);
 #else
-        PHIST_TG_PREFIX(TGEXC) (&wantq, &wantz, &m, 
-                S, &ldS, T, &ldT, VS, &ldVS, WS, &ldWS,
-                &ifst, &ilst, work, &lwork, iflag);
+        *iflag=PHIST_TG_PREFIX(TGEXC) (SDMAT_FLAG, wantq, wantz, m,
+                S, ldS, T, ldT, VS, ldVS, WS, ldWS,
+                &ifst, &ilst);
 #endif
         if( *iflag != 0 )
           break;
@@ -756,30 +736,19 @@ void SUBR(ComputeEigenvectors)(TYPE(const_mvec_ptr) Q, TYPE(sdMat_ptr) R,
 
     PHIST_CHK_IERR(SUBR(sdMat_extract_view)(S,&S_raw, &ldS,iflag),*iflag);
     PHIST_CHK_IERR(SUBR(sdMat_extract_view)(R,&R_raw, &ldR,iflag),*iflag);
-    
+
     PHIST_CHK_IERR(SUBR(sdMat_from_device)(R,iflag),*iflag);
-    const char* side="R";
-    const char* howmny="A";
+    phist_blas_char side='R';
+    phist_blas_char howmny='A';
     int m_out;
-    MT* work=new MT[5*n];
-    phist_blas_idx ildS=static_cast<phist_blas_idx>(ldS);
-    phist_blas_idx ildR=static_cast<phist_blas_idx>(ldR);
-    if (ildS<0 || ildR<0)
-    {
-    *iflag=PHIST_INTEGER_OVERFLOW;
-    return;
-    }
 #ifdef IS_COMPLEX
-    MT* rwork = work+4*n;
-    PHIST_CHK_IERR(PHIST_TG_PREFIX(TREVC)((phist_blas_char*)side, (phist_blas_char*)howmny, NULL, 
-    &n, (mt::blas_cmplx_t*)R_raw, &ildR, NULL, &ildS, 
-    (mt::blas_cmplx_t*)S_raw, &ildS, &n, &m_out, (mt::blas_cmplx_t*)work, 
-    rwork, iflag),*iflag);
+    PHIST_CHK_IERR(*iflag=PHIST_TG_PREFIX(TREVC)(SDMAT_FLAG, side, howmny, NULL,
+    n, (mt::blas_cmplx_t*)R_raw, ldR, NULL, ldS,
+    (mt::blas_cmplx_t*)S_raw, ldS, n, &m_out), *iflag);
 #else
-    PHIST_CHK_IERR(PHIST_TG_PREFIX(TREVC)((phist_blas_char*)side, (phist_blas_char*)howmny, NULL, 
-    &n,R_raw, &ildR, NULL, &ildS, S_raw, &ildS, &n, &m_out, work, iflag),*iflag);
-#endif  
-    delete [] work;
+    PHIST_CHK_IERR(*iflag=PHIST_TG_PREFIX(TREVC)(SDMAT_FLAG, side, howmny, NULL,
+    n,R_raw, ldR, NULL, ldS, S_raw, ldS, n, &m_out),*iflag);
+#endif
 
     PHIST_CHK_IERR(SUBR(sdMat_to_device)(R,iflag),*iflag);
     PHIST_CHK_IERR(SUBR(sdMat_to_device)(S,iflag),*iflag);
