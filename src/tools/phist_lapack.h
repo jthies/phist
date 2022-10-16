@@ -124,24 +124,26 @@ typedef char phist_blas_char;
 /* LARTG: C interface missing in MKL and OpenBLAS, so we switch to [S|D]LARTGP */
 /* and call the Fortran variant [c|z]lartgp_ directly because that one is mis- */
 /* sing in OpenBLAS, too.                                                      */
-#define SLARTGP LAPACK_SUBR(SLARTGP,slartgp)
-#define DLARTGP LAPACK_SUBR(DLARTGP,dlartgp)
+#define SLARTGP LAPACKE_SUBR(SLARTGP,slartgp)
+#define DLARTGP LAPACKE_SUBR(DLARTGP,dlartgp)
 #ifdef PHIST_HAVE_MKL
 #define CLARTG LAPACK_SUBR(CLARTG,clartg)
 #define ZLARTG LAPACK_SUBR(ZLARTG,zlartg)
 #else
 #define CLARTG LAPACK_GLOBAL(clartg, CLARTG)
 #define ZLARTG LAPACK_GLOBAL(zlartg, ZLARTG)
-# ifdef __cplusplus
+#endif
+
+#ifdef __cplusplus
 extern "C" {
-# endif
+#endif
 /* missing in OpenBLAS lapack.h */
 void CLARTG(lapack_complex_float* F, lapack_complex_float* G, float* CS, lapack_complex_float* SN, lapack_complex_float* R);
 void ZLARTG(lapack_complex_double* F, lapack_complex_double* G, double* CS, lapack_complex_double* SN, lapack_complex_double* R);
-# ifdef __cplusplus
+#ifdef __cplusplus
 }
-# endif
 #endif
+
 /* GESVD */
 #define SGESVD LAPACKE_SUBR(SGESVD,sgesvd)
 #define DGESVD LAPACKE_SUBR(DGESVD,dgesvd)

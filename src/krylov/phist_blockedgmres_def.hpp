@@ -364,8 +364,15 @@ void SUBR(blockedGMRESstates_updateSol)(TYPE(blockedGMRESstate_ptr) S[], int num
 
 
     // solve triangular system
+    phist_blas_idx ildH=static_cast<phist_blas_idx>(ldH);
+    phist_blas_idx ildy=static_cast<phist_blas_idx>(ldy);
+    if (ildH<0 || ildy<0)
+    {
+      *iflag=PHIST_INTEGER_OVERFLOW;
+      return;
+    }
     PHIST_CHK_IERR(SUBR(sdMat_from_device)(S[i]->H_,iflag),*iflag);
-    PHIST_CHK_IERR(*iflag=PHIST_TG_PREFIX(TRSV)("U","N","N",m,(st::blas_scalar_t*)H_raw,&ldH,(st::blas_scalar_t*)y, &ldy,iflag),*iflag);
+    PHIST_CHK_IERR(PHIST_TG_PREFIX(TRSV)("U","N","N",&m,(st::blas_scalar_t*)H_raw,&ildH,(st::blas_scalar_t*)y, &ildy),*iflag);
 
 
     // if we are only interested in the directions Vi*yi and appropriate AVi*yi,
@@ -906,11 +913,11 @@ PHIST_TASK_BEGIN(ComputeTask)
       // new Givens rotation to eliminate H(j+1,j)
 #ifdef IS_COMPLEX
       _MT_ cs;
-      PHIST_TG_PREFIX(LARTG)((blas_cmplx*)&Hj[j-1],(blas_cmplx*)&Hj[j],&cs,(blas_cmplx*)&S[i]->sn_[j-1],(blas_cmplx*)&tmp);
+      PHIST_TG_PREFIX(ROTG)((blas_cmplx*)&Hj[j-1],(blas_cmplx*)&Hj[j],&cs,(blas_cmplx*)&S[i]->sn_[j-1]);
       S[i]->cs_[j-1] = (_ST_) cs;
       S[i]->sn_[j-1] = st::conj(S[i]->sn_[j-1]);
 #else
-      PHIST_TG_PREFIX(LARTGP)(&Hj[j-1],&Hj[j],&S[i]->cs_[j-1],&S[i]->sn_[j-1],&tmp);
+      PHIST_TG_PREFIX(LARTGP)(Hj[j-1],Hj[j],&S[i]->cs_[j-1],&S[i]->sn_[j-1],&tmp);
       //{
         //_MT_ len = mt::sqrt(st::real(st::conj(Hj[j-1])*Hj[j-1])+st::real(st::conj(Hj[j])*Hj[j]));
         //S[i]->cs_[j-1] = Hj[j-1]/len;
