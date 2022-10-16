@@ -19,7 +19,6 @@
 //      using lapacke everywhere
 #ifdef PHIST_HAVE_MKL
 # include "mkl_blas.h"
-# include "mkl_lapack.h"
 # include "mkl_lapacke.h"
 typedef const char phist_blas_char;
 typedef MKL_Complex8 phist_Sblas_cmplx;
@@ -27,14 +26,15 @@ typedef MKL_Complex16 phist_Dblas_cmplx;
 typedef MKL_INT phist_blas_idx;
 #define BLAS_SUBR(NAME,name) name
 #define LAPACK_SUBR(NAME,name) name
+#define LAPACKE_SUBR(NAME,name) LAPACKE_##name
 #else
 /* this works for OpenBLAS, not sure about other lapack vendors... */
-# include "lapack.h"
+# include "lapacke.h"
 # ifndef lapack_complex_float
 #  define lapack_complex_float phist_s_complex
 #  define lapack_complex_double phist_d_complex
 # endif
-# include "lapacke.h"
+
 typedef lapack_complex_float phist_Sblas_cmplx;
 typedef lapack_complex_double phist_Dblas_cmplx;
 typedef int phist_blas_idx;
@@ -42,6 +42,7 @@ typedef char phist_blas_char;
 
 #define BLAS_SUBR(NAME,name) name##_
 #define LAPACK_SUBR(NAME,name) LAPACK_ ## name
+#define LAPACKE_SUBR(NAME,name) LAPACKE_ ## name
 #endif
 
 #ifdef PHIST_SDMATS_ROW_MAJOR
@@ -56,60 +57,60 @@ typedef char phist_blas_char;
 #define CGEMM BLAS_SUBR(CGEMM,cgemm)
 #define ZGEMM BLAS_SUBR(ZGEMM,zgemm)
 /* GEQRT */
-#define SGEQRT LAPACK_SUBR(SGEQRT,sgeqrt)
-#define DGEQRT LAPACK_SUBR(DGEQRT,dgeqrt)
-#define CGEQRT LAPACK_SUBR(CGEQRT,cgeqrt)
-#define ZGEQRT LAPACK_SUBR(ZGEQRT,zgeqrt)
+#define SGEQRT LAPACKE_SUBR(SGEQRT,sgeqrt)
+#define DGEQRT LAPACKE_SUBR(DGEQRT,dgeqrt)
+#define CGEQRT LAPACKE_SUBR(CGEQRT,cgeqrt)
+#define ZGEQRT LAPACKE_SUBR(ZGEQRT,zgeqrt)
 /* GEMQRT */
-#define SGEMQRT LAPACK_SUBR(SGEMQRT,sgemqrt)
-#define DGEMQRT LAPACK_SUBR(DGEMQRT,dgemqrt)
-#define CGEMQRT LAPACK_SUBR(CGEMQRT,cgemqrt)
-#define ZGEMQRT LAPACK_SUBR(ZGEMQRT,zgemqrt)
+#define SGEMQRT LAPACKE_SUBR(SGEMQRT,sgemqrt)
+#define DGEMQRT LAPACKE_SUBR(DGEMQRT,dgemqrt)
+#define CGEMQRT LAPACKE_SUBR(CGEMQRT,cgemqrt)
+#define ZGEMQRT LAPACKE_SUBR(ZGEMQRT,zgemqrt)
 /* STEQR */
-#define SSTEQR LAPACK_SUBR(SSTEQR,ssteqr)
-#define DSTEQR LAPACK_SUBR(DSTEQR,dsteqr)
-#define CSTEQR LAPACK_SUBR(CSTEQR,csteqr)
-#define ZSTEQR LAPACK_SUBR(ZSTEQR,zsteqr)
+#define SSTEQR LAPACKE_SUBR(SSTEQR,ssteqr)
+#define DSTEQR LAPACKE_SUBR(DSTEQR,dsteqr)
+#define CSTEQR LAPACKE_SUBR(CSTEQR,csteqr)
+#define ZSTEQR LAPACKE_SUBR(ZSTEQR,zsteqr)
 /* GEES - compute Schur form and eigenvalues A */
-#define SGEES LAPACK_SUBR(SGEES,sgees)
-#define DGEES LAPACK_SUBR(DGEES,dgees)
-#define CGEES LAPACK_SUBR(CGEES,cgees)
-#define ZGEES LAPACK_SUBR(ZGEES,zgees)
+#define SGEES LAPACKE_SUBR(SGEES,sgees)
+#define DGEES LAPACKE_SUBR(DGEES,dgees)
+#define CGEES LAPACKE_SUBR(CGEES,cgees)
+#define ZGEES LAPACKE_SUBR(ZGEES,zgees)
 /* GGES - compute generalized Schur form and eigenvalues of (A,B) */
-#define SGGES LAPACK_SUBR(SGGES,sgges)
-#define DGGES LAPACK_SUBR(DGGES,dgges)
-#define CGGES LAPACK_SUBR(CGGES,cgges)
-#define ZGGES LAPACK_SUBR(ZGGES,zgges)
+#define SGGES LAPACKE_SUBR(SGGES,sgges)
+#define DGGES LAPACKE_SUBR(DGGES,dgges)
+#define CGGES LAPACKE_SUBR(CGGES,cgges)
+#define ZGGES LAPACKE_SUBR(ZGGES,zgges)
 /* TRSEN - sort Schur form */
-#define STRSEN LAPACK_SUBR(STRSEN,strsen)
-#define DTRSEN LAPACK_SUBR(DTRSEN,dtrsen)
-#define CTRSEN LAPACK_SUBR(CTRSEN,ctrsen)
-#define ZTRSEN LAPACK_SUBR(ZTRSEN,ztrsen)
+#define STRSEN LAPACKE_SUBR(STRSEN,strsen)
+#define DTRSEN LAPACKE_SUBR(DTRSEN,dtrsen)
+#define CTRSEN LAPACKE_SUBR(CTRSEN,ctrsen)
+#define ZTRSEN LAPACKE_SUBR(ZTRSEN,ztrsen)
 /* TGSEN - sort generalized Schur form */
-#define STGSEN LAPACK_SUBR(STGSEN,stgsen)
-#define DTGSEN LAPACK_SUBR(DTGSEN,dtgsen)
-#define CTGSEN LAPACK_SUBR(CTGSEN,ctgsen)
-#define ZTGSEN LAPACK_SUBR(ZTGSEN,ztgsen)
+#define STGSEN LAPACKE_SUBR(STGSEN,stgsen)
+#define DTGSEN LAPACKE_SUBR(DTGSEN,dtgsen)
+#define CTGSEN LAPACKE_SUBR(CTGSEN,ctgsen)
+#define ZTGSEN LAPACKE_SUBR(ZTGSEN,ztgsen)
 /* TREXC - swap rows in Schur form */
-#define STREXC LAPACK_SUBR(STREXC,strexc)
-#define DTREXC LAPACK_SUBR(DTREXC,dtrexc)
-#define CTREXC LAPACK_SUBR(CTREXC,ctrexc)
-#define ZTREXC LAPACK_SUBR(ZTREXC,ztrexc)
+#define STREXC LAPACKE_SUBR(STREXC,strexc)
+#define DTREXC LAPACKE_SUBR(DTREXC,dtrexc)
+#define CTREXC LAPACKE_SUBR(CTREXC,ctrexc)
+#define ZTREXC LAPACKE_SUBR(ZTREXC,ztrexc)
 /* TGEXC - swap rows in generalized Schur form */
-#define STGEXC LAPACK_SUBR(STGEXC,stgexc)
-#define DTGEXC LAPACK_SUBR(DTGEXC,dtgexc)
-#define CTGEXC LAPACK_SUBR(CTGEXC,ctgexc)
-#define ZTGEXC LAPACK_SUBR(ZTGEXC,ztgexc)
+#define STGEXC LAPACKE_SUBR(STGEXC,stgexc)
+#define DTGEXC LAPACKE_SUBR(DTGEXC,dtgexc)
+#define CTGEXC LAPACKE_SUBR(CTGEXC,ctgexc)
+#define ZTGEXC LAPACKE_SUBR(ZTGEXC,ztgexc)
 /* TREVC - compute eigenvectors */
-#define STREVC LAPACK_SUBR(STREVC,strevc)
-#define DTREVC LAPACK_SUBR(DTREVC,dtrevc)
-#define CTREVC LAPACK_SUBR(CTREVC,ctrevc)
-#define ZTREVC LAPACK_SUBR(ZTREVC,ztrevc)
+#define STREVC LAPACKE_SUBR(STREVC,strevc)
+#define DTREVC LAPACKE_SUBR(DTREVC,dtrevc)
+#define CTREVC LAPACKE_SUBR(CTREVC,ctrevc)
+#define ZTREVC LAPACKE_SUBR(ZTREVC,ztrevc)
 /* TRTRS - triangular solve */
-#define STRTRS LAPACK_SUBR(STRTRS,strtrs)
-#define DTRTRS LAPACK_SUBR(DTRTRS,dtrtrs)
-#define CTRTRS LAPACK_SUBR(CTRTRS,ctrtrs)
-#define ZTRTRS LAPACK_SUBR(ZTRTRS,ztrtrs)
+#define STRTRS LAPACKE_SUBR(STRTRS,strtrs)
+#define DTRTRS LAPACKE_SUBR(DTRTRS,dtrtrs)
+#define CTRTRS LAPACKE_SUBR(CTRTRS,ctrtrs)
+#define ZTRTRS LAPACKE_SUBR(ZTRTRS,ztrtrs)
 /* TRSV */
 #define STRSV BLAS_SUBR(STRSV,strsv)
 #define DTRSV BLAS_SUBR(DTRSV,dtrsv)
@@ -123,8 +124,8 @@ typedef char phist_blas_char;
 /* LARTG: C interface missing in MKL and OpenBLAS, so we switch to [S|D]LARTGP */
 /* and call the Fortran variant [c|z]lartgp_ directly because that one is mis- */
 /* sing in OpenBLAS, too.                                                      */
-#define SLARTGP LAPACK_SUBR(SLARTGP,slartgp)
-#define DLARTGP LAPACK_SUBR(DLARTGP,dlartgp)
+#define SLARTGP LAPACKE_SUBR(SLARTGP,slartgp)
+#define DLARTGP LAPACKE_SUBR(DLARTGP,dlartgp)
 #ifdef PHIST_HAVE_MKL
 #define CLARTG LAPACK_SUBR(CLARTG,clartg)
 #define ZLARTG LAPACK_SUBR(ZLARTG,zlartg)
@@ -142,10 +143,10 @@ void ZLARTG(lapack_complex_double* F, lapack_complex_double* G, double* CS, lapa
 # endif
 #endif
 /* GESVD */
-#define SGESVD LAPACK_SUBR(SGESVD,sgesvd)
-#define DGESVD LAPACK_SUBR(DGESVD,dgesvd)
-#define CGESVD LAPACK_SUBR(CGESVD,cgesvd)
-#define ZGESVD LAPACK_SUBR(ZGESVD,zgesvd)
+#define SGESVD LAPACKE_SUBR(SGESVD,sgesvd)
+#define DGESVD LAPACKE_SUBR(DGESVD,dgesvd)
+#define CGESVD LAPACKE_SUBR(CGESVD,cgesvd)
+#define ZGESVD LAPACKE_SUBR(ZGESVD,zgesvd)
 
 #ifdef PHIST_SDMATS_ROW_MAJOR
 /* we might use LAPACKE for this case, but we don't really need the support
