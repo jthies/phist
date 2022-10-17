@@ -30,7 +30,7 @@ project(phist C CXX Fortran)
 # the function claims to do, depending on the status of the repository.
 set(PHIST_VERSION_MAJOR 1)
 set(PHIST_VERSION_MINOR 11)
-set(PHIST_VERSION_PATCH 0)
+set(PHIST_VERSION_PATCH 1)
 set(PHIST_VERSION ${PHIST_VERSION_MAJOR}.${PHIST_VERSION_MINOR}.${PHIST_VERSION_PATCH})
 math(EXPR PHIST_VERSION_INT "( ( ${PHIST_VERSION_MAJOR} * 100 ) + ${PHIST_VERSION_MINOR} ) * 100 + ${PHIST_VERSION_PATCH}")
 
@@ -199,7 +199,7 @@ endif()
 if (NOT TPL_LAPACKE_INCLUDE_DIRS)
   find_path (LAPACKE_INCLUDE_DIR NAMES lapacke.h mkl_lapacke.h 
                                  HINTS ${LAPACK_LIBDIR}
-                                 PATH_SUFFIXES "lapacke")
+                                 PATH_SUFFIXES "lapacke" "openblas")
   if (LAPACKE_INCLUDE_DIR MATCHES "LAPACKE_INCLUDE_DIR-NOTFOUND")
     message(WARNING "did not find lapacke header, if the build fails you may need to set TPL_LAPACKE_INCLUDE_DIRS explicitly.")
   else()
