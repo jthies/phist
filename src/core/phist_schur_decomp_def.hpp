@@ -48,10 +48,10 @@ PHIST_TASK_BEGIN_SMALLDETERMINISTIC(ComputeTask)
 
   MT ev_r[m];   // in the complex case this is used as RWORK
 #ifndef IS_COMPLEX
-  // real and imag part of ritz values
+  // real and imag part of Ritz values
   MT ev_i[m];
 #endif
-  phist_blas_char jobvs='V'; // compute the ritz vectors in S
+  phist_blas_char jobvs='V'; // compute the Ritz vectors in S
   phist_blas_char sort='N';  // do not sort Ritz values (we do that later
                           // because gees only accepts the simple select
                           // function which does not compare the Ritz values)
@@ -136,7 +136,9 @@ PHIST_TASK_BEGIN_SMALLDETERMINISTIC(ComputeTask)
 #ifndef IS_COMPLEX
   int liwork=m*m;
   int iwork[liwork];
-#endif  
+  int lwork = 2*m*m;
+  ST work[lwork];
+#endif
   if (nselect<m)
   {
     PHIST_DEB("initial sort step, nselect=%d\n",nselect);
@@ -153,13 +155,14 @@ PHIST_TASK_BEGIN_SMALLDETERMINISTIC(ComputeTask)
         *iflag=PHIST_TG_PREFIX(TRSEN)(SDMAT_FLAG,job,compq,select,m,(blas_cmplx*)T,ldT,(blas_cmplx*)S,ldS,(blas_cmplx*)ev,&nsorted,
               &S_cond, &sep);
 #else
-        *iflag=PHIST_TG_PREFIX(TRSEN)(SDMAT_FLAG,job,compq,select,m,T,ldT,S,ldS,ev_r,ev_i,&nsorted,
-              &S_cond, &sep);
+        /* pass in work arrays due to a bug in lapacke (segfault in MKL, OpenBLAS, netlib) */
+        *iflag=PHIST_TG_PREFIX(TRSEN_work)(SDMAT_FLAG,job,compq,select,m,T,ldT,S,ldS,ev_r,ev_i,&nsorted,
+              &S_cond, &sep, work, lwork, iwork, liwork);
         for (int i=0;i<m;i++)
         {
           ev[i]=std::complex<MT>(ev_r[i],ev_i[i]);
         }
-#endif   
+#endif
       }
     }
     PHIST_CHK_IERR(;,*iflag);
@@ -173,7 +176,7 @@ PHIST_TASK_BEGIN_SMALLDETERMINISTIC(ComputeTask)
       nselect = nsorted;
     }
   }//nselect<m
-  
+
   if (nselect==1) return; // the one (or two for complex pairs) selected eigenvalue
                           // according to 'which' is already 'sorted'
 
@@ -203,8 +206,8 @@ PHIST_TASK_BEGIN_SMALLDETERMINISTIC(ComputeTask)
         PHIST_TG_PREFIX(TRSEN)(SDMAT_FLAG,job,compq,select,m,(blas_cmplx*)T,ldT,(blas_cmplx*)S,ldS,
               (blas_cmplx*)ev,&nsorted,&S_cond, &sep);
 #else
-        *iflag=PHIST_TG_PREFIX(TRSEN)(SDMAT_FLAG,job,compq,select,m,T,ldT,S,ldS,ev_r,ev_i,&nsorted,
-              &S_cond, &sep);
+        *iflag=PHIST_TG_PREFIX(TRSEN_work)(SDMAT_FLAG,job,compq,select,m,T,ldT,S,ldS,ev_r,ev_i,&nsorted,
+              &S_cond, &sep, work, lwork, iwork, liwork);
         for (int j=0;j<m;j++)
         {
           ev[j]=std::complex<MT>(ev_r[j],ev_i[j]);

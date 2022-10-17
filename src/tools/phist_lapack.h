@@ -82,8 +82,15 @@ typedef char phist_blas_char;
 #define CGGES LAPACKE_SUBR(CGGES,cgges)
 #define ZGGES LAPACKE_SUBR(ZGGES,zgges)
 /* TRSEN - sort Schur form */
+/* note: due to a bug in OpenBLAS we call the 'work' variant for real data types
+         because it seems they forget to allocate iwork (segfault even in MKL)
+ */
+/*
 #define STRSEN LAPACKE_SUBR(STRSEN,strsen)
 #define DTRSEN LAPACKE_SUBR(DTRSEN,dtrsen)
+*/
+#define STRSEN_work LAPACKE_SUBR(STRSEN_work,strsen_work)
+#define DTRSEN_work LAPACKE_SUBR(DTRSEN_work,dtrsen_work)
 #define CTRSEN LAPACKE_SUBR(CTRSEN,ctrsen)
 #define ZTRSEN LAPACKE_SUBR(ZTRSEN,ztrsen)
 /* TGSEN - sort generalized Schur form */
