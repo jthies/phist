@@ -913,7 +913,7 @@ PHIST_TASK_BEGIN(ComputeTask)
       // new Givens rotation to eliminate H(j+1,j)
 #ifdef IS_COMPLEX
       _MT_ cs;
-      PHIST_TG_PREFIX(ROTG)((blas_cmplx*)&Hj[j-1],(blas_cmplx*)&Hj[j],&cs,(blas_cmplx*)&S[i]->sn_[j-1]);
+      PHIST_TG_PREFIX(LARTG)((blas_cmplx*)&Hj[j-1],(blas_cmplx*)&Hj[j],&cs,(blas_cmplx*)&S[i]->sn_[j-1],(blas_cmplx*)&tmp);
       S[i]->cs_[j-1] = (_ST_) cs;
       S[i]->sn_[j-1] = st::conj(S[i]->sn_[j-1]);
 #else
