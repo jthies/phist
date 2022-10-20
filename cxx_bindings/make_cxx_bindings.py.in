@@ -103,7 +103,7 @@ namespace phist
             continue
         if verbose: print("    - process file '"+c_file_name+"'")
 
-        whole_file = open(mod_dir + "/" + c_file_name, 'rU').read()
+        whole_file = open(mod_dir + "/" + c_file_name, 'r', newline=None).read()
                 
         subroutines=re.findall("SUBR\(.*?\)\(.*?\)\;", whole_file, re.DOTALL)
         for s in subroutines:
