@@ -1,5 +1,7 @@
-phist-1.11.1
+phist-1.11.2
   - use lapacke interface almost everywhere to improve portability (in particular for Cray libsci, which doesn't provide a lapack.h header)
+  - fix another minor issue with Cray libsci
+  - adjust deprecated Python code to support python 3.11
 phist-1.11.0
   - clean up BLAS/LAPACK interface to allow building with OpenBLAS
   - fix a minor build error with Intel OneAPI Fortran compiler ifx
