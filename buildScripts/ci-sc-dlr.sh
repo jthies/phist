@@ -88,6 +88,8 @@ export MODULEPATH=/tools/modulesystem/spack-22.2/share/spack/modules/linux-ubunt
 module load PrgEnv/${PRGENV}||exit ${LINENO}
 # cppcheck from spack currently doesn't work, unload it manually
 module unload -f cppcheck
+module load py-pytest
+module load py-numpy
 
 
 if [[ "$FLAGS" = *optional-libs* ]]; then
