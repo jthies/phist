@@ -80,6 +80,9 @@ echo "HOST: ${HOSTNAME}"
 echo "SOURCE DIR: ${PWD}"
 
 ## prepare system for compilation
+# configure modulesystem
+module() { eval `/usr/bin/modulecmd bash $*`; }
+export MODULEPATH=/tools/modulesystem/spack-22.2/share/spack/modules/linux-ubuntu20.04-x86_64_v3
 
 # load modules
 module load PrgEnv/${PRGENV}||exit ${LINENO}
