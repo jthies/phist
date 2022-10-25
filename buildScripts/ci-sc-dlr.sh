@@ -31,7 +31,7 @@ SANITIZER=""
 
 
 ## parse command line arguments
-usage() { echo "Usage: $0 [-k <builtin|ghost|epetra|tpetra|petsc|eigen>] [-e PrgEnv/<module-string>] [-f <optional-libs>]"; \
+usage() { echo "Usage: $0 [-k <builtin|ghost|epetra|tpetra|petsc|eigen>] [-e <PrgEnv/module-string>] [-f <optional-libs>]"; \
           echo "       [-c <cmake flags to be added>] [-v <SSE|AVX|AVX2|CUDA>] [-t <trilinos version>] [-w <workspace-dir>]" 1>&2; exit 1; }
 
 function update_error { 
@@ -80,19 +80,12 @@ echo "HOST: ${HOSTNAME}"
 echo "SOURCE DIR: ${PWD}"
 
 ## prepare system for compilation
-# configure modulesystem
-module() { eval `/usr/bin/modulecmd bash $*`; }
-source /tools/modulesystem/spack_KP/share/spack/setup-env.sh
 
 # load modules
 module load PrgEnv/${PRGENV}||exit ${LINENO}
-module load py-pytest-5.3.4-gcc-7.5.0-python3-slogudr || ${LINENO}
-module load py-numpy-1.18.5-gcc-7.5.0-mkl-python3-mogymwt  py-numpy-1.18.5-gcc-7.5.0-mogymwt || exit ${LINENO}
-module test PrgEnv/${PRGENV} || exit ${LINENO}
 
 
 if [[ "$FLAGS" = *optional-libs* ]]; then
-
   ADD_CMAKE_FLAGS+=" -DPHIST_USE_GRAPH_TPLS:BOOL=ON"
   ADD_CMAKE_FLAGS+=" -DPHIST_USE_PRECON_TPLS:BOOL=ON"
   ADD_CMAKE_FLAGS+=" -DPHIST_USE_SOLVER_TPLS:BOOL=ON"
@@ -126,9 +119,8 @@ if [[ $PRGENV =~ gcc* ]]; then
     export FC=gfortran CC=gcc CXX=g++
   fi
   if [[ "${VECT_EXT}" != "CUDA" ]] && [[ "${PRGENV}" != "gcc-7.2.0-openmpi" ]]; then
-    ADD_CMAKE_FLAGS+=" -DPHIST_USE_CCACHE=OFF"
-#    ADD_CMAKE_FLAGS+=" -DPHIST_USE_CCACHE=ON"
-#    export CCACHE_DIR=/localdata1/f_jkessx/.ccache/
+    ADD_CMAKE_FLAGS+=" -DPHIST_USE_CCACHE=ON"
+    export CCACHE_DIR=/localdata1/f_buildn/ESSEX_workspace/.ccache/
   else
     ADD_CMAKE_FLAGS+=" -DPHIST_USE_CCACHE=OFF"
   fi
