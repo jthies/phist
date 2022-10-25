@@ -86,6 +86,8 @@ export MODULEPATH=/tools/modulesystem/spack-22.2/share/spack/modules/linux-ubunt
 
 # load modules
 module load PrgEnv/${PRGENV}||exit ${LINENO}
+# cppcheck from spack currently doesn't work, unload it manually
+module unload -f cppcheck
 
 
 if [[ "$FLAGS" = *optional-libs* ]]; then
