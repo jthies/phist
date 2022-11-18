@@ -235,11 +235,17 @@ endif()
 # compiler-dependent flags 
 ##############################################################################
 
-if (CMAKE_C_COMPILER_ID STREQUAL "GNU")
+if (NOT CMAKE_C_COMPILer_ID STREQUAL CMAKE_Fortran_COMPILER_ID AND
+        CMAKE_C_COMPILER_ID STREQUAL CMAKE_CXX_COMPILer_ID) 
+
+  message (STATUS "C/CXX/Fortran compiler IDs differ.")
+  message (STATUS "No custom compiler flags willbe used.")
+
+elseif (CMAKE_C_COMPILER_ID STREQUAL "GNU")
 
   message(STATUS "using GNU compiler flags")
   include(cmake/SetCompilerFlagsGNU.cmake)
-  
+
 elseif (CMAKE_C_COMPILER_ID STREQUAL "Intel")
 
   message(STATUS "using INTEL compiler flags")
@@ -257,8 +263,8 @@ elseif (CMAKE_C_COMPILER_ID STREQUAL "Clang")
 
 else()
 
-  message ("compiler ID: " ${CMAKE_C_COMPILER_ID})
-  message ("No custom compiler flags are known.")
+  message (STATUS "compiler ID: " ${CMAKE_C_COMPILER_ID})
+  message (STATUS "No custom compiler flags are known.")
 
 endif ()
 
