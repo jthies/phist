@@ -28,7 +28,13 @@ extern "C" void SUBR(sdMat_delete)(TYPE(sdMat_ptr) V, int* iflag);
 //!     wherever the program leaves the scope, tmp_V is deleted without
 //!     the user having to call SUBR(mvec_delete)
 //!     }
-
+//!
+//! or, if you do not have an object yet, you may want to use the constructor that actually creates the mvec:
+//!
+//! mvecOwner<ST> V(map_ptr, ncols, &iflag);
+//!
+//! and retrieve the pointer using V.get() for calling phist functions.
+//!
 namespace phist {
 
 //! mvec owner object
@@ -37,12 +43,19 @@ template<> class MvecOwner<_ST_>
 
   public:
 
-    //! constructor
-    MvecOwner(TYPE(mvec_ptr) v=NULL){v_=v;}
+    //! constructor that takes ownership of an existing pointer if an argument is given
+    MvecOwner(TYPE(mvec_ptr) v=nullptr){v_=v;}
+
+    //! constructor that allocates memory
+    MvecOwner(phist_const_map_ptr map, int ncols, int *iflag)
+    {
+      v_=nullptr;
+      PHIST_CHK_IERR(SUBR(mvec_create)(&v_, map, ncols, iflag), *iflag);
+    }
 
     //! destructor
-    ~MvecOwner(){int iflag=0; if (v_!=NULL) SUBR(mvec_delete)(v_,&iflag);}
-    
+    ~MvecOwner(){int iflag=0; if (v_!=nullptr) SUBR(mvec_delete)(v_,&iflag);}
+
     //! set mvec pointer
     void set(TYPE(mvec_ptr) v) {v_=v;}
 
@@ -53,10 +66,10 @@ template<> class MvecOwner<_ST_>
     TYPE(const_mvec_ptr) get() const {return v_;}
 
   private:
-  
+
     //! wraped mvec pointer
     TYPE(mvec_ptr) v_;
-    
+
 };
 
 
@@ -65,12 +78,19 @@ template<> class SdMatOwner<_ST_>
 {
 
   public:
-  
-    //! constructor
-    SdMatOwner(TYPE(sdMat_ptr) v=NULL){v_=v;}
+
+    //! constructor that takes ownership of an existing sdMat_ptr
+    SdMatOwner(TYPE(sdMat_ptr) v=nullptr){v_=v;}
+
+    //! constructor that creates a new sdMat and owns it
+    SdMatOwner(int nrows, int ncols, phist_const_comm_ptr comm, int* iflag)
+    {
+      v_=nullptr;
+      PHIST_CHK_IERR(SUBR(sdMat_create)(&v_, nrows, ncols, comm, iflag), *iflag);
+    }
 
     //! destructor
-    ~SdMatOwner(){int iflag=0; if (v_!=NULL) SUBR(sdMat_delete)(v_,&iflag);}
+    ~SdMatOwner(){int iflag=0; if (v_!=nullptr) SUBR(sdMat_delete)(v_,&iflag);}
 
     //! set sdMat pointer
     void set(TYPE(sdMat_ptr) v) {v_=v;}
@@ -95,10 +115,10 @@ template<> class SparseMatOwner<_ST_>
   public:
 
     //! constructor
-    SparseMatOwner(TYPE(sparseMat_ptr) v=NULL){v_=v;}
+    SparseMatOwner(TYPE(sparseMat_ptr) v=nullptr){v_=v;}
 
     //! destructor
-    ~SparseMatOwner(){int iflag=0; if (v_!=NULL) SUBR(sparseMat_delete)(v_,&iflag);}
+    ~SparseMatOwner(){int iflag=0; if (v_!=nullptr) SUBR(sparseMat_delete)(v_,&iflag);}
 
     //! set sparseMat pointer
     void set(TYPE(sparseMat_ptr) v) {v_=v;}
@@ -110,7 +130,7 @@ template<> class SparseMatOwner<_ST_>
     TYPE(const_sparseMat_ptr) get() const {return v_;}
 
   private:
-  
+
     //! wraped sparseMat pointer
     TYPE(sparseMat_ptr) v_;
 };
