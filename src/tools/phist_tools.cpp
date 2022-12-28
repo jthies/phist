@@ -220,6 +220,7 @@ extern "C" const char* linSolv2str(phist_ElinSolv s)
            s==phist_MINRES?"MINRES":
            s==phist_QMR?"QMR":
            s==phist_BICGSTAB?"BICGSTAB":
+           s==phist_IDRS?"IDRS":
            s==phist_CARP_CG?"CARP_CG":
            s==phist_NO_LINSOLV?"NONE":
            s==phist_USER_LINSOLV?"USER_DEFINED":
@@ -305,6 +306,7 @@ extern "C" phist_ElinSolv str2linSolv(const char* c_str)
   else if (str=="MINRES") s=phist_MINRES;
   else if (str=="QMR") s=phist_QMR;
   else if (str=="BICGSTAB") s=phist_BICGSTAB;
+  else if (str=="IDRS") s=phist_IDRS;
   else if (str=="CARP_CG") s=phist_CARP_CG;
   else if (str=="NONE") s=phist_NO_LINSOLV;
   else if (str=="USER_DEFINED") s=phist_USER_LINSOLV;

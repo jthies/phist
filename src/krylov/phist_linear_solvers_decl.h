@@ -13,6 +13,12 @@
 //! \ingroup linear_solvers
 //!@{
 
+//! \brief IDR(s) for a general non-Hermitian linear system
+void SUBR(IDRs)(TYPE(const_linearOp_ptr) Op,
+                                TYPE(const_linearOp_ptr) rightPreconOp,
+                                TYPE(const_mvec_ptr) rhs, TYPE(mvec_ptr) sol,
+                                int* nIter, _MT_ tol, int* iflag);
+
 //! \brief BiCGStab for a general non-Hermitian linear system
 void SUBR(BiCGStab)(TYPE(const_linearOp_ptr) Op,
                                 TYPE(const_linearOp_ptr) rightPreconOp,

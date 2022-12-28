@@ -13,6 +13,7 @@
 #include "gtest/phist_gtest.h"
 
 #include "phist_precon.h"
+#include "phist_krylov.h"
 #include "phist_jadaOp.h"
 #include "phist_subspacejada.h"
 #include "phist_jadaCorrectionSolver.h"

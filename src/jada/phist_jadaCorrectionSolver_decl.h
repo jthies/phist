@@ -9,10 +9,6 @@
 //! \file phist_jadaCorrectionSolver_decl.h 
 //! \brief calculate approximate solutions to a set of Jacobi-Davidson correction equations
 
-#ifndef DOXYGEN
-#include "phist_enums.h"
-#endif //DOXYGEN
-
 //! \addtogroup jada
 //!@{
 
@@ -25,6 +21,7 @@ typedef struct TYPE(jadaCorrectionSolver) {
   //!@{
   int                   hermitian; //!< Some inner solver schemes may be able to make use of this info
   int                   innerSolvBlockSize_; //!< Number of blockedGMRES states iterated at once
+  int                   innerSolvMaxBas_; //!< number of blocks allowed in linear solver (m for GMRES(m), s for IDR(s))
   TYPE(blockedGMRESstate_ptr) *blockedGMRESstates_; //!< blockedGMRES states
   TYPE(carp_cgState_ptr) *carp_cgStates_; //!< Can use CARP-CG alternatively
   phist_ElinSolv     method_;    //!< Supported values are GMRES, MINRES, CARP_CG and CUSTOM.
@@ -32,6 +29,8 @@ typedef struct TYPE(jadaCorrectionSolver) {
   int preconSkewProject;
 
   TYPE(linearOp_ptr) leftPrecon;
+
+  TYPE(linearOp_ptr) rightPrecon;
 
   //! Pointer to solver object if innerSolvType==USER_DEFINED
   void* customSolver_;

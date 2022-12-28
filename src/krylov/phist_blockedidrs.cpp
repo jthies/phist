@@ -10,17 +10,14 @@
 
 #include "phist_tools.h"
 #include "phist_kernels.h"
-#include "phist_core.h"
-#include "phist_krylov.h"
-#include "phist_ScalarTraits.hpp"
-#include "phist_jadaCorrectionSolver.h"
-#include "phist_jadaOp.h"
-#include "phist_precon.h"
-
-#include "phist_MemOwner.hpp"
-
 #include <cstdlib>
+#include <cstring>
+#include <cmath>
 #include <vector>
 
-#define PHIST_CLASSFILE_DEF "phist_jadaCorrectionSolver_def.hpp"
+#include "phist_blockedidrs.h"
+#include "phist_orthog.h"
+#include "phist_MemOwner.hpp"
+
+#define PHIST_CLASSFILE_DEF "phist_blockedidrs_def.hpp"
 #include "phist_gen_all.h"

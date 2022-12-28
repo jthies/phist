@@ -18,12 +18,9 @@
 #include <mpi.h>
 #endif
 #include "phist_void_aliases.h"
-#include "phist_blockedgmres.h"
-#include "phist_blockedminres.h"
-#include "phist_blockedqmr.h"
-#include "phist_blockedbicgstab.h"
-#include "phist_carp_cg.h"
 #include "phist_jadaOpts.h"
+#include "phist_blockedgmres.h" /* for the blockedGMRESstates struct */
+#include "phist_carp_cg.h" /* for the blockedGMRESstates struct */
 
 #endif // DOXYGEN
 

@@ -8,6 +8,7 @@
 
 /* blocked Krylov solvers used as correction solvers in jada */
 #include "phist_blockedbicgstab.h"
+#include "phist_blockedidrs.h"
 #include "phist_blockedgmres.h"
 #include "phist_blockedminres.h"
 #include "phist_blockedqmr.h"

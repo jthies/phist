@@ -88,7 +88,10 @@ phist_ElinSolv innerSolvType; //!< \brief GMRES, MINRES, CARP_CG, USER_DEFINED a
                               //!< if preconSkewProject!=0 is set.
 
 int innerSolvBlockSize;       //!< If set to -1, the outer block size (blockSize) is used.
-int innerSolvMaxBas;          //!< If set to -1, innerSolvMaxBas=innerSolvMaxIters is used (no restarting of e.g. GMRES)
+int innerSolvMaxBas;          //!< If set to -1, innerSolvMaxBas=innerSolvMaxIters is used (no restarting of e.g. GMRES).
+                              //< For GMRES(m), this is the maximum basis size m.
+                              //< For IDR(s), this is the length of the recurrence loop, s.
+                              //< For other solvers like MINRES, BiCGStab or QMR, it is ignored.
 int innerSolvMaxIters;
 double innerSolvBaseTol;    //!< In the k'th iteration on eigenvalue j, the tolerance used will be innerTolBase^k (default: 0.1)
 int innerSolvRobust; //!< Extra effort to get good jada updates

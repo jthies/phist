@@ -6,21 +6,37 @@
 /* Contact: Jonas Thies (j.thies@tudelft.nl)                                               */
 /*                                                                                         */
 /*******************************************************************************************/
+#ifndef PHIST_BLOCKEDIDRS_H
+#define PHIST_BLOCKEDIDRS_H
+
 #include "phist_config.h"
 
-#include "phist_tools.h"
-#include "phist_kernels.h"
-#include "phist_core.h"
-#include "phist_krylov.h"
-#include "phist_ScalarTraits.hpp"
-#include "phist_jadaCorrectionSolver.h"
-#include "phist_jadaOp.h"
-#include "phist_precon.h"
+#ifndef DOXYGEN
 
-#include "phist_MemOwner.hpp"
+/* needs to be included before system headers for some intel compilers+mpi */
+#ifdef PHIST_HAVE_MPI
+#include <mpi.h>
+#endif
+#include "phist_operator.h"
+#include "phist_enums.h"
+#include "phist_typedefs.h"
 
-#include <cstdlib>
-#include <vector>
+#endif //DOXYGEN
 
-#define PHIST_CLASSFILE_DEF "phist_jadaCorrectionSolver_def.hpp"
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+//! \defgroup blockedBiCGStab blocked BiCGStab solver for symmetric or general linear systems
+//! \ingroup linear_solvers
+//!@{
+
+#define PHIST_CLASSFILE_DEF "phist_blockedidrs_decl.h"
 #include "phist_gen_all.h"
+
+//!@}
+#ifdef __cplusplus
+}
+#endif
+
+#endif
