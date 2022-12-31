@@ -46,7 +46,7 @@ void SUBR(mgs)(TYPE(mvec_ptr) P[], int s, int numSys, int* iflag)
   double nrms[nvec];
   for (int j=0; j<s; j++)
   {
-    for (int k=0; k<j-1; k++)
+    for (int k=0; k<j; k++)
     {
       PHIST_CHK_IERR(SUBR(trace_dot)(P[k], P[j], &alpha, iflag), *iflag);
       PHIST_CHK_IERR(SUBR(mvec_add_mvec)(-alpha, P[k], 1, P[j], iflag), *iflag);
@@ -128,8 +128,8 @@ extern "C" void SUBR(blockedIDRs_iterate)(TYPE(const_linearOp_ptr) Aop, TYPE(con
   // to be able to call phist functions conveniently, get raw pointers
   mvec_ptr r=_r.get(), t=_t.get(), v=_v.get();
 
-  mvec_ptr x;
-  mvec_ptr b;
+  mvec_ptr x=nullptr;
+  mvec_ptr b=nullptr;
   PHIST_CHK_IERR(SUBR(mvec_view_block)(sol, &x, 0, numSys-1, iflag),*iflag);
   _x.set(x);
   PHIST_CHK_IERR(SUBR(mvec_view_block)((mvec_ptr)rhs, &b, 0, numSys-1, iflag),*iflag);
@@ -148,6 +148,8 @@ extern "C" void SUBR(blockedIDRs_iterate)(TYPE(const_linearOp_ptr) Aop, TYPE(con
      PHIST_CHK_IERR(SUBR(mvec_random)(P[i], iflag), *iflag);
   }
 
+  *nIter = 0;
+
   // compute initial residual
   MT normR, normR0, normB, tolB, tolR0;
   ST alpha[s], beta[s], gamma[s];
@@ -158,6 +160,8 @@ extern "C" void SUBR(blockedIDRs_iterate)(TYPE(const_linearOp_ptr) Aop, TYPE(con
   normR0 = normR;
   tolB  = tol * normB;
   tolR0 = tol * normR0;
+
+  PHIST_SOUT(PHIST_VERBOSE, "IDR iter %d:\t%8.4e\t%8.4e\n", *nIter, normR/normR0, normR/normB);
 
   //check if the initial solution is not already a solution within the prescribed
   //tolerance for all of the systems. If it is for one or a few, we do at least one
@@ -183,7 +187,6 @@ extern "C" void SUBR(blockedIDRs_iterate)(TYPE(const_linearOp_ptr) Aop, TYPE(con
 #else
 #define M_ELEM(II,JJ) M_raw[ (JJ)*ldM+(II) ]
 #endif
-  *nIter = 0;
 
   // This concludes the initialisation phase
 
@@ -206,7 +209,7 @@ extern "C" void SUBR(blockedIDRs_iterate)(TYPE(const_linearOp_ptr) Aop, TYPE(con
       ii++;
 
       // Compute new v
-      PHIST_CHK_IERR(SUBR(mvec_add_mvec)(1, v, 1, r, iflag), *iflag);
+      PHIST_CHK_IERR(SUBR(mvec_add_mvec)(1, r, 0, v, iflag), *iflag);
       if ( jj > 0 )
       {
         // Solve small system (Note: M is lower triangular) and make v orthogonal to P:
@@ -282,10 +285,10 @@ extern "C" void SUBR(blockedIDRs_iterate)(TYPE(const_linearOp_ptr) Aop, TYPE(con
           H(ii-k+1:ii-1,ii) =  alpha(1:k-1)/beta(1:k-1)
        */
       // Break down?
-      if ( abs(M_ELEM(k,k)) <= mt::eps() )
+      if ( std::abs(M_ELEM(k,k)) <= mt::eps() )
       {
         *iflag=-3;
-        return;
+        PHIST_CHK_IERR("breakdown encountered in IDR(s)",*iflag);
       }
 
       // Make r orthogonal to p_i, i = 1..k, update solution and residual 
@@ -303,7 +306,7 @@ extern "C" void SUBR(blockedIDRs_iterate)(TYPE(const_linearOp_ptr) Aop, TYPE(con
 
         // Compute Hessenberg matrix?
         /*
-        if ( out_H .and. ii <= nritz ) then     
+        if ( out_H .and. ii <= nritz ) then
             H(ii,ii) = 1./beta(k)
             l = max(1,ii-s)
             H(l+1:ii+1,ii) = (H(l+1:ii+1,ii) - H(l:ii,ii))
@@ -312,7 +315,8 @@ extern "C" void SUBR(blockedIDRs_iterate)(TYPE(const_linearOp_ptr) Aop, TYPE(con
          */
       // Check for convergence
       PHIST_CHK_IERR(SUBR(frob_norm)(r, &normR, iflag), *iflag);
-      *nIter++;
+      (*nIter)++;
+      PHIST_SOUT(PHIST_VERBOSE, "IDR iter %d:\t%8.4e\t%8.4e\n", *nIter, normR/normR0, normR/normB);
       if ( normR < tolB || normR < tolR0 )
       {
         *iflag = 0;
@@ -324,7 +328,6 @@ extern "C" void SUBR(blockedIDRs_iterate)(TYPE(const_linearOp_ptr) Aop, TYPE(con
         return;
       }
     }// k-loop: Now we have computed s+1 vectors in G_j
-    if ( *iflag >= 0 ) return;
 
     //+++++++++++++++++++++++++++++++++++++++++++++++++++++++
     // Compute first residual in G_j+1
@@ -371,7 +374,7 @@ extern "C" void SUBR(blockedIDRs_iterate)(TYPE(const_linearOp_ptr) Aop, TYPE(con
     if ( std::abs(omega) <= mt::eps() )
     {
       *iflag = 3;
-      return;
+      PHIST_CHK_IERR("stagnation detected in IDR(s)",*iflag);
     }
 
     // Update solution and residual
@@ -382,7 +385,8 @@ extern "C" void SUBR(blockedIDRs_iterate)(TYPE(const_linearOp_ptr) Aop, TYPE(con
 
     // Check for convergence
     PHIST_CHK_IERR(SUBR(frob_norm)(r,&normR,iflag),*iflag);
-    *nIter++;
+    (*nIter)++;
+    PHIST_SOUT(PHIST_VERBOSE, "IDR iter %d:\t%8.4e\t%8.4e\n", *nIter, normR/normR0, normR/normB);
 
     if ( normR < tolB || normR < tolR0)
     {
@@ -393,8 +397,9 @@ extern "C" void SUBR(blockedIDRs_iterate)(TYPE(const_linearOp_ptr) Aop, TYPE(con
          *iflag = 1;
     }
   } // end of while loop
-/* TODO
-! Set output parameters
+
+  // Set output parameters
+  /* TODO
    r = b - A*x
    normr = FROB_NORM(r)
 

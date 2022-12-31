@@ -35,4 +35,4 @@
 void SUBR( blockedIDRs_iterate ) (TYPE(const_linearOp_ptr) Op,
                 TYPE(const_linearOp_ptr) rightPreconOp,
                 TYPE(const_mvec_ptr) rhs, TYPE(mvec_ptr) sol, TYPE(const_mvec_ptr) V,
-                int numSys, int *nIter, _MT_ const tol, int s, int* iflag);
+                int numSys, int *nIter, _MT_ tol, int s, int* iflag);
