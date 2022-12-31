@@ -26,6 +26,7 @@
 #include "phist_belos.h"
 
 #include "phist_blockedbicgstab.h"
+#include "phist_blockedidrs.h"
 #include "phist_precon.h"
 
 
@@ -34,6 +35,8 @@
 #include "phist_driver_utils_decl.h"
 #include "phist_ScalarTraits.hpp"
 #include "phist_std_typedefs.hpp"
+
+/* driver routine for experimenting with BiCGstab and IDR(s) linear solvers */
 
 int main(int argc, char** argv)
 {
@@ -65,7 +68,8 @@ int main(int argc, char** argv)
 
   if (argc<2)
   {
-    PHIST_SOUT(PHIST_ERROR,"Usage: %s <matrix> [<max iters> [<tol> [<num rhs> [<precon> [<prec_opts>]]]]]\n",argv[0]);
+    PHIST_SOUT(PHIST_ERROR,"Usage: %s <matrix> [<s> [<max iters> [<tol> [<num rhs> [<precon> [<prec_opts>]]]]]]\n",argv[0]);
+    PHIST_SOUT(PHIST_ERROR,"       s=0: BiCGstab, s>=1: IDR(s)\n")
     SUBR(create_matrix)(NULL,NULL,"usage",&iflag);
     SUBR(precon_create)(NULL,NULL,st::zero(),NULL,NULL,NULL,"usage",NULL,NULL,&iflag);
     return 1;
@@ -75,6 +79,8 @@ int main(int argc, char** argv)
   
   int p=2;
 
+  int s=0;
+  GET_ARG(s,p++,s>=0);
   int max_iters=300;  
   GET_ARG(max_iters,p++,max_iters>0);
   MT tol=1e-6;
@@ -128,10 +134,16 @@ int main(int argc, char** argv)
 
   TYPE(const_mvec_ptr) V = NULL;
   int nIter=max_iters;
-  _MT_ _tol[num_rhs];
-  for(int i=0; i<num_rhs; i++) _tol[i]=tol;
-  PHIST_ICHK_IERR( SUBR( blockedBiCGStab_iterate ) (A_op, P_op,B, X, V, num_rhs, &nIter, _tol, &iflag),iflag);
-  
+  if (s==0) /* BiCGstab */
+  {
+    _MT_ _tol[num_rhs];
+    for(int i=0; i<num_rhs; i++) _tol[i]=tol;
+    PHIST_ICHK_IERR( SUBR( blockedBiCGStab_iterate ) (A_op, P_op,B, X, V, num_rhs, &nIter, _tol, &iflag),iflag);
+  }
+  else /* IDR(s) */
+  {
+    PHIST_ICHK_IERR( SUBR( blockedIDRs_iterate ) (A_op, P_op,B, X, V, num_rhs, &nIter, tol, s, &iflag),iflag);
+  }
   
   /* compute residual norms */
   PHIST_ICHK_IERR(SUBR(sparseMat_times_mvec)(st::one(),A,X,st::zero(),R,&iflag),iflag);
