@@ -94,14 +94,25 @@
 #define PHIST_TIMEMONITOR_PERLINE_MACRO
 #endif
 
+//! \def PHIST_REPORT_IERR prints an error message if flag<0 and returns from the current function.
+//! Prints a warning message if flag>0 and continues in the current function.
+#define PHIST_REPORT_IERR(msg,FLAG) { \
+if (FLAG<PHIST_SUCCESS) { \
+PHIST_OUT(PHIST_ERROR,"Error code %d (%s) encountered: %s\n(file %s, line %d)\n",\
+(FLAG),(phist_retcode2str(FLAG)),(msg),(__FILE__),(__LINE__)); return;} \
+else if (FLAG>PHIST_SUCCESS) { \
+PHIST_OUT(PHIST_WARNING,"Warning code %d (%s) encountered: %s\n(file %s, line %d)\n",\
+(FLAG),(phist_retcode2str(FLAG)),(msg),(__FILE__),(__LINE__));} \
+}
+
 //! \def PHIST_CHK_IERR checks an iflag flag passed to a void function for non-zero value, assigns it to FLAG,
 //! prints an error message and returns if non-zero (to be used in void functions)
 #ifdef __cplusplus
 #define PHIST_CHK_IERR(func,FLAG) { PHIST_TIMEMONITOR_PERLINE_MACRO \
-try {func; if (FLAG==PHIST_DEPRECATED) { \
+try {func; if ((FLAG)==PHIST_DEPRECATED) { \
 PHIST_OUT(PHIST_WARNING,"Warning: function %s is DEPRECATED!\n (file %s, line %d)\n",(#func),(__FILE__),(__LINE__)); \
 FLAG=PHIST_SUCCESS; \
-} else if (FLAG!=PHIST_SUCCESS) { \
+} else if ((FLAG)!=PHIST_SUCCESS) { \
 PHIST_OUT(PHIST_ERROR,"Error code %d (%s) returned from call %s\n(file %s, line %d)\n",\
 (FLAG),(phist_retcode2str(FLAG)),(#func),(__FILE__),(__LINE__)); return;}} \
 catch (const std::exception &e) {PHIST_OUT(PHIST_ERROR,"Exception caught in call %s (%s)\n(file %s, line %d)\n",\
@@ -114,10 +125,10 @@ catch (...) {PHIST_OUT(PHIST_ERROR,"unknown Exception caught in call %s\n(file %
 (#func),(__FILE__),(__LINE__)); (FLAG)=-77; return;}}
 #else
 #define PHIST_CHK_IERR(func,FLAG) { PHIST_TIMEMONITOR_PERLINE_MACRO \
-{func; if (FLAG==PHIST_DEPRECATED) { \
+{func; if ((FLAG)==PHIST_DEPRECATED) { \
 PHIST_OUT(PHIST_WARNING,"Warning: function %s is DEPRECATED!\n (file %s, line %d)\n",(#func),(__FILE__),(__LINE__)); \
-FLAG=PHIST_SUCCESS; \
-} else if (FLAG!=PHIST_SUCCESS) { \
+(FLAG)=PHIST_SUCCESS; \
+} else if ((FLAG)!=PHIST_SUCCESS) { \
 PHIST_OUT(PHIST_ERROR,"Error code %d (%s) returned from call %s\n(file %s, line %d)\n",\
 (FLAG),(phist_retcode2str(FLAG)),(#func),(__FILE__),(__LINE__)); return;}}}
 #endif
@@ -140,7 +151,7 @@ PHIST_OUT(PHIST_ERROR,"Error code %d (%s) returned from call %s\n(file %s, line 
 #ifndef PHIST_CHK_NEG_IERR
 #ifdef __cplusplus
 #define PHIST_CHK_NEG_IERR(func,FLAG) { PHIST_TIMEMONITOR_PERLINE_MACRO \
-try {func; if (FLAG < PHIST_SUCCESS) { \
+try {func; if ((FLAG) < PHIST_SUCCESS) { \
 PHIST_OUT(PHIST_ERROR,"Error code %d (%s) returned from call %s\n(file %s, line %d)\n",\
 (FLAG),(phist_retcode2str(FLAG)),(#func),(__FILE__),(__LINE__)); return;}} \
 catch (const std::exception &e) {PHIST_OUT(PHIST_ERROR,"Exception caught in call %s (%s)\n(file %s, line %d)\n",\

@@ -17,17 +17,18 @@ void SUBR(trace_dot)(TYPE(const_mvec_ptr) x, TYPE(const_mvec_ptr) y, _ST_* resul
   int nvec;
   PHIST_CHK_IERR(SUBR(mvec_num_vectors)(x,&nvec,iflag),*iflag);
   _ST_ dot[nvec];
-  *result=0;
   PHIST_CHK_IERR(SUBR(mvec_dot_mvec)(x, y, dot, iflag), *iflag);
+  *result=0;
   for (int i=0; i<nvec; i++) *result+=dot[i];
   return;
 }
 
 void SUBR(frob_norm)(TYPE(const_mvec_ptr) x, _MT_* result, int *iflag)
 {
+#include "phist_std_typedefs.hpp"
   _ST_ dot;
   PHIST_CHK_IERR(SUBR(trace_dot)(x,x,&dot,iflag),*iflag);
-  *result = _MT_(dot);
+  *result = std::sqrt(st::real(dot));
 }
 
 // helper function: pdots[i] = trace_dot(P[i],w), for i=0...s-1
@@ -145,7 +146,6 @@ extern "C" void SUBR(blockedIDRs_iterate)(TYPE(const_linearOp_ptr) Aop, TYPE(con
      _G[i].set(G[i]);
      PHIST_CHK_IERR(SUBR(mvec_create)(&P[i], map, numSys, iflag), *iflag);
      _P[i].set(P[i]);
-     PHIST_CHK_IERR(SUBR(mvec_random)(P[i], iflag), *iflag);
   }
 
   *nIter = 0;
@@ -161,7 +161,7 @@ extern "C" void SUBR(blockedIDRs_iterate)(TYPE(const_linearOp_ptr) Aop, TYPE(con
   tolB  = tol * normB;
   tolR0 = tol * normR0;
 
-  PHIST_SOUT(PHIST_VERBOSE, "IDR iter %d:\t%8.4e\t%8.4e\n", *nIter, normR/normR0, normR/normB);
+  PHIST_SOUT(PHIST_VERBOSE, "IDR iter %d:\t%8.4e\t%8.4e\n", *nIter, normR/normR0, normR);
 
   //check if the initial solution is not already a solution within the prescribed
   //tolerance for all of the systems. If it is for one or a few, we do at least one
@@ -172,11 +172,19 @@ extern "C" void SUBR(blockedIDRs_iterate)(TYPE(const_linearOp_ptr) Aop, TYPE(con
     return;
   }
 
+
+  // setting the first column of P to r reproduces BiCGStab for IDR(1)
+  PHIST_CHK_IERR(SUBR(mvec_add_mvec)(1,r,0,P[0], iflag), *iflag);
+  for (int i=1; i<s; i++)
+  {
+    PHIST_CHK_IERR(SUBR(mvec_random)(P[i], iflag), *iflag);
+  }
+
   // orthogonalize the s P vectors mutually
   PHIST_CHK_IERR(SUBR(mgs)(P, s, numSys, iflag), *iflag);
   ST kappa = 0.7;
 
-  sdMat_owner _M(s,s,comm,iflag); PHIST_CHK_IERR("memory allocation failed",*iflag);
+  sdMat_owner _M(s,s,comm,iflag); PHIST_REPORT_IERR("memory allocation failed",*iflag);
   sdMat_ptr M = _M.get();
   PHIST_CHK_IERR(SUBR(sdMat_put_value)(M,0,iflag),*iflag);
   ST* M_raw=nullptr;
@@ -288,7 +296,7 @@ extern "C" void SUBR(blockedIDRs_iterate)(TYPE(const_linearOp_ptr) Aop, TYPE(con
       if ( std::abs(M_ELEM(k,k)) <= mt::eps() )
       {
         *iflag=-3;
-        PHIST_CHK_IERR("breakdown encountered in IDR(s)",*iflag);
+        PHIST_REPORT_IERR("breakdown encountered in IDR(s)",*iflag);
       }
 
       // Make r orthogonal to p_i, i = 1..k, update solution and residual 
@@ -316,7 +324,7 @@ extern "C" void SUBR(blockedIDRs_iterate)(TYPE(const_linearOp_ptr) Aop, TYPE(con
       // Check for convergence
       PHIST_CHK_IERR(SUBR(frob_norm)(r, &normR, iflag), *iflag);
       (*nIter)++;
-      PHIST_SOUT(PHIST_VERBOSE, "IDR iter %d:\t%8.4e\t%8.4e\n", *nIter, normR/normR0, normR/normB);
+      PHIST_SOUT(PHIST_VERBOSE, "IDR iter %d:\t%8.4e\t%8.4e\n", *nIter, normR/normR0, normR);
       if ( normR < tolB || normR < tolR0 )
       {
         *iflag = 0;
@@ -374,7 +382,7 @@ extern "C" void SUBR(blockedIDRs_iterate)(TYPE(const_linearOp_ptr) Aop, TYPE(con
     if ( std::abs(omega) <= mt::eps() )
     {
       *iflag = 3;
-      PHIST_CHK_IERR("stagnation detected in IDR(s)",*iflag);
+      PHIST_REPORT_IERR("stagnation detected in IDR(s)",*iflag);
     }
 
     // Update solution and residual
@@ -386,7 +394,7 @@ extern "C" void SUBR(blockedIDRs_iterate)(TYPE(const_linearOp_ptr) Aop, TYPE(con
     // Check for convergence
     PHIST_CHK_IERR(SUBR(frob_norm)(r,&normR,iflag),*iflag);
     (*nIter)++;
-    PHIST_SOUT(PHIST_VERBOSE, "IDR iter %d:\t%8.4e\t%8.4e\n", *nIter, normR/normR0, normR/normB);
+    PHIST_SOUT(PHIST_VERBOSE, "IDR iter %d:\t%8.4e\t%8.4e\n", *nIter, normR/normR0, normR);
 
     if ( normR < tolB || normR < tolR0)
     {
