@@ -161,7 +161,7 @@ int main(int argc, char** argv)
   PHIST_SOUT(PHIST_INFO,"Total number of iterations:\n:");
   for (int i=0; i<num_rhs; i++)
   {
-    PHIST_SOUT(PHIST_INFO,"SYSTEM %d: %d (%s)\n",i,nIter[i],nIter[i]<max_iters?"SUCCESS":"FAILURE");
+    PHIST_SOUT(PHIST_INFO,"SYSTEM %d: %d (%s)\n",i,nIter[i],nIter[i]<=max_iters?"SUCCESS":"FAILURE");
   }
   
   PHIST_SOUT(PHIST_VERBOSE,"residual 2-norms: ||r||, ||r||/||x||, ||r||/||b||:\n");

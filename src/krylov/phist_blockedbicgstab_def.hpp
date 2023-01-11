@@ -17,7 +17,7 @@ extern "C" void SUBR(blockedBiCGStab_iterate)(TYPE(const_linearOp_ptr) Aop, TYPE
   if (numSys==0) return; // do not appear in timing stats
   PHIST_ENTER_FCN(__FUNCTION__);
 
-  int maxIter = (*nIter)>0 ? *nIter: 9999999;
+  int maxIter = (*nIter)>0 ? *nIter: 1000;
 
   *iflag=0;
 
@@ -26,7 +26,7 @@ extern "C" void SUBR(blockedBiCGStab_iterate)(TYPE(const_linearOp_ptr) Aop, TYPE
     *iflag = PHIST_INVALID_INPUT;
     return;
   }
-  
+
   PHIST_CHK_IERR(*iflag=(Pop==NULL)?0:PHIST_NOT_IMPLEMENTED,*iflag);
   {
   }
@@ -74,7 +74,9 @@ extern "C" void SUBR(blockedBiCGStab_iterate)(TYPE(const_linearOp_ptr) Aop, TYPE
   PHIST_CHK_IERR(SUBR(mvec_dot_mvec)(r0,r0,&rho0[0],iflag),*iflag);
   rho=rho0;
 
-  for (*nIter = 0; *nIter <= maxIter; (*nIter)++)
+  // note: to be consistent with IDR(1) and e.g. the MATLAB
+  // implementation, we count matvecs, so two per loop iteration.
+  for (*nIter = 0; *nIter <= maxIter; (*nIter)+=2)
   {
     bool firstConverged = false;
     PHIST_SOUT(PHIST_VERBOSE,"BICGSTAB ITER %d:",*nIter);

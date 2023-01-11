@@ -1044,6 +1044,9 @@ install(TARGETS phist_carp_cg RUNTIME DESTINATION bin OPTIONAL)
 
 LIST(APPEND driver_list phist_carp_cg)
 
+# add integration tests based on these drivers
+include(drivers/integration_tests.cmake)
+
 ######################################################################################
 # setup pkg-config and cmake package files to find phist and dependencies            #
 ######################################################################################
