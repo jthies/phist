@@ -71,6 +71,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(PHIST_KERNEL_LIB "builtin" CACHE STRING "Select underlying kernel libraries for phist (builtin|ghost|epetra|tpetra|magma|petsc|eigen)")
 message(STATUS "PHIST kernel library: " ${PHIST_KERNEL_LIB})
 
+include(cmake/KernelLibSettings.cmake)
 include(cmake/PHIST_Options.cmake)
 
 ########################################################################
@@ -321,87 +322,7 @@ endif()
 
 include(cmake/HandleTPLs.cmake)
 
-
-set(REQUIRE_TRILI_PKG,"")
-set(OPTIONAL_TRILI_PKG,"")
-
-if (PHIST_USE_SOLVER_TPLS)
-  list(APPEND OPTIONAL_TRILI_PKG "Teuchos")
-  list(APPEND OPTIONAL_TRILI_PKG "Anasazi")
-  list(APPEND OPTIONAL_TRILI_PKG "Belos")
-endif()
-
-if  (PHIST_KERNEL_LIB STREQUAL "epetra")
-  list(APPEND REQUIRE_TRILI_PKG "Epetra")
-  list(APPEND REQUIRE_TRILI_PKG "EpetraExt")
-  list(APPEND REQUIRE_TRILI_PKG "Teuchos")
-  set(PHIST_KERNEL_LIB_EPETRA 1)
-
-  list(APPEND OPTIONAL_TRILI_PKG "Kokkos")
-  if (PHIST_USE_GRAPH_TPLS)
-    list(APPEND OPTIONAL_TRILI_PKG "Isorropia")
-    list(APPEND OPTIONAL_TRILI_PKG "Zoltan")
-  endif()
-  if (PHIST_USE_PRECON_TPLS)
-    list(APPEND OPTIONAL_TRILI_PKG "Ifpack")
-    list(APPEND OPTIONAL_TRILI_PKG "ML")
-    list(APPEND OPTIONAL_TRILI_PKG "MueLU")
-  endif()
-elseif  (PHIST_KERNEL_LIB STREQUAL "tpetra")
-  list(APPEND REQUIRE_TRILI_PKG "Tpetra")
-  list(APPEND REQUIRE_TRILI_PKG "Kokkos")
-  list(APPEND REQUIRE_TRILI_PKG "Teuchos")
-  set(PHIST_KERNEL_LIB_TPETRA 1)
-  if (PHIST_USE_PRECON_TPLS)
-    list(APPEND OPTIONAL_TRILI_PKG "Ifpack2")
-    list(APPEND OPTIONAL_TRILI_PKG "Amesos2")
-    list(APPEND OPTIONAL_TRILI_PKG "MueLU")
-  endif()
-elseif (PHIST_KERNEL_LIB STREQUAL "ghost")
-  # we already link with ghost because of the queuing system  
-  set(PHIST_KERNEL_LIB_GHOST 1)
-  set(PHIST_USE_GHOST ON)
-  set(PHIST_MVECS_ROW_MAJOR 1 CACHE STRING "wether multi-vectors should be stored in row-major ordering")
-  set(PHIST_USE_GHOST_TASKS 0 CACHE STRING "execute all kernels as separate GHOST tasks, required for using PHISTs tasking features.")
-
-  set(PHIST_SELL_C -1 CACHE STRING "chunk size C for the SELL-C-sigma format (-1: automatic choice)")
-  set(PHIST_SELL_SIGMA -1 CACHE STRING "sorting scope sigma for the SELL-C-sigma format (-1: automatic choice)")
-
-  set(PHIST_DEFAULT_SPMV_MODE 0 CACHE STRING "default GHOST spmv mode (0: VECTOR, 8: OVERLAP, 16: TASK)")
-
-  if (PHIST_USE_GRAPH_TPLS)
-    list(APPEND OPTIONAL_TRILI_PKG "Zoltan")
-  endif()
-  list(APPEND OPTIONAL_TRILI_PKG "Kokkos")
-  list(APPEND OPTIONAL_TRILI_PKG "Teuchos")
-
-elseif (PHIST_KERNEL_LIB STREQUAL "builtin")
-  set(PHIST_KERNEL_LIB_BUILTIN 1)
-  set(PHIST_MVECS_ROW_MAJOR 1)
-  option(PHIST_BUILTIN_MEMALIGN "Specify desired alignment for builtin Fortran kernels (in byte). Setting it to 0 will use regular mallocs." 0)
-  if(PHIST_HAVE_AVX2)
-    option(PHIST_HIGH_PRECISION_KERNELS "Activate experimental high-precision builtin kernel routines" Off)
-    option(PHIST_HIGH_PRECISION_KERNELS_FORCE "Always force the usage of high precision reductions even if this requires copying data and is slow!" Off)
-  endif()
-
-  if( NOT PHIST_HAVE_MPI )
-    message(FATAL_ERROR "Builtin kernel lib requires MPI!")
-  endif()
-elseif (PHIST_KERNEL_LIB STREQUAL "magma")
-  set(PHIST_KERNEL_LIB_MAGMA 1)
-  set(PHIST_MVECS_ROW_MAJOR 0)
-elseif (PHIST_KERNEL_LIB STREQUAL "petsc")
-  set(PHIST_KERNEL_LIB_PETSC 1)
-  set(PHIST_MVECS_ROW_MAJOR 0)
-elseif (PHIST_KERNEL_LIB STREQUAL "eigen")
-  set(PHIST_KERNEL_LIB_EIGEN 1)
-  set(PHIST_MVECS_ROW_MAJOR 0 CACHE STRING "wether multi-vectors should be stored in row-major ordering")
-  if( PHIST_HAVE_MPI )
-    message(FATAL_ERROR "The eigen kernel lib has no MPI support!")
-  endif()
-else ()
-  message( FATAL_ERROR "PHIST_KERNEL_LIB not set or not recognized" )
-endif ()
+include(cmake/HandleTrilinosTPLs.cmake)
 
 if (NOT DEFINED PHIST_FORCE_32BIT_GIDX_DEFAULT)
 
@@ -723,6 +644,20 @@ target_link_libraries(phist_core phist_kernels_${PHIST_KERNEL_LIB})
 target_link_libraries(phist_precon phist_core)
 target_link_libraries(phist_solvers phist_precon)
 
+foreach(PKG ${REQUIRE_TRILI_PKG})
+
+    target_link_libraries(phist_tools ${${PKG}_LIBRARIES})
+    target_link_libraries(phist_tools ${${PKG}_TPL_LIBRARIES})
+
+endforeach()
+
+foreach(PKG ${OPTIONAL_TRILI_PKG})
+
+    target_link_libraries(phist_tools ${${PKG}_LIBRARIES})
+    target_link_libraries(phist_tools ${${PKG}_TPL_LIBRARIES})
+
+endforeach()
+
 if(PHIST_KERNEL_LIB STREQUAL "ghost")
   find_package(GHOST 1.1.1 REQUIRED CONFIG)
 elseif(PHIST_USE_GHOST)
@@ -809,70 +744,6 @@ if (PHIST_USE_LIKWID)
 
 endif()
 
-
-###########################################################################################
-# check for required Trilinos libraries, note that you have to add the Trilinos lib/cmake #
-# dir to your CMAKE_PREFIX_PATH so that CMake finds them automatically.                   #
-###########################################################################################
-
-foreach(PKG ${REQUIRE_TRILI_PKG})
-  string(TOUPPER ${PKG} PKG_CAPS)
-  if (Trilinos_DIR)
-    set(${PKG}_DIR "${Trilinos_DIR}/../${PKG}")
-    find_package(${PKG} PATHS ${${PKG}_DIR} QUIET NO_DEFAULT_PATH REQUIRED)
-  else()
-    find_package(${PKG} REQUIRED)
-  endif()
-  message(STATUS "Look for required Trilinos package ${PKG}...")
-  if (${${PKG}_FOUND})
-    include_directories(${${PKG}_INCLUDE_DIRS})
-    include_directories(${${PKG}_TPL_INCLUDE_DIRS})
-    link_directories(${${PKG}_LIBRARY_DIRS})
-    link_directories(${${PKG}_TPL_LIBRARY_DIRS})
-    target_link_libraries(phist_tools ${${PKG}_LIBRARIES})
-    target_link_libraries(phist_tools ${${PKG}_TPL_LIBRARIES})
-    set(PHIST_HAVE_${PKG_CAPS} "Enable required Trilinos package ${PKG}" ON)
-    mark_as_advanced(${PKG}_DIR)
-  else()
-    message(FATAL_ERROR "required package ${PKG} was not found")
-  endif()
-
-endforeach()
-
-#########################################################################################
-# check for and enable optional libs from Trilinos (preconditioners, Belos/Anasazi)     #
-#########################################################################################
-
-
-if (NOT PHIST_USE_TRILINOS_TPLS)
-  set(OPTIONAL_TRILI_PKG "")
-endif()
-
-foreach(PKG ${OPTIONAL_TRILI_PKG})
-  string(TOUPPER ${PKG} PKG_CAPS)
-  set(TPL_REPORT "optional Trilinos package ${PKG_CAPS}... ")
-  if (Trilinos_DIR)
-    set(${PKG}_DIR "${Trilinos_DIR}/../${PKG}")
-    find_package(${PKG} PATHS ${${PKG}_DIR} QUIET NO_DEFAULT_PATH QUIET)
-  else()
-    find_package(${PKG} QUIET)
-  endif()
-
-  if (${${PKG}_FOUND})
-    list(APPEND TPL_REPORT "found")
-    include_directories(${${PKG}_INCLUDE_DIRS})
-    include_directories(${${PKG}_TPL_INCLUDE_DIRS})
-    link_directories(${${PKG}_LIBRARY_DIRS})
-    link_directories(${${PKG}_TPL_LIBRARY_DIRS})
-    target_link_libraries(phist_tools ${${PKG}_LIBRARIES})
-    target_link_libraries(phist_tools ${${PKG}_TPL_LIBRARIES})
-    mark_as_advanced(${PKG}_DIR)
-    set(PHIST_HAVE_${PKG_CAPS} "Enable optional Trilinos package ${PKG}" ON)
-  else()
-    list(APPEND TPL_REPORT "not found")
-  endif()
-  message(STATUS ${TPL_REPORT})
-endforeach()
 
 if (PHIST_HAVE_ANASAZI)
   set(PHIST_ANASAZI_THEIR_ORTHO_MANAGER ON CACHE BOOL "In the Anasazi interface, rely on the Trilinos orthogonalization routines rather than our own.")
@@ -1043,9 +914,6 @@ target_link_libraries(phist_carp_cg ${library_list})
 install(TARGETS phist_carp_cg RUNTIME DESTINATION bin OPTIONAL)
 
 LIST(APPEND driver_list phist_carp_cg)
-
-# add integration tests based on these drivers
-include(drivers/integration_tests.cmake)
 
 ######################################################################################
 # setup pkg-config and cmake package files to find phist and dependencies            #
@@ -1313,6 +1181,13 @@ if (PHIST_KERNEL_LIB_GHOST AND GCC_SANITIZE )
 endif()
 # Test python interface. This requires pytest
 if(NOT DISABLE_PYTHON_TESTS)
+
+#### INTEGRATION TESTS ####
+
+# add integration tests based on these drivers
+include(drivers/integration_tests.cmake)
+
+###########################
 
   set(PYSTDIR "${PROJECT_SOURCE_DIR}/python/")
 
