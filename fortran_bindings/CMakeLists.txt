@@ -18,6 +18,10 @@ set(INC_FLAGS "-I${PHIST_SRC}/kernels/"
 if (PHIST_KERNEL_LIB_GHOST)
   list(GET GHOST_INCLUDE_DIRS 0 GHOST_INCLUDE_DIR)
   set(INC_FLAGS "-I${GHOST_INCLUDE_DIR}" ${INC_FLAGS})
+elseif (PHIST_KERNEL_LIB_EPETRA)
+  set(INC_FLAGS "-I${Epetra_INCLUDE_DIRS}" ${INC_FLAGS})
+elseif (PHIST_KERNEL_LIB_TPETRA)
+  set(INC_FLAGS "-I${Tpetra_INCLUDE_DIRS}" ${INC_FLAGS})
 endif()
 
 set(F_EXT "F90" CACHE STRING "file extension to be added to generated Fortran modules (.F90 by default)")
