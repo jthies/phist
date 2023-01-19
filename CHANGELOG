@@ -1,8 +1,9 @@
 devel
   - new linear solver: IDR(s)
   - fix bug in generating Fortran bindings (missing include path for Epetra/Tpetra kernel libs)
-  - refactoring of cmake (some parts outsourced) to make it more readable
-  - refactor integration tests
+  - refactoring of cmake (some parts outsourced) to make it more readable)
+  - refactor integration tests (now defined via cmake rather than a python script)
+  
 phist-1.11.2
   - use lapacke interface almost everywhere to improve portability (in particular for Cray libsci, which doesn't provide a lapack.h header)
   - fix another minor issue with Cray libsci
