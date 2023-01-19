@@ -1183,8 +1183,6 @@ if (PHIST_KERNEL_LIB_GHOST AND GCC_SANITIZE )
   message(WARNING "Disabling Python tests with GHOST+GCC sanitizer, cf. issue #165")
   set(DISABLE_PYTHON_TESTS 1)
 endif()
-# Test python interface. This requires pytest
-if(NOT DISABLE_PYTHON_TESTS)
 
 #### INTEGRATION TESTS ####
 
@@ -1192,6 +1190,10 @@ if(NOT DISABLE_PYTHON_TESTS)
 include(drivers/integration_tests.cmake)
 
 ###########################
+
+# Test python interface. This requires pytest
+if(NOT DISABLE_PYTHON_TESTS)
+
 
   set(PYSTDIR "${PROJECT_SOURCE_DIR}/python/")
 
