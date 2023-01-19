@@ -71,8 +71,8 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(PHIST_KERNEL_LIB "builtin" CACHE STRING "Select underlying kernel libraries for phist (builtin|ghost|epetra|tpetra|magma|petsc|eigen)")
 message(STATUS "PHIST kernel library: " ${PHIST_KERNEL_LIB})
 
-include(cmake/KernelLibSettings.cmake)
 include(cmake/PHIST_Options.cmake)
+include(cmake/KernelLibSettings.cmake)
 
 ########################################################################
 # XSDK OPTIONS
@@ -1147,7 +1147,7 @@ foreach(np ${PHIST_MPI_TEST_NPROCS})
       set(TEST_COMMAND ${TEST_ENV_NTHREADS} 
                        ./${PRODUCT_NAME}-${label}-test-${CMAKE_BUILD_TYPE} --gtest_death_test_style=threadsafe --gtest_output=xml:${TEST_OUTPUT_DIR}/xunit.xml)
     else()
-      set(TEST_COMMAND ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} ${np} ${TEST_ENV_NTHREADS}
+      set(TEST_COMMAND ${MPIEXEC} ${MPIEXEC_PREFLAGS} ${MPIEXEC_NUMPROC_FLAG} ${np} ${MPIEXEC_POSTFLAGS} ${TEST_ENV_NTHREADS}
                        ./${PRODUCT_NAME}-${label}-test-${CMAKE_BUILD_TYPE} --gtest_death_test_style=threadsafe --gtest_output=xml:${TEST_OUTPUT_DIR}/xunit.xml)
     endif()
     set(CURRENT_TESTNAME test-${label}_np${np})
