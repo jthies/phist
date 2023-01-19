@@ -1147,9 +1147,13 @@ foreach(np ${PHIST_MPI_TEST_NPROCS})
       set(TEST_COMMAND ${TEST_ENV_NTHREADS} 
                        ./${PRODUCT_NAME}-${label}-test-${CMAKE_BUILD_TYPE} --gtest_death_test_style=threadsafe --gtest_output=xml:${TEST_OUTPUT_DIR}/xunit.xml)
     else()
-      set(TEST_COMMAND ${MPIEXEC} ${MPIEXEC_PREFLAGS} ${MPIEXEC_NUMPROC_FLAG} ${np} ${MPIEXEC_POSTFLAGS} ${TEST_ENV_NTHREADS}
+      if ("${MPIEXEC}" MATCHES "srun")
+          set(MPIEXEC_NUMTHREADS "-c ${TEST_OMP_NUM_THREADS}")
+      endif()
+      set(TEST_COMMAND ${MPIEXEC} ${MPIEXEC_PREFLAGS} ${MPIEXEC_NUMPROC_FLAG} ${np} ${MPIEXEC_NUMTHREADS} ${TEST_ENV_NTHREADS}
                        ./${PRODUCT_NAME}-${label}-test-${CMAKE_BUILD_TYPE} --gtest_death_test_style=threadsafe --gtest_output=xml:${TEST_OUTPUT_DIR}/xunit.xml)
     endif()
+
     set(CURRENT_TESTNAME test-${label}_np${np})
     list(APPEND ALL_PHIST_TESTS ${CURRENT_TESTNAME})
     add_test(NAME ${CURRENT_TESTNAME} COMMAND ${TEST_COMMAND})

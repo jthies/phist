@@ -24,7 +24,7 @@ elseif (PHIST_KERNEL_LIB STREQUAL "builtin")
     option(PHIST_HIGH_PRECISION_KERNELS_FORCE "Always force the usage of high precision reductions even if this requires copying data and is slow!" Off)
   endif()
 
-  if( NOT PHIST_HAVE_MPI )
+  if( NOT PHIST_ENABLE_MPI )
     message(FATAL_ERROR "Builtin kernel lib requires MPI!")
   endif()
 elseif (PHIST_KERNEL_LIB STREQUAL "magma")
