@@ -53,6 +53,7 @@ void SUBR(jadaCorrectionSolver_create)(TYPE(jadaCorrectionSolver_ptr) *me, phist
   }
   else if ((*me)->method_==phist_IDRS)
   {
+    PHIST_SOUT(PHIST_INFO, "TROET: got IDRs as inner solver!");
     (*me)->innerSolvMaxBas_    = opts.innerSolvMaxBas;
     if ((*me)->innerSolvMaxBas_<0) (*me)->innerSolvMaxBas_=4;
     (*me)->rightPrecon=(TYPE(linearOp_ptr))opts.preconOp;
@@ -317,7 +318,7 @@ void SUBR(jadaCorrectionSolver_run)(TYPE(jadaCorrectionSolver_ptr) me,
         }
 
       }
-      else if (me->method_==phist_QMR || me->method_==phist_BICGSTAB)
+      else if (me->method_==phist_QMR || me->method_==phist_BICGSTAB || me->method_==phist_IDRS)
       {
         // make sure the inner and outer block sizes are the same, and there is no permutation of the residual vectors.
         // For GMRES and MINRES below we don't have this restriction
@@ -339,7 +340,8 @@ void SUBR(jadaCorrectionSolver_run)(TYPE(jadaCorrectionSolver_ptr) me,
         phist::MvecOwner<_ST_> _V(V);
         if (me->method_==phist_IDRS)
         {
-          int s = 4;
+          int s = me->innerSolvMaxBas_;
+          PHIST_SOUT(PHIST_INFO, "run IDR(%d) for maxIter=%d iterations and %d RHS\n", s, nIter, k);//TROET
           MT min_tol=tol[0]; for (int i=1; i<k; i++) min_tol=std::min(min_tol,tol[i]);
           PHIST_CHK_NEG_IERR(SUBR(blockedIDRs_iterate)(&jadaOp, jadaPrecRight, _res,_t, V, k, &nIter, min_tol, s, iflag),*iflag);
         }
