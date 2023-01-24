@@ -67,6 +67,7 @@ size=comm_size;
 // collect the results for printing them
 double all_mean_store[comm_size], all_mean_load[comm_size], all_mean_copy[comm_size], all_mean_triad[comm_size];
 
+
 MPI_Gather(&mean_bw_load,1,MPI_DOUBLE,
            all_mean_load,1,MPI_DOUBLE,0,MPI_COMM_WORLD);
 
@@ -88,39 +89,53 @@ if (size>10)
 
 if (rank==0)
 {
+
+  double total_bw_store=0.0, total_bw_load=0.0, total_bw_copy=0.0, total_bw_triad=0.0;
+  for (int i=0; i<comm_size; i++)
+  {
+    total_bw_load += all_mean_load[i];
+    total_bw_store += all_mean_store[i];
+    total_bw_copy += all_mean_copy[i];
+    total_bw_triad += all_mean_triad[i];
+  }
+
   PHIST_SOUT(PHIST_INFO,"\nSTREAM BENCHMARK RESULTS (GB/s) per MPI rank\n");
   PHIST_SOUT(PHIST_INFO,"=============");
-  for (int i=0; i<size; i++) PHIST_SOUT(PHIST_INFO,"========");
-  PHIST_SOUT(PHIST_INFO,"\n| benchmark |");
+  for (int i=0; i<size+1; i++) PHIST_SOUT(PHIST_INFO,"========");
+  PHIST_SOUT(PHIST_INFO,"\n| benchmark | total |");
   for (int i=0; i<size; i++) PHIST_SOUT(PHIST_INFO,"  P%d   |",i);
-  PHIST_SOUT(PHIST_INFO,"\n-------------");
+  PHIST_SOUT(PHIST_INFO,"\n---------------------");
   for (int i=0; i<size; i++) PHIST_SOUT(PHIST_INFO,"--------");
 
   PHIST_SOUT(PHIST_INFO,"\n|  load     |");
+  fprintf(stdout," %5.3g |",total_bw_load);
   for (int i=0; i<size; i++)
   {
     fprintf(stdout," %5.3g |",all_mean_load[i]);
   }
   PHIST_SOUT(PHIST_INFO,"\n|  store    |");
+  fprintf(stdout," %5.3g |",total_bw_store);
   for (int i=0; i<size; i++)
   {
     fprintf(stdout," %5.3g |",all_mean_store[i]);
   }
 
   PHIST_SOUT(PHIST_INFO,"\n|  copy    |");
+  fprintf(stdout," %5.3g |",total_bw_copy);
   for (int i=0; i<size; i++)
   {
     fprintf(stdout," %5.3g |",all_mean_copy[i]);
   }
 
   PHIST_SOUT(PHIST_INFO,"\n|  triad    |");
+  fprintf(stdout," %5.3g |",total_bw_triad);
   for (int i=0; i<size; i++)
   {
     fprintf(stdout," %5.3g |",all_mean_triad[i]);
   }
 
   PHIST_SOUT(PHIST_INFO,"\n=============");
-  for (int i=0; i<size; i++) PHIST_SOUT(PHIST_INFO,"========");
+  for (int i=0; i<size+1; i++) PHIST_SOUT(PHIST_INFO,"========");
 
   // deduce process weights from the results
 
