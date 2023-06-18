@@ -41,6 +41,14 @@
 #include <sstream>
 #include <cstdlib>
 
+#include "Trilinos_version.h"
+#if TRILINOS_MAJOR_MINOR_VERSION <= 130200
+#define getLocalNumElements getNodeNumElements
+#define getLocalNumRows getNodeNumRows
+#define getLocalNumEntries getNodeNumEntries
+#endif
+
+
 
 using namespace phist::tpetra;
 

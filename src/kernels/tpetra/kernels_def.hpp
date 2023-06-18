@@ -12,6 +12,13 @@
 #include "Tpetra_MultiVector.hpp"
 #include "Tpetra_Access.hpp"
 
+#include "Trilinos_version.h"
+#if TRILINOS_MAJOR_MINOR_VERSION <= 130200
+#define getLocalNumElements getNodeNumElements
+#define getLocalNumRows getNodeNumRows
+#define getLocalNumEntries getNodeNumEntries
+#endif
+
 extern "C" void SUBR(type_avail)(int *iflag)
 {
   *iflag = PHIST_NOT_IMPLEMENTED;
