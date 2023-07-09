@@ -19,7 +19,9 @@
 #endif
 #include <stdint.h>
 #include <stdio.h>
+#ifdef PHIST_HAVE_SSE
 #include <emmintrin.h>
+#endif
 #include <stdlib.h>
 
 static inline _Bool is_aligned(const void *restrict pointer, size_t byte_count)
@@ -30,6 +32,10 @@ static inline _Bool is_aligned(const void *restrict pointer, size_t byte_count)
 
 void daxpy_nt_2_c(int nrows, const double *restrict alpha, const double *restrict x, double *restrict y)
 {
+#ifndef PHIST_HAVE_SSE
+  printf("%s: must not be called on platforms without SSE.", __FUNCTION__);
+  exit(1);
+#else
   if( !is_aligned(y,16) )
   {
     printf("%s: not aligned %lx\n", __FUNCTION__, (uintptr_t)(void*)y);
@@ -54,11 +60,16 @@ void daxpy_nt_2_c(int nrows, const double *restrict alpha, const double *restric
     // non-temporal store
     _mm_stream_pd(y+2*i, y_);
   }
+#endif
 }
 
 
 void daxpy_nt_4_c(int nrows, const double *restrict alpha, const double *restrict x, double *restrict y)
 {
+#ifndef PHIST_HAVE_SSE
+  printf("%s: must not be called on platforms without SSE.", __FUNCTION__);
+  exit(1);
+#else
   if( !is_aligned(y,16) )
   {
     printf("%s: not aligned %lx\n", __FUNCTION__, (uintptr_t)(void*)y);
@@ -86,11 +97,16 @@ void daxpy_nt_4_c(int nrows, const double *restrict alpha, const double *restric
       _mm_stream_pd(y+4*i+2*k, y_);
     }
   }
+#endif
 }
 
 
 void daxpy_nt_8_c(int nrows, const double *restrict alpha, const double *restrict x, double *restrict y)
 {
+#ifndef PHIST_HAVE_SSE
+  printf("%s: must not be called on platforms without SSE.", __FUNCTION__);
+  exit(1);
+#else
   if( !is_aligned(y,16) )
   {
     printf("%s: not aligned %lx\n", __FUNCTION__, (uintptr_t)(void*)y);
@@ -118,11 +134,16 @@ void daxpy_nt_8_c(int nrows, const double *restrict alpha, const double *restric
       _mm_stream_pd(y+8*i+2*k, y_);
     }
   }
+#endif
 }
 
 
 void daxpy_nt_strided_2_c(int nrows, const double *restrict alpha, const double *restrict x, int ldx, double *restrict y, int ldy)
 {
+#ifndef PHIST_HAVE_SSE
+  printf("%s: must not be called on platforms without SSE.", __FUNCTION__);
+  exit(1);
+#else
   if( !is_aligned(y,16) )
   {
     printf("%s: not aligned %lx\n", __FUNCTION__, (uintptr_t)(void*)y);
@@ -140,11 +161,16 @@ void daxpy_nt_strided_2_c(int nrows, const double *restrict alpha, const double 
     // non-temporal store
     _mm_stream_pd(y+ldy*i, y_);
   }
+#endif
 }
 
 
 void daxpy_nt_strided_4_c(int nrows, const double *restrict alpha, const double *restrict x, int ldx, double *restrict y, int ldy)
 {
+#ifndef PHIST_HAVE_SSE
+  printf("%s: must not be called on platforms without SSE.", __FUNCTION__);
+  exit(1);
+#else
   if( !is_aligned(y,16) || ldy % 2 != 0 )
   {
     printf("%s: not aligned %lx\n", __FUNCTION__, (uintptr_t)(void*)y);
@@ -165,11 +191,16 @@ void daxpy_nt_strided_4_c(int nrows, const double *restrict alpha, const double 
       _mm_stream_pd(y+ldy*i+2*k, y_);
     }
   }
+#endif
 }
 
 
 void daxpy_nt_strided_8_c(int nrows, const double *restrict alpha, const double *restrict x, int ldx, double *restrict y, int ldy)
 {
+#ifndef PHIST_HAVE_SSE
+  printf("%s: must not be called on platforms without SSE.", __FUNCTION__);
+  exit(1);
+#else
   if( !is_aligned(y,16) || ldy % 2 != 0 )
   {
     printf("%s: not aligned %lx\n", __FUNCTION__, (uintptr_t)(void*)y);
@@ -190,11 +221,16 @@ void daxpy_nt_strided_8_c(int nrows, const double *restrict alpha, const double 
       _mm_stream_pd(y+ldy*i+2*k, y_);
     }
   }
+#endif
 }
 
 
 void dcopy_general_nt_c(int nrows, int nvec, const double *restrict x, int ldx, double *restrict y, int ldy)
 {
+#ifndef PHIST_HAVE_SSE
+  printf("%s: must not be called on platforms without SSE.", __FUNCTION__);
+  exit(1);
+#else
   if( nvec % 2 != 0 )
   {
     printf("%s: not aligned %lx\n", __FUNCTION__, (uintptr_t)(void*)x);
@@ -217,5 +253,6 @@ void dcopy_general_nt_c(int nrows, int nvec, const double *restrict x, int ldx, 
       _mm_stream_pd(y+i*ldy+2*j, tmp);
     }
   }
+#endif
 }
 
