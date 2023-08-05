@@ -1,4 +1,5 @@
 devel
+  - cmake: make "PHIST_TRY_TO_PIN_THREADS=OFF" the default because nowadays, it's more useful to rely on MPI and/or OPenmP pinning unless you know exactly what you're doing
   - new linear solver: IDR(s)
   - fix bug in generating Fortran bindings (missing include path for Epetra/Tpetra kernel libs)
   - refactoring of cmake (some parts outsourced) to make it more readable)

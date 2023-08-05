@@ -5,7 +5,10 @@ option(PHIST_USE_CCACHE "Enable/disable using ccache to speed up repeated builds
 option(PHIST_HOST_OPTIMIZE "Set this to OFF if you are not compiling for the CPU on which the cmake command is invoked." ON)
 
 # performance-related settings
-option(PHIST_TRY_TO_PIN_THREADS "Try to pin the threads to cores, the exact implementation depends on the kernel library, hence the 'TRY'. A kernel library may or may not bind the threads without further warnings." On)
+
+## note: presently, MPI installations, OpenMP and other low-level components do their own
+## pinning, so it is best to (at least by default) not try to do it manually in phist
+option(PHIST_TRY_TO_PIN_THREADS "Try to pin the threads to cores, the exact implementation depends on the kernel library, hence the 'TRY'. A kernel library may or may not bind the threads without further warnings." OFF)
 option(PHIST_TRY_TO_RESPECT_NUMA "Try to first-touch multi-vector data after allocation, makes the code run better on NUMA systems but temporary vectors become more expensive." On)
 
 # output behavior
