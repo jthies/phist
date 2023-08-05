@@ -8,7 +8,6 @@
 /*******************************************************************************************/
 
 #include "Trilinos_version.h"
-#include "Kokkos_View.hpp"
 #include "Tpetra_MultiVector.hpp"
 #include "Tpetra_Access.hpp"
 

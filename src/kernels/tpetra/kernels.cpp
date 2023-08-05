@@ -20,7 +20,13 @@
 #include "Kokkos_Cuda.hpp"
 #endif
 
+#if TRILINOS_MAJOR_VERSION>14
+#undef PHIST_TRY_TO_PIN_THREADS
+#endif
+
+#ifdef PHIST_TRY_TO_PIN_THREADS
 #include "Kokkos_hwloc.hpp"
+#endif
 
 #include "Teuchos_StandardCatchMacros.hpp"
 #include "Teuchos_DefaultComm.hpp"
