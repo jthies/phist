@@ -117,7 +117,7 @@ int numCoresPerNuma=-1;
   MPI_Comm node_comm;
   MPI_Comm_split_type(global_comm, MPI_COMM_TYPE_SHARED, 0,
   MPI_INFO_NULL, &node_comm);
-  
+
   MPI_Comm_rank(global_comm,&myGlobalRank);
   MPI_Comm_rank(node_comm, &myRankOnNode);
   MPI_Comm_size(node_comm, &numProcsOnNode);
@@ -133,13 +133,16 @@ if (Kokkos::hwloc::available())
 }
 #endif
 
-#if TRILINOS_MAJOR_MINOR_VERSION>=121300
+#if TRILINOS_MAJOR_VERSION>=14
+  Kokkos::initialize(*argc, *argv);
+#elif TRILINOS_MAJOR_MINOR_VERSION>=121300
   Kokkos::InitArguments args{numThreads, numNuma};
+  PHIST_TRY_CATCH(Kokkos::initialize(args), *iflag);
 #else
   Kokkos::InitArguments args; args.num_threads=numThreads; args.num_numa=numNuma;
-#endif
   PHIST_TRY_CATCH(Kokkos::initialize(args), *iflag);
-  
+#endif
+
 #ifdef PHIST_TRY_TO_PIN_THREADS
 if (Kokkos::hwloc::available() && Kokkos::hwloc::can_bind_threads())
 {
