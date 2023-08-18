@@ -52,7 +52,14 @@ foreach(PKG ${REQUIRE_TRILI_PKG})
   string(TOUPPER ${PKG} PKG_CAPS)
   if (Trilinos_DIR)
     set(${PKG}_DIR "${Trilinos_DIR}/../${PKG}")
-    find_package(${PKG} PATHS ${${PKG}_DIR} QUIET NO_DEFAULT_PATH REQUIRED)
+    # Note: originally, we required all trilinos packages to be taken from Trilinos_DIR
+    # here, but since Trilinos 14.4.0, Kokkos can be compiled outside of Trilinos, and that
+    # caused cmake to fail to find it here. So now we first try to find the packages inside
+    # Trilinos_DIR, and if they are not there, we look for them anywhere alse.
+    find_package(${PKG} PATHS ${${PKG}_DIR} QUIET NO_DEFAULT_PATH)
+    if (NOT ${${PKG}_FOUND})
+      find_package(${PKG} REQUIRED)
+    endif()
   else()
     find_package(${PKG} REQUIRED)
   endif()
