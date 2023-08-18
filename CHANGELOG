@@ -1,4 +1,4 @@
-devel
+phist-1.12.0
   - small update to allow building with Trilinos/Tpetra 14 (do not include private Kokkos headers)
   - cmake: make "PHIST_TRY_TO_PIN_THREADS=OFF" the default because nowadays, it's more useful to rely on MPI and/or OPenmP pinning unless you know exactly what you're doing
   - new linear solver: IDR(s)
