@@ -392,7 +392,8 @@ extern "C" void SUBR(jadaOp_create_impl)(TYPE(const_linearOp_ptr)    AB_op,
 
   if (AB_op->apply_shifted==NULL)
   {
-    PHIST_SOUT(PHIST_ERROR, "operator passed to %s does not support apply_shifted\n"
+    // note: this may be OK for preconditioning, in that case we should suppress the warning
+    PHIST_SOUT(PHIST_WARNING, "operator passed to %s does not support apply_shifted: shifts will be ignored\n"
                             "(file %s, line %d)\n",__FUNCTION__,__FILE__,__LINE__);
   *iflag=-1;
   return;
