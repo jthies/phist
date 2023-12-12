@@ -546,7 +546,7 @@ extern "C" void SUBR(mvec_extract_view)(TYPE(mvec_ptr) vV, _ST_** val, phist_lid
     if (V->traits.location & GHOST_LOCATION_DEVICE)
     {
       *val=(ST*)V->cu_val;
-      return
+      return;
     }
     else
     {
@@ -555,7 +555,7 @@ extern "C" void SUBR(mvec_extract_view)(TYPE(mvec_ptr) vV, _ST_** val, phist_lid
       *val = NULL;
       return;
     }
-
+  }
   if (V->val==NULL)
   {
     if (V->traits.location == GHOST_LOCATION_DEVICE)

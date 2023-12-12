@@ -44,7 +44,7 @@ void SUBR(mgs)(TYPE(mvec_ptr) P[], int s, int numSys, int* iflag)
   _ST_ alpha=0;
   int nvec;
   PHIST_CHK_IERR(SUBR(mvec_num_vectors)(P[0],&nvec,iflag),*iflag);
-  double nrms[nvec];
+  _MT_ nrms[nvec];
   for (int j=0; j<s; j++)
   {
     for (int k=0; k<j; k++)
