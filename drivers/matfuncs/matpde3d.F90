@@ -336,10 +336,10 @@ contains
   end if
   
     ! scaling factors of convective terms (x,y,z-direction)
-    alpha=1.0_8
-    beta=1.0_8
-    gamma=1.0_8
-    delta=1.0_8
+    alpha=0.0_8
+    beta=0.0_8
+    gamma=0.0_8
+    delta=0.0_8
     
     if (problem==PROB_A0 .or. problem==PROB_B0) then
       alpha=0.0_8
@@ -378,6 +378,9 @@ contains
       beta =1.0/5.0E-3
       gamma=1.0/5.0E-3
       delta=1.0/5.0e-3
+      !beta=1.0_8
+      !gamma=1.0_8
+      !delta=1.0_8
     end if
 
 
@@ -1016,7 +1019,7 @@ end function rrc
       sbc = sin(pi*x)
     else
       ! default
-      sbc = 0.0_8
+      sbc = 1.0_8
     end if
     
     sbc=sbc*delta
