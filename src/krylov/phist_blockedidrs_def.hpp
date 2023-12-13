@@ -182,7 +182,7 @@ extern "C" void SUBR(blockedIDRs_iterate)(TYPE(const_linearOp_ptr) Aop, TYPE(con
 
   // orthogonalize the s P vectors mutually
   PHIST_CHK_IERR(SUBR(mgs)(P, s, numSys, iflag), *iflag);
-  ST kappa = 0.7;
+  MT kappa = 0.7;
 
   sdMat_owner _M(s,s,comm,iflag); PHIST_REPORT_IERR("memory allocation failed",*iflag);
   sdMat_ptr M = _M.get();
