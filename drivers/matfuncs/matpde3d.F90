@@ -77,6 +77,13 @@
 ! or defined yet, I imgine e.g.
 ! Du + alpha*d/dx(u^beta) = F, 1<=beta, 0<=alpha
 !
+!=======================================================================================
+! (E) various additional benchmarks
+! E1: conv/diff/react problem with a strong negative reaction term
+!    -eps Delta u +beta grad u + r u = b
+!    with eps = 5e-3, beta = [1,1,1], r = -5.
+
+!=======================================================================================
 ! The right-hand sides F that follow from prescribed analytic solutions U (in           
 ! e.g. the A and B benchmarks) are not implemented, if we want to assess accuracy we    
 ! should do that, but for now we just use b=A*x for some given x.                       
@@ -132,6 +139,8 @@ module matpde3d_module
   integer, parameter :: PROB_D7=INT(Z'D7')
   integer, parameter :: PROB_D8=INT(Z'D8')
   integer, parameter :: PROB_D9=INT(Z'D9')
+
+  integer, parameter :: PROB_E1=INT(Z'E1')
 
   ! location of boundaries in the BNDRY array
   integer, parameter :: BOTTOM=1
@@ -320,6 +329,8 @@ contains
     BNDRY(1:6)=0
     !! disable octree ordering
     level=-1
+  else if (problem == PROB_E1) then
+    BNDRY(1:6)=0
   else
     iflag=-99
   end if
@@ -362,6 +373,11 @@ contains
     else if (problem==PROB_C0 .and. PROBLEM .le. PROB_C9) then
       ! scaling of random numbers on diagonal
       alpha=16.5
+    else if (problem == PROB_E1) then
+      alpha=-5/5.0E-3
+      beta =1.0/5.0E-3
+      gamma=1.0/5.0E-3
+      delta=1.0/5.0e-3
     end if
 
 
@@ -748,9 +764,12 @@ end if
     ZK = HZ*DBLE(KZ)
     YJ = HY*DBLE(JY)
     XI = HX*DBLE(IX)
-    
+
     solVal=U(XI,YJ,ZK,col)
     the_result=0
+
+    write(*,*) 'INDEX ',row, 'coordinates ',ix,jy,kz
+    write(*,*) 'grid location ',xi,yj,kz,' value ',solVal
     
   end function MATPDE3D_solFunc
 
@@ -888,7 +907,7 @@ end if
       rc = 0.0_8
     else
       ! default
-      rc = 0.0_8
+      rc = 1.0_8
     end if    
     rc=rc*beta
   end function rc
@@ -942,7 +961,7 @@ end function rrc
       sc = sin(pi*z)
     else
       ! default
-      sc = 0.0_8
+      sc = 1.0_8
     end if
     
     sc=sc*gamma
@@ -1052,7 +1071,7 @@ end function rrc
   else if (problem == PROB_C1) then
     tc = -6.0_8/(hy2*alpha)
   else
-    tc = 0.0_8
+    tc = 1.0_8
   end if
 
   tc=tc*alpha
@@ -1075,6 +1094,8 @@ end function rrc
       u = x*y*z*(1.-x)*(1.-y)*(1.-z)
     else if (problem==PROB_A2) then
       u = x+y+z
+    else if (problem ==PROB_E1) then
+      u = sqrt(x*y*z*(1.0-x)*(1.0-y)*(1.0-z))
     else
       omega=pi*DBLE(k+1)
       u = x * exp(x*y*z) * sin(omega*x) * sin(omega*y) * sin(omega*z)
