@@ -517,10 +517,14 @@ void SUBR(create_sol_and_rhs)(const char* problem, TYPE(const_sparseMat_ptr) A,
 
   PHIST_ENTER_FCN(__FUNCTION__);
   *iflag=0;
-  int done=0;
+  int sol_done=0, rhs_done=0;
   // only the MATPDE3D Benchmark problems have
   // an implementation for providing an analytical
-  // solution and exact RHS vector, for the other
+  // solution and exact RHS vector. We skip the rhs
+  // though because the analytical rhs takes discretization
+  // errors into account when used for residual calculations.
+  // So we use the analytical solution x and then compute b=A*x.
+  // For the other
   // cases (and matrices read from a file), we use
   // a random vector X and compute B=A*X.
 #if defined(IS_DOUBLE) && !defined(IS_COMPLEX)
@@ -528,15 +532,23 @@ void SUBR(create_sol_and_rhs)(const char* problem, TYPE(const_sparseMat_ptr) A,
   {
     // MATPDE3D provides these for us
     SUBR(mvec_put_func)(sol,&MATPDE3D_solFunc,NULL,iflag);
-    if (*iflag==0) done=1;
-    SUBR(mvec_put_func)(rhs,&MATPDE3D_rhsFunc,NULL,iflag);
-    if (*iflag==0) done&=1;
+    if (*iflag==0)
+    {
+      sol_done=1;
+    }
+//    if (sol_done)
+//    {
+//      SUBR(mvec_put_func)(rhs,&MATPDE3D_rhsFunc,NULL,iflag);
+//    if (*iflag==0) rhs_done=1;
+//    }
   }
 #endif
-  if (!done)
+  if (!sol_done)
   {
-    // if not, or not a BENCH3D case, set sol=random and rhs=A*sol
     PHIST_CHK_IERR(SUBR(mvec_random)(sol,iflag),*iflag);
+  }
+  if (!rhs_done)
+  {
     PHIST_CHK_IERR(SUBR(sparseMat_times_mvec)(ONE,A,sol,ZERO,rhs,iflag),*iflag);
   }
 }
